@@ -1,7 +1,7 @@
 import type { Candidate, Notification, Project, ProjectDetail, Search, SearchResult, User } from './types'
 
 export type AuthPayload = { token: string; user: User }
-export type SignupResponse = AuthPayload | { detail: string; requires_email_verification: true }
+export type SignupResponse = AuthPayload | { detail: string; requires_email_verification: true; local_verification_url?: string }
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api/v1'
 
@@ -62,7 +62,7 @@ export const api = {
   answerSearch: (id: number, answer: string) => request<Search>(`/searches/${id}/answer/`, { method: 'POST', body: JSON.stringify({ answer }) }),
   results: (id: number, filters = '') => request<{ count: number; results: SearchResult[]; search: Search }>(`/searches/${id}/results/${filters}`),
   candidate: (id: number) => request<Candidate>(`/candidates/${id}/`),
-  setStatus: (id: number, status: string) => request(`/candidates/${id}/status/`, { method: 'PUT', body: JSON.stringify({ status }) }),
+  setStatus: (id: number, status: string, reason = '', note = '') => request(`/candidates/${id}/status/`, { method: 'PUT', body: JSON.stringify({ status, reason, note }) }),
   clearStatus: (id: number) => request<void>(`/candidates/${id}/status/`, { method: 'DELETE' }),
   compare: (candidate_ids: number[]) => request<Candidate[]>('/candidates/compare/', { method: 'POST', body: JSON.stringify({ candidate_ids }) }),
   notifications: () => request<Notification[]>('/notifications/'),

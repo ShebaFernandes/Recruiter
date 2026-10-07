@@ -47,8 +47,8 @@ async function seedCandidate(request: APIRequestContext, index: number, runId: n
       work_preferences: ['Hybrid', 'Remote'],
       skills: index === 2 ? ['Java', 'Kafka', 'AWS', 'PostgreSQL'] : ['Python', 'Django', 'Kafka', 'PostgreSQL'],
       work_experiences: [
-        { company: `Early ${company}`, role: 'Software Engineer', start_date: '2018-01-01', end_date: '2020-01-01', description: 'Built APIs.' },
-        { company, role: headline, start_date: index === 0 ? '2021-01-01' : '2020-02-01', end_date: null, description: 'Owned reliable backend systems.' },
+        { company: `Early ${company}`, role: 'Software Engineer', start_date: '2018-01-01', end_date: '2020-01-01', description: 'Built APIs.', gap_reason: '' },
+        { company, role: headline, start_date: index === 0 ? '2021-01-01' : '2020-02-01', end_date: null, description: 'Owned reliable backend systems.', gap_reason: index === 0 ? 'Completed an advanced distributed-systems programme.' : '' },
       ],
     },
   })
@@ -86,6 +86,7 @@ test('recruiter completes clarification, filters, compares, reviews and persists
   expect(searchBox?.width).toBeLessThanOrEqual(681)
   expect(searchBox?.height).toBeGreaterThanOrEqual(57)
   expect(searchBox?.height).toBeLessThanOrEqual(59)
+  expect(searchBox?.y).toBeGreaterThan(430)
 
   await page.getByLabel('Candidate search').fill('Backend engineer with 4 years experience')
   await page.getByRole('button', { name: 'Search talent' }).click()
@@ -94,6 +95,7 @@ test('recruiter completes clarification, filters, compares, reviews and persists
   await page.getByRole('button', { name: 'Bengaluru', exact: true }).click()
   const cards = page.locator('.candidate-card')
   await expect(cards.first()).toBeVisible()
+  const seededAnikaCard = cards.filter({ has: page.locator(`a[href="mailto:${candidates[0].email}"]`) })
   const initialCount = await cards.count()
   expect(initialCount).toBeGreaterThanOrEqual(4)
   await expect(page.getByText(`Showing ${initialCount} of ${initialCount} results`)).toBeVisible()
@@ -107,7 +109,10 @@ test('recruiter completes clarification, filters, compares, reviews and persists
   expect(resultsBox?.width).toBeGreaterThanOrEqual(1019)
   expect(resultsBox?.width).toBeLessThanOrEqual(1021)
   expect(firstCardBox?.height).toBeLessThanOrEqual(210)
-  await expect(page.getByLabel(/Career gap of approximately/).first()).toBeVisible()
+  const seededGap = seededAnikaCard.getByLabel(/Career gap of approximately/)
+  await expect(seededGap).toBeVisible()
+  await seededGap.hover()
+  await expect(seededAnikaCard.getByText('Completed an advanced distributed-systems programme.')).toBeVisible()
   await expect(page.locator('.candidate-rank')).toHaveCount(0)
   await expect(page.getByText('Why this match')).toHaveCount(0)
 
@@ -146,7 +151,7 @@ test('recruiter completes clarification, filters, compares, reviews and persists
   await expect(cards).toHaveCount(initialCount)
 
   const anikaName = candidates[0].name
-  const anikaCard = cards.filter({ has: page.locator(`a[href="mailto:${candidates[0].email}"]`) })
+  const anikaCard = seededAnikaCard
   await expect(anikaCard.getByRole('heading', { name: anikaName, exact: true })).toBeVisible()
   await anikaCard.getByRole('checkbox').check()
   await cards.filter({ hasNotText: anikaName }).first().getByRole('checkbox').check()
@@ -166,11 +171,13 @@ test('recruiter completes clarification, filters, compares, reviews and persists
   await expect(profileDrawer.getByRole('link', { name: 'Email', exact: true })).toBeVisible()
   await expect(profileDrawer.getByRole('link', { name: 'WhatsApp', exact: true })).toBeVisible()
   await expect(page.getByText(`Built a resilient event platform at SignalWorks.`)).toBeVisible()
+  await profileDrawer.getByRole('button', { name: 'Add', exact: true }).click()
+  await expect(page.getByText(/Candidate saved to Backend hiring/)).toBeVisible()
   await page.locator('.profile-drawer .close').click()
   await expect(anikaCard.locator('.name-row .signal.viewed')).toBeVisible()
+  await expect(anikaCard.locator('.contact-icon-row a')).toHaveCount(2)
+  await expect(anikaCard.getByRole('link', { name: /Resume/ })).toHaveCount(0)
 
-  await anikaCard.getByRole('button', { name: /Save to Backend hiring/ }).click()
-  await expect(page.getByText(/Candidate saved to Backend hiring/)).toBeVisible()
   await page.getByRole('button', { name: 'Projects' }).click()
   await page.locator('.workspace-sidepanel').getByRole('button', { name: new RegExp(`Backend hiring ${runId}`) }).click()
   await expect(page.getByRole('heading', { name: `Backend hiring ${runId}` })).toBeVisible()
@@ -179,10 +186,19 @@ test('recruiter completes clarification, filters, compares, reviews and persists
   await expect(page.getByText(`Showing ${initialCount} of ${initialCount} results`)).toBeVisible()
 
   const stage = anikaCard.getByLabel(`Stage for ${anikaName}`)
-  await stage.selectOption('sourced')
-  await expect(stage).toHaveValue('sourced')
-  await stage.selectOption('non_relevant')
-  await expect(stage).toHaveValue('non_relevant')
+  for (const value of ['sourced', 'shortlisted', 'contacted', 'screening', 'interviewing', 'offered', 'rejected', 'non_relevant', 'hired']) {
+    await stage.selectOption(value)
+    if (value === 'non_relevant') {
+      const feedback = page.getByRole('dialog', { name: `Why is ${anikaName} not relevant?` })
+      await expect(feedback).toBeVisible()
+      await feedback.getByText('Wrong seniority', { exact: true }).click()
+      await feedback.getByText('Wrong location', { exact: true }).click()
+      await feedback.getByPlaceholder('Add a short note for the search quality team…').fill('The role needs a more senior candidate in Mumbai.')
+      await feedback.getByRole('button', { name: 'Save feedback' }).click()
+      await expect(feedback).toHaveCount(0)
+    }
+    await expect(stage).toHaveValue(value)
+  }
 
   const fixture = fs.readFileSync(path.resolve('../backend/tests/fixtures/asha-rao-resume.docx'))
   const update = await request.post(`${API}/candidate/resumes/`, {
@@ -202,7 +218,7 @@ test('recruiter completes clarification, filters, compares, reviews and persists
   await page.locator('.workspace-sidepanel .workspace-list').getByRole('button').first().click()
   await expect(page.getByText(`Showing ${initialCount} of ${initialCount} results`)).toBeVisible()
   const persisted = page.locator('.candidate-card').filter({ has: page.locator(`a[href="mailto:${candidates[0].email}"]`) })
-  await expect(persisted.getByLabel(`Stage for ${anikaName}`)).toHaveValue('non_relevant')
+  await expect(persisted.getByLabel(`Stage for ${anikaName}`)).toHaveValue('hired')
   await expect(persisted.locator('.name-row .signal.viewed')).toBeVisible()
   await expect(persisted.locator('.name-row .signal.updated')).toHaveText('Profile updated')
 })

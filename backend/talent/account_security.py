@@ -87,6 +87,7 @@ def send_verification_email(user):
         [user.email],
         fail_silently=False,
     )
+    return link
 
 
 def send_password_reset_email(user):

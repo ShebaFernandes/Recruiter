@@ -45,6 +45,15 @@ const recruiterStages = [
   ['hired', 'Hired'],
 ] as const
 
+const nonRelevantOptions = [
+  'Wrong depth',
+  'Wrong company context',
+  'Skill not deep enough',
+  'Wrong seniority',
+  'Wrong location',
+  'Not enough evidence',
+] as const
+
 function recruiterStageLabel(value: string) {
   return recruiterStages.find(([key]) => key === value)?.[1] || 'Recruiting stage'
 }
@@ -93,6 +102,7 @@ function AuthScreen({ role, onDone, back }: {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [pendingEmail, setPendingEmail] = useState('')
+  const [localVerificationUrl, setLocalVerificationUrl] = useState('')
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setBusy(true); setError(''); setMessage('')
     const data = Object.fromEntries(new FormData(event.currentTarget).entries()) as Record<string, string>
@@ -107,6 +117,7 @@ function AuthScreen({ role, onDone, back }: {
         : await api.login({ email: data.email, password: data.password })
       if ('requires_email_verification' in payload) {
         setPendingEmail(data.email)
+        setLocalVerificationUrl(payload.local_verification_url || '')
         setMessage(payload.detail)
         return
       }
@@ -133,9 +144,10 @@ function AuthScreen({ role, onDone, back }: {
       <h1>Check your email</h1>
       <p>We sent a secure verification link to <b>{pendingEmail}</b>. Verify your email before signing in and building your profile.</p>
       {message && <div className="success"><Check size={17} />{message}</div>}
+      {localVerificationUrl && <div className="local-email-preview"><b>Local development</b><span>Inbox delivery is not configured on this computer. Use this secure one-time link to continue testing.</span><a className="primary" href={localVerificationUrl}>Verify this local account</a></div>}
       <InlineError value={error} />
       <button className="primary" onClick={resend} disabled={busy}>{busy ? 'Sending…' : 'Resend verification email'}</button>
-      <button className="text-button" onClick={() => { setPendingEmail(''); setMode('login'); setMessage(''); setError('') }}>Back to login</button>
+      <button className="text-button" onClick={() => { setPendingEmail(''); setLocalVerificationUrl(''); setMode('login'); setMessage(''); setError('') }}>Back to login</button>
     </section>
   </main>
   return <main className="auth-page">
@@ -226,6 +238,7 @@ function CandidatePortal({ user, logout, accountDeleted }: { user: User; logout:
   const [experiences, setExperiences] = useState<WorkExperience[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
+  const [draggingResume, setDraggingResume] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [editing, setEditing] = useState<string | null>(null)
@@ -353,6 +366,36 @@ function CandidatePortal({ user, logout, accountDeleted }: { user: User; logout:
     ['not_looking', 'Not looking right now', 'Keep your profile, pause discovery.'],
   ] as const
   const workModes = ['Flexible', 'Remote', 'Hybrid', 'On-site']
+
+  if (loading) return <Shell user={user} logout={logout}><main className="candidate-upload-first"><div className="candidate-profile-loading" role="status">Loading your profile…</div></main></Shell>
+
+  if (!profile.latest_resume) return <Shell user={user} logout={logout}>
+    <main className="candidate-upload-first">
+      <section className="candidate-upload-card" aria-labelledby="resume-upload-title">
+        <div
+          className={`cv-dropzone ${draggingResume ? 'dragging' : ''} ${uploading ? 'busy' : ''}`}
+          onDragEnter={event => { event.preventDefault(); if (!uploading) setDraggingResume(true) }}
+          onDragOver={event => { event.preventDefault(); if (!uploading) setDraggingResume(true) }}
+          onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDraggingResume(false) }}
+          onDrop={event => { event.preventDefault(); setDraggingResume(false); if (!uploading) void upload(event.dataTransfer.files?.[0]) }}
+        >
+          <div className="cv-mark">CV</div>
+          <div className="cv-drop-content">
+            <h1 id="resume-upload-title">{uploading ? 'Reading your resume…' : 'Drop your resume'}</h1>
+            <p>{uploading ? 'We’re extracting the details that are actually present in your CV.' : 'Drag and drop your CV here, or choose it from your device.'}</p>
+            <label className={`cv-file-button ${uploading ? 'busy' : ''}`}><input type="file" accept=".pdf,.docx" onChange={event => upload(event.target.files?.[0])} disabled={uploading} data-testid="resume-input" /><UploadCloud size={18} /><span>{uploading ? 'Extracting profile…' : 'Choose PDF or DOCX'}</span></label>
+            <small>PDF or DOCX · Maximum 5 MB</small>
+          </div>
+        </div>
+        <InlineError value={error} />
+        <div className="candidate-upload-points">
+          <div><span>RECRUITERS SEE</span><b>Role, skills, notice, compensation, and proof of work</b></div>
+          <div><span>YOU CONTROL</span><b>Visibility, work mode, and outreach preference</b></div>
+          <div><span>AFTER UPLOAD</span><b>Only missing details are shown for confirmation</b></div>
+        </div>
+      </section>
+    </main>
+  </Shell>
 
   return <Shell user={user} logout={logout}>
     <main className="candidate-studio">
@@ -503,6 +546,29 @@ function CandidateCard({ result, selected, toggle, open, status }: {
   </article>
 }
 
+function NonRelevantDialog({ candidateName, reasons, note, saving, toggleReason, setNote, cancel, save }: {
+  candidateName: string
+  reasons: string[]
+  note: string
+  saving: boolean
+  toggleReason: (reason: string) => void
+  setNote: (note: string) => void
+  cancel: () => void
+  save: (event: FormEvent) => void
+}) {
+  return <div className="overlay non-relevant-overlay" role="presentation">
+    <form className="non-relevant-modal" role="dialog" aria-modal="true" aria-labelledby="non-relevant-title" onSubmit={save}>
+      <h2 id="non-relevant-title">Why is {candidateName} not relevant?</h2>
+      <p>This helps improve future result quality for recruiters.</p>
+      <fieldset><legend className="sr-only">Select all reasons that apply</legend><div className="non-relevant-reasons">
+        {nonRelevantOptions.map(reason => <label key={reason} className={reasons.includes(reason) ? 'selected' : ''}><input type="checkbox" checked={reasons.includes(reason)} onChange={() => toggleReason(reason)} /><span>{reason}</span></label>)}
+      </div></fieldset>
+      <label className="non-relevant-note"><span className="sr-only">Additional feedback</span><textarea value={note} onChange={event => setNote(event.target.value)} placeholder="Add a short note for the search quality team…" maxLength={1000} /></label>
+      <div className="non-relevant-actions"><button type="button" onClick={cancel}>Cancel</button><button className="primary" disabled={saving || (reasons.length === 0 && !note.trim())}>{saving ? 'Saving…' : 'Save feedback'}</button></div>
+    </form>
+  </div>
+}
+
 function ProfileDrawer({ candidate, close, refresh, projects, selectedProject, addToProject }: {
   candidate: Candidate; close: () => void; refresh: () => void; projects: Project[]
   selectedProject: number | null; addToProject: (projectId: number, candidateId: number) => void
@@ -600,6 +666,10 @@ function RecruiterPortal({ user, logout }: { user: User; logout: () => void }) {
   const [workspacePanel, setWorkspacePanel] = useState<'recents' | 'projects' | 'updates' | null>(null)
   const [newProjectName, setNewProjectName] = useState('')
   const [voiceListening, setVoiceListening] = useState(false)
+  const [nonRelevantCandidate, setNonRelevantCandidate] = useState<{ id: number; name: string } | null>(null)
+  const [nonRelevantReasons, setNonRelevantReasons] = useState<string[]>([])
+  const [nonRelevantNote, setNonRelevantNote] = useState('')
+  const [savingFeedback, setSavingFeedback] = useState(false)
   const clarificationInputRef = useRef<HTMLInputElement>(null)
   useEffect(() => { Promise.all([api.searches(), api.notifications(), api.projects()]).then(([s, n, p]) => { setRecents(s); setNotifications(n); setProjects(p) }).catch(e => setError(e.message)) }, [])
   const activeProject = projects.find(item => item.id === selectedProject)
@@ -656,7 +726,23 @@ function RecruiterPortal({ user, logout }: { user: User; logout: () => void }) {
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not load candidates.') }
   }
   async function openProfile(id: number) { try { const item = await api.candidate(id); setProfile(item); setResults(old => old.map(row => row.candidate.id === id ? { ...row, candidate: { ...row.candidate, viewed: true } } : row)) } catch (e) { setError(e instanceof Error ? e.message : 'Could not open profile.') } }
-  async function setStatus(id: number, value: string) { try { if (value) await api.setStatus(id, value); else await api.clearStatus(id); setResults(old => old.map(row => row.candidate.id === id ? { ...row, candidate: { ...row.candidate, stage: value } } : row)); if (profile?.id === id) setProfile({ ...profile, stage: value }) } catch (e) { setError(e instanceof Error ? e.message : 'Status failed.') } }
+  async function persistStatus(id: number, value: string, reason = '', note = '') { try { if (value) await api.setStatus(id, value, reason, note); else await api.clearStatus(id); setResults(old => old.map(row => row.candidate.id === id ? { ...row, candidate: { ...row.candidate, stage: value } } : row)); if (profile?.id === id) setProfile({ ...profile, stage: value }) } catch (e) { setError(e instanceof Error ? e.message : 'Status failed.'); throw e } }
+  function setStatus(id: number, name: string, value: string) {
+    if (value === 'non_relevant') {
+      setNonRelevantCandidate({ id, name }); setNonRelevantReasons([]); setNonRelevantNote(''); return
+    }
+    void persistStatus(id, value)
+  }
+  function toggleNonRelevantReason(reason: string) { setNonRelevantReasons(old => old.includes(reason) ? old.filter(item => item !== reason) : [...old, reason]) }
+  async function saveNonRelevant(event: FormEvent) {
+    event.preventDefault()
+    if (!nonRelevantCandidate || (nonRelevantReasons.length === 0 && !nonRelevantNote.trim())) return
+    setSavingFeedback(true)
+    try {
+      await persistStatus(nonRelevantCandidate.id, 'non_relevant', nonRelevantReasons.join(', '), nonRelevantNote.trim())
+      setNonRelevantCandidate(null); setNonRelevantReasons([]); setNonRelevantNote('')
+    } catch { /* persistStatus presents the error */ } finally { setSavingFeedback(false) }
+  }
   async function compare() { try { setComparison(await api.compare(selected)) } catch (e) { setError(e instanceof Error ? e.message : 'Comparison failed.') } }
   function chooseRecent(item: Search) { setSearch(item); setQuery(item.query); setAnswer(''); setResults([]); setResultsLoaded(false); setProjectDetail(null); setSelectedProject(item.project); setWorkspacePanel(null); if (item.state === 'complete') loadResults(item.id) }
   async function openProject(id: number) { setError(''); setSelectedProject(id); setWorkspacePanel(null); setResultsLoaded(false); setSearch(null); try { setProjectDetail(await api.project(id)) } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not open project.') } }
@@ -693,11 +779,11 @@ function RecruiterPortal({ user, logout }: { user: User; logout: () => void }) {
           <InlineError value={error} />
         </div>}
         {resultsLoaded && <div className="results-view">
-          <div className="results-head results-toolbar"><div><h1>Showing {results.length} of {results.length} results</h1><p>{search?.query}{search?.project_name && ` · ${search.project_name}`}</p></div><div className="results-toolbar-actions"><button className="header-compare" aria-label="Compare" disabled={selected.length < 2} onClick={compare}>Compare ({selected.length})</button><select aria-label="Quick result filter" value={filters.stage} onChange={event => applyQuickStage(event.target.value)}><option value="">All</option><option value="unviewed">Not viewed</option><option value="viewed">Viewed</option><option value="sourced">Sourced</option><option value="non_relevant">Non-Relevant</option></select><button className={`filter-button ${filterOpen ? 'active' : ''}`} onClick={() => { setWorkspacePanel(null); setFilterOpen(value => !value) }} aria-expanded={filterOpen} aria-label={filterOpen ? 'Hide filters' : 'Refine'} title={filterOpen ? 'Hide filters' : 'Refine'}><SlidersHorizontal /></button></div></div>
+          <div className="results-head results-toolbar"><div><h1>Showing {results.length} of {results.length} results</h1><p>{search?.query}{search?.project_name && ` · ${search.project_name}`}</p></div><div className="results-toolbar-actions"><button className="header-compare" aria-label="Compare" disabled={selected.length < 2} onClick={compare}>Compare ({selected.length})</button><select aria-label="Quick result filter" value={filters.stage} onChange={event => applyQuickStage(event.target.value)}><option value="">All stages</option><option value="unviewed">Not viewed</option><option value="viewed">Viewed</option>{recruiterStages.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select><button className={`filter-button ${filterOpen ? 'active' : ''}`} onClick={() => { setWorkspacePanel(null); setFilterOpen(value => !value) }} aria-expanded={filterOpen} aria-label={filterOpen ? 'Hide filters' : 'Refine'} title={filterOpen ? 'Hide filters' : 'Refine'}><SlidersHorizontal /></button></div></div>
           <div className={`results-layout ${filterOpen ? 'refine-open' : ''}`}>
           <div className="results-column">
           <InlineError value={error} />
-          {results.length === 0 ? <div className="empty-results"><SearchIcon size={28} /><h2>No candidates match these filters</h2><p>Broaden the role, skills, location, experience, notice, compensation, or preference criteria.</p><button className="primary small" onClick={() => { setFilters(emptyRecruiterFilters); loadResults(search?.id, emptyRecruiterFilters) }}>Clear filters</button></div> : <div className="candidate-list">{results.map(result => <CandidateCard key={result.candidate.id} result={result} selected={selected.includes(result.candidate.id)} toggle={() => setSelected(old => old.includes(result.candidate.id) ? old.filter(id => id !== result.candidate.id) : old.length < 4 ? [...old, result.candidate.id] : old)} open={() => openProfile(result.candidate.id)} status={value => setStatus(result.candidate.id, value)} project={activeProject} addToProject={activeProject ? () => addToProject(activeProject.id, result.candidate.id) : undefined} />)}</div>}
+          {results.length === 0 ? <div className="empty-results"><SearchIcon size={28} /><h2>No candidates match these filters</h2><p>Broaden the role, skills, location, experience, notice, compensation, or preference criteria.</p><button className="primary small" onClick={() => { setFilters(emptyRecruiterFilters); loadResults(search?.id, emptyRecruiterFilters) }}>Clear filters</button></div> : <div className="candidate-list">{results.map(result => <CandidateCard key={result.candidate.id} result={result} selected={selected.includes(result.candidate.id)} toggle={() => setSelected(old => old.includes(result.candidate.id) ? old.filter(id => id !== result.candidate.id) : old.length < 4 ? [...old, result.candidate.id] : old)} open={() => openProfile(result.candidate.id)} status={value => setStatus(result.candidate.id, result.candidate.full_name, value)} />)}</div>}
           </div>
           {filterOpen && <aside className="results-filter-panel" aria-label="Refine candidate results"><div className="filter-panel-head"><div><span>REFINE</span><h2>Shape the shortlist</h2></div><button aria-label="Close filters" title="Close filters" onClick={() => setFilterOpen(false)}><X /></button></div><form className="filter-bar expanded" onSubmit={e => { e.preventDefault(); loadResults() }}>
             <label>Role<input value={filters.role} onChange={e => setFilters({ ...filters, role: e.target.value })} placeholder="Backend engineer" /></label>
@@ -710,7 +796,7 @@ function RecruiterPortal({ user, logout }: { user: User; logout: () => void }) {
             <label>Max. compensation<input type="number" min="0" value={filters.max_salary_lpa} onChange={e => setFilters({ ...filters, max_salary_lpa: e.target.value })} placeholder="LPA" /></label>
             <label>Work preference<select value={filters.work_preferences} onChange={e => setFilters({ ...filters, work_preferences: e.target.value })}><option value="">Any setup</option><option>Flexible</option><option>Remote</option><option>Hybrid</option><option>On-site</option></select></label>
             <label>Employment type<select value={filters.employment_type} onChange={e => setFilters({ ...filters, employment_type: e.target.value })}><option value="">Any type</option><option>Full-time</option><option>Contract</option><option>Part-time</option></select></label>
-            <label>Recruiting signal<select value={filters.stage} onChange={e => setFilters({ ...filters, stage: e.target.value })}><option value="">Any signal</option><option value="unviewed">Not viewed</option><option value="viewed">Viewed</option><option value="sourced">Sourced</option><option value="non_relevant">Non-Relevant</option></select></label>
+            <label>Recruiting stage<select value={filters.stage} onChange={e => setFilters({ ...filters, stage: e.target.value })}><option value="">Any stage</option><option value="unviewed">Not viewed</option><option value="viewed">Viewed</option>{recruiterStages.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
             <div className="filter-actions"><button type="button" onClick={() => { setFilters(emptyRecruiterFilters); loadResults(search?.id, emptyRecruiterFilters) }}>Clear</button><button className="primary">Apply filters</button></div>
           </form></aside>}
           </div>
@@ -723,6 +809,7 @@ function RecruiterPortal({ user, logout }: { user: User; logout: () => void }) {
         {workspacePanel === 'updates' && <nav className="workspace-list update-list">{notifications.length ? notifications.map(item => <button className={item.is_read ? 'read' : ''} key={item.id} onClick={() => openNotification(item)}><span>{item.candidate_name}</span><b>{item.message}</b><small>{item.is_read ? 'Seen' : 'New'} · {new Date(item.created_at).toLocaleDateString()}</small></button>) : <p>No candidate updates yet.</p>}</nav>}
       </aside>}
       {profile && <ProfileDrawer candidate={profile} close={() => setProfile(null)} refresh={() => openProfile(profile.id)} projects={projects} selectedProject={selectedProject} addToProject={addToProject} />}
+      {nonRelevantCandidate && <NonRelevantDialog candidateName={nonRelevantCandidate.name} reasons={nonRelevantReasons} note={nonRelevantNote} saving={savingFeedback} toggleReason={toggleNonRelevantReason} setNote={setNonRelevantNote} cancel={() => setNonRelevantCandidate(null)} save={saveNonRelevant} />}
       {comparison.length > 0 && <CompareModal candidates={comparison} close={() => setComparison([])} />}
     </main>
   </Shell>

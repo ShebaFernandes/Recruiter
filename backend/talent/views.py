@@ -99,7 +99,7 @@ def signup(request):
             )
     if is_candidate:
         try:
-            send_verification_email(user)
+            verification_url = send_verification_email(user)
         except Exception:
             return Response(
                 {
@@ -111,13 +111,17 @@ def signup(request):
                 },
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
-        return Response(
-            {
-                "detail": "Check your email to verify your candidate account.",
-                "requires_email_verification": True,
-            },
-            status=status.HTTP_201_CREATED,
-        )
+        payload = {
+            "detail": "Check your email to verify your candidate account.",
+            "requires_email_verification": True,
+        }
+        if settings.EXPOSE_LOCAL_EMAIL_LINKS and settings.EMAIL_BACKEND in {
+            "django.core.mail.backends.locmem.EmailBackend",
+            "django.core.mail.backends.console.EmailBackend",
+            "django.core.mail.backends.filebased.EmailBackend",
+        }:
+            payload["local_verification_url"] = verification_url
+        return Response(payload, status=status.HTTP_201_CREATED)
     token = Token.objects.create(user=user)
     return Response({"token": token.key, "user": _identity(user)}, status=status.HTTP_201_CREATED)
 
@@ -837,7 +841,14 @@ def candidate_status(request, candidate_id):
             "note": request.data.get("note", ""),
         },
     )
-    return Response({"candidate": candidate.id, "status": item.status})
+    return Response(
+        {
+            "candidate": candidate.id,
+            "status": item.status,
+            "reason": item.reason,
+            "note": item.note,
+        }
+    )
 
 
 @api_view(["POST"])

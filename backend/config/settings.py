@@ -129,6 +129,9 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "true").lower() == "true"
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://127.0.0.1:5173")
+EXPOSE_LOCAL_EMAIL_LINKS = (
+    DEBUG and os.getenv("EXPOSE_LOCAL_EMAIL_LINKS", "true").lower() == "true"
+)
 RESUME_MAX_BYTES = int(os.getenv("RESUME_MAX_BYTES", str(5 * 1024 * 1024)))
 EMAIL_VERIFICATION_TOKEN_TTL_SECONDS = int(
     os.getenv("EMAIL_VERIFICATION_TOKEN_TTL_SECONDS", "86400")

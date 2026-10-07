@@ -10,6 +10,7 @@ from pypdf import PdfWriter
 from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 from rest_framework.authtoken.models import Token
 from talent.models import CandidateProfile, Resume, WorkExperience
+from talent.services import parse_resume
 
 
 def resume_docx(name="Asha Rao", role="Senior Backend Engineer", extra=""):
@@ -79,6 +80,54 @@ def resume_pdf():
     return output.getvalue()
 
 
+def standard_layout_resume_docx():
+    document = Document()
+    for line in [
+        "Sheba Paul Fernandes",
+        "EXPERIENCE",
+        "Enter Recruitment    Sep 2026 - Present",
+        "AI Full-Stack Developer",
+        "- Developing a production recruitment platform.",
+        "- Building resume extraction and candidate search workflows.",
+        "NewSpace Research and Technologies    Jan 2026 - Jul 2026",
+        "AI Intern / SDE Intern - AI | Bengaluru, India",
+        "- Built a LangGraph-based product requirements agent.",
+        "PROJECTS",
+        "Candidate matching system",
+    ]:
+        document.add_paragraph(line)
+    output = BytesIO()
+    document.save(output)
+    output.seek(0)
+    return output
+
+
+def test_resume_parser_extracts_company_date_then_role_layout():
+    extracted = parse_resume(standard_layout_resume_docx(), "standard-layout.docx")
+
+    assert extracted["headline"] == "AI Full-Stack Developer"
+    assert extracted["current_company"] == "Enter Recruitment"
+    assert extracted["work_experiences"] == [
+        {
+            "role": "AI Full-Stack Developer",
+            "company": "Enter Recruitment",
+            "start_date": "2026-09-01",
+            "end_date": None,
+            "description": (
+                "Developing a production recruitment platform. "
+                "Building resume extraction and candidate search workflows."
+            ),
+        },
+        {
+            "role": "AI Intern / SDE Intern - AI",
+            "company": "NewSpace Research and Technologies",
+            "start_date": "2026-01-01",
+            "end_date": "2026-07-01",
+            "description": "Built a LangGraph-based product requirements agent.",
+        },
+    ]
+
+
 @pytest.mark.django_db
 def test_candidate_signup_upload_extract_edit_and_login_persists(
     client, candidate_account, tmp_path
@@ -116,6 +165,8 @@ def test_candidate_signup_upload_extract_edit_and_login_persists(
         assert Resume.objects.count() == 1
         assert WorkExperience.objects.count() == 2
 
+        experiences = response.data["work_experiences"]
+        experiences[1]["gap_reason"] = "Completed advanced study and independent research."
         update = client.patch(
             "/api/v1/candidate/profile/",
             {
@@ -127,11 +178,15 @@ def test_candidate_signup_upload_extract_edit_and_login_persists(
                 ),
                 "visibility": "matching_roles",
                 "work_preferences": ["Remote", "Hybrid"],
+                "work_experiences": experiences,
             },
             format="json",
         )
         assert update.status_code == 200
         assert update.data["headline"] == "Staff Backend Engineer"
+        assert update.data["work_experiences"][1]["gap_reason"] == (
+            "Completed advanced study and independent research."
+        )
         assert update.data["profile_completion"]["percent"] == 100
         assert update.data["can_submit"] is True
         no_consent = client.post("/api/v1/candidate/profile/submit/", format="json")

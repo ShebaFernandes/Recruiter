@@ -148,6 +148,17 @@ def _standard_experiences(lines):
         else:
             context = section[max(0, index - 2) : index]
         role, company = _role_and_company(context)
+        role_line_index = None
+        if (not role or not company) and len(context) == 1 and index + 1 < len(section):
+            # A common resume layout puts "Company   Jan 2024 - Present" on one line
+            # and the role on the next. Preserve that pairing instead of discarding it.
+            next_line = section[index + 1].strip(" |•-–—")
+            next_role = next_line.split("|", 1)[0].strip()
+            if next_role and not DATE_RANGE_PATTERN.search(next_line) and _looks_like_role(
+                next_role
+            ):
+                role, company = next_role, context[0]
+                role_line_index = index + 1
         start_date = _resume_date(date_match.group("start"))
         end_value = date_match.group("end")
         end_date = (
@@ -157,16 +168,18 @@ def _standard_experiences(lines):
         )
         if not role or not company or not start_date:
             continue
+        description_parts = []
         suffix = line[date_match.end() :].strip(" |•-–—")
-        description = suffix
-        if not description and index + 1 < len(section):
-            candidate = section[index + 1].strip(" |•-–—")
-            if (
-                candidate
-                and not DATE_RANGE_PATTERN.search(candidate)
-                and not _looks_like_role(candidate)
-            ):
-                description = candidate
+        if suffix:
+            description_parts.append(suffix)
+        description_start = (role_line_index + 1) if role_line_index is not None else index + 1
+        for candidate in section[description_start:]:
+            if DATE_RANGE_PATTERN.search(candidate):
+                break
+            value = candidate.strip(" |•-–—")
+            if value:
+                description_parts.append(value)
+        description = " ".join(description_parts)
         experiences.append(
             {
                 "role": role[:180],

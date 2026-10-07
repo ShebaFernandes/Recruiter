@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 from django.utils import timezone
-from talent.models import CandidateProfile, CandidateUpdateNotification, UserRole
+from talent.models import CandidateProfile, CandidateStatus, CandidateUpdateNotification, UserRole
 
 from .test_candidate_flow import resume_docx
 
@@ -64,12 +64,48 @@ def test_clarified_search_profile_view_status_and_resume_update_notification(
         profile = client.get(f"/api/v1/candidates/{candidate_id}/")
         assert profile.status_code == 200
         assert profile.data["viewed"] is True
-        stage = client.put(
-            f"/api/v1/candidates/{candidate_id}/status/", {"status": "sourced"}, format="json"
-        )
-        assert stage.status_code == 200
-        refreshed = client.get(f"/api/v1/searches/{search.data['id']}/results/")
-        assert refreshed.data["results"][0]["candidate"]["stage"] == "sourced"
+        recruiting_stages = [
+            "sourced",
+            "shortlisted",
+            "contacted",
+            "screening",
+            "interviewing",
+            "offered",
+            "rejected",
+            "non_relevant",
+            "hired",
+        ]
+        for recruiting_stage in recruiting_stages:
+            payload = {"status": recruiting_stage}
+            if recruiting_stage == "non_relevant":
+                payload.update(
+                    {
+                        "reason": "Wrong seniority, Wrong location",
+                        "note": "The role needs a more senior candidate in Mumbai.",
+                    }
+                )
+            stage = client.put(
+                f"/api/v1/candidates/{candidate_id}/status/",
+                payload,
+                format="json",
+            )
+            assert stage.status_code == 200
+            assert stage.data["status"] == recruiting_stage
+            if recruiting_stage == "non_relevant":
+                assert stage.data["reason"] == payload["reason"]
+                assert stage.data["note"] == payload["note"]
+                stored_feedback = CandidateStatus.objects.get(
+                    recruiter__user__email="recruiter@company.example",
+                    candidate_id=candidate_id,
+                )
+                assert stored_feedback.reason == payload["reason"]
+                assert stored_feedback.note == payload["note"]
+            filtered = client.get(
+                f"/api/v1/searches/{search.data['id']}/results/?stage={recruiting_stage}"
+            )
+            assert filtered.status_code == 200
+            assert filtered.data["count"] == 1
+            assert filtered.data["results"][0]["candidate"]["stage"] == recruiting_stage
 
         client.post("/api/v1/auth/logout/")
         client.credentials()

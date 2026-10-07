@@ -68,10 +68,11 @@ def test_candidate_email_verification_resend_expiry_and_one_time_use(settings):
         format="json",
     )
     assert signup.status_code == 201
-    assert signup.data == {
-        "detail": "Check your email to verify your candidate account.",
-        "requires_email_verification": True,
-    }
+    assert signup.data["detail"] == "Check your email to verify your candidate account."
+    assert signup.data["requires_email_verification"] is True
+    assert signup.data["local_verification_url"].startswith(
+        "http://127.0.0.1:5173/?verify-email="
+    )
     user = User.objects.get(username="pending@example.com")
     assert user.is_active is False
     assert user.candidate_profile.email_verified_at is None
@@ -96,6 +97,21 @@ def test_candidate_email_verification_resend_expiry_and_one_time_use(settings):
     )
     assert generic.data == unknown.data
     assert len(mail.outbox) == 1
+
+    with override_settings(EXPOSE_LOCAL_EMAIL_LINKS=False):
+        production_style_signup = client.post(
+            "/api/v1/auth/signup/",
+            {
+                "email": "no-local-link@example.com",
+                "password": PASSWORD,
+                "full_name": "No Local Link",
+                "role": "candidate",
+            },
+            format="json",
+        )
+    assert production_style_signup.status_code == 201
+    assert "local_verification_url" not in production_style_signup.data
+    mail.outbox.pop()
 
     AccountActionToken.objects.filter(user=user).update(
         created_at=timezone.now()
