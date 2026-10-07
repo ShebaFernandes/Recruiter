@@ -13,7 +13,13 @@ DATABASE_URL=postgresql://enter:enter@127.0.0.1:5433/enter uv run python backend
 DATABASE_URL=postgresql://enter:enter@127.0.0.1:5433/enter uv run python backend/manage.py runserver 127.0.0.1:8010
 ```
 
-In another terminal:
+Run the durable local resume worker in another terminal:
+
+```bash
+DATABASE_URL=postgresql://enter:enter@127.0.0.1:5433/enter uv run python backend/manage.py run_resume_worker
+```
+
+Run the frontend in a third terminal:
 
 ```bash
 cd frontend

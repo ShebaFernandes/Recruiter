@@ -13,7 +13,11 @@ export type Resume = {
   original_name: string
   version: number
   uploaded_at: string
-  url: string
+  processing_status: 'uploaded' | 'queued' | 'processing' | 'completed' | 'failed'
+  scan_status: 'quarantined' | 'scanning' | 'clean' | 'infected' | 'failed'
+  processing_error: string
+  can_retry: boolean
+  url: string | null
 }
 export type MissingField = {
   field: string
@@ -77,6 +81,8 @@ export type Search = {
   state: 'needs_clarification' | 'complete'
   follow_up_question: string
   follow_up_options: string[]
+  understanding_source: 'openai' | 'deterministic' | 'deterministic_fallback'
+  understanding_model: string
   created_at: string
 }
 export type SearchResult = { candidate: Candidate; match_score: number; match_reasons: string[] }

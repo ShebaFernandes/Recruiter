@@ -298,6 +298,43 @@ def parse_resume(file_obj, filename):
     }
 
 
+def _search_role(query):
+    role_match = re.search(
+        r"(?i)\b(backend engineer|frontend engineer|full.?stack (?:engineer|developer)|"
+        r"software engineer|platform engineer|data engineer|product manager|designer|engineer)\b",
+        query,
+    )
+    if role_match:
+        start = role_match.start()
+        prefix = query[:start].strip()
+        if (
+            prefix
+            and len(prefix.split()) <= 3
+            and re.search(r"(?i)\b(ai|ml|genai|senior|staff|lead|founding)\b", prefix)
+        ):
+            return f"{prefix} {role_match.group(1)}".strip()
+        return role_match.group(1)
+    candidate = re.split(
+        r"(?i)\b(?:with|having)\b|\b\d+(?:\.\d+)?\s*(?:\+?\s*years?|yrs?)\b|"
+        r"\b(?:remote|hybrid|on[ -]?site|in\s+[A-Z][\w-]+)\b",
+        query,
+        maxsplit=1,
+    )[0]
+    candidate = re.sub(
+        r"(?i)^\s*(?:find|show me|looking for|search for|we need|hire|hiring)\s+", "", candidate
+    ).strip(" ,.-")
+    if candidate and len(candidate.split()) <= 8 and _looks_like_role(candidate):
+        return candidate
+    return ""
+
+
+def _display_role(value):
+    if not value:
+        return ""
+    normalized = value.title()
+    return re.sub(r"\b(?:Ai|Ml|Genai)\b", lambda match: match.group(0).upper(), normalized)
+
+
 def parse_search_query(query):
     lower = query.lower()
     years = re.search(r"(\d+(?:\.\d+)?)\s*(?:\+?\s*years?|yrs?)", lower)
@@ -306,11 +343,7 @@ def parse_search_query(query):
     )
     location = next((city for city in LOCATIONS if city.lower() in lower), None)
     skills = [skill for skill in KNOWN_SKILLS if skill.lower() in lower]
-    role_match = re.search(
-        r"(?i)\b(backend engineer|frontend engineer|full.?stack engineer|software engineer|"
-        r"platform engineer|data engineer|product manager|designer|engineer)\b",
-        query,
-    )
+    role = _search_role(query)
     remote = "remote" in lower or "work from home" in lower
     work_preferences = []
     for label, pattern in (
@@ -334,7 +367,7 @@ def parse_search_query(query):
         "",
     )
     criteria = {
-        "role": role_match.group(1).title() if role_match else "",
+        "role": _display_role(role),
         "skills": skills,
         "min_experience": float(years_range.group(1))
         if years_range
@@ -365,13 +398,7 @@ def apply_search_answer(criteria, answer):
     if city and city != "Remote":
         criteria["location"] = city
     if not criteria.get("role"):
-        role_match = re.search(
-            r"(?i)((?:backend|frontend|full.?stack|platform|data|software)\s+engineer|"
-            r"product manager|designer)",
-            answer,
-        )
-        if role_match:
-            criteria["role"] = role_match.group(0).title()
+        criteria["role"] = _display_role(_search_role(answer))
     for skill in KNOWN_SKILLS:
         if skill.lower() in lower and skill not in criteria.get("skills", []):
             criteria.setdefault("skills", []).append(skill)

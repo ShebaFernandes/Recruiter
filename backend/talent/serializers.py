@@ -41,15 +41,39 @@ class WorkExperienceSerializer(serializers.ModelSerializer):
 
 class ResumeSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
+    can_retry = serializers.SerializerMethodField()
 
     class Meta:
         model = Resume
-        fields = ["id", "original_name", "version", "uploaded_at", "extracted_data", "url"]
+        # Parsed resume text stays server-side. The UI only needs safe metadata
+        # plus the authenticated download endpoint.
+        fields = [
+            "id",
+            "original_name",
+            "version",
+            "uploaded_at",
+            "processing_status",
+            "scan_status",
+            "processing_error",
+            "can_retry",
+            "url",
+        ]
 
     def get_url(self, obj):
+        if (
+            obj.processing_status != Resume.ProcessingStatus.COMPLETED
+            or obj.scan_status != Resume.ScanStatus.CLEAN
+        ):
+            return None
         request = self.context.get("request")
         path = f"/api/v1/resumes/{obj.pk}/download/"
         return request.build_absolute_uri(path) if request else path
+
+    def get_can_retry(self, obj):
+        return (
+            obj.processing_status == Resume.ProcessingStatus.FAILED
+            and obj.scan_status != Resume.ScanStatus.INFECTED
+        )
 
 
 class CandidateProfileSerializer(serializers.ModelSerializer):
@@ -260,7 +284,10 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
             for spec in self.PROFILE_FIELD_SPECS
             if spec["category"] == "required" and self._field_missing(obj, spec["field"])
         ]
-        if not obj.resumes.exists():
+        if not obj.resumes.filter(
+            processing_status=Resume.ProcessingStatus.COMPLETED,
+            scan_status=Resume.ScanStatus.CLEAN,
+        ).exists():
             missing.insert(
                 0,
                 {
@@ -287,7 +314,14 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
         return "submitted"
 
     def get_latest_resume(self, obj):
-        resume = obj.resumes.first()
+        request = self.context.get("request")
+        if getattr(getattr(request, "user", None), "recruiter_profile", None):
+            resume = obj.resumes.filter(
+                processing_status=Resume.ProcessingStatus.COMPLETED,
+                scan_status=Resume.ScanStatus.CLEAN,
+            ).first()
+        else:
+            resume = obj.resumes.first()
         return ResumeSerializer(resume, context=self.context).data if resume else None
 
     def _recruiter(self):
@@ -373,15 +407,6 @@ class ProjectCandidateSerializer(serializers.ModelSerializer):
 
 class SearchSerializer(serializers.ModelSerializer):
     project_name = serializers.CharField(source="project.name", read_only=True, default="")
-    follow_up_options = serializers.SerializerMethodField()
-
-    def get_follow_up_options(self, obj):
-        question = obj.follow_up_question.lower()
-        if "location" in question or "remote" in question:
-            return ["Bengaluru", "Remote", "Anywhere", "Let me type it"]
-        if "role" in question or "job title" in question:
-            return ["Backend Engineer", "Frontend Engineer", "Data Engineer", "Product Manager"]
-        return []
 
     class Meta:
         model = Search
@@ -394,6 +419,8 @@ class SearchSerializer(serializers.ModelSerializer):
             "state",
             "follow_up_question",
             "follow_up_options",
+            "understanding_source",
+            "understanding_model",
             "created_at",
             "updated_at",
         ]
@@ -404,6 +431,8 @@ class SearchSerializer(serializers.ModelSerializer):
             "follow_up_question",
             "project_name",
             "follow_up_options",
+            "understanding_source",
+            "understanding_model",
             "created_at",
             "updated_at",
         ]

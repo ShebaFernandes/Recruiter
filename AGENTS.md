@@ -10,6 +10,7 @@
 - `docker compose up -d db` starts PostgreSQL on port 5433.
 - `DATABASE_URL=postgresql://enter:enter@127.0.0.1:5433/enter uv run python backend/manage.py migrate` applies migrations.
 - `uv run python backend/manage.py runserver 127.0.0.1:8010` starts Django.
+- `uv run python backend/manage.py run_resume_worker` starts the durable local/SQS resume worker.
 - `cd frontend && VITE_API_URL=http://127.0.0.1:8010/api/v1 npm run dev` starts React.
 - `uv run pytest -q`, `uv run ruff check .`, `cd frontend && npm run test`, `npm run lint`, and `npm run build` verify changes.
 - With both servers running, `cd frontend && npm run test:e2e` runs browser flows.

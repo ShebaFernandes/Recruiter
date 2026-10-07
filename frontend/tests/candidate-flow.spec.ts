@@ -18,6 +18,7 @@ test('candidate completes a conversational resume profile and preferences persis
   const verificationToken = issueLocalAccountToken(email, 'verify_email')
   await page.goto(`/?verify-email=${verificationToken}`)
   await expect(page.getByRole('heading', { name: 'Drop your resume' })).toBeVisible()
+  expect(await page.evaluate(() => document.cookie)).not.toContain('enter_session')
   await expect(page.getByText('CANDIDATE PLATFORM')).toHaveCount(0)
   await expect(page.locator('.profile-board')).toHaveCount(0)
   await expect(page.getByText('Only missing details are shown for confirmation')).toBeVisible()

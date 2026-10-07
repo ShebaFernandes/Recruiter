@@ -19,7 +19,7 @@ from talent.models import (
     WorkExperience,
 )
 
-from .test_candidate_flow import resume_docx
+from .test_candidate_flow import complete_resume_upload, resume_docx
 
 PASSWORD = "strong-pass-123"
 
@@ -245,7 +245,7 @@ def test_candidate_account_deletion_removes_profile_relations_and_resume_files(t
         created = client.post(
             "/api/v1/candidate/resumes/", {"file": upload}, format="multipart"
         )
-        assert created.status_code == 201
+        created = complete_resume_upload(client, created)
         profile_id = created.data["id"]
         client.patch(
             "/api/v1/candidate/profile/",
@@ -285,9 +285,10 @@ def test_candidate_account_deletion_removes_profile_relations_and_resume_files(t
             resume_docx(name="Delete Me", role="Staff Backend Engineer"),
             content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
-        assert client.post(
+        replacement_upload = client.post(
             "/api/v1/candidate/resumes/", {"file": replacement}, format="multipart"
-        ).status_code == 201
+        )
+        complete_resume_upload(client, replacement_upload)
         assert CandidateUpdateNotification.objects.filter(candidate_id=profile_id).exists()
         paused = client.patch(
             "/api/v1/candidate/profile/", {"visibility": "not_looking"}, format="json"

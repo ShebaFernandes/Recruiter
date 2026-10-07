@@ -5,15 +5,14 @@ import App from './App'
 
 afterEach(() => {
   cleanup()
-  localStorage.clear()
   window.history.replaceState({}, '', '/')
 })
 
 describe('Enter Talent landing', () => {
-  it('offers connected recruiter and candidate entry points', () => {
+  it('offers connected recruiter and candidate entry points', async () => {
     render(<App />)
-    expect(screen.getByTestId('for-recruiters')).toBeVisible()
-    fireEvent.click(screen.getByTestId('for-candidates'))
+    expect(await screen.findByTestId('for-recruiters')).toBeVisible()
+    fireEvent.click(await screen.findByTestId('for-candidates'))
     expect(screen.getByRole('heading', { name: 'Create your account' })).toBeVisible()
     expect(screen.queryByText('CANDIDATE PLATFORM')).not.toBeInTheDocument()
   })

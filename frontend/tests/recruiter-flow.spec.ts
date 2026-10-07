@@ -3,8 +3,17 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { issueLocalAccountToken } from './account-token'
 
-const API = 'http://127.0.0.1:8010/api/v1'
+const API = process.env.PLAYWRIGHT_API_URL || 'http://127.0.0.1:8010/api/v1'
 const password = 'strong-pass-123'
+
+async function waitForResumeProcessing(request: APIRequestContext, headers: Record<string, string>, version: number) {
+  await expect.poll(async () => {
+    const response = await request.get(`${API}/candidate/profile/`, { headers })
+    if (!response.ok()) return `http-${response.status()}`
+    const profile = await response.json()
+    return `${profile.latest_resume?.version}:${profile.latest_resume?.processing_status}`
+  }, { timeout: 20_000 }).toBe(`${version}:completed`)
+}
 
 async function seedCandidate(request: APIRequestContext, index: number, runId: number) {
   const people = [
@@ -33,6 +42,7 @@ async function seedCandidate(request: APIRequestContext, index: number, runId: n
     multipart: { file: { name: 'asha-rao-resume.docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', buffer: fixture } },
   })
   expect(upload.ok()).toBeTruthy()
+  await waitForResumeProcessing(request, headers, 1)
   const profile = await request.patch(`${API}/candidate/profile/`, {
     headers,
     data: {
@@ -155,15 +165,21 @@ test('recruiter completes clarification, filters, compares, reviews and persists
   await expect(anikaCard.getByRole('heading', { name: anikaName, exact: true })).toBeVisible()
   await anikaCard.getByRole('checkbox').check()
   await cards.filter({ hasNotText: anikaName }).first().getByRole('checkbox').check()
-  await page.getByRole('button', { name: 'Compare', exact: true }).click()
+  const compareButton = page.getByRole('button', { name: 'Compare', exact: true })
+  await compareButton.click()
   await expect(page.getByRole('heading', { name: 'Candidate comparison' })).toBeVisible()
+  await expect(page.getByRole('dialog', { name: 'Candidate comparison' }).locator(':focus')).toHaveCount(1)
   await expect(page.getByText('Career history')).toBeVisible()
   await expect(page.getByText('Work preferences')).toBeVisible()
   await expect(page.getByText('Meaningful work')).toBeVisible()
-  await page.locator('.compare-modal .close').click()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog', { name: 'Candidate comparison' })).toHaveCount(0)
+  await expect(compareButton).toBeFocused()
 
-  await anikaCard.getByRole('button', { name: 'View profile' }).click()
+  const viewProfileButton = anikaCard.getByRole('button', { name: 'View profile' })
+  await viewProfileButton.click()
   const profileDrawer = page.locator('.profile-drawer')
+  await expect(page.getByRole('dialog', { name: 'Candidate profile' }).locator(':focus')).toHaveCount(1)
   await expect(page.getByText('CANDIDATE PROFILE · SUBMITTED · VIEWED')).toBeVisible()
   await expect(profileDrawer.getByRole('link', { name: 'Resume' })).toBeVisible()
   await expect(profileDrawer.getByRole('link', { name: 'LinkedIn' })).toBeVisible()
@@ -173,7 +189,9 @@ test('recruiter completes clarification, filters, compares, reviews and persists
   await expect(page.getByText(`Built a resilient event platform at SignalWorks.`)).toBeVisible()
   await profileDrawer.getByRole('button', { name: 'Add', exact: true }).click()
   await expect(page.getByText(/Candidate saved to Backend hiring/)).toBeVisible()
-  await page.locator('.profile-drawer .close').click()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog', { name: 'Candidate profile' })).toHaveCount(0)
+  await expect(viewProfileButton).toBeFocused()
   await expect(anikaCard.locator('.name-row .signal.viewed')).toBeVisible()
   await expect(anikaCard.locator('.contact-icon-row a')).toHaveCount(2)
   await expect(anikaCard.getByRole('link', { name: /Resume/ })).toHaveCount(0)
@@ -187,9 +205,16 @@ test('recruiter completes clarification, filters, compares, reviews and persists
 
   const stage = anikaCard.getByLabel(`Stage for ${anikaName}`)
   for (const value of ['sourced', 'shortlisted', 'contacted', 'screening', 'interviewing', 'offered', 'rejected', 'non_relevant', 'hired']) {
+    await stage.focus()
     await stage.selectOption(value)
     if (value === 'non_relevant') {
       const feedback = page.getByRole('dialog', { name: `Why is ${anikaName} not relevant?` })
+      await expect(feedback).toBeVisible()
+      await expect(feedback.locator(':focus')).toHaveCount(1)
+      await page.keyboard.press('Escape')
+      await expect(feedback).toHaveCount(0)
+      await expect(stage).toBeFocused()
+      await stage.selectOption(value)
       await expect(feedback).toBeVisible()
       await feedback.getByText('Wrong seniority', { exact: true }).click()
       await feedback.getByText('Wrong location', { exact: true }).click()
@@ -206,6 +231,7 @@ test('recruiter completes clarification, filters, compares, reviews and persists
     multipart: { file: { name: 'asha-rao-updated.docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', buffer: fixture } },
   })
   expect(update.ok()).toBeTruthy()
+  await waitForResumeProcessing(request, { Authorization: `Token ${candidates[0].token}` }, 2)
   const restoreName = await request.patch(`${API}/candidate/profile/`, {
     headers: { Authorization: `Token ${candidates[0].token}` },
     data: { full_name: anikaName, email: candidates[0].email },

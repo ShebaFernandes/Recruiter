@@ -5,7 +5,7 @@ from django.test import override_settings
 from django.utils import timezone
 from talent.models import CandidateProfile, CandidateStatus, CandidateUpdateNotification, UserRole
 
-from .test_candidate_flow import resume_docx
+from .test_candidate_flow import complete_resume_upload, resume_docx
 
 
 @pytest.mark.django_db
@@ -19,6 +19,7 @@ def test_clarified_search_profile_view_status_and_resume_update_notification(
             content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
         created = client.post("/api/v1/candidate/resumes/", {"file": upload}, format="multipart")
+        created = complete_resume_upload(client, created)
         candidate_id = created.data["id"]
         visible = client.patch(
             "/api/v1/candidate/profile/",
@@ -120,12 +121,10 @@ def test_clarified_search_profile_view_status_and_resume_update_notification(
             resume_docx(role="Staff Backend Engineer", extra="AWS"),
             content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
-        assert (
-            client.post(
-                "/api/v1/candidate/resumes/", {"file": update}, format="multipart"
-            ).status_code
-            == 201
+        updated_resume = client.post(
+            "/api/v1/candidate/resumes/", {"file": update}, format="multipart"
         )
+        complete_resume_upload(client, updated_resume)
         profile_update = client.patch(
             "/api/v1/candidate/profile/",
             {"meaningful_work": "Updated the reliability story after submission."},
@@ -206,12 +205,10 @@ def test_not_looking_candidate_is_excluded_from_recruiter_search(
             resume_docx(),
             content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
-        assert (
-            client.post(
-                "/api/v1/candidate/resumes/", {"file": upload}, format="multipart"
-            ).status_code
-            == 201
+        created = client.post(
+            "/api/v1/candidate/resumes/", {"file": upload}, format="multipart"
         )
+        complete_resume_upload(client, created)
     preference = client.patch(
         "/api/v1/candidate/profile/",
         {

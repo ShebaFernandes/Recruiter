@@ -4,6 +4,8 @@ from . import views
 
 urlpatterns = [
     path("health/", views.health),
+    path("health/ready/", views.readiness),
+    path("auth/csrf/", views.csrf_token),
     path("auth/signup/", views.signup),
     path("auth/login/", views.login),
     path("auth/logout/", views.logout),
@@ -16,6 +18,10 @@ urlpatterns = [
     path("candidate/profile/", views.candidate_profile),
     path("candidate/profile/submit/", views.submit_candidate_profile),
     path("candidate/resumes/", views.resume_upload),
+    path(
+        "candidate/resumes/<int:resume_id>/retry/",
+        views.retry_resume_processing,
+    ),
     path("resumes/<int:resume_id>/download/", views.resume_download),
     path("projects/", views.projects),
     path("projects/<int:project_id>/", views.project_detail),

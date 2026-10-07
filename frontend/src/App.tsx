@@ -69,6 +69,39 @@ function InlineError({ value }: { value: string }) {
   return value ? <div className="error" role="alert">{value}</div> : null
 }
 
+function useDialogFocus(onClose: () => void) {
+  const dialogRef = useRef<HTMLElement | null>(null)
+  const closeRef = useRef(onClose)
+  useEffect(() => {
+    closeRef.current = onClose
+  }, [onClose])
+  useEffect(() => {
+    const dialog = dialogRef.current
+    const previous = document.activeElement as HTMLElement | null
+    const oldOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const focusable = () => Array.from(dialog?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])') || [])
+    ;(focusable()[0] || dialog)?.focus()
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); closeRef.current(); return }
+      if (event.key !== 'Tab') return
+      const items = focusable()
+      if (!items.length) { event.preventDefault(); dialog?.focus(); return }
+      const first = items[0]
+      const last = items[items.length - 1]
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus() }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
+    }
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('keydown', handleKey)
+      document.body.style.overflow = oldOverflow
+      previous?.focus()
+    }
+  }, [])
+  return dialogRef
+}
+
 function Landing({ choose }: { choose: (role: 'recruiter' | 'candidate') => void }) {
   return <main className="landing">
     <nav className="landing-nav"><Brand /><span>One hiring system. Two human experiences.</span></nav>
@@ -264,6 +297,27 @@ function CandidatePortal({ user, logout, accountDeleted }: { user: User; logout:
       .finally(() => setLoading(false))
   }, [])
 
+  useEffect(() => {
+    const state = profile.latest_resume?.processing_status
+    if (state !== 'queued' && state !== 'processing' && state !== 'uploaded') return
+    let active = true
+    const poll = async () => {
+      try {
+        const next = await api.candidateProfile()
+        if (!active) return
+        applyProfile(next)
+        if (next.latest_resume?.processing_status === 'completed') {
+          setMessage("We've built your starting profile. Take a look below.")
+        }
+      } catch (cause) {
+        if (active) setError(cause instanceof Error ? cause.message : 'We could not refresh resume processing.')
+      }
+    }
+    const interval = window.setInterval(poll, 1200)
+    void poll()
+    return () => { active = false; window.clearInterval(interval) }
+  }, [profile.latest_resume?.id, profile.latest_resume?.processing_status])
+
   async function savePatch(patch: Partial<Candidate>, success = 'Saved to your profile.') {
     setError(''); setSaving(true)
     try {
@@ -283,10 +337,21 @@ function CandidatePortal({ user, logout, accountDeleted }: { user: User; logout:
     try {
       const next = await api.uploadResume(file)
       applyProfile(next)
-      setMessage("We've built your starting profile. Take a look below.")
+      setMessage('Resume uploaded securely. Security scanning and profile extraction are queued.')
     }
     catch (e) { setError(e instanceof Error ? e.message : 'Upload failed.') }
     finally { setUploading(false) }
+  }
+
+  async function retryResume() {
+    if (!profile.latest_resume) return
+    setUploading(true); setError(''); setMessage('')
+    try {
+      applyProfile(await api.retryResume(profile.latest_resume.id))
+      setMessage('Resume processing has been queued again.')
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'We could not retry resume processing.')
+    } finally { setUploading(false) }
   }
 
   function openWizard() {
@@ -369,6 +434,27 @@ function CandidatePortal({ user, logout, accountDeleted }: { user: User; logout:
 
   if (loading) return <Shell user={user} logout={logout}><main className="candidate-upload-first"><div className="candidate-profile-loading" role="status">Loading your profile…</div></main></Shell>
 
+  const resumeState = profile.latest_resume?.processing_status
+  if (profile.latest_resume && resumeState !== 'completed') return <Shell user={user} logout={logout}>
+    <main className="candidate-upload-first">
+      <section className="candidate-upload-card processing-card" aria-live="polite">
+        <div className={`cv-dropzone ${resumeState === 'failed' ? 'failed' : 'busy'}`}>
+          <div className="cv-mark">CV</div>
+          <div className="cv-drop-content">
+            <h1>{resumeState === 'failed' ? 'We couldn’t finish this resume' : resumeState === 'queued' || resumeState === 'uploaded' ? 'Your resume is queued' : profile.latest_resume.scan_status === 'scanning' ? 'Checking your resume…' : 'Reading your resume…'}</h1>
+            <p>{resumeState === 'failed' ? profile.latest_resume.processing_error || 'Resume processing failed safely. Your profile was not changed.' : 'Your file is private while we scan it and build your starting profile.'}</p>
+            <strong>{profile.latest_resume.original_name}</strong>
+            {resumeState === 'failed' && <div className="processing-actions">
+              {profile.latest_resume.can_retry && <button className="primary" onClick={retryResume} disabled={uploading}>{uploading ? 'Queueing…' : 'Retry processing'}</button>}
+              <label className="cv-file-button"><input type="file" accept=".pdf,.docx" onChange={event => upload(event.target.files?.[0])} disabled={uploading} data-testid="resume-input" /><UploadCloud size={18} /><span>Upload a different resume</span></label>
+            </div>}
+          </div>
+        </div>
+        <InlineError value={error} />
+      </section>
+    </main>
+  </Shell>
+
   if (!profile.latest_resume) return <Shell user={user} logout={logout}>
     <main className="candidate-upload-first">
       <section className="candidate-upload-card" aria-labelledby="resume-upload-title">
@@ -381,9 +467,9 @@ function CandidatePortal({ user, logout, accountDeleted }: { user: User; logout:
         >
           <div className="cv-mark">CV</div>
           <div className="cv-drop-content">
-            <h1 id="resume-upload-title">{uploading ? 'Reading your resume…' : 'Drop your resume'}</h1>
-            <p>{uploading ? 'We’re extracting the details that are actually present in your CV.' : 'Drag and drop your CV here, or choose it from your device.'}</p>
-            <label className={`cv-file-button ${uploading ? 'busy' : ''}`}><input type="file" accept=".pdf,.docx" onChange={event => upload(event.target.files?.[0])} disabled={uploading} data-testid="resume-input" /><UploadCloud size={18} /><span>{uploading ? 'Extracting profile…' : 'Choose PDF or DOCX'}</span></label>
+            <h1 id="resume-upload-title">{uploading ? 'Uploading your resume…' : 'Drop your resume'}</h1>
+            <p>{uploading ? 'Your private file is being stored securely before processing begins.' : 'Drag and drop your CV here, or choose it from your device.'}</p>
+            <label className={`cv-file-button ${uploading ? 'busy' : ''}`}><input type="file" accept=".pdf,.docx" onChange={event => upload(event.target.files?.[0])} disabled={uploading} data-testid="resume-input" /><UploadCloud size={18} /><span>{uploading ? 'Uploading…' : 'Choose PDF or DOCX'}</span></label>
             <small>PDF or DOCX · Maximum 5 MB</small>
           </div>
         </div>
@@ -407,7 +493,7 @@ function CandidatePortal({ user, logout, accountDeleted }: { user: User; logout:
       <section className={`resume-launch ${profile.latest_resume ? 'has-resume' : ''}`}>
         <div className="resume-launch-copy"><div className="resume-icon"><FileText /></div><div><span>{profile.latest_resume ? 'YOUR RESUME' : 'START HERE'}</span><h2>{profile.latest_resume ? "We've built your starting profile" : 'Upload your resume'}</h2><p>{profile.latest_resume ? 'Review what we found and add the details that make your story yours.' : 'PDF or DOCX. We’ll turn it into a profile you can review and edit.'}</p></div></div>
         <label className={`resume-action ${uploading ? 'busy' : ''}`}><input type="file" accept=".pdf,.docx" onChange={event => upload(event.target.files?.[0])} disabled={uploading} data-testid="resume-input" /><UploadCloud size={19} /><span>{uploading ? 'Reading your resume…' : profile.latest_resume ? 'Upload a newer resume' : 'Choose your resume'}</span></label>
-        {profile.latest_resume && <div className="resume-file"><span><Check size={15} />{profile.latest_resume.original_name}<small>Version {profile.latest_resume.version}</small></span><a href={profile.latest_resume.url} aria-label="Download resume"><Download size={16} /></a></div>}
+        {profile.latest_resume && <div className="resume-file"><span><Check size={15} />{profile.latest_resume.original_name}<small>Version {profile.latest_resume.version}</small></span>{profile.latest_resume.url && <a href={profile.latest_resume.url} aria-label="Download resume"><Download size={16} /></a>}</div>}
       </section>
 
       <div className="candidate-notices"><InlineError value={error} />{message && <div className="success"><Check size={17} />{message}</div>}</div>
@@ -556,8 +642,9 @@ function NonRelevantDialog({ candidateName, reasons, note, saving, toggleReason,
   cancel: () => void
   save: (event: FormEvent) => void
 }) {
+  const dialogRef = useDialogFocus(cancel)
   return <div className="overlay non-relevant-overlay" role="presentation">
-    <form className="non-relevant-modal" role="dialog" aria-modal="true" aria-labelledby="non-relevant-title" onSubmit={save}>
+    <form ref={dialogRef as React.RefObject<HTMLFormElement>} tabIndex={-1} className="non-relevant-modal" role="dialog" aria-modal="true" aria-labelledby="non-relevant-title" onSubmit={save}>
       <h2 id="non-relevant-title">Why is {candidateName} not relevant?</h2>
       <p>This helps improve future result quality for recruiters.</p>
       <fieldset><legend className="sr-only">Select all reasons that apply</legend><div className="non-relevant-reasons">
@@ -573,6 +660,7 @@ function ProfileDrawer({ candidate, close, refresh, projects, selectedProject, a
   candidate: Candidate; close: () => void; refresh: () => void; projects: Project[]
   selectedProject: number | null; addToProject: (projectId: number, candidateId: number) => void
 }) {
+  const dialogRef = useDialogFocus(close)
   const whatsapp = candidate.phone ? `https://wa.me/${candidate.phone.replace(/\D/g, '')}` : ''
   const [projectId, setProjectId] = useState(String(selectedProject || projects[0]?.id || ''))
   const facts = [
@@ -583,11 +671,11 @@ function ProfileDrawer({ candidate, close, refresh, projects, selectedProject, a
     candidate.expected_salary_lpa && ['Expected compensation', `₹${candidate.expected_salary_lpa} LPA`],
     candidate.employment_type && ['Employment', candidate.employment_type],
   ].filter(Boolean) as string[][]
-  return <div className="overlay" role="dialog" aria-modal="true" aria-label="Candidate profile"><div className="profile-drawer">
-    <button className="close" onClick={close}><X /></button>
+  return <div ref={dialogRef as React.RefObject<HTMLDivElement>} tabIndex={-1} className="overlay" role="dialog" aria-modal="true" aria-label="Candidate profile"><div className="profile-drawer">
+    <button className="close" aria-label="Close candidate profile" onClick={close}><X /></button>
     <div className="profile-hero"><div className="avatar large">{candidate.full_name.split(' ').map(v => v[0]).join('').slice(0, 2)}</div><div><div className="eyebrow">CANDIDATE PROFILE · SUBMITTED · VIEWED</div><h2>{candidate.full_name}</h2><p>{candidate.headline} {candidate.current_company && `at ${candidate.current_company}`}</p></div></div>
     <div className="profile-actions">
-      {candidate.latest_resume && <a className="icon-action" href={candidate.latest_resume.url} aria-label="Resume" title="Resume"><FileText /></a>}
+      {candidate.latest_resume?.url && <a className="icon-action" href={candidate.latest_resume.url} aria-label="Resume" title="Resume"><FileText /></a>}
       {candidate.linkedin_url && <a className="icon-action" href={candidate.linkedin_url} target="_blank" rel="noreferrer" aria-label="LinkedIn" title="LinkedIn"><Link /></a>}
       {candidate.github_url && <a className="icon-action" href={candidate.github_url} target="_blank" rel="noreferrer" aria-label="GitHub" title="GitHub"><Code2 /></a>}
       {candidate.email && <a className="icon-action" href={`mailto:${candidate.email}`} aria-label="Email" title="Email"><Mail /></a>}
@@ -606,6 +694,7 @@ function ProfileDrawer({ candidate, close, refresh, projects, selectedProject, a
 }
 
 function CompareModal({ candidates, close }: { candidates: Candidate[]; close: () => void }) {
+  const dialogRef = useDialogFocus(close)
   const rows: Array<[string, (candidate: Candidate) => string]> = [
     ['Experience', c => `${c.total_experience} years`], ['Location', c => c.location || 'Not shared'],
     ['Current compensation', c => c.current_salary_lpa ? `₹${c.current_salary_lpa} LPA` : 'Not shared'],
@@ -618,7 +707,7 @@ function CompareModal({ candidates, close }: { candidates: Candidate[]; close: (
     ['Education', c => c.education.join('\n') || 'Not added'],
     ['Meaningful work', c => c.meaningful_work || 'Not added'],
   ]
-  return <div className="overlay" role="dialog" aria-modal="true"><div className="compare-modal"><button className="close" onClick={close}><X /></button><div className="eyebrow">SIDE-BY-SIDE</div><h2>Candidate comparison</h2>
+  return <div ref={dialogRef as React.RefObject<HTMLDivElement>} tabIndex={-1} className="overlay" role="dialog" aria-modal="true" aria-labelledby="candidate-comparison-title"><div className="compare-modal"><button className="close" aria-label="Close candidate comparison" onClick={close}><X /></button><div className="eyebrow">SIDE-BY-SIDE</div><h2 id="candidate-comparison-title">Candidate comparison</h2>
     <div className="compare-table" style={{ gridTemplateColumns: `150px repeat(${candidates.length}, minmax(190px, 1fr))` }}>
       <div /><>{candidates.map(c => <div className="compare-name" key={c.id}><b>{c.full_name}</b><span>{c.headline}</span></div>)}</>
       {rows.map(([label, value]) => <div className="compare-row" key={label} style={{ display: 'contents' }}><b>{label}</b>{candidates.map(c => <div key={c.id}>{value(c).split('\n').map(line => <span key={line}>{line}</span>)}</div>)}</div>)}
@@ -816,10 +905,22 @@ function RecruiterPortal({ user, logout }: { user: User; logout: () => void }) {
 }
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(() => auth.user())
+  const [user, setUser] = useState<User | null | undefined>(undefined)
   const [choice, setChoice] = useState<'candidate' | 'recruiter' | null>(null)
   const [accountRemoved, setAccountRemoved] = useState(false)
   const screen = useMemo(() => user?.role || choice, [user, choice])
+  useEffect(() => {
+    api.me().then(setUser).catch(() => setUser(null))
+  }, [])
+  useEffect(() => {
+    const expireSession = () => {
+      auth.clear()
+      setUser(null)
+      setChoice(null)
+    }
+    window.addEventListener('enter-auth-expired', expireSession)
+    return () => window.removeEventListener('enter-auth-expired', expireSession)
+  }, [])
   async function logout() { try { await api.logout() } catch { /* local logout still applies */ } auth.clear(); setUser(null); setChoice(null) }
   const path = window.location.pathname
   const query = new URLSearchParams(window.location.search)
@@ -829,6 +930,7 @@ export default function App() {
   if (verificationToken) return <EmailVerificationScreen token={verificationToken} onDone={payload => setUser(payload.user)} />
   const resetToken = query.get('reset-password')
   if (resetToken) return <PasswordResetScreen token={resetToken} done={() => { setChoice('candidate'); setUser(null) }} />
+  if (user === undefined) return <main className="auth-page"><div className="candidate-profile-loading" role="status">Opening Enter…</div></main>
   if (accountRemoved) return <main className="auth-page"><section className="auth-card auth-state-card"><Brand /><div className="auth-state-icon"><CheckCircle2 /></div><h1>Your account has been deleted</h1><p>Your candidate profile and stored resumes were permanently removed.</p><button className="primary" onClick={() => { setAccountRemoved(false); setChoice(null) }}>Return to Enter</button></section></main>
   if (!screen) return <Landing choose={setChoice} />
   if (!user) return <AuthScreen role={screen} back={() => setChoice(null)} onDone={payload => setUser(payload.user)} />

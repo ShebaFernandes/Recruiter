@@ -5,10 +5,12 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.db import connection, transaction
 from django.db.models import Count, Q
 from django.http import FileResponse
+from django.middleware.csrf import get_token
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import (
@@ -16,6 +18,7 @@ from rest_framework.decorators import (
     authentication_classes,
     parser_classes,
     permission_classes,
+    throttle_classes,
 )
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny
@@ -38,11 +41,17 @@ from .models import (
     ProjectCandidate,
     RecruiterProfile,
     Resume,
+    ResumeProcessingJob,
     Search,
     UserRole,
-    WorkExperience,
 )
 from .permissions import IsCandidate, IsRecruiter
+from .resume_processing import enqueue_resume_job
+from .search_understanding import (
+    SearchUnderstandingUnavailable,
+    continue_search,
+    understand_search,
+)
 from .serializers import (
     CandidateProfileSerializer,
     NotificationSerializer,
@@ -51,13 +60,16 @@ from .serializers import (
     SearchSerializer,
     SignupSerializer,
 )
-from .services import (
-    apply_search_answer,
-    calculate_match,
-    next_search_question,
-    parse_date,
-    parse_resume,
-    parse_search_query,
+from .services import calculate_match
+from .throttling import (
+    LoginRateThrottle,
+    PasswordResetConfirmRateThrottle,
+    PasswordResetRateThrottle,
+    RecruiterSearchRateThrottle,
+    ResumeUploadRateThrottle,
+    SignupRateThrottle,
+    VerificationConsumeRateThrottle,
+    VerificationRateThrottle,
 )
 
 
@@ -67,15 +79,68 @@ def _identity(user):
     return {"id": user.id, "email": user.email, "role": role, "full_name": profile.full_name}
 
 
+def _authenticated_response(user, token, response_status=status.HTTP_200_OK):
+    payload = {"user": _identity(user)}
+    if settings.DEBUG or settings.TESTING:
+        payload["token"] = token.key
+    response = Response(payload, status=response_status)
+    response.set_cookie(
+        settings.AUTH_COOKIE_NAME,
+        token.key,
+        httponly=True,
+        secure=settings.AUTH_COOKIE_SECURE,
+        samesite=settings.AUTH_COOKIE_SAMESITE,
+        domain=settings.AUTH_COOKIE_DOMAIN,
+        max_age=settings.AUTH_TOKEN_TTL_SECONDS,
+        path="/",
+    )
+    return response
+
+
+def _enqueue_resume_safely(job_id):
+    # PostgreSQL remains the durable outbox. A transient SQS outage must not
+    # turn an already committed upload/retry into an HTTP failure: the worker's
+    # dispatcher will enqueue records whose enqueued_at is still null.
+    try:
+        enqueue_resume_job(job_id)
+    except Exception:
+        return
+
+
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def health(request):
     return Response({"status": "ok"})
 
 
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def readiness(request):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT 1")
+        cursor.fetchone()
+    return Response(
+        {
+            "status": "ready",
+            "database": "ok",
+            "resume_queue": settings.RESUME_QUEUE_BACKEND,
+        }
+    )
+
+
+@ensure_csrf_cookie
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def csrf_token(request):
+    return Response({"csrfToken": get_token(request)})
+
+
+@csrf_protect
 @api_view(["POST"])
 @authentication_classes([])
 @permission_classes([AllowAny])
+@throttle_classes([SignupRateThrottle])
 def signup(request):
     serializer = SignupSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -123,12 +188,14 @@ def signup(request):
             payload["local_verification_url"] = verification_url
         return Response(payload, status=status.HTTP_201_CREATED)
     token = Token.objects.create(user=user)
-    return Response({"token": token.key, "user": _identity(user)}, status=status.HTTP_201_CREATED)
+    return _authenticated_response(user, token, status.HTTP_201_CREATED)
 
 
+@csrf_protect
 @api_view(["POST"])
 @authentication_classes([])
 @permission_classes([AllowAny])
+@throttle_classes([LoginRateThrottle])
 def login(request):
     email = str(request.data.get("email", "")).strip().lower()
     password = request.data.get("password", "")
@@ -148,12 +215,14 @@ def login(request):
         )
     Token.objects.filter(user=user).delete()
     token = Token.objects.create(user=user)
-    return Response({"token": token.key, "user": _identity(user)})
+    return _authenticated_response(user, token)
 
 
+@csrf_protect
 @api_view(["POST"])
 @authentication_classes([])
 @permission_classes([AllowAny])
+@throttle_classes([VerificationConsumeRateThrottle])
 def verify_email(request):
     user = consume_account_token(
         request.data.get("token"), AccountActionToken.Purpose.VERIFY_EMAIL
@@ -170,12 +239,14 @@ def verify_email(request):
     profile.save(update_fields=["email_verified_at", "profile_updated_at"])
     Token.objects.filter(user=user).delete()
     token = Token.objects.create(user=user)
-    return Response({"token": token.key, "user": _identity(user)})
+    return _authenticated_response(user, token)
 
 
+@csrf_protect
 @api_view(["POST"])
 @authentication_classes([])
 @permission_classes([AllowAny])
+@throttle_classes([VerificationRateThrottle])
 def resend_verification(request):
     email = str(request.data.get("email", "")).strip().lower()
     user = User.objects.filter(username__iexact=email, is_active=False).first()
@@ -193,9 +264,11 @@ def resend_verification(request):
     )
 
 
+@csrf_protect
 @api_view(["POST"])
 @authentication_classes([])
 @permission_classes([AllowAny])
+@throttle_classes([PasswordResetRateThrottle])
 def request_password_reset(request):
     email = str(request.data.get("email", "")).strip().lower()
     user = User.objects.filter(username__iexact=email, is_active=True).first()
@@ -213,9 +286,11 @@ def request_password_reset(request):
     )
 
 
+@csrf_protect
 @api_view(["POST"])
 @authentication_classes([])
 @permission_classes([AllowAny])
+@throttle_classes([PasswordResetConfirmRateThrottle])
 def confirm_password_reset(request):
     raw_token = request.data.get("token")
     action_token = inspect_account_token(raw_token, AccountActionToken.Purpose.RESET_PASSWORD)
@@ -249,7 +324,14 @@ def confirm_password_reset(request):
 @api_view(["POST"])
 def logout(request):
     Token.objects.filter(user=request.user).delete()
-    return Response(status=status.HTTP_204_NO_CONTENT)
+    response = Response(status=status.HTTP_204_NO_CONTENT)
+    response.delete_cookie(
+        settings.AUTH_COOKIE_NAME,
+        domain=settings.AUTH_COOKIE_DOMAIN,
+        path="/",
+        samesite=settings.AUTH_COOKIE_SAMESITE,
+    )
+    return response
 
 
 @api_view(["GET"])
@@ -385,12 +467,20 @@ def delete_candidate_account(request):
         )
     with transaction.atomic():
         request.user.delete()
-    return Response(status=status.HTTP_204_NO_CONTENT)
+    response = Response(status=status.HTTP_204_NO_CONTENT)
+    response.delete_cookie(
+        settings.AUTH_COOKIE_NAME,
+        path="/",
+        domain=settings.AUTH_COOKIE_DOMAIN,
+        samesite=settings.AUTH_COOKIE_SAMESITE,
+    )
+    return response
 
 
 @api_view(["POST"])
 @permission_classes([IsCandidate])
 @parser_classes([MultiPartParser, FormParser])
+@throttle_classes([ResumeUploadRateThrottle])
 def resume_upload(request):
     uploaded = request.FILES.get("file")
     if not uploaded:
@@ -415,78 +505,84 @@ def resume_upload(request):
             {"detail": f"Resume exceeds the {max_megabytes} MB limit."},
             status=status.HTTP_400_BAD_REQUEST,
         )
-    try:
-        extracted = parse_resume(uploaded, uploaded.name)
-    except Exception:
-        return Response(
-            {
-                "detail": (
-                    "We could not read this resume. Check that the file is valid and try again."
-                )
-            },
-            status=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        )
-    if not extracted.get("raw_text", "").strip():
-        return Response(
-            {"detail": "No readable text was found in this resume."},
-            status=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        )
-    uploaded.seek(0)
     profile = request.user.candidate_profile
     with transaction.atomic():
-        version = (profile.resumes.first().version + 1) if profile.resumes.exists() else 1
+        profile = CandidateProfile.objects.select_for_update().get(pk=profile.pk)
+        latest_resume = profile.resumes.order_by("-version", "-uploaded_at").first()
+        version = latest_resume.version + 1 if latest_resume else 1
         resume = Resume.objects.create(
             candidate=profile,
             file=uploaded,
             original_name=Path(uploaded.name).name[:255],
-            extracted_data=extracted,
             version=version,
+            processing_status=Resume.ProcessingStatus.UPLOADED,
+            scan_status=Resume.ScanStatus.QUARANTINED,
         )
-        scalar_fields = [
-            "full_name",
-            "headline",
-            "current_company",
-            "email",
-            "phone",
-            "location",
-            "total_experience",
-            "notice_period_days",
-            "current_salary_lpa",
-            "expected_salary_lpa",
-            "linkedin_url",
-            "github_url",
-            "work_preferences",
-            "skills",
-            "education",
-            "summary",
-        ]
-        for field in scalar_fields:
-            value = extracted.get(field)
-            if value not in (None, "", [], 0):
-                setattr(profile, field, value)
-        profile.save()
-        if extracted.get("work_experiences"):
-            profile.work_experiences.all().delete()
-            WorkExperience.objects.bulk_create(
-                [
-                    WorkExperience(
-                        candidate=profile,
-                        company=item["company"],
-                        role=item["role"],
-                        start_date=parse_date(item["start_date"]),
-                        end_date=parse_date(item.get("end_date")),
-                        description=item.get("description", ""),
-                    )
-                    for item in extracted["work_experiences"]
-                ]
-            )
-        if version > 1:
-            _notify_recruiters_of_candidate_update(
-                profile, change_type="resume", resume=resume
-            )
+        job = ResumeProcessingJob.objects.create(
+            resume=resume,
+            max_attempts=settings.RESUME_JOB_MAX_ATTEMPTS,
+        )
+
+        def dispatch():
+            try:
+                enqueue_resume_job(job.pk)
+            except Exception:
+                # The PostgreSQL job is the durable outbox. A worker/dispatcher
+                # will publish it when the queue becomes available again.
+                pass
+
+        transaction.on_commit(dispatch)
     return Response(
         CandidateProfileSerializer(profile, context={"request": request}).data,
-        status=status.HTTP_201_CREATED,
+        status=status.HTTP_202_ACCEPTED,
+    )
+
+
+@api_view(["POST"])
+@permission_classes([IsCandidate])
+@throttle_classes([ResumeUploadRateThrottle])
+def retry_resume_processing(request, resume_id):
+    try:
+        resume = request.user.candidate_profile.resumes.select_related(
+            "processing_job"
+        ).get(pk=resume_id)
+    except Resume.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    if resume.scan_status == Resume.ScanStatus.INFECTED:
+        return Response(
+            {"detail": "This file did not pass the security scan. Upload a different resume."},
+            status=status.HTTP_409_CONFLICT,
+        )
+    if resume.processing_status != Resume.ProcessingStatus.FAILED:
+        return Response(
+            {"detail": "Only failed resume processing jobs can be retried."},
+            status=status.HTTP_409_CONFLICT,
+        )
+    with transaction.atomic():
+        job = ResumeProcessingJob.objects.select_for_update().get(resume=resume)
+        job.state = ResumeProcessingJob.State.QUEUED
+        job.attempts = 0
+        job.available_at = timezone.now()
+        job.locked_at = None
+        job.enqueued_at = None
+        job.last_error = ""
+        job.completed_at = None
+        job.save()
+        resume.processing_status = Resume.ProcessingStatus.QUEUED
+        resume.scan_status = Resume.ScanStatus.QUARANTINED
+        resume.processing_error = ""
+        resume.save(
+            update_fields=[
+                "processing_status",
+                "scan_status",
+                "processing_error",
+                "processing_updated_at",
+            ]
+        )
+        transaction.on_commit(lambda: _enqueue_resume_safely(job.pk))
+    return Response(
+        CandidateProfileSerializer(resume.candidate, context={"request": request}).data,
+        status=status.HTTP_202_ACCEPTED,
     )
 
 
@@ -503,6 +599,11 @@ def resume_download(request, resume_id):
     ):
         # Match the unknown-ID response so this endpoint cannot be used to
         # enumerate private resume records.
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    if (
+        resume.scan_status != Resume.ScanStatus.CLEAN
+        or resume.processing_status != Resume.ProcessingStatus.COMPLETED
+    ):
         return Response(status=status.HTTP_404_NOT_FOUND)
     response = FileResponse(
         resume.file.open("rb"), as_attachment=True, filename=resume.original_name
@@ -595,6 +696,7 @@ def project_candidate(request, project_id, candidate_id=None):
 
 @api_view(["GET", "POST"])
 @permission_classes([IsRecruiter])
+@throttle_classes([RecruiterSearchRateThrottle])
 def searches(request):
     recruiter = request.user.recruiter_profile
     if request.method == "GET":
@@ -602,20 +704,40 @@ def searches(request):
     query = str(request.data.get("query", "")).strip()
     if not query:
         return Response({"detail": "Describe the candidate you are looking for."}, status=400)
-    criteria, question = parse_search_query(query)
+    try:
+        interpretation = understand_search(query)
+    except SearchUnderstandingUnavailable:
+        return Response(
+            {
+                "detail": (
+                    "Enter could not understand this search right now. "
+                    "Please try again shortly."
+                ),
+                "code": "search_understanding_unavailable",
+            },
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
     search = Search.objects.create(
         recruiter=recruiter,
         project_id=request.data.get("project") or None,
         query=query,
-        criteria=criteria,
-        state=Search.State.NEEDS_CLARIFICATION if question else Search.State.COMPLETE,
-        follow_up_question=question,
+        criteria=interpretation.criteria,
+        state=(
+            Search.State.NEEDS_CLARIFICATION
+            if interpretation.follow_up_question
+            else Search.State.COMPLETE
+        ),
+        follow_up_question=interpretation.follow_up_question,
+        follow_up_options=interpretation.follow_up_options,
+        understanding_source=interpretation.source,
+        understanding_model=interpretation.model,
     )
     return Response(SearchSerializer(search).data, status=status.HTTP_201_CREATED)
 
 
 @api_view(["POST"])
 @permission_classes([IsRecruiter])
+@throttle_classes([RecruiterSearchRateThrottle])
 def search_answer(request, search_id):
     try:
         search = request.user.recruiter_profile.searches.get(pk=search_id)
@@ -624,18 +746,52 @@ def search_answer(request, search_id):
     answer = str(request.data.get("answer", "")).strip()
     if not answer:
         return Response({"detail": "Answer the clarification question to continue."}, status=400)
-    search.criteria = apply_search_answer(search.criteria, answer)
-    search.follow_up_question = next_search_question(search.criteria)
+    pending_question = search.follow_up_question
+    try:
+        interpretation = continue_search(
+            search.query, search.criteria, pending_question, answer
+        )
+    except SearchUnderstandingUnavailable:
+        return Response(
+            {
+                "detail": (
+                    "Enter could not understand that answer right now. "
+                    "Please try again shortly."
+                ),
+                "code": "search_understanding_unavailable",
+            },
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+    search.criteria = interpretation.criteria
+    search.follow_up_question = interpretation.follow_up_question
+    search.follow_up_options = interpretation.follow_up_options
+    search.understanding_source = interpretation.source
+    search.understanding_model = interpretation.model
+    search.clarification_history = [
+        *search.clarification_history,
+        {"question": pending_question, "answer": answer},
+    ]
     search.state = (
         Search.State.NEEDS_CLARIFICATION
         if search.follow_up_question
         else Search.State.COMPLETE
     )
-    search.save(update_fields=["criteria", "state", "follow_up_question", "updated_at"])
+    search.save(
+        update_fields=[
+            "criteria",
+            "state",
+            "follow_up_question",
+            "follow_up_options",
+            "understanding_source",
+            "understanding_model",
+            "clarification_history",
+            "updated_at",
+        ]
+    )
     return Response(SearchSerializer(search).data)
 
 
-def _filtered_candidates(criteria, params):
+def _filtered_candidates(criteria, params, recruiter=None):
     candidates = CandidateProfile.objects.select_related("user").prefetch_related(
         "work_experiences", "resumes"
     ).filter(
@@ -682,6 +838,21 @@ def _filtered_candidates(criteria, params):
     ).strip()
     if employment_type:
         candidates = candidates.filter(employment_type__iexact=employment_type)
+    stage_filter = str(params.get("stage", "")).strip()
+    if stage_filter:
+        if not recruiter:
+            raise ValueError("A recruiter is required for recruiting-stage filters.")
+        if stage_filter == "viewed":
+            candidates = candidates.filter(profileview__recruiter=recruiter)
+        elif stage_filter == "unviewed":
+            candidates = candidates.exclude(profileview__recruiter=recruiter)
+        elif stage_filter in CandidateStatus.Status.values:
+            candidates = candidates.filter(
+                candidatestatus__recruiter=recruiter,
+                candidatestatus__status=stage_filter,
+            )
+        else:
+            raise ValueError("Choose a valid recruiting stage filter.")
 
     skills_value = params.get("skills") or params.get("skill")
     requested_skills = (
@@ -695,6 +866,33 @@ def _filtered_candidates(criteria, params):
         if preference_value
         else criteria.get("work_preferences") or []
     )
+    if connection.vendor == "postgresql":
+        # Keep the existing case-insensitive semantics while filtering inside
+        # PostgreSQL instead of materialising every candidate in Python.
+        if requested_skills:
+            for value in requested_skills:
+                candidates = candidates.extra(
+                    where=[
+                        "EXISTS (SELECT 1 FROM jsonb_array_elements_text("
+                        "talent_candidateprofile.skills) AS skill(value) "
+                        "WHERE LOWER(skill.value) = LOWER(%s))"
+                    ],
+                    params=[value],
+                )
+        if requested_preferences:
+            placeholders = ", ".join(["%s"] * len(requested_preferences))
+            candidates = candidates.extra(
+                where=[
+                    "EXISTS (SELECT 1 FROM jsonb_array_elements_text("
+                    "talent_candidateprofile.work_preferences) AS preference(value) "
+                    f"WHERE LOWER(preference.value) IN ({placeholders}))"
+                ],
+                params=[value.casefold() for value in requested_preferences],
+            )
+        return list(candidates.distinct())
+
+    # SQLite remains useful for lightweight local tooling, but production and
+    # all readiness tests use PostgreSQL.
     candidate_list = list(candidates)
     if requested_skills:
         requested = {value.casefold() for value in requested_skills}
@@ -747,6 +945,7 @@ def _recruiter_can_access_candidate(recruiter, candidate):
 
 @api_view(["GET"])
 @permission_classes([IsRecruiter])
+@throttle_classes([RecruiterSearchRateThrottle])
 def search_results(request, search_id):
     try:
         search = request.user.recruiter_profile.searches.get(pk=search_id)
@@ -755,34 +954,11 @@ def search_results(request, search_id):
     if search.state != Search.State.COMPLETE:
         return Response({"detail": "This search needs clarification first."}, status=409)
     try:
-        candidates = _filtered_candidates(search.criteria, request.query_params)
+        candidates = _filtered_candidates(
+            search.criteria, request.query_params, request.user.recruiter_profile
+        )
     except ValueError as exc:
         return Response({"detail": str(exc)}, status=400)
-    stage_filter = str(request.query_params.get("stage", "")).strip()
-    if stage_filter:
-        recruiter = request.user.recruiter_profile
-        if stage_filter == "viewed":
-            candidates = [
-                candidate
-                for candidate in candidates
-                if candidate.profileview_set.filter(recruiter=recruiter).exists()
-            ]
-        elif stage_filter == "unviewed":
-            candidates = [
-                candidate
-                for candidate in candidates
-                if not candidate.profileview_set.filter(recruiter=recruiter).exists()
-            ]
-        elif stage_filter in CandidateStatus.Status.values:
-            candidates = [
-                candidate
-                for candidate in candidates
-                if candidate.candidatestatus_set.filter(
-                    recruiter=recruiter, status=stage_filter
-                ).exists()
-            ]
-        else:
-            return Response({"detail": "Choose a valid recruiting stage filter."}, status=400)
     data = []
     for candidate in candidates:
         score, reasons = calculate_match(candidate, search.criteria)

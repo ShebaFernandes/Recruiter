@@ -9,7 +9,8 @@ from docx import Document
 from pypdf import PdfWriter
 from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 from rest_framework.authtoken.models import Token
-from talent.models import CandidateProfile, Resume, WorkExperience
+from talent.models import CandidateProfile, Resume, ResumeProcessingJob, WorkExperience
+from talent.resume_processing import process_resume_job
 from talent.services import parse_resume
 
 
@@ -80,6 +81,30 @@ def resume_pdf():
     return output.getvalue()
 
 
+def complete_resume_upload(client, response):
+    """Run the real worker boundary after asserting the upload stayed asynchronous."""
+    assert response.status_code == 202, response.data
+    resume_id = response.data["latest_resume"]["id"]
+    job = ResumeProcessingJob.objects.get(resume_id=resume_id)
+    assert job.state == ResumeProcessingJob.State.QUEUED
+    assert process_resume_job(job.pk, str(job.idempotency_key)) == "completed"
+    refreshed = client.get("/api/v1/candidate/profile/")
+    assert refreshed.status_code == 200
+    return refreshed
+
+
+def exhaust_resume_job(response):
+    resume_id = response.data["latest_resume"]["id"]
+    job = ResumeProcessingJob.objects.get(resume_id=resume_id)
+    outcome = None
+    for _ in range(job.max_attempts):
+        job.refresh_from_db()
+        job.available_at = timezone.now()
+        job.save(update_fields=["available_at", "updated_at"])
+        outcome = process_resume_job(job.pk, str(job.idempotency_key))
+    return outcome, Resume.objects.get(pk=resume_id)
+
+
 def standard_layout_resume_docx():
     document = Document()
     for line in [
@@ -139,7 +164,7 @@ def test_candidate_signup_upload_extract_edit_and_login_persists(
             content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
         response = client.post("/api/v1/candidate/resumes/", {"file": upload}, format="multipart")
-        assert response.status_code == 201, response.data
+        response = complete_resume_upload(client, response)
         assert response.data["full_name"] == "Asha Rao"
         assert response.data["headline"] == "Senior Backend Engineer"
         assert response.data["location"] == "Bengaluru"
@@ -147,6 +172,7 @@ def test_candidate_signup_upload_extract_edit_and_login_persists(
         assert response.data["linkedin_url"] == "https://linkedin.com/in/asharao"
         assert response.data["github_url"] == "https://github.com/asharao"
         assert response.data["latest_resume"]["version"] == 1
+        assert "extracted_data" not in response.data["latest_resume"]
         assert len(response.data["work_experiences"]) == 2
         assert response.data["education"] == ["B.Tech Computer Science, PES University"]
         assert response.data["profile_status"] == "draft"
@@ -287,7 +313,7 @@ def test_resume_extracts_bare_profile_links_and_work_preferences(
         response = client.post(
             "/api/v1/candidate/resumes/", {"file": upload}, format="multipart"
         )
-    assert response.status_code == 201
+        response = complete_resume_upload(client, response)
     assert response.data["linkedin_url"] == "https://linkedin.com/in/asharao"
     assert response.data["github_url"] == "https://github.com/asharao"
     assert response.data["work_preferences"] == ["Remote", "Hybrid"]
@@ -338,7 +364,7 @@ def test_resume_extracts_standard_career_and_education_sections(
         response = client.post(
             "/api/v1/candidate/resumes/", {"file": upload}, format="multipart"
         )
-    assert response.status_code == 201, response.data
+        response = complete_resume_upload(client, response)
     assert response.data["headline"] == "Senior Backend Engineer"
     assert response.data["current_company"] == "SignalWorks"
     assert [item["company"] for item in response.data["work_experiences"]] == [
@@ -370,7 +396,7 @@ def test_real_pdf_is_extracted(client, candidate_account, tmp_path):
             "priya-resume.pdf", resume_pdf(), content_type="application/pdf"
         )
         response = client.post("/api/v1/candidate/resumes/", {"file": upload}, format="multipart")
-        assert response.status_code == 201, response.data
+        response = complete_resume_upload(client, response)
         assert response.data["full_name"] == "Priya Nair"
         assert response.data["headline"] == "Backend Engineer"
         assert response.data["location"] == "Pune"
@@ -378,6 +404,102 @@ def test_real_pdf_is_extracted(client, candidate_account, tmp_path):
         missing = {item["field"] for item in response.data["missing_fields"]}
         assert {"linkedin_url", "github_url", "work_experiences", "visibility"} <= missing
         assert not {"headline", "location", "skills"} & missing
+
+
+@pytest.mark.django_db
+def test_standard_layout_resume_upload_persists_current_and_previous_roles(
+    client, candidate_account, tmp_path
+):
+    with override_settings(MEDIA_ROOT=tmp_path):
+        upload = SimpleUploadedFile(
+            "standard-layout.docx",
+            standard_layout_resume_docx().getvalue(),
+            content_type=(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            ),
+        )
+        response = client.post(
+            "/api/v1/candidate/resumes/", {"file": upload}, format="multipart"
+        )
+        response = complete_resume_upload(client, response)
+    assert response.data["headline"] == "AI Full-Stack Developer"
+    assert response.data["current_company"] == "Enter Recruitment"
+    assert len(response.data["work_experiences"]) == 2
+    assert response.data["work_experiences"][1]["end_date"] is None
+
+
+@pytest.mark.django_db
+def test_resume_upload_rejects_oversize_corrupt_and_misleading_files(
+    client, candidate_account, settings, tmp_path
+):
+    with override_settings(MEDIA_ROOT=tmp_path):
+        oversized = SimpleUploadedFile(
+            "too-large.pdf",
+            b"%PDF-" + b"0" * settings.RESUME_MAX_BYTES,
+            content_type="application/pdf",
+        )
+        oversized_response = client.post(
+            "/api/v1/candidate/resumes/", {"file": oversized}, format="multipart"
+        )
+        corrupt_pdf = client.post(
+            "/api/v1/candidate/resumes/",
+            {
+                "file": SimpleUploadedFile(
+                    "corrupt.pdf", b"%PDF-not-a-pdf", content_type="application/pdf"
+                )
+            },
+            format="multipart",
+        )
+        corrupt_docx = client.post(
+            "/api/v1/candidate/resumes/",
+            {
+                "file": SimpleUploadedFile(
+                    "corrupt.docx",
+                    b"PK-not-a-zip",
+                    content_type=(
+                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    ),
+                )
+            },
+            format="multipart",
+        )
+        misleading = client.post(
+            "/api/v1/candidate/resumes/",
+            {
+                "file": SimpleUploadedFile(
+                    "misleading.docx", b"%PDF-fake", content_type="application/pdf"
+                )
+            },
+            format="multipart",
+        )
+        traversal = client.post(
+            "/api/v1/candidate/resumes/",
+            {
+                "file": SimpleUploadedFile(
+                    "../../safe-name.docx",
+                    resume_docx(),
+                    content_type=(
+                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    ),
+                )
+            },
+            format="multipart",
+        )
+
+    assert oversized_response.status_code == 400
+    assert "exceeds" in oversized_response.data["detail"]
+    assert corrupt_pdf.status_code == 202
+    assert corrupt_docx.status_code == 202
+    assert misleading.status_code == 400
+    assert traversal.status_code == 202
+    assert traversal.data["latest_resume"]["original_name"] == "safe-name.docx"
+    with override_settings(MEDIA_ROOT=tmp_path):
+        assert exhaust_resume_job(corrupt_pdf)[0] == "failed"
+        assert exhaust_resume_job(corrupt_docx)[0] == "failed"
+        traversal = complete_resume_upload(client, traversal)
+    stored_name = Resume.objects.get(pk=traversal.data["latest_resume"]["id"]).file.name
+    assert stored_name.startswith("resumes/")
+    assert ".." not in stored_name
 
 
 @pytest.mark.django_db

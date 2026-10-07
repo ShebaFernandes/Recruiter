@@ -8,7 +8,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 from talent.models import CandidateProfile, Resume
 
-from .test_candidate_flow import resume_docx
+from .test_candidate_flow import complete_resume_upload, resume_docx
 
 PASSWORD = "strong-pass-123"
 
@@ -38,7 +38,7 @@ def _upload_resume(client, name, marker):
         content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     )
     response = client.post("/api/v1/candidate/resumes/", {"file": upload}, format="multipart")
-    assert response.status_code == 201, response.data
+    response = complete_resume_upload(client, response)
     return response.data["id"], response.data["latest_resume"]["id"]
 
 

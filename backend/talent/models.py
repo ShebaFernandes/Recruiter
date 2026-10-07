@@ -1,5 +1,9 @@
+import uuid
+
 from django.contrib.auth.models import User
+from django.contrib.postgres.indexes import GinIndex
 from django.db import models
+from django.utils import timezone
 
 
 class UserRole(models.Model):
@@ -79,6 +83,19 @@ class CandidateProfile(models.Model):
     submission_consent_version = models.CharField(max_length=80, blank=True)
     profile_updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["profile_status", "visibility"]),
+            models.Index(fields=["headline"]),
+            models.Index(fields=["location"]),
+            models.Index(fields=["total_experience"]),
+            models.Index(fields=["notice_period_days"]),
+            models.Index(fields=["expected_salary_lpa"]),
+            models.Index(fields=["employment_type"]),
+            GinIndex(fields=["skills"], name="candidate_skills_gin"),
+            GinIndex(fields=["work_preferences"], name="candidate_workprefs_gin"),
+        ]
+
 
 class WorkExperience(models.Model):
     candidate = models.ForeignKey(
@@ -96,17 +113,80 @@ class WorkExperience(models.Model):
 
 
 class Resume(models.Model):
+    class ProcessingStatus(models.TextChoices):
+        UPLOADED = "uploaded", "Uploaded"
+        QUEUED = "queued", "Queued"
+        PROCESSING = "processing", "Processing"
+        COMPLETED = "completed", "Completed"
+        FAILED = "failed", "Failed"
+
+    class ScanStatus(models.TextChoices):
+        QUARANTINED = "quarantined", "Quarantined"
+        SCANNING = "scanning", "Scanning"
+        CLEAN = "clean", "Clean"
+        INFECTED = "infected", "Infected"
+        FAILED = "failed", "Scan failed"
+
     candidate = models.ForeignKey(
         CandidateProfile, on_delete=models.CASCADE, related_name="resumes"
     )
-    file = models.FileField(upload_to="resumes/%Y/%m/")
+    file = models.FileField(upload_to="quarantine/%Y/%m/")
     original_name = models.CharField(max_length=255)
     extracted_data = models.JSONField(default=dict)
     version = models.PositiveIntegerField(default=1)
+    processing_status = models.CharField(
+        max_length=20,
+        choices=ProcessingStatus.choices,
+        default=ProcessingStatus.UPLOADED,
+    )
+    scan_status = models.CharField(
+        max_length=20,
+        choices=ScanStatus.choices,
+        default=ScanStatus.QUARANTINED,
+    )
+    processing_error = models.CharField(max_length=255, blank=True)
+    processing_updated_at = models.DateTimeField(auto_now=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["-version"]
+
+
+class ResumeProcessingJob(models.Model):
+    class State(models.TextChoices):
+        QUEUED = "queued", "Queued"
+        PROCESSING = "processing", "Processing"
+        COMPLETED = "completed", "Completed"
+        FAILED = "failed", "Failed"
+
+    resume = models.OneToOneField(
+        Resume, on_delete=models.CASCADE, related_name="processing_job"
+    )
+    state = models.CharField(max_length=20, choices=State.choices, default=State.QUEUED)
+    idempotency_key = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    max_attempts = models.PositiveSmallIntegerField(default=3)
+    available_at = models.DateTimeField(default=timezone.now)
+    locked_at = models.DateTimeField(null=True, blank=True)
+    enqueued_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    queue_message_id = models.CharField(max_length=180, blank=True)
+    last_error = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["state", "available_at"])]
+
+
+class RateLimitBucket(models.Model):
+    key = models.CharField(max_length=64, unique=True)
+    window_started_at = models.DateTimeField()
+    count = models.PositiveIntegerField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["updated_at"])]
 
 
 class Project(models.Model):
@@ -153,6 +233,10 @@ class Search(models.Model):
     criteria = models.JSONField(default=dict)
     state = models.CharField(max_length=30, choices=State.choices)
     follow_up_question = models.TextField(blank=True)
+    follow_up_options = models.JSONField(default=list, blank=True)
+    understanding_source = models.CharField(max_length=32, default="deterministic")
+    understanding_model = models.CharField(max_length=100, blank=True)
+    clarification_history = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -166,6 +250,7 @@ class ProfileView(models.Model):
     viewed_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        indexes = [models.Index(fields=["recruiter", "viewed_at"])]
         constraints = [
             models.UniqueConstraint(fields=["recruiter", "candidate"], name="unique_profile_view")
         ]
@@ -191,6 +276,7 @@ class CandidateStatus(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        indexes = [models.Index(fields=["recruiter", "status"])]
         constraints = [
             models.UniqueConstraint(
                 fields=["recruiter", "candidate"], name="unique_candidate_status"
