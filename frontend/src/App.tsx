@@ -1,14 +1,18 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  ArrowRight, Bell, BriefcaseBusiness, CalendarDays, Check, ChevronRight, CircleUserRound,
+  ArrowRight, Bell, BriefcaseBusiness, CalendarDays, Check, ChevronRight,
   Download, CheckCircle2, Code2, Eye, EyeOff, FileText, FolderPlus, GraduationCap,
-  History, IndianRupee, Link, LogOut, Mail, MapPin, MessageCircle, Mic, Pencil, Plus,
+  History, IndianRupee, Link, LogOut, Mail, MapPin, MessageCircle, Pencil, Plus,
   Search as SearchIcon, ShieldCheck, SlidersHorizontal, Sparkles, Target, Trash2,
   UploadCloud, X, Zap,
 } from 'lucide-react'
 import { api, ApiError, auth } from './api'
 import type { AuthPayload } from './api'
 import type { Candidate, Notification, Project, ProjectDetail, Search, SearchResult, User, WorkExperience } from './types'
+import { Badge, Button, Card, FormField } from './components/ui'
+import Landing from './components/Landing'
+import RecruiterSearch from './components/RecruiterSearch'
+import './components/auth.css'
 
 type SpeechRecognitionLike = {
   lang: string
@@ -102,40 +106,47 @@ function useDialogFocus(onClose: () => void) {
   return dialogRef
 }
 
-function Landing({ choose }: { choose: (role: 'recruiter' | 'candidate') => void }) {
-  return <main className="landing">
-    <nav className="landing-nav"><Brand /><span>One hiring system. Two human experiences.</span></nav>
-    <section className="landing-hero">
-      <div className="eyebrow"><Sparkles size={15} /> Human decisions, better signals</div>
-      <h1>Right person.<br /><em>Right problem.</em></h1>
-      <p>Search, understand, and connect with exceptional talent — or let your work tell its story.</p>
-      <div className="role-grid">
-        <button onClick={() => choose('recruiter')} data-testid="for-recruiters">
-          <span className="role-icon"><BriefcaseBusiness /></span>
-          <small>FOR RECRUITERS</small><b>Find the signal</b>
-          <span>Describe who you need. Compare the evidence. Keep judgment human.</span>
-          <i>Enter recruiter workspace <ChevronRight size={16} /></i>
-        </button>
-        <button onClick={() => choose('candidate')} data-testid="for-candidates">
-          <span className="role-icon"><CircleUserRound /></span>
-          <small>FOR CANDIDATES</small><b>Show what you can do</b>
-          <span>Upload your resume, review your profile, and be found for the right work.</span>
-          <i>Build your candidate profile <ChevronRight size={16} /></i>
-        </button>
-      </div>
-    </section>
+
+function AuthLayout({ role, back, children }: {
+  role?: 'candidate' | 'recruiter'
+  back?: () => void
+  children: React.ReactNode
+}) {
+  const candidate = role === 'candidate'
+  return <main className="auth-page auth-editorial">
+    <header className="auth-masthead">
+      <Brand />
+      {back ? <Button variant="ghost" size="small" onClick={back}>← Back to Enter</Button> : <a href="/">← Back to Enter</a>}
+    </header>
+    <div className="auth-layout">
+      <aside className="auth-story">
+        <div className="auth-story__copy">
+          <span className="auth-context-label">{role ? candidate ? 'FOR CANDIDATES' : 'FOR RECRUITERS' : 'YOUR ENTER ACCOUNT'}</span>
+          <h2>{role ? candidate ? 'Your work. Your story.' : 'Good hiring starts with understanding.' : 'A simple way back to what’s next.'}</h2>
+          <p>{!role ? 'Manage access to your Enter account and pick up where you left off.' : candidate
+            ? 'Turn your resume into a profile you control, then decide how the right recruiters can find you.'
+            : 'Describe the work, clarify what matters, and build a shortlist from real candidate evidence.'}</p>
+        </div>
+      </aside>
+      <section className="auth-content">{children}</section>
+    </div>
   </main>
 }
 
-function AuthScreen({ role, onDone, back }: {
+function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
   role: 'candidate' | 'recruiter'; onDone: (payload: AuthPayload) => void; back: () => void
+  initialMode?: 'signup' | 'login'
 }) {
-  const [mode, setMode] = useState<'signup' | 'login' | 'forgot'>('signup')
+  const [mode, setMode] = useState<'signup' | 'login' | 'forgot'>(initialMode)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [pendingEmail, setPendingEmail] = useState('')
   const [localVerificationUrl, setLocalVerificationUrl] = useState('')
+  useEffect(() => {
+    document.documentElement.scrollTop = 0
+    document.body.scrollTop = 0
+  }, [])
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setBusy(true); setError(''); setMessage('')
     const data = Object.fromEntries(new FormData(event.currentTarget).entries()) as Record<string, string>
@@ -170,39 +181,40 @@ function AuthScreen({ role, onDone, back }: {
     catch (err) { setError(err instanceof Error ? err.message : 'Could not resend verification.') }
     finally { setBusy(false) }
   }
-  if (pendingEmail) return <main className="auth-page">
-    <button className="back-link" onClick={back}>← Back</button>
-    <section className="auth-card auth-state-card">
-      <Brand /><div className="auth-state-icon"><Mail /></div>
+  if (pendingEmail) return <AuthLayout role={role} back={back}>
+    <Card className="auth-card auth-state-card">
+      <div className="auth-state-icon"><Mail aria-hidden="true" /></div>
       <h1>Check your email</h1>
       <p>We sent a secure verification link to <b>{pendingEmail}</b>. Verify your email before signing in and building your profile.</p>
-      {message && <div className="success"><Check size={17} />{message}</div>}
-      {localVerificationUrl && <div className="local-email-preview"><b>Local development</b><span>Inbox delivery is not configured on this computer. Use this secure one-time link to continue testing.</span><a className="primary" href={localVerificationUrl}>Verify this local account</a></div>}
+      {message && <div className="success" role="status"><Check size={17} aria-hidden="true" />{message}</div>}
+      {localVerificationUrl && <div className="local-email-preview"><b>Local development</b><span>Inbox delivery is not configured on this computer. Use this secure one-time link to continue testing.</span><a className="ui-button ui-button--primary ui-button--medium ui-button--full ui-button-link" href={localVerificationUrl}>Verify this local account</a></div>}
       <InlineError value={error} />
-      <button className="primary" onClick={resend} disabled={busy}>{busy ? 'Sending…' : 'Resend verification email'}</button>
-      <button className="text-button" onClick={() => { setPendingEmail(''); setLocalVerificationUrl(''); setMode('login'); setMessage(''); setError('') }}>Back to login</button>
-    </section>
-  </main>
-  return <main className="auth-page">
-    <button className="back-link" onClick={back}>← Back</button>
-    <form className="auth-card" onSubmit={submit}>
-      <Brand />
-      {role === 'recruiter' && <div className="eyebrow">RECRUITER WORKSPACE</div>}
-      <h1>{mode === 'signup' ? 'Create your account' : mode === 'forgot' ? 'Reset your password' : 'Welcome back'}</h1>
-      <p>{mode === 'forgot' ? 'Enter your email. If an account exists, we’ll send a secure reset link.' : role === 'recruiter' ? 'Search real candidate profiles and build a thoughtful shortlist.' : 'Turn your resume into a profile you control.'}</p>
-      {mode === 'signup' && <label>Full name<input name="full_name" required autoComplete="name" /></label>}
-      {mode === 'signup' && role === 'recruiter' && <label>Company<input name="company" required /></label>}
-      <label>Email<input name="email" type="email" required autoComplete="email" /></label>
-      {mode !== 'forgot' && <label>Password<input name="password" type="password" minLength={8} required autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} /></label>}
-      <InlineError value={error} />
-      {message && <div className="success"><Check size={17} />{message}</div>}
-      <button className="primary" disabled={busy}>{busy ? 'Please wait…' : mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send reset link' : 'Log in'}</button>
-      {mode === 'login' && <button type="button" className="text-button" onClick={() => { setMode('forgot'); setError(''); setMessage('') }}>Forgot password?</button>}
-      <button type="button" className="text-button" onClick={() => { setMode(mode === 'signup' ? 'login' : mode === 'login' ? 'signup' : 'login'); setError(''); setMessage('') }}>
-        {mode === 'signup' ? 'Already have an account? Log in' : mode === 'login' ? 'New here? Create an account' : 'Back to login'}
-      </button>
-    </form>
-  </main>
+      <Button fullWidth onClick={resend} disabled={busy}>{busy ? 'Sending…' : 'Resend verification email'}</Button>
+      <Button variant="ghost" fullWidth onClick={() => { setPendingEmail(''); setLocalVerificationUrl(''); setMode('login'); setMessage(''); setError('') }}>Back to login</Button>
+    </Card>
+  </AuthLayout>
+  return <AuthLayout role={role} back={back}>
+    <Card className="auth-card">
+      <form className="auth-form" onSubmit={submit}>
+        <Badge tone="neutral">{role === 'recruiter' ? 'RECRUITER WORKSPACE' : 'CANDIDATE PROFILE'}</Badge>
+        <h1>{mode === 'signup' ? 'Create your account' : mode === 'forgot' ? 'Forgot your password?' : 'Welcome back'}</h1>
+        <p>{mode === 'forgot' ? 'Enter your email. If an account exists, we’ll send a secure reset link.' : role === 'recruiter' ? 'Search real candidate profiles and build a thoughtful shortlist.' : 'Turn your resume into a profile you control.'}</p>
+        <div className="auth-fields">
+          {mode === 'signup' && <FormField label="Full name" name="full_name" required autoComplete="name" />}
+          {mode === 'signup' && role === 'recruiter' && <FormField label="Company" name="company" required autoComplete="organization" />}
+          <FormField label="Email" name="email" type="email" required autoComplete="email" />
+          {mode !== 'forgot' && <FormField label="Password" name="password" type="password" minLength={8} required autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} hint={mode === 'signup' ? 'Use at least 8 characters.' : undefined} />}
+        </div>
+        <InlineError value={error} />
+        {message && <div className="success" role="status"><Check size={17} aria-hidden="true" />{message}</div>}
+        <Button size="large" fullWidth disabled={busy}>{busy ? 'Please wait…' : mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send reset link' : 'Log in'}</Button>
+        {mode === 'login' && <Button type="button" variant="ghost" fullWidth onClick={() => { setMode('forgot'); setError(''); setMessage('') }}>Forgot password?</Button>}
+        <Button type="button" variant="ghost" fullWidth onClick={() => { setMode(mode === 'signup' ? 'login' : mode === 'login' ? 'signup' : 'login'); setError(''); setMessage('') }}>
+          {mode === 'signup' ? 'Already have an account? Log in' : mode === 'login' ? 'New here? Create an account' : 'Back to login'}
+        </Button>
+      </form>
+    </Card>
+  </AuthLayout>
 }
 
 function EmailVerificationScreen({ token, onDone }: { token: string; onDone: (payload: AuthPayload) => void }) {
@@ -217,12 +229,12 @@ function EmailVerificationScreen({ token, onDone }: { token: string; onDone: (pa
       onDone(payload)
     }).catch(cause => setError(cause instanceof Error ? cause.message : 'This verification link could not be used.'))
   }, [token, onDone])
-  return <main className="auth-page"><section className="auth-card auth-state-card"><Brand />
-    <div className="auth-state-icon"><ShieldCheck /></div>
+  return <AuthLayout role="candidate"><Card className="auth-card auth-state-card">
+    <div className="auth-state-icon"><ShieldCheck aria-hidden="true" /></div>
     <h1>{error ? 'Verification link unavailable' : 'Verifying your email…'}</h1>
-    <p>{error || 'One moment while we securely activate your candidate account.'}</p>
-    {error && <a className="primary anchor-button" href="/">Return to Enter</a>}
-  </section></main>
+    <p role={error ? 'alert' : 'status'}>{error || 'One moment while we securely activate your candidate account.'}</p>
+    {error && <a className="ui-button ui-button--primary ui-button--medium ui-button--full ui-button-link" href="/">Return to Enter</a>}
+  </Card></AuthLayout>
 }
 
 function PasswordResetScreen({ token, done }: { token: string; done: () => void }) {
@@ -237,12 +249,12 @@ function PasswordResetScreen({ token, done }: { token: string; done: () => void 
     catch (cause) { setError(cause instanceof Error ? cause.message : 'This reset link could not be used.') }
     finally { setBusy(false) }
   }
-  return <main className="auth-page"><section className="auth-card auth-state-card"><Brand />
-    <div className="auth-state-icon"><ShieldCheck /></div>
+  return <AuthLayout><Card className="auth-card auth-state-card">
+    <div className="auth-state-icon"><ShieldCheck aria-hidden="true" /></div>
     <h1>{complete ? 'Password updated' : 'Choose a new password'}</h1>
-    {complete ? <><p>Your password has been changed and existing sessions have been signed out.</p><button className="primary" onClick={done}>Continue to login</button></>
-      : <form className="nested-auth-form" onSubmit={submit}><p>Use a strong password you don’t use elsewhere.</p><label>New password<input name="password" type="password" minLength={8} required autoComplete="new-password" /></label><label>Confirm password<input name="confirm_password" type="password" minLength={8} required autoComplete="new-password" /></label><InlineError value={error} /><button className="primary" disabled={busy}>{busy ? 'Updating…' : 'Reset password'}</button></form>}
-  </section></main>
+    {complete ? <><p role="status">Your password has been changed and existing sessions have been signed out.</p><Button fullWidth onClick={done}>Continue to login</Button></>
+      : <form className="nested-auth-form" onSubmit={submit}><p>Use a strong password you don’t use elsewhere.</p><FormField label="New password" name="password" type="password" minLength={8} required autoComplete="new-password" /><FormField label="Confirm password" name="confirm_password" type="password" minLength={8} required autoComplete="new-password" /><InlineError value={error} /><Button fullWidth disabled={busy}>{busy ? 'Updating…' : 'Reset password'}</Button></form>}
+  </Card></AuthLayout>
 }
 
 function LegalPlaceholder({ kind }: { kind: 'privacy' | 'terms' }) {
@@ -759,9 +771,9 @@ function RecruiterPortal({ user, logout }: { user: User; logout: () => void }) {
   const [nonRelevantReasons, setNonRelevantReasons] = useState<string[]>([])
   const [nonRelevantNote, setNonRelevantNote] = useState('')
   const [savingFeedback, setSavingFeedback] = useState(false)
-  const clarificationInputRef = useRef<HTMLInputElement>(null)
   useEffect(() => { Promise.all([api.searches(), api.notifications(), api.projects()]).then(([s, n, p]) => { setRecents(s); setNotifications(n); setProjects(p) }).catch(e => setError(e.message)) }, [])
   const activeProject = projects.find(item => item.id === selectedProject)
+  const isSearchView = !projectDetail && !resultsLoaded
 
   async function refreshProjects(openId?: number) {
     const next = await api.projects()
@@ -848,25 +860,21 @@ function RecruiterPortal({ user, logout }: { user: User; logout: () => void }) {
     loadResults(search?.id, nextFilters)
   }
   return <Shell user={user} logout={logout} noticeCount={notifications.filter(n => !n.is_read).length}>
-    <main className={`recruiter-page ${workspacePanel ? 'workspace-panel-open' : ''}`}>
+    <main className={`recruiter-page ${isSearchView ? 'recruiter-search-mode' : ''} ${workspacePanel ? 'workspace-panel-open' : ''}`}>
       <nav className="recruiter-rail" aria-label="Recruiter workspace">
-        <button className="rail-new-search" title="New search" aria-label="New search" onClick={() => { setSearch(null); setProjectDetail(null); setQuery(''); setResults([]); setResultsLoaded(false); setSelected([]); setWorkspacePanel(null) }}><Plus /></button>
-        <button className={workspacePanel === 'recents' ? 'active' : ''} title="Recent searches" aria-label="Recent searches" aria-expanded={workspacePanel === 'recents'} onClick={() => toggleWorkspacePanel('recents')}><History /></button>
-        <button className={workspacePanel === 'projects' ? 'active' : ''} title="Projects" aria-label="Projects" aria-expanded={workspacePanel === 'projects'} onClick={() => toggleWorkspacePanel('projects')}><BriefcaseBusiness /></button>
-        <button className={workspacePanel === 'updates' ? 'active' : ''} title="Candidate updates" aria-label="Candidate updates" aria-expanded={workspacePanel === 'updates'} onClick={() => toggleWorkspacePanel('updates')}><Bell />{notifications.some(item => !item.is_read) && <span>{notifications.filter(item => !item.is_read).length}</span>}</button>
+        <button className="rail-new-search" title="New search" aria-label="New search" onClick={() => { setSearch(null); setProjectDetail(null); setQuery(''); setResults([]); setResultsLoaded(false); setSelected([]); setWorkspacePanel(null) }}><Plus />{isSearchView && <small className="rail-label">New search</small>}</button>
+        <button className={workspacePanel === 'recents' ? 'active' : ''} title="Recent searches" aria-label="Recent searches" aria-expanded={workspacePanel === 'recents'} onClick={() => toggleWorkspacePanel('recents')}><History />{isSearchView && <small className="rail-label">Recents</small>}</button>
+        <button className={workspacePanel === 'projects' ? 'active' : ''} title="Projects" aria-label="Projects" aria-expanded={workspacePanel === 'projects'} onClick={() => toggleWorkspacePanel('projects')}><BriefcaseBusiness />{isSearchView && <small className="rail-label">Projects</small>}</button>
+        <button className={workspacePanel === 'updates' ? 'active' : ''} title="Candidate updates" aria-label="Candidate updates" aria-expanded={workspacePanel === 'updates'} onClick={() => toggleWorkspacePanel('updates')}><Bell />{isSearchView && <small className="rail-label">Updates</small>}{notifications.some(item => !item.is_read) && <span>{notifications.filter(item => !item.is_read).length}</span>}</button>
       </nav>
       <section className="recruiter-content">
         {message && <div className="recruiter-toast"><Check size={16} />{message}<button onClick={() => setMessage('')}><X size={14} /></button></div>}
-        {projectDetail ? <ProjectWorkspace detail={projectDetail} openCandidate={openProfile} removeCandidate={removeFromProject} openSearch={chooseRecent} startSearch={() => { setProjectDetail(null); setQuery(''); setSearch(null) }} /> : !resultsLoaded && <div className="search-hero search-chat-home"><h1>Who are we hiring today?</h1>
-          {activeProject && <div className="search-project-context"><BriefcaseBusiness size={14} /> Searching inside <b>{activeProject.name}</b><button onClick={() => setSelectedProject(null)}>Remove</button></div>}
-          <form className="search-box chat-composer" onSubmit={begin}><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Example: Backend engineers in Bengaluru, 4–7 yrs, Java, Kafka, 0-to-1" aria-label="Candidate search" /><button type="button" className={`voice-search ${voiceListening ? 'listening' : ''}`} onClick={startVoiceSearch} aria-label={voiceListening ? 'Listening for search' : 'Search by voice'} title="Search by voice"><Mic /></button><button className="search-enter-button" aria-label="Search talent" title="Search talent" disabled={busy || !query.trim()}><img src="/enter-logo.jpeg" alt="" /></button></form>
-          {!search && <div className="search-hints"><button onClick={() => setQuery('0-to-1 backend builders with 4 years experience, remote okay')}>0→1 backend builders</button><button onClick={() => setQuery('Production machine learning engineers with 4 years experience, remote okay')}>Production ML engineers</button><button onClick={() => setQuery('Founding engineers with 5 years experience, remote okay')}>Founding engineers</button></div>}
-          {search?.state === 'needs_clarification' && <div className="search-conversation" aria-live="polite">
-            <div className="conversation-row recruiter-message"><div><small>You</small><p>{search.query}</p></div></div>
-            <form className="conversation-row enter-message" onSubmit={event => { event.preventDefault(); clarifyWith(answer) }}><div className="ai-mark">e</div><div><small>Enter</small><b>One detail before I search</b><p>{search.follow_up_question}</p>{search.follow_up_options.length > 0 && <div className="clarification-options">{search.follow_up_options.map(option => <button type="button" key={option} onClick={() => option === 'Let me type it' ? clarificationInputRef.current?.focus() : clarifyWith(option)} disabled={busy}>{option}</button>)}</div>}<div className="clarification-input"><input ref={clarificationInputRef} value={answer} onChange={e => setAnswer(e.target.value)} placeholder="Type a different answer" aria-label="Clarification answer" /><button className="primary" disabled={!answer.trim() || busy}>Continue <ArrowRight size={14} /></button></div></div></form>
-          </div>}
-          <InlineError value={error} />
-        </div>}
+        {projectDetail ? <ProjectWorkspace detail={projectDetail} openCandidate={openProfile} removeCandidate={removeFromProject} openSearch={chooseRecent} startSearch={() => { setProjectDetail(null); setQuery(''); setSearch(null) }} /> : !resultsLoaded && <RecruiterSearch
+          query={query} setQuery={setQuery} search={search} answer={answer} setAnswer={setAnswer}
+          submit={begin} clarify={clarifyWith} busy={busy} error={error}
+          projectName={activeProject?.name} clearProject={() => setSelectedProject(null)}
+          voiceListening={voiceListening} startVoiceSearch={startVoiceSearch}
+        />}
         {resultsLoaded && <div className="results-view">
           <div className="results-head results-toolbar"><div><h1>Showing {results.length} of {results.length} results</h1><p>{search?.query}{search?.project_name && ` · ${search.project_name}`}</p></div><div className="results-toolbar-actions"><button className="header-compare" aria-label="Compare" disabled={selected.length < 2} onClick={compare}>Compare ({selected.length})</button><select aria-label="Quick result filter" value={filters.stage} onChange={event => applyQuickStage(event.target.value)}><option value="">All stages</option><option value="unviewed">Not viewed</option><option value="viewed">Viewed</option>{recruiterStages.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select><button className={`filter-button ${filterOpen ? 'active' : ''}`} onClick={() => { setWorkspacePanel(null); setFilterOpen(value => !value) }} aria-expanded={filterOpen} aria-label={filterOpen ? 'Hide filters' : 'Refine'} title={filterOpen ? 'Hide filters' : 'Refine'}><SlidersHorizontal /></button></div></div>
           <div className={`results-layout ${filterOpen ? 'refine-open' : ''}`}>
@@ -907,6 +915,7 @@ function RecruiterPortal({ user, logout }: { user: User; logout: () => void }) {
 export default function App() {
   const [user, setUser] = useState<User | null | undefined>(undefined)
   const [choice, setChoice] = useState<'candidate' | 'recruiter' | null>(null)
+  const [authMode, setAuthMode] = useState<'signup' | 'login'>('signup')
   const [accountRemoved, setAccountRemoved] = useState(false)
   const screen = useMemo(() => user?.role || choice, [user, choice])
   useEffect(() => {
@@ -929,10 +938,10 @@ export default function App() {
   const verificationToken = query.get('verify-email')
   if (verificationToken) return <EmailVerificationScreen token={verificationToken} onDone={payload => setUser(payload.user)} />
   const resetToken = query.get('reset-password')
-  if (resetToken) return <PasswordResetScreen token={resetToken} done={() => { setChoice('candidate'); setUser(null) }} />
+  if (resetToken) return <PasswordResetScreen token={resetToken} done={() => { setAuthMode('login'); setChoice('candidate'); setUser(null) }} />
   if (user === undefined) return <main className="auth-page"><div className="candidate-profile-loading" role="status">Opening Enter…</div></main>
   if (accountRemoved) return <main className="auth-page"><section className="auth-card auth-state-card"><Brand /><div className="auth-state-icon"><CheckCircle2 /></div><h1>Your account has been deleted</h1><p>Your candidate profile and stored resumes were permanently removed.</p><button className="primary" onClick={() => { setAccountRemoved(false); setChoice(null) }}>Return to Enter</button></section></main>
-  if (!screen) return <Landing choose={setChoice} />
-  if (!user) return <AuthScreen role={screen} back={() => setChoice(null)} onDone={payload => setUser(payload.user)} />
+  if (!screen) return <Landing choose={(role, mode = 'signup') => { setAuthMode(mode); setChoice(role) }} />
+  if (!user) return <AuthScreen role={screen} initialMode={authMode} back={() => setChoice(null)} onDone={payload => setUser(payload.user)} />
   return user.role === 'candidate' ? <CandidatePortal user={user} logout={logout} accountDeleted={() => { setUser(null); setChoice(null); setAccountRemoved(true) }} /> : <RecruiterPortal user={user} logout={logout} />
 }

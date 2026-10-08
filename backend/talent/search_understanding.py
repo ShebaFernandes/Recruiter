@@ -1,16 +1,28 @@
-import json
-import socket
-import urllib.error
-import urllib.request
+import logging
 from dataclasses import dataclass
 
 from django.conf import settings
 
+from .ai_providers import AIProviderError, AIProviderMalformedResponse, get_ai_provider
 from .services import apply_search_answer, next_search_question, parse_search_query
+
+logger = logging.getLogger(__name__)
 
 
 class SearchUnderstandingUnavailable(Exception):
-    """Raised when the configured semantic search interpreter cannot respond safely."""
+    """A safe, user-facing failure from the search-understanding boundary."""
+
+    def __init__(
+        self,
+        message,
+        code="search_understanding_unavailable",
+        status_code=503,
+        retry_after=None,
+    ):
+        super().__init__(message)
+        self.code = code
+        self.status_code = status_code
+        self.retry_after = retry_after
 
 
 @dataclass(frozen=True)
@@ -20,6 +32,7 @@ class SearchInterpretation:
     follow_up_options: list[str]
     source: str
     model: str = ""
+    request_id: str = ""
 
 
 CRITERIA_DEFAULTS = {
@@ -114,26 +127,56 @@ def _deterministic_interpretation(query, criteria=None, question="", answer=""):
     )
 
 
-def _response_text(payload):
-    if isinstance(payload.get("output_text"), str):
-        return payload["output_text"]
-    for item in payload.get("output", []):
-        for content in item.get("content", []):
-            if content.get("type") == "output_text" and isinstance(content.get("text"), str):
-                return content["text"]
-    raise SearchUnderstandingUnavailable("The AI search response did not contain output text.")
+def _schema_error():
+    raise AIProviderMalformedResponse("The AI search response did not match the schema.")
 
 
-def _normalize_interpretation(payload, model):
+def _is_number(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _normalize_interpretation(payload, provider, model, request_id=""):
+    if not isinstance(payload, dict) or set(payload) != {
+        "criteria",
+        "follow_up_question",
+        "follow_up_options",
+    }:
+        _schema_error()
     criteria_payload = payload.get("criteria")
-    if not isinstance(criteria_payload, dict):
-        raise SearchUnderstandingUnavailable("The AI search response was invalid.")
-    criteria = {
-        key: criteria_payload.get(key, default.copy() if isinstance(default, list) else default)
-        for key, default in CRITERIA_DEFAULTS.items()
-    }
-    question = str(payload.get("follow_up_question") or "").strip()
-    raw_options = payload.get("follow_up_options") or []
+    if not isinstance(criteria_payload, dict) or set(criteria_payload) != set(CRITERIA_DEFAULTS):
+        _schema_error()
+    for field in ("role", "location", "employment_type"):
+        if not isinstance(criteria_payload[field], str):
+            _schema_error()
+    for field in ("skills", "work_preferences"):
+        if not isinstance(criteria_payload[field], list) or not all(
+            isinstance(value, str) for value in criteria_payload[field]
+        ):
+            _schema_error()
+    for field in ("min_experience", "max_experience", "max_salary_lpa"):
+        value = criteria_payload[field]
+        if value is not None and not _is_number(value):
+            _schema_error()
+    notice = criteria_payload["notice_period_days"]
+    if notice is not None and (not isinstance(notice, int) or isinstance(notice, bool)):
+        _schema_error()
+    if not isinstance(criteria_payload["remote_ok"], bool):
+        _schema_error()
+    if criteria_payload["employment_type"] not in {"", "Full-time", "Part-time", "Contract"}:
+        _schema_error()
+    if not set(criteria_payload["work_preferences"]).issubset(
+        {"Remote", "Hybrid", "On-site", "Flexible"}
+    ):
+        _schema_error()
+    if not isinstance(payload["follow_up_question"], str) or not isinstance(
+        payload["follow_up_options"], list
+    ):
+        _schema_error()
+    if not all(isinstance(value, str) for value in payload["follow_up_options"]):
+        _schema_error()
+    criteria = dict(criteria_payload)
+    question = payload["follow_up_question"].strip()
+    raw_options = payload["follow_up_options"]
     options = []
     for option in raw_options:
         value = str(option).strip()
@@ -143,14 +186,10 @@ def _normalize_interpretation(payload, model):
         options.append("Let me type it")
     if not question:
         options = []
-    return SearchInterpretation(criteria, question, options[:5], "openai", model)
+    return SearchInterpretation(criteria, question, options[:5], provider, model, request_id)
 
 
-def _openai_interpret(query, criteria=None, question="", answer=""):
-    api_key = settings.OPENAI_API_KEY
-    if not api_key:
-        raise SearchUnderstandingUnavailable("AI search is not configured.")
-    model = settings.OPENAI_SEARCH_MODEL
+def _provider_interpret(query, criteria=None, question="", answer=""):
     user_payload = {"search_query": query}
     if criteria is not None:
         user_payload.update(
@@ -160,48 +199,65 @@ def _openai_interpret(query, criteria=None, question="", answer=""):
                 "recruiter_answer": answer,
             }
         )
-    request_body = {
-        "model": model,
-        "instructions": SYSTEM_INSTRUCTIONS,
-        "input": json.dumps(user_payload, ensure_ascii=False),
-        "text": {
-            "format": {
-                "type": "json_schema",
-                "name": "candidate_search_interpretation",
-                "strict": True,
-                "schema": INTERPRETATION_SCHEMA,
-            }
-        },
-    }
-    request = urllib.request.Request(
-        f"{settings.OPENAI_API_BASE_URL.rstrip('/')}/responses",
-        data=json.dumps(request_body).encode("utf-8"),
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-        method="POST",
+    provider = get_ai_provider(settings.AI_PROVIDER)
+    result = provider.generate(
+        SYSTEM_INSTRUCTIONS,
+        user_payload,
+        INTERPRETATION_SCHEMA,
+        "candidate_search_interpretation",
     )
-    try:
-        with urllib.request.urlopen(
-            request, timeout=settings.SEARCH_AI_TIMEOUT_SECONDS
-        ) as response:
-            response_payload = json.loads(response.read().decode("utf-8"))
-        return _normalize_interpretation(json.loads(_response_text(response_payload)), model)
-    except (urllib.error.URLError, TimeoutError, socket.timeout, json.JSONDecodeError) as exc:
-        raise SearchUnderstandingUnavailable(
-            "AI search understanding is temporarily unavailable."
-        ) from exc
+    interpretation = _normalize_interpretation(
+        result.data, result.provider, result.model, result.request_id
+    )
+    logger.info(
+        "ai_search_provider_success provider=%s model=%s request_id=%s",
+        result.provider,
+        result.model,
+        result.request_id or "not-returned",
+    )
+    return interpretation
+
+
+def _public_provider_error(error):
+    if error.kind == "rate_limited":
+        return SearchUnderstandingUnavailable(
+            "Enter's search assistant is busy. Please wait a moment and try again.",
+            code="ai_provider_rate_limited",
+            status_code=429,
+            retry_after=error.retry_after or 30,
+        )
+    if error.kind == "timeout":
+        return SearchUnderstandingUnavailable(
+            "Enter's search assistant took too long to respond. Please try again.",
+            code="ai_provider_timeout",
+            status_code=503,
+        )
+    if error.kind == "malformed_response":
+        return SearchUnderstandingUnavailable(
+            "Enter could not safely understand that search. Please try rephrasing it.",
+            code="ai_provider_malformed_response",
+            status_code=502,
+        )
+    return SearchUnderstandingUnavailable(
+        "Enter's search assistant is temporarily unavailable. Please try again shortly.",
+        code="ai_provider_unavailable",
+        status_code=503,
+    )
 
 
 def _interpret(query, criteria=None, question="", answer=""):
-    backend = settings.SEARCH_UNDERSTANDING_BACKEND
-    if backend == "deterministic":
+    if settings.AI_PROVIDER == "deterministic":
         return _deterministic_interpretation(query, criteria, question, answer)
-    if backend != "openai":
-        raise SearchUnderstandingUnavailable("The configured search interpreter is invalid.")
     try:
-        return _openai_interpret(query, criteria, question, answer)
-    except SearchUnderstandingUnavailable:
-        if not settings.SEARCH_AI_ALLOW_FALLBACK:
-            raise
+        return _provider_interpret(query, criteria, question, answer)
+    except AIProviderError as error:
+        if not settings.AI_ALLOW_DETERMINISTIC_FALLBACK:
+            raise _public_provider_error(error) from error
+        logger.warning(
+            "ai_search_provider_fallback provider=%s error=%s",
+            settings.AI_PROVIDER,
+            error.kind,
+        )
         fallback = _deterministic_interpretation(query, criteria, question, answer)
         return SearchInterpretation(
             fallback.criteria,

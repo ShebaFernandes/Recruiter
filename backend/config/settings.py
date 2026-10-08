@@ -245,24 +245,40 @@ SUBMISSION_CONSENT_VERSION = os.getenv(
     "SUBMISSION_CONSENT_VERSION", "candidate-profile-sharing-v1"
 )
 
-SEARCH_UNDERSTANDING_BACKEND = os.getenv(
-    "SEARCH_UNDERSTANDING_BACKEND", "openai"
-)
+AI_PROVIDER = os.getenv(
+    "AI_PROVIDER",
+    "deterministic" if TESTING else ("openrouter" if DEBUG else "openai"),
+).lower()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_SEARCH_MODEL = os.getenv("OPENAI_SEARCH_MODEL", "gpt-4o-mini")
 OPENAI_API_BASE_URL = os.getenv("OPENAI_API_BASE_URL", "https://api.openai.com/v1")
-SEARCH_AI_TIMEOUT_SECONDS = float(os.getenv("SEARCH_AI_TIMEOUT_SECONDS", "12"))
-SEARCH_AI_ALLOW_FALLBACK = (
-    os.getenv("SEARCH_AI_ALLOW_FALLBACK", "true" if DEBUG else "false").lower() == "true"
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+OPENROUTER_SEARCH_MODEL = os.getenv("OPENROUTER_SEARCH_MODEL", "openai/gpt-4o-mini")
+OPENROUTER_API_BASE_URL = os.getenv(
+    "OPENROUTER_API_BASE_URL", "https://openrouter.ai/api/v1"
+)
+OPENROUTER_HTTP_REFERER = os.getenv("OPENROUTER_HTTP_REFERER", FRONTEND_URL)
+OPENROUTER_APP_TITLE = os.getenv("OPENROUTER_APP_TITLE", "Enter Talent Platform")
+AI_REQUEST_TIMEOUT_SECONDS = float(
+    os.getenv("AI_REQUEST_TIMEOUT_SECONDS", os.getenv("SEARCH_AI_TIMEOUT_SECONDS", "12"))
+)
+AI_ALLOW_DETERMINISTIC_FALLBACK = (
+    os.getenv(
+        "AI_ALLOW_DETERMINISTIC_FALLBACK",
+        os.getenv("SEARCH_AI_ALLOW_FALLBACK", "false"),
+    ).lower()
+    == "true"
 )
 
 if not DEBUG:
-    if SEARCH_UNDERSTANDING_BACKEND != "openai" or not OPENAI_API_KEY:
+    if AI_PROVIDER not in {"openai", "openrouter"}:
+        raise ImproperlyConfigured("Production AI_PROVIDER must be openai or openrouter.")
+    provider_key = OPENAI_API_KEY if AI_PROVIDER == "openai" else OPENROUTER_API_KEY
+    if not provider_key:
         raise ImproperlyConfigured(
-            "Production recruiter search requires SEARCH_UNDERSTANDING_BACKEND=openai "
-            "and OPENAI_API_KEY."
+            f"Production AI_PROVIDER={AI_PROVIDER} requires its server-side API key."
         )
-    if SEARCH_AI_ALLOW_FALLBACK:
+    if AI_ALLOW_DETERMINISTIC_FALLBACK:
         raise ImproperlyConfigured(
             "Production AI search must fail clearly instead of silently using "
             "deterministic fallback."

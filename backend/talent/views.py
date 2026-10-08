@@ -706,16 +706,12 @@ def searches(request):
         return Response({"detail": "Describe the candidate you are looking for."}, status=400)
     try:
         interpretation = understand_search(query)
-    except SearchUnderstandingUnavailable:
+    except SearchUnderstandingUnavailable as exc:
+        headers = {"Retry-After": str(exc.retry_after)} if exc.retry_after else None
         return Response(
-            {
-                "detail": (
-                    "Enter could not understand this search right now. "
-                    "Please try again shortly."
-                ),
-                "code": "search_understanding_unavailable",
-            },
-            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            {"detail": str(exc), "code": exc.code},
+            status=exc.status_code,
+            headers=headers,
         )
     search = Search.objects.create(
         recruiter=recruiter,
@@ -751,16 +747,12 @@ def search_answer(request, search_id):
         interpretation = continue_search(
             search.query, search.criteria, pending_question, answer
         )
-    except SearchUnderstandingUnavailable:
+    except SearchUnderstandingUnavailable as exc:
+        headers = {"Retry-After": str(exc.retry_after)} if exc.retry_after else None
         return Response(
-            {
-                "detail": (
-                    "Enter could not understand that answer right now. "
-                    "Please try again shortly."
-                ),
-                "code": "search_understanding_unavailable",
-            },
-            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            {"detail": str(exc), "code": exc.code},
+            status=exc.status_code,
+            headers=headers,
         )
     search.criteria = interpretation.criteria
     search.follow_up_question = interpretation.follow_up_question

@@ -1,0 +1,111 @@
+/* The Career Edition. All rules are isolated from authenticated product screens. */
+.career-edition {
+  --ce-paper: #faf9f6;
+  --ce-ink: #222225;
+  --ce-muted: #626168;
+  --ce-rule: #d6d4cf;
+  --ce-violet: #6d4aff;
+  background: var(--ce-paper);
+  color: var(--ce-ink);
+  font-family: 'DM Sans', sans-serif;
+}
+.career-edition * { min-width: 0; }
+.ce-page-width { width: min(1248px, calc(100% - 96px)); margin-inline: auto; }
+.career-edition button, .career-edition a { -webkit-tap-highlight-color: transparent; }
+.career-edition :is(a, button, summary):focus-visible { outline: 3px solid var(--ce-violet); outline-offset: 5px; }
+.career-edition :is(h1,h2,h3) { font-family: 'Newsreader', serif; font-weight: 500; }
+.career-edition em { font-family: 'Newsreader', serif; color: inherit; }
+.ce-skip { position: absolute; left: 20px; top: -100px; z-index: 5; background: #fff; padding: 12px; color: var(--ce-ink); }
+.ce-skip:focus { top: 12px; }
+.ce-masthead { min-height: 86px; margin-inline: 48px; border-bottom: 1px solid var(--ce-rule); display: flex; align-items: center; gap: 36px; }
+.ce-logo { display: inline-flex; flex: none; }
+.ce-logo img { width: 98px; height: 42px; object-fit: contain; mix-blend-mode: multiply; }
+.ce-masthead .ce-logo { animation: ce-logo-reveal 380ms ease-out both; }
+.ce-masthead-note { font-size: 11px; color: var(--ce-muted); }
+.ce-masthead nav { display: flex; align-items: center; gap: 30px; margin-left: auto; }
+.ce-masthead nav a, .ce-footer>a:last-child { display: inline-flex; align-items: center; gap: 8px; color: var(--ce-ink); font-size: 12px; text-decoration: none; padding-block: 12px; }
+.ce-masthead nav a, .ce-login summary { position: relative; }
+.ce-masthead nav a::after, .ce-login summary::after { content: ''; position: absolute; bottom: 5px; left: 0; right: 0; height: 1px; background: var(--ce-violet); transform: scaleX(0); transform-origin: left; transition: transform .2s ease; }
+.ce-masthead nav a:is(:hover, :focus-visible)::after, .ce-login summary:is(:hover, :focus-visible)::after { transform: scaleX(1); }
+.ce-masthead nav a:hover { color: var(--ce-violet); }
+.ce-login { position: relative; flex: none; }
+.ce-login summary { cursor: pointer; list-style: none; padding-block: 12px; font-size: 12px; transition: color .2s ease; }
+.ce-login summary::-webkit-details-marker { display: none; }
+.ce-login summary:hover, .ce-login[open] summary { color: var(--ce-violet); }
+.ce-login-options { position: absolute; z-index: 5; top: calc(100% + 8px); right: 0; width: 190px; padding: 6px; background: var(--ce-paper); border: 1px solid var(--ce-rule); border-radius: 4px; box-shadow: 0 8px 20px #2222250d; }
+.ce-login-options button { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 44px; padding: 10px; border: 0; background: transparent; text-align: left; font-size: 12px; }
+.ce-login-options button:hover { color: var(--ce-violet); background: #f0efea; }
+.ce-intro { padding-bottom: 22px; }
+.ce-index { display: flex; justify-content: space-between; gap: 18px; padding-top: 35px; color: var(--ce-muted); font-size: 9px; letter-spacing: .13em; font-weight: 600; }
+.ce-intro-grid { display: grid; grid-template-columns: minmax(0, 1fr) 270px; align-items: end; gap: 50px; margin: 42px 0 27px; }
+.ce-intro h1 { font-size: clamp(57.6px, 6.84vw, 97.2px); line-height: .94; letter-spacing: -.052em; margin: 0; animation: ce-headline-reveal 480ms ease-out both; }
+.ce-intro h1 em { position: relative; white-space: nowrap; }
+.ce-intro h1 em::after { content: ''; height: 2px; position: absolute; left: 0; right: 0; bottom: 4px; background: var(--ce-violet); transform-origin: left; animation: ce-underline-reveal 400ms 480ms ease-out both; }
+.ce-intro-aside { padding-bottom: 4px; }
+.ce-intro-aside>p { font-size: 14px; line-height: 1.75; color: var(--ce-muted); margin-bottom: 0; }
+.career-edition .ui-button { min-height: 46px; border-radius: 4px; font-size: 12px; padding-inline: 17px; box-shadow: none; transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease; }
+.career-edition .ui-button--primary { background: var(--ce-ink); color: #fff; }
+.career-edition .ui-button--primary:hover { background: var(--ce-violet); box-shadow: none; transform: none; }
+.career-edition .ui-button svg { transition: transform .2s ease; }
+.career-edition .ui-button:is(:hover, :focus-visible) svg { transform: translateX(3px); }
+.ce-kicker { font-size: 9px; line-height: 1.5; font-weight: 700; letter-spacing: .12em; color: var(--ce-muted); }
+.ce-entry-section { border-top: 1px solid var(--ce-rule); background: #f0efea; }
+.ce-entry-heading { display: grid; grid-template-columns: 1fr 2.1fr; gap: 38px; padding: 42px 0 36px; }
+.ce-entry-heading>.ce-kicker { padding-top: 8px; }
+.ce-entry-heading h2 { font-size: clamp(36px, 4vw, 55px); line-height: 1; letter-spacing: -.035em; margin: 0; }
+.ce-entry { display: grid; grid-template-columns: 60px 1fr minmax(260px, .8fr); align-items: start; gap: 36px; padding: 36px 0; border-top: 1px solid var(--ce-rule); scroll-margin-top: 24px; }
+.ce-entry-number { padding-top: 3px; font-size: 12px; color: var(--ce-muted); font-variant-numeric: tabular-nums; }
+.ce-entry-copy h3 { font-size: 40px; line-height: 1.02; letter-spacing: -.03em; margin: 14px 0 0; }
+.ce-entry-action p { font-size: 12px; line-height: 1.8; max-width: 355px; color: var(--ce-muted); margin: 0 0 20px; }
+.career-edition .ce-entry-action .ui-button { width: 260px; max-width: 100%; justify-content: space-between; background: transparent; border-color: #bdbab4; color: var(--ce-ink); }
+.career-edition .ce-entry-action .ui-button:hover { background: var(--ce-paper); border-color: var(--ce-violet); }
+.ce-footer { display: flex; align-items: center; gap: 25px; padding-block: 25px; }
+.ce-footer .ce-logo img { width: 69px; height: 31px; }
+.ce-footer p { font-size: 11px; color: var(--ce-muted); margin: 0; }
+.ce-footer>a:last-child { margin-left: auto; font-size: 10px; }
+.ce-footer>a:last-child:hover { color: var(--ce-violet); }
+
+/* IntersectionObserver starts each reveal once; content remains available without it. */
+.ce-entry.is-revealed { animation: ce-entry-reveal 450ms ease-out both; }
+@keyframes ce-logo-reveal { from { opacity: .35; } to { opacity: 1; } }
+@keyframes ce-headline-reveal { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ce-underline-reveal { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes ce-entry-reveal { from { opacity: .2; } to { opacity: 1; } }
+
+@media (max-width: 1100px) {
+  .ce-page-width { width: calc(100% - 64px); }
+  .ce-masthead { margin-inline: 32px; }
+  .ce-intro-grid { grid-template-columns: minmax(0,1fr) 220px; gap: 32px; }
+  .ce-intro h1 { font-size: 69.3px; }
+  .ce-intro-aside>p { font-size: 12px; }
+  .ce-entry { grid-template-columns: 35px 1fr .85fr; gap: 25px; }
+  .ce-entry-copy h3 { font-size: 36px; }
+}
+@media (max-width: 760px) {
+  .ce-page-width { width: calc(100% - 40px); }
+  .ce-masthead { margin-inline: 20px; gap: 15px; min-height: 74px; }
+  .ce-logo img { width: 73px; height: 33px; }
+  .ce-masthead-note { display: none; }
+  .ce-masthead nav { gap: 14px; }
+  .ce-masthead nav a { font-size: 10px; gap: 3px; }
+  .ce-login summary { font-size: 10px; }
+  .ce-masthead nav svg { display: none; }
+  .ce-index { padding-top: 24px; font-size: 8px; }
+  .ce-index>span:last-child { display: none; }
+  .ce-intro-grid { grid-template-columns: 1fr; gap: 23px; margin-top: 28px; }
+  .ce-intro h1 { font-size: clamp(44.1px, 10.8vw, 68.4px); line-height: .98; letter-spacing: -.048em; }
+  .ce-intro-aside>p { font-size: 13px; line-height: 1.65; }
+  .ce-entry-heading { grid-template-columns: 1fr; gap: 20px; padding-top: 27px; }
+  .ce-entry-heading h2 { font-size: 35px; }
+  .ce-entry { grid-template-columns: 24px 1fr; gap: 18px; padding-block: 27px; }
+  .ce-entry-copy h3 { font-size: 34px; margin-top: 10px; }
+  .ce-entry-action { grid-column: 2; }
+  .ce-entry-action p { font-size: 12px; }
+  .career-edition .ce-entry-action .ui-button { font-size: 11px; padding-inline: 12px; width: 100%; justify-content: space-between; }
+  .ce-footer { flex-wrap: wrap; gap: 12px; padding-block: 22px; }
+  .ce-footer p { order: 3; width: 100%; font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .career-edition *, .career-edition *::before, .career-edition *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  .career-edition .ui-button:is(:hover, :focus-visible) svg { transform: none; }
+}

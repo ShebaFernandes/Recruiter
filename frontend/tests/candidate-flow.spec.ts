@@ -88,7 +88,7 @@ test('candidate completes a conversational resume profile and preferences persis
   await page.getByRole('button', { name: 'Reset password' }).click()
   await expect(page.getByRole('heading', { name: 'Password updated' })).toBeVisible()
   await page.getByRole('button', { name: 'Continue to login' }).click()
-  await page.getByRole('button', { name: /Already have an account/ }).click()
+  await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
   await page.getByLabel('Email').fill(email)
   await page.getByLabel('Password').fill('new-strong-pass-456')
   await page.getByRole('button', { name: 'Log in', exact: true }).click()

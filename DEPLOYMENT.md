@@ -64,20 +64,31 @@ Start from `.env.example`; inject values at runtime, never into images or fronte
 - `AUTH_COOKIE_SECURE=true`, `AUTH_COOKIE_SAMESITE=Lax`, `SECURE_SSL_REDIRECT=true`, and HSTS after HTTPS is verified.
 - `RATE_LIMIT_TRUST_X_FORWARDED_FOR=true` only when the ALB is configured in append mode; the application uses the right-most observed address and ignores spoofable left-most values.
 - SMTP/SES variables and a verified `DEFAULT_FROM_EMAIL`; production signup depends on email delivery.
-- `SEARCH_UNDERSTANDING_BACKEND=openai`, `OPENAI_API_KEY`, and an approved
-  `OPENAI_SEARCH_MODEL`: the key must come from Secrets Manager/SSM, never the frontend.
-- `SEARCH_AI_ALLOW_FALLBACK=false`: staging/production fails clearly when the model is
-  unavailable instead of silently presenting deterministic parsing as AI.
+- `AI_PROVIDER=openai|openrouter`, the selected provider's API key, and an approved
+  structured-output-capable model. Store the key in Secrets Manager/SSM, never the frontend.
+- OpenAI uses `OPENAI_API_KEY`, `OPENAI_SEARCH_MODEL`, and `OPENAI_API_BASE_URL`.
+- OpenRouter uses `OPENROUTER_API_KEY`, `OPENROUTER_SEARCH_MODEL`,
+  `OPENROUTER_API_BASE_URL`, `OPENROUTER_HTTP_REFERER`, and `OPENROUTER_APP_TITLE`.
+- `AI_ALLOW_DETERMINISTIC_FALLBACK=false`: staging/production fails clearly when the
+  selected provider is unavailable instead of silently presenting deterministic parsing as AI.
 
 Keep S3 Block Public Access enabled, use SSE-S3 or SSE-KMS, disable ACLs, and grant web read only if downloads remain web-served. Grant workers quarantine read/delete and promoted-object read/write. Add a reviewed lifecycle rule only after the retention policy exists. RDS backups, point-in-time recovery, backup retention, restore testing, and deletion protection are product decisions, not repository defaults.
 
-Recruiter queries are interpreted server-side through the OpenAI Responses API using strict
-Structured Outputs. Only the recruiter's search sentence and clarification context are sent;
-candidate profiles and resumes are not sent to this integration. Restrict and rotate the API
-key, monitor latency/error/cost, and give ECS tasks controlled outbound HTTPS access. Local
-development may use the named deterministic fallback when no credential is present; it is
-recorded as `understanding_source=deterministic_fallback`. Production configuration rejects
-fallback mode so the product never presents fixed parsing as AI.
+Recruiter queries are interpreted server-side through a provider adapter. OpenAI uses the
+Responses API; OpenRouter uses Chat Completions with `response_format=json_schema` and
+`require_parameters=true`. Both responses pass through the same strict application validator
+before reaching Django search logic. Only the recruiter's search sentence and clarification
+context are sent; candidate profiles and resumes are not sent to either integration. Restrict
+and rotate provider keys, monitor latency/error/cost, and give ECS tasks controlled outbound
+HTTPS access. Local development may explicitly opt into the named deterministic fallback; it
+is recorded as `understanding_source=deterministic_fallback` and is disabled by default.
+Production configuration rejects fallback mode so the product never presents fixed parsing
+as AI.
+
+Successful real requests emit a redacted log event such as
+`ai_search_provider_success provider=openrouter model=<model> request_id=<id>`. Fallbacks emit
+`ai_search_provider_fallback provider=openrouter error=<category>`. No prompt, candidate data,
+or API key is included in either event.
 
 ## Health, logging, and monitoring
 
