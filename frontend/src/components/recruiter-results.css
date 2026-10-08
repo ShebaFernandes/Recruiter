@@ -1,0 +1,203 @@
+/* Results and recruiter-only dialogs. A modestly wider card allows readable
+   content and compact side-by-side actions without shrinking the reference UI. */
+.recruiter-results-ui.results-view { width: min(1160px, 100%); max-width: 1160px; padding-top: 14px; }
+.recruiter-results-ui {
+  --ink: #242331;
+  --muted: #62616d;
+  --line: #deddd7;
+  --results-accent: #6d4aff;
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.recruiter-results-ui :is(button, a, input, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--results-accent);
+  outline-offset: 3px;
+}
+.recruiter-results-ui :is(button, a, select) { transition: background-color .18s, border-color .18s, color .18s; }
+.recruiter-results-ui .primary { background: var(--ink); }
+.recruiter-results-ui .primary:hover { background: #49369a; transform: none; }
+.recruiter-results-ui .results-toolbar { gap: 16px; box-shadow: 0 2px 8px #24233106; }
+.recruiter-results-ui .results-toolbar > div:first-child { min-width: 0; }
+.recruiter-results-ui .results-toolbar h1 { font-size: 22px; letter-spacing: -.025em; }
+.recruiter-results-ui .results-toolbar p { font-size: 12px; line-height: 1.4; margin: 5px 0 0; }
+.recruiter-results-ui .results-toolbar-actions { min-width: 330px; grid-template-columns: auto minmax(130px, 180px) 42px; }
+.recruiter-results-ui .results-toolbar-actions :is(button, select) { font-size: 12px; font-weight: 600; }
+.recruiter-results-ui .results-toolbar-actions .filter-button.active { background: var(--color-violet-100); color: #5938e6; border-color: #bbaaff; }
+.recruiter-results-ui .candidate-list { gap: 8px; }
+.recruiter-results-ui .candidate-card { padding: 10px 12px; grid-template-columns: minmax(0, 1fr) 210px; min-height: 0; box-shadow: 0 2px 9px #24233106; }
+.recruiter-results-ui .candidate-card.selected { border-color: #9c85ed; box-shadow: 0 0 0 1px #ddd5ff; }
+.recruiter-results-ui .candidate-main { padding-right: 14px; }
+.recruiter-results-ui .candidate-top { gap: 10px; flex-wrap: nowrap; }
+.recruiter-results-ui .candidate-top > div:last-child { min-width: 0; overflow-wrap: anywhere; }
+.recruiter-results-ui .candidate-top h3 { font-size: 17px; line-height: 1.25; }
+.recruiter-results-ui .candidate-top p { font-size: 14px; line-height: 1.3; }
+.recruiter-results-ui .candidate-top .candidate-education { font-size: 12px; color: var(--muted); }
+.recruiter-results-ui .candidate-card .avatar { background: #eeece5; border-color: var(--line); border-radius: 5px; }
+.recruiter-results-ui .name-row { gap: 5px 8px; }
+.recruiter-results-ui .signal { font-size: 12px; font-weight: 600; }
+.recruiter-results-ui .candidate-facts { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px 14px; margin-top: 9px; }
+.recruiter-results-ui .candidate-facts span { font-size: 14px; flex-wrap: wrap; gap: 3px; line-height: 1.3; }
+.recruiter-results-ui .candidate-facts svg { margin-right: 2px; }
+.recruiter-results-ui .candidate-facts b { color: var(--muted); font-weight: 500; font-size: 12px; }
+.recruiter-results-ui :is(.career-row, .card-skills) { grid-template-columns: 88px minmax(0, 1fr); margin-top: 8px; }
+.recruiter-results-ui :is(.career-row, .card-skills) > b { font-size: 12px; color: var(--muted); font-weight: 500; }
+.recruiter-results-ui .card-skills { align-items: start; }
+.recruiter-results-ui .card-skills .skill-list { flex-wrap: wrap; overflow: visible; gap: 4px; }
+.recruiter-results-ui .skill-list span { font-size: 12px; padding: 2px 7px; line-height: 1.35; font-weight: 500; }
+.recruiter-results-ui .candidate-actions { padding-left: 12px; display: grid; grid-template-columns: 68px minmax(0, 1fr); align-content: start; align-items: center; gap: 7px; }
+.recruiter-results-ui .candidate-actions > :is(.compare-check, .card-stage-label, .stage-signals) { grid-column: 1 / -1; }
+.recruiter-results-ui .candidate-actions .contact-icon-row { grid-column: 1; grid-row: 3; margin: 0; gap: 4px; }
+.recruiter-results-ui .candidate-actions > .primary { grid-column: 2; grid-row: 3; }
+.recruiter-results-ui .candidate-actions .compare-check { font-size: 12px; min-height: 22px; color: var(--ink); }
+.recruiter-results-ui .compare-check input { width: 16px; height: 16px; accent-color: var(--results-accent); }
+.recruiter-results-ui .card-stage-label { font-size: 12px; font-weight: 500; color: var(--muted); display: grid; gap: 4px; margin: 0; }
+.recruiter-results-ui .candidate-actions select { height: 34px; font-size: 14px; font-weight: 600; }
+.recruiter-results-ui .candidate-actions .stage-active { background: #f3efff; border-color: #b9a8ed; color: #50359f; }
+.recruiter-results-ui .candidate-actions .stage-closed { background: #fff5f2; border-color: #d7a89b; color: #8b3e2d; }
+.recruiter-results-ui .candidate-actions > .primary { font-size: 14px; min-height: 36px; padding: 7px 8px; white-space: nowrap; }
+.recruiter-results-ui .candidate-actions .contact-icon-row a { width: 32px; height: 32px; }
+.recruiter-results-ui .stage-signals { padding-top: 6px; margin: 0; }
+.recruiter-results-ui .stage-signals > b { font-size: 12px; font-weight: 500; color: var(--muted); }
+.recruiter-results-ui .stage-signals span { font-size: 12px; background: #f6f4ef; border-color: #e4dfd3; color: #665e4f; font-weight: 500; }
+
+/* Dates and company labels stay close to the line. Focus also opens details. */
+.recruiter-results-ui .career-journey { min-height: 54px; padding: 0; }
+.recruiter-results-ui :is(.career-period, .career-gap-period) { min-width: 78px; }
+.recruiter-results-ui .career-job { height: 54px; }
+.recruiter-results-ui .career-journey :is(.career-job, .career-gap-period) > b { font-size: 12px; top: 0; line-height: 18px; }
+.recruiter-results-ui .career-period-line { top: 23px; height: 3px; }
+.recruiter-results-ui .career-journey :is(.career-job, .career-gap-period) > small { top: 31px; font-size: 12px; color: var(--muted); }
+.recruiter-results-ui .career-detail { top: 54px; font-size: 12px !important; width: 230px; line-height: 1.5; }
+.recruiter-results-ui .career-detail :is(b, small, span, p) { font-size: 12px; }
+.recruiter-results-ui .career-detail b { color: white; }
+.recruiter-results-ui .career-period:focus-within, .recruiter-results-ui .career-gap-period:focus { z-index: 25; }
+.recruiter-results-ui .career-sequence:first-child .career-detail { left: 0; right: auto; transform: none; }
+.recruiter-results-ui .career-sequence:last-child .career-detail { left: auto; right: 0; transform: none; }
+.recruiter-results-ui .career-gap-period .gap-detail { top: 54px; }
+.recruiter-results-ui .career-journey.detailed { min-height: 84px; }
+.recruiter-results-ui .career-journey.detailed .career-job { height: 84px; }
+.recruiter-results-ui .career-journey.detailed .career-job > em { top: 51px; font: 500 12px/1.3 'DM Sans', sans-serif; white-space: normal; width: 95%; }
+.recruiter-results-ui .career-journey.detailed .career-detail { top: 84px; }
+
+/* Right-side filters reflow the cards, never cover them on desktop. */
+.recruiter-results-ui .results-layout.refine-open { grid-template-columns: minmax(0, 1fr) 280px; gap: 14px; }
+.recruiter-results-ui .results-filter-panel { background: #fff; padding: 0; animation: none; display: flex; flex-direction: column; position: sticky; top: 78px; height: var(--filter-available-height, calc(100dvh - 174px)); max-height: var(--filter-available-height, calc(100dvh - 174px)); overflow: hidden; }
+.recruiter-results-ui .filter-panel-head { align-items: center; gap: 8px; padding: 14px; margin: 0; border-bottom: 1px solid var(--line); flex: none; }
+.recruiter-results-ui .filter-panel-head span { font-size: 12px; color: var(--muted); }
+.recruiter-results-ui .filter-panel-head h2 { font: 500 21px/1.2 'Newsreader', serif; margin: 3px 0 0; }
+.recruiter-results-ui .filter-panel-head button { width: 36px; height: 36px; }
+.recruiter-results-ui .filter-bar.expanded { padding: 0 14px 12px; animation: none; gap: 4px; overflow-y: auto; overscroll-behavior: contain; min-height: 0; flex: 1; scrollbar-gutter: stable; }
+.recruiter-results-ui .filter-bar fieldset { flex-shrink: 0; }
+.recruiter-results-ui .filter-bar fieldset { border: 0; border-top: 1px solid var(--line); padding: 12px 0 4px; margin: 12px 0 0; min-width: 0; display: grid; gap: 10px; }
+.recruiter-results-ui .filter-bar legend { font-size: 12px; font-weight: 700; padding: 0 8px 0 0; }
+.recruiter-results-ui .filter-bar label { font-size: 12px; font-weight: 500; color: var(--muted); }
+.recruiter-results-ui .filter-bar :is(input, select) { font-size: 13px; min-height: 38px; border: 1px solid var(--line); border-radius: 6px; background: #fff; min-width: 0; }
+.recruiter-results-ui .filter-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.recruiter-results-ui .filter-actions { position: static; padding: 12px 14px; background: #fff; margin: 0; border-top: 1px solid var(--line); flex: none; }
+.recruiter-results-ui .filter-actions button { font-size: 12px; min-height: 40px; }
+.recruiter-results-ui .applied-result-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 10px 0 12px; font-size: 12px; }
+.recruiter-results-ui .applied-result-filters b { font-weight: 500; color: var(--muted); margin-right: 4px; }
+.recruiter-results-ui .applied-result-filters span { background: #eeeaff; color: #50359f; border: 1px solid #ddd5ff; border-radius: 5px; padding: 3px 7px; overflow-wrap: anywhere; }
+
+/* Existing recruiter profile and comparison dialogs only. */
+.recruiter-results-ui .profile-drawer { width: min(760px, 96vw); background: #faf9f6; padding: 28px 32px; }
+.recruiter-results-ui .close { width: 40px; height: 40px; z-index: 2; }
+.recruiter-results-ui .profile-hero { padding: 36px 0 20px; align-items: start; }
+.recruiter-results-ui .profile-hero h2 { font-size: 36px; line-height: 1.12; margin: 8px 0; }
+.recruiter-results-ui .profile-hero p { font-size: 14px; line-height: 1.5; }
+.recruiter-results-ui :is(.eyebrow, .section-kicker) { font-size: 12px; letter-spacing: .07em; color: var(--muted); }
+.recruiter-results-ui .profile-actions { gap: 8px; }
+.recruiter-results-ui .profile-actions .icon-action { width: 40px; height: 40px; border-radius: 7px; }
+.recruiter-results-ui .profile-actions svg { width: 18px; height: 18px; }
+.recruiter-results-ui .profile-actions svg[data-brand] { stroke: none; }
+.recruiter-results-ui .recruiter-resume-access { padding: 12px; background: #fff; border: 1px solid var(--line); border-radius: 7px; margin-bottom: 16px; }
+.recruiter-results-ui .resume-access-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.recruiter-results-ui .resume-access-actions :is(button, a) { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; min-height: 40px; }
+.recruiter-results-ui .resume-access-actions a { color: #50359f; }
+.recruiter-results-ui .resume-access-actions a.primary { color: #fff; text-decoration: none; }
+.recruiter-results-ui .recruiter-resume-access p { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
+.recruiter-results-ui .recruiter-resume-access .error { color: #8b3e2d; }
+.recruiter-results-ui .non-relevant-modal { width: min(680px, 100%); padding: 26px; border-radius: 10px; }
+.recruiter-results-ui .non-relevant-modal h2 { font-size: 26px; line-height: 1.25; }
+.recruiter-results-ui .non-relevant-modal > p { font-size: 14px; margin: 12px 0 20px; }
+.recruiter-results-ui .non-relevant-reasons { gap: 10px; }
+.recruiter-results-ui .non-relevant-reasons label { min-height: 46px; padding: 10px 14px; gap: 9px; font-size: 14px; border-radius: 7px; }
+.recruiter-results-ui .non-relevant-reasons label.selected { color: #8b3e2d; background: #fff5f2; border-color: #d7a89b; }
+.recruiter-results-ui .non-relevant-reasons input { width: 18px; height: 18px; accent-color: #8b3e2d; }
+.recruiter-results-ui .non-relevant-note { margin-top: 16px; }
+.recruiter-results-ui .non-relevant-note textarea { font-size: 14px; min-height: 100px; padding: 12px; }
+.recruiter-results-ui .non-relevant-actions { margin-top: 18px; gap: 10px; }
+.recruiter-results-ui .non-relevant-actions button { min-height: 44px; font-size: 14px; padding: 0 18px; }
+.recruiter-results-ui .profile-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); overflow: hidden; }
+.recruiter-results-ui .profile-facts div { border: 0; padding: 12px; background: #fff; gap: 5px; overflow-wrap: anywhere; }
+.recruiter-results-ui .profile-facts span { font-size: 12px; text-transform: none; }
+.recruiter-results-ui .profile-facts b { font-size: 13px; margin: 0; }
+.recruiter-results-ui .profile-drawer section { padding: 20px 0; }
+.recruiter-results-ui .profile-drawer section > p { font-size: 14px; line-height: 1.65; white-space: pre-line; overflow-wrap: anywhere; }
+.recruiter-results-ui .profile-education p { font-size: 13px; line-height: 1.5; }
+.recruiter-results-ui .profile-project-action { padding: 12px; gap: 10px; background: #f1eee8; }
+.recruiter-results-ui .profile-project-action :is(b, span, select, button) { font-size: 12px; }
+.recruiter-results-ui .profile-project-action select { min-width: 0; max-width: 100%; }
+.recruiter-results-ui .text-button { color: #5938e6; padding: 12px 0; font-size: 12px; }
+.recruiter-results-ui .compare-modal { background: #faf9f6; padding: 32px; }
+.recruiter-results-ui .compare-modal h2 { font-size: 32px; padding-right: 35px; }
+.recruiter-results-ui .compare-scroll { overflow-x: auto; max-width: 100%; }
+.recruiter-results-ui .compare-row > b { font-size: 12px; background: #f1eee8; }
+.recruiter-results-ui .compare-row > div { font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.recruiter-results-ui .compare-name b { font-family: 'DM Sans', sans-serif; font-size: 16px; }
+.recruiter-results-ui .compare-name span { font-size: 12px; }
+
+@media (max-width: 1100px) {
+  .recruiter-results-ui .results-layout.refine-open { grid-template-columns: minmax(0, 1fr) 250px; }
+  .recruiter-results-ui .refine-open .candidate-facts { margin-left: 0; grid-template-columns: 1fr; }
+  .recruiter-results-ui .refine-open :is(.career-row, .card-skills) { grid-template-columns: 1fr; gap: 4px; }
+  .recruiter-results-ui .refine-open .candidate-card { grid-template-columns: minmax(0, 1fr) 160px; }
+  .recruiter-results-ui .refine-open .candidate-actions { grid-template-columns: minmax(0, 1fr); }
+  .recruiter-results-ui .refine-open .candidate-actions > .primary { grid-column: 1; grid-row: 4; }
+}
+@media (max-width: 800px) {
+  .recruiter-results-ui .results-toolbar { display: block; }
+  .recruiter-results-ui .results-toolbar-actions { margin-top: 12px; min-width: 0; grid-template-columns: 1fr 1fr 42px; }
+  .recruiter-results-ui .refine-open .candidate-card { grid-template-columns: minmax(0, 1fr); }
+  .recruiter-results-ui .refine-open .candidate-actions { border-left: 0; padding-left: 0; }
+}
+@media (max-width: 700px) {
+  .recruiter-results-ui.results-view { padding: 12px 12px 84px; }
+  .recruiter-results-ui .results-toolbar h1 { font-size: 20px; }
+  .recruiter-results-ui .results-toolbar-actions .header-compare { grid-column: auto; }
+  .recruiter-results-ui .results-toolbar-actions :is(button, select) { height: 44px; }
+  .recruiter-results-ui .results-toolbar p { white-space: normal; overflow-wrap: anywhere; }
+  .recruiter-results-ui .candidate-card { grid-template-columns: minmax(0, 1fr); padding: 14px; }
+  .recruiter-results-ui .candidate-main { padding: 0; }
+  .recruiter-results-ui .candidate-facts { margin-left: 0; grid-template-columns: 1fr; }
+  .recruiter-results-ui :is(.career-row, .card-skills) { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .recruiter-results-ui .career-journey { display: grid; grid-auto-flow: column; grid-auto-columns: 140px; align-items: start; overflow-x: auto; padding: 4px 3px 8px; }
+  .recruiter-results-ui :is(.career-period, .career-gap-period) { width: 140px; min-width: 140px; }
+  .recruiter-results-ui .career-job { display: block; height: auto; min-height: 54px; }
+  .recruiter-results-ui .career-gap-period { min-height: 54px; }
+  .recruiter-results-ui .career-journey.detailed .career-job { height: auto; min-height: 84px; }
+  .recruiter-results-ui .career-journey .career-detail { position: static; transform: none; width: 100%; margin-top: 54px; box-shadow: none; overflow-wrap: anywhere; }
+  .recruiter-results-ui .career-job:not(:focus) .career-detail, .recruiter-results-ui .career-gap-period:not(:focus) .career-detail { display: none !important; }
+  .recruiter-results-ui .career-journey.detailed .career-detail { margin-top: 84px; }
+  .recruiter-results-ui .candidate-actions { display: grid; grid-template-columns: 1fr 1fr; padding: 10px 0 0; gap: 8px; border-left: 0; }
+  .recruiter-results-ui .candidate-actions .compare-check { min-height: 32px; margin: 0; }
+  .recruiter-results-ui .candidate-actions :is(select, .primary) { min-height: 44px; }
+  .recruiter-results-ui .candidate-actions .contact-icon-row { grid-column: 1; grid-row: 3; }
+  .recruiter-results-ui .candidate-actions .contact-icon-row a { width: 44px; height: 44px; }
+  .recruiter-results-ui .candidate-actions > .primary { grid-column: 2; grid-row: 3; }
+  .recruiter-results-ui .results-filter-panel { position: fixed; width: min(390px, 100vw); top: 76px; bottom: 68px; right: 0; height: auto; max-height: none; }
+  .recruiter-results-ui .filter-bar :is(input, select) { font-size: 16px; min-height: 44px; }
+  .recruiter-results-ui .profile-drawer { width: 100%; padding: 20px; }
+  .recruiter-results-ui .profile-hero { gap: 12px; }
+  .recruiter-results-ui .profile-hero h2 { font-size: 30px; }
+  .recruiter-results-ui .profile-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .recruiter-results-ui .profile-project-action { grid-template-columns: auto minmax(0, 1fr); }
+  .recruiter-results-ui .profile-project-action :is(select, button) { min-height: 44px; }
+  .recruiter-results-ui .compare-modal { padding: 24px 16px; width: calc(100vw - 20px); max-height: 90dvh; }
+  .recruiter-results-ui .compare-modal h2 { font-size: 27px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .recruiter-results-ui *, .recruiter-results-ui *::before, .recruiter-results-ui *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

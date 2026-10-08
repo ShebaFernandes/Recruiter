@@ -71,12 +71,12 @@ async function seedCandidate(request: APIRequestContext, index: number, runId: n
   return { email, token: auth.token, name }
 }
 
-test('recruiter completes clarification, filters, compares, reviews and persists signals', async ({ page, request }) => {
+test('recruiter completes clarification, filters, compares, reviews and persists signals', async ({ page, request }, testInfo) => {
   const runId = Date.now()
   const candidates = []
   for (let index = 0; index < 4; index += 1) candidates.push(await seedCandidate(request, index, runId))
 
-  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/')
   await page.getByTestId('for-recruiters').click()
   await page.getByLabel('Full name').fill('Ritu Mehta')
@@ -96,7 +96,7 @@ test('recruiter completes clarification, filters, compares, reviews and persists
   expect(searchBox?.width).toBeLessThanOrEqual(681)
   expect(searchBox?.height).toBeGreaterThanOrEqual(57)
   expect(searchBox?.height).toBeLessThanOrEqual(59)
-  expect(searchBox?.y).toBeGreaterThan(430)
+  expect(searchBox?.y).toBeGreaterThan(380)
 
   await page.getByLabel('Candidate search').fill('Backend engineer with 4 years experience')
   await page.getByRole('button', { name: 'Search talent' }).click()
@@ -111,20 +111,73 @@ test('recruiter completes clarification, filters, compares, reviews and persists
   await expect(page.getByText(`Showing ${initialCount} of ${initialCount} results`)).toBeVisible()
   const inViewport = await cards.evaluateAll(elements => elements.filter(element => {
     const box = element.getBoundingClientRect()
-    return box.top < window.innerHeight && box.bottom > 0
+    return box.top >= 66 && box.bottom <= window.innerHeight
   }).length)
   expect(inViewport).toBeGreaterThanOrEqual(3)
   const resultsBox = await page.locator('.results-view').boundingBox()
   const firstCardBox = await cards.first().boundingBox()
-  expect(resultsBox?.width).toBeGreaterThanOrEqual(1019)
-  expect(resultsBox?.width).toBeLessThanOrEqual(1021)
-  expect(firstCardBox?.height).toBeLessThanOrEqual(210)
+  await page.screenshot({ path: testInfo.outputPath('results-1440.png'), fullPage: true })
+  expect(resultsBox?.width).toBeGreaterThanOrEqual(1159)
+  expect(resultsBox?.width).toBeLessThanOrEqual(1161)
+  // Three COMPLETE cards at 1440×900; no text or information hidden to fit.
+  expect(firstCardBox?.height).toBeLessThanOrEqual(240)
   const seededGap = seededAnikaCard.getByLabel(/Career gap of approximately/)
   await expect(seededGap).toBeVisible()
   await seededGap.hover()
   await expect(seededAnikaCard.getByText('Completed an advanced distributed-systems programme.')).toBeVisible()
   await expect(page.locator('.candidate-rank')).toHaveCount(0)
   await expect(page.getByText('Why this match')).toHaveCount(0)
+
+  for (const width of [1440, 1024, 390]) {
+    await page.setViewportSize({ width, height: 900 })
+    await page.mouse.move(0, 0)
+    await page.evaluate(() => window.scrollTo(0, 0))
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
+    const smallText = await cards.first().locator('*').evaluateAll(elements => elements.filter(element =>
+      element.getBoundingClientRect().height > 0 && Array.from(element.childNodes).some(node =>
+        node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) &&
+      parseFloat(getComputedStyle(element).fontSize) < 12,
+    ).map(element => element.className))
+    expect(smallText).toEqual([])
+    await page.screenshot({ path: testInfo.outputPath(`results-${width}.png`) })
+    await cards.first().getByRole('button', { name: 'View profile' }).click()
+    const drawer = page.locator('.profile-drawer')
+    await expect(drawer).toBeVisible()
+    expect(await drawer.evaluate(element => element.scrollWidth <= element.clientWidth)).toBeTruthy()
+    await page.screenshot({ path: testInfo.outputPath(`profile-${width}.png`) })
+    const careerJob = drawer.locator('.career-job').first()
+    await careerJob.focus()
+    await expect(careerJob.locator('.career-detail')).toBeVisible()
+    await careerJob.locator('.career-detail').scrollIntoViewIfNeeded()
+    await expect(careerJob.locator('.career-detail')).toBeInViewport()
+    await page.screenshot({ path: testInfo.outputPath(`career-detail-${width}.png`) })
+    await page.keyboard.press('Escape')
+    await page.getByRole('button', { name: 'Refine', exact: true }).click()
+    await expect(page.getByRole('button', { name: 'Close filters' })).toBeFocused()
+    if (width === 390) {
+      await page.keyboard.press('Shift+Tab')
+      await expect(page.getByRole('button', { name: 'Apply filters' })).toBeFocused()
+      await page.keyboard.press('Tab')
+      await expect(page.getByRole('button', { name: 'Close filters' })).toBeFocused()
+    }
+    await expect(page.getByRole('group', { name: 'Role & expertise' })).toBeVisible()
+    if (width >= 1024) {
+      const card = await cards.first().boundingBox()
+      const panel = await page.locator('.results-filter-panel').boundingBox()
+      expect(panel!.x).toBeGreaterThanOrEqual(card!.x + card!.width)
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
+    await page.screenshot({ path: testInfo.outputPath(`filters-${width}.png`) })
+    const filterBody = page.locator('.results-filter-panel form')
+    await filterBody.evaluate(element => { element.scrollTop = element.scrollHeight })
+    expect(await filterBody.evaluate(element => element.scrollTop)).toBeGreaterThan(0)
+    await expect(page.getByRole('button', { name: 'Close filters' })).toBeInViewport()
+    await expect(page.getByRole('button', { name: 'Apply filters' })).toBeInViewport()
+    await expect(page.getByRole('combobox', { name: 'Recruiting stage', exact: true })).toBeInViewport()
+    await page.getByRole('button', { name: 'Close filters' }).click()
+    await expect(page.getByRole('button', { name: 'Refine', exact: true })).toBeFocused()
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 })
 
   await page.getByRole('button', { name: 'Refine' }).click()
   await expect(page.locator('.results-filter-panel')).toBeVisible()
@@ -140,6 +193,8 @@ test('recruiter completes clarification, filters, compares, reviews and persists
   await page.getByLabel('Min. experience').fill('7')
   await page.getByRole('button', { name: 'Apply filters' }).click()
   await expect.poll(() => cards.count()).toBeLessThan(initialCount)
+  await expect(page.getByLabel('Applied filters')).toContainText('Min. years: 7')
+  await expect(page.getByRole('button', { name: 'Apply filters' })).toBeInViewport()
   await page.getByLabel('Min. experience').fill('')
   await page.getByRole('button', { name: 'Apply filters' }).click()
   await expect(cards).toHaveCount(initialCount)
@@ -172,6 +227,16 @@ test('recruiter completes clarification, filters, compares, reviews and persists
   await expect(page.getByText('Career history')).toBeVisible()
   await expect(page.getByText('Work preferences')).toBeVisible()
   await expect(page.getByText('Meaningful work')).toBeVisible()
+  for (const width of [1440, 1024, 390]) {
+    await page.setViewportSize({ width, height: 1000 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
+    const scroller = page.getByRole('region', { name: 'Comparison details' })
+    await scroller.focus()
+    await page.keyboard.press('ArrowRight')
+    await page.screenshot({ path: testInfo.outputPath(`comparison-${width}.png`) })
+    await expect(page.getByRole('button', { name: 'Close candidate comparison' })).toBeVisible()
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 })
   await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog', { name: 'Candidate comparison' })).toHaveCount(0)
   await expect(compareButton).toBeFocused()
@@ -181,9 +246,24 @@ test('recruiter completes clarification, filters, compares, reviews and persists
   const profileDrawer = page.locator('.profile-drawer')
   await expect(page.getByRole('dialog', { name: 'Candidate profile' }).locator(':focus')).toHaveCount(1)
   await expect(page.getByText('CANDIDATE PROFILE · SUBMITTED · VIEWED')).toBeVisible()
-  await expect(profileDrawer.getByRole('link', { name: 'Resume' })).toBeVisible()
+  const resumeLink = profileDrawer.getByRole('link', { name: 'View Resume' })
+  await expect(resumeLink).toBeVisible()
+  const resumeUrl = await resumeLink.getAttribute('href')
+  expect(resumeUrl).toMatch(/\/api\/v1\/resumes\/\d+\/download\/$/)
+  const downloadEvent = page.waitForEvent('download')
+  await resumeLink.click()
+  const download = await downloadEvent
+  expect(await download.failure()).toBeNull()
+  expect(download.suggestedFilename()).toMatch(/\.docx$/)
+  await expect(profileDrawer.getByText(/DOCX opens as a download/)).toBeVisible()
   await expect(profileDrawer.getByRole('link', { name: 'LinkedIn' })).toBeVisible()
   await expect(profileDrawer.getByRole('link', { name: 'GitHub' })).toBeVisible()
+  await expect(profileDrawer.locator('a[aria-label="LinkedIn"] svg')).toHaveAttribute('data-brand', 'linkedin')
+  await expect(profileDrawer.locator('a[aria-label="GitHub"] svg')).toHaveAttribute('data-brand', 'github')
+  for (const name of ['LinkedIn', 'GitHub']) {
+    await expect(profileDrawer.getByRole('link', { name })).toHaveAttribute('target', '_blank')
+    await expect(profileDrawer.getByRole('link', { name })).toHaveAttribute('rel', 'noopener noreferrer')
+  }
   await expect(profileDrawer.getByRole('link', { name: 'Email', exact: true })).toBeVisible()
   await expect(profileDrawer.getByRole('link', { name: 'WhatsApp', exact: true })).toBeVisible()
   await expect(page.getByText(`Built a resilient event platform at SignalWorks.`)).toBeVisible()
@@ -218,11 +298,20 @@ test('recruiter completes clarification, filters, compares, reviews and persists
       await expect(feedback).toBeVisible()
       await feedback.getByText('Wrong seniority', { exact: true }).click()
       await feedback.getByText('Wrong location', { exact: true }).click()
+      for (const width of [1440, 1024, 390]) {
+        await page.setViewportSize({ width, height: 900 })
+        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
+        await feedback.getByRole('button', { name: 'Save feedback' }).scrollIntoViewIfNeeded()
+        await expect(feedback.getByRole('button', { name: 'Save feedback' })).toBeInViewport()
+        await page.screenshot({ path: testInfo.outputPath(`not-relevant-${width}.png`) })
+      }
+      await page.setViewportSize({ width: 1440, height: 900 })
       await feedback.getByPlaceholder('Add a short note for the search quality team…').fill('The role needs a more senior candidate in Mumbai.')
       await feedback.getByRole('button', { name: 'Save feedback' }).click()
       await expect(feedback).toHaveCount(0)
     }
     await expect(stage).toHaveValue(value)
+    await expect(stage).toHaveClass(value === 'non_relevant' || value === 'rejected' ? /stage-closed/ : /stage-active/)
   }
 
   const fixture = fs.readFileSync(path.resolve('../backend/tests/fixtures/asha-rao-resume.docx'))

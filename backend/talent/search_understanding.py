@@ -1,9 +1,11 @@
 import logging
+import math
 from dataclasses import dataclass
 
 from django.conf import settings
 
 from .ai_providers import AIProviderError, AIProviderMalformedResponse, get_ai_provider
+from .search_grounding import CRITERIA_DEFAULTS, ground_criteria
 from .services import apply_search_answer, next_search_question, parse_search_query
 
 logger = logging.getLogger(__name__)
@@ -34,19 +36,6 @@ class SearchInterpretation:
     model: str = ""
     request_id: str = ""
 
-
-CRITERIA_DEFAULTS = {
-    "role": "",
-    "skills": [],
-    "min_experience": None,
-    "max_experience": None,
-    "location": "",
-    "remote_ok": False,
-    "notice_period_days": None,
-    "max_salary_lpa": None,
-    "employment_type": "",
-    "work_preferences": [],
-}
 
 INTERPRETATION_SCHEMA = {
     "type": "object",
@@ -89,6 +78,14 @@ Return only the structured response required by the supplied JSON schema.
 
 Rules:
 - Extract only requirements that the recruiter stated or confirmed. Never invent a requirement.
+- Unspecified numeric fields MUST be null, unspecified strings MUST be "", and unspecified
+  lists MUST be []. Zero is an explicit requirement, NEVER a placeholder for missing data.
+- Do not assume full-time employment, immediate availability, a salary cap, or an experience
+  upper bound. "At least 3 years" has no upper bound. "Immediate joiner" has notice period 0.
+- "Remote only" requires remote work; "remote is also okay" must not exclude other setups.
+- Respect negations and explicit removals, such as "no salary cap" or "Python is not required".
+- Use the original query and confirmed clarification history as evidence. Existing criteria
+  are suggestions, not evidence. Later recruiter corrections supersede earlier requirements.
 - Preserve the complete intended job title, including qualifiers such as AI, ML, GenAI,
   Full-Stack, Staff, or Founding. Job titles are open-ended, not selected from a fixed list.
 - Treat 'remote', 'work from home', or 'anywhere' as a complete location/work-setup answer.
@@ -132,7 +129,12 @@ def _schema_error():
 
 
 def _is_number(value):
-    return isinstance(value, (int, float)) and not isinstance(value, bool)
+    return (
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and math.isfinite(value)
+        and value >= 0
+    )
 
 
 def _normalize_interpretation(payload, provider, model, request_id=""):
@@ -158,7 +160,7 @@ def _normalize_interpretation(payload, provider, model, request_id=""):
         if value is not None and not _is_number(value):
             _schema_error()
     notice = criteria_payload["notice_period_days"]
-    if notice is not None and (not isinstance(notice, int) or isinstance(notice, bool)):
+    if notice is not None and (not isinstance(notice, int) or not _is_number(notice)):
         _schema_error()
     if not isinstance(criteria_payload["remote_ok"], bool):
         _schema_error()
@@ -189,12 +191,14 @@ def _normalize_interpretation(payload, provider, model, request_id=""):
     return SearchInterpretation(criteria, question, options[:5], provider, model, request_id)
 
 
-def _provider_interpret(query, criteria=None, question="", answer=""):
+def _provider_interpret(query, criteria=None, question="", answer="", history=None):
     user_payload = {"search_query": query}
     if criteria is not None:
+        safe_previous, _ = ground_criteria(criteria, query, history)
         user_payload.update(
             {
-                "existing_criteria": criteria,
+                "existing_criteria": safe_previous,
+                "clarification_history": history or [],
                 "pending_question": question,
                 "recruiter_answer": answer,
             }
@@ -245,11 +249,32 @@ def _public_provider_error(error):
     )
 
 
-def _interpret(query, criteria=None, question="", answer=""):
+def _ground_interpretation(result, query, criteria, question, answer, history):
+    turns = [*(history or [])]
+    if answer:
+        turns.append({"question": question, "answer": answer})
+    safe, clarification = ground_criteria(result.criteria, query, turns, previous=criteria)
+    changed = sorted(field for field in safe if safe[field] != result.criteria.get(field))
+    if changed:
+        # Field names only: never log source text or candidate/recruiter information.
+        logger.info("search_criteria_grounded fields=%s", ",".join(changed))
+    return SearchInterpretation(
+        safe,
+        clarification,
+        _fallback_options(clarification),
+        result.source,
+        result.model,
+        result.request_id,
+    )
+
+
+def _interpret(query, criteria=None, question="", answer="", history=None):
     if settings.AI_PROVIDER == "deterministic":
-        return _deterministic_interpretation(query, criteria, question, answer)
+        result = _deterministic_interpretation(query, criteria, question, answer)
+        return _ground_interpretation(result, query, criteria, question, answer, history)
     try:
-        return _provider_interpret(query, criteria, question, answer)
+        result = _provider_interpret(query, criteria, question, answer, history)
+        return _ground_interpretation(result, query, criteria, question, answer, history)
     except AIProviderError as error:
         if not settings.AI_ALLOW_DETERMINISTIC_FALLBACK:
             raise _public_provider_error(error) from error
@@ -259,17 +284,18 @@ def _interpret(query, criteria=None, question="", answer=""):
             error.kind,
         )
         fallback = _deterministic_interpretation(query, criteria, question, answer)
-        return SearchInterpretation(
+        result = SearchInterpretation(
             fallback.criteria,
             fallback.follow_up_question,
             fallback.follow_up_options,
             "deterministic_fallback",
         )
+        return _ground_interpretation(result, query, criteria, question, answer, history)
 
 
 def understand_search(query):
     return _interpret(query)
 
 
-def continue_search(query, criteria, question, answer):
-    return _interpret(query, criteria, question, answer)
+def continue_search(query, criteria, question, answer, history=None):
+    return _interpret(query, criteria, question, answer, history)

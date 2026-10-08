@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Download } from '@playwright/test'
+import { readFile } from 'node:fs/promises'
 import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 
@@ -97,7 +98,24 @@ test('candidate created in the UI is discovered and updated in the recruiter UI'
   const profile = page.locator('.profile-drawer')
   await expect(profile).toContainText('Audit Systems')
   await expect(profile).toContainText(meaningfulWork)
-  await expect(profile.getByRole('link', { name: 'Resume' })).toBeVisible()
+  await expect(profile.getByRole('button', { name: 'View Resume' })).toBeVisible()
+  const resumeResponse = page.waitForResponse(response => /\/resumes\/\d+\/download\/$/.test(response.url()))
+  let previewDownload: Download | undefined
+  page.on('download', download => { previewDownload = download })
+  page.context().on('page', newPage => newPage.on('download', download => { previewDownload = download }))
+  const popupEvent = page.waitForEvent('popup')
+  await profile.getByRole('button', { name: 'View Resume' }).click()
+  const popup = await popupEvent
+  const document = await resumeResponse
+  expect(document.status()).toBe(200)
+  expect(document.headers()['content-type']).toContain('application/pdf')
+  // Headless Chromium can download PDFs instead of using its native viewer.
+  await expect.poll(() => previewDownload || popup.url().startsWith('blob:')).toBeTruthy()
+  const signature = previewDownload
+    ? (await readFile((await previewDownload.path())!)).subarray(0, 4).toString()
+    : await page.evaluate(async url => (await (await fetch(url)).text()).slice(0, 4), popup.url())
+  expect(signature).toBe('%PDF')
+  await popup.close()
   await page.locator('.profile-drawer .close').click()
 
   await page.getByRole('button', { name: 'Log out' }).click()

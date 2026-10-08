@@ -1,3 +1,4 @@
+import math
 from pathlib import Path
 
 from django.conf import settings
@@ -47,6 +48,7 @@ from .models import (
 )
 from .permissions import IsCandidate, IsRecruiter
 from .resume_processing import enqueue_resume_job
+from .search_grounding import ground_saved_search
 from .search_understanding import (
     SearchUnderstandingUnavailable,
     continue_search,
@@ -701,8 +703,8 @@ def searches(request):
     recruiter = request.user.recruiter_profile
     if request.method == "GET":
         return Response(SearchSerializer(recruiter.searches.all()[:20], many=True).data)
-    query = str(request.data.get("query", "")).strip()
-    if not query:
+    query = str(request.data.get("query", ""))
+    if not query.strip():
         return Response({"detail": "Describe the candidate you are looking for."}, status=400)
     try:
         interpretation = understand_search(query)
@@ -742,10 +744,14 @@ def search_answer(request, search_id):
     answer = str(request.data.get("answer", "")).strip()
     if not answer:
         return Response({"detail": "Answer the clarification question to continue."}, status=400)
-    pending_question = search.follow_up_question
+    pending_question = ground_saved_search(search)[1] or search.follow_up_question
     try:
         interpretation = continue_search(
-            search.query, search.criteria, pending_question, answer
+            search.query,
+            search.criteria,
+            pending_question,
+            answer,
+            history=search.clarification_history,
         )
     except SearchUnderstandingUnavailable as exc:
         headers = {"Retry-After": str(exc.retry_after)} if exc.retry_after else None
@@ -796,21 +802,28 @@ def _filtered_candidates(criteria, params, recruiter=None):
     location = explicit_location or str(criteria.get("location") or "").strip()
     if location and (explicit_location or not criteria.get("remote_ok")):
         candidates = candidates.filter(location__iexact=location)
-    minimum = _numeric_filter(
-        params.get("min_experience") or criteria.get("min_experience"), "minimum experience"
-    )
+
+    def selected(field):
+        value = params.get(field)
+        return criteria.get(field) if value in (None, "") else value
+
+    minimum = _numeric_filter(selected("min_experience"), "minimum experience")
     maximum = _numeric_filter(
-        params.get("max_experience") or criteria.get("max_experience"), "maximum experience"
+        selected("max_experience"), "maximum experience"
     )
     notice = _numeric_filter(
-        params.get("notice_period_days") or criteria.get("notice_period_days"),
+        selected("notice_period_days"),
         "notice period",
     )
     minimum_salary = _numeric_filter(params.get("min_salary_lpa"), "minimum compensation")
     salary = _numeric_filter(
-        params.get("max_salary_lpa") or criteria.get("max_salary_lpa"),
+        selected("max_salary_lpa"),
         "maximum compensation",
     )
+    if minimum is not None and maximum is not None and minimum > maximum:
+        raise ValueError("Minimum experience cannot exceed maximum experience.")
+    if minimum_salary is not None and salary is not None and minimum_salary > salary:
+        raise ValueError("Minimum compensation cannot exceed maximum compensation.")
     if minimum not in (None, ""):
         candidates = candidates.filter(total_experience__gte=minimum)
     if maximum not in (None, ""):
@@ -908,12 +921,14 @@ def _filtered_candidates(criteria, params, recruiter=None):
 def _numeric_filter(value, label):
     if value in (None, ""):
         return None
+    if isinstance(value, bool):
+        raise ValueError(f"Enter a valid number for {label}.")
     try:
         number = float(value)
     except (TypeError, ValueError) as exc:
         raise ValueError(f"Enter a valid number for {label}.") from exc
-    if number < 0:
-        raise ValueError(f"{label.title()} cannot be negative.")
+    if not math.isfinite(number) or number < 0:
+        raise ValueError(f"{label.title()} must be a finite, non-negative number.")
     return number
 
 
@@ -929,10 +944,13 @@ def _recruiter_can_access_candidate(recruiter, candidate):
         return True
     if candidate.visibility != CandidateProfile.Visibility.MATCHING_ROLES:
         return False
-    return any(
-        any(item.pk == candidate.pk for item in _filtered_candidates(search.criteria, {}))
-        for search in recruiter.searches.filter(state=Search.State.COMPLETE)
-    )
+    for search in recruiter.searches.filter(state=Search.State.COMPLETE):
+        criteria, clarification = ground_saved_search(search)
+        if not clarification and any(
+            item.pk == candidate.pk for item in _filtered_candidates(criteria, {})
+        ):
+            return True
+    return False
 
 
 @api_view(["GET"])
@@ -945,15 +963,18 @@ def search_results(request, search_id):
         return Response(status=404)
     if search.state != Search.State.COMPLETE:
         return Response({"detail": "This search needs clarification first."}, status=409)
+    safe_criteria, clarification = ground_saved_search(search)
+    if clarification:
+        return Response({"detail": clarification}, status=409)
     try:
         candidates = _filtered_candidates(
-            search.criteria, request.query_params, request.user.recruiter_profile
+            safe_criteria, request.query_params, request.user.recruiter_profile
         )
     except ValueError as exc:
         return Response({"detail": str(exc)}, status=400)
     data = []
     for candidate in candidates:
-        score, reasons = calculate_match(candidate, search.criteria)
+        score, reasons = calculate_match(candidate, safe_criteria)
         data.append(
             {
                 "candidate": CandidateProfileSerializer(

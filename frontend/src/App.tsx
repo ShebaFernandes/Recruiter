@@ -12,6 +12,8 @@ import type { Candidate, Notification, Project, ProjectDetail, Search, SearchRes
 import { Badge, Button, Card, FormField } from './components/ui'
 import Landing from './components/Landing'
 import RecruiterSearch from './components/RecruiterSearch'
+import ResumeAccess from './components/ResumeAccess'
+import { GithubMark, LinkedInMark } from './components/ProfileMarks'
 import './components/auth.css'
 
 type SpeechRecognitionLike = {
@@ -612,7 +614,6 @@ function CandidateCard({ result, selected, toggle, open, status }: {
 }) {
   const candidate = result.candidate
   const whatsapp = candidate.phone ? `https://wa.me/${candidate.phone.replace(/\D/g, '')}` : ''
-  const stageLabel = recruiterStageLabel(candidate.stage)
   return <article className={`candidate-card ${selected ? 'selected' : ''}`}>
     <div className="candidate-main">
       <div className="candidate-top">
@@ -633,10 +634,10 @@ function CandidateCard({ result, selected, toggle, open, status }: {
     </div>
     <div className="candidate-actions">
       <label className="compare-check"><input type="checkbox" checked={selected} onChange={toggle} /> Compare</label>
-      <b className="card-stage-label">{stageLabel}</b>
-      <select aria-label={`Stage for ${candidate.full_name}`} value={candidate.stage || ''} onChange={e => status(e.target.value)}>
+      <label className="card-stage-label">Hiring stage
+      <select className={`stage-select ${candidate.stage === 'non_relevant' || candidate.stage === 'rejected' ? 'stage-closed' : candidate.stage ? 'stage-active' : ''}`} aria-label={`Stage for ${candidate.full_name}`} value={candidate.stage || ''} onChange={e => status(e.target.value)}>
         <option value="">Set stage</option>{recruiterStages.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-      </select>
+      </select></label>
       {(candidate.email || whatsapp) && <div className="contact-icon-row">{whatsapp && <a href={whatsapp} target="_blank" rel="noreferrer" aria-label={`WhatsApp ${candidate.full_name}`} title="WhatsApp"><MessageCircle /></a>}{candidate.email && <a href={`mailto:${candidate.email}`} aria-label={`Email ${candidate.full_name}`} title="Email"><Mail /></a>}</div>}
       <button className="primary small" onClick={open}>View profile</button>
       {(candidate.work_preferences.length > 0 || candidate.employment_type) && <div className="stage-signals"><b>Preference signals</b><div>{candidate.work_preferences.slice(0, 2).map(preference => <span key={preference}>{preference}</span>)}{candidate.employment_type && <span>{candidate.employment_type}</span>}</div></div>}
@@ -655,7 +656,7 @@ function NonRelevantDialog({ candidateName, reasons, note, saving, toggleReason,
   save: (event: FormEvent) => void
 }) {
   const dialogRef = useDialogFocus(cancel)
-  return <div className="overlay non-relevant-overlay" role="presentation">
+  return <div className="overlay non-relevant-overlay recruiter-results-ui" role="presentation">
     <form ref={dialogRef as React.RefObject<HTMLFormElement>} tabIndex={-1} className="non-relevant-modal" role="dialog" aria-modal="true" aria-labelledby="non-relevant-title" onSubmit={save}>
       <h2 id="non-relevant-title">Why is {candidateName} not relevant?</h2>
       <p>This helps improve future result quality for recruiters.</p>
@@ -683,16 +684,16 @@ function ProfileDrawer({ candidate, close, refresh, projects, selectedProject, a
     candidate.expected_salary_lpa && ['Expected compensation', `₹${candidate.expected_salary_lpa} LPA`],
     candidate.employment_type && ['Employment', candidate.employment_type],
   ].filter(Boolean) as string[][]
-  return <div ref={dialogRef as React.RefObject<HTMLDivElement>} tabIndex={-1} className="overlay" role="dialog" aria-modal="true" aria-label="Candidate profile"><div className="profile-drawer">
+  return <div ref={dialogRef as React.RefObject<HTMLDivElement>} tabIndex={-1} className="overlay recruiter-results-ui" role="dialog" aria-modal="true" aria-label="Candidate profile"><div className="profile-drawer">
     <button className="close" aria-label="Close candidate profile" onClick={close}><X /></button>
     <div className="profile-hero"><div className="avatar large">{candidate.full_name.split(' ').map(v => v[0]).join('').slice(0, 2)}</div><div><div className="eyebrow">CANDIDATE PROFILE · SUBMITTED · VIEWED</div><h2>{candidate.full_name}</h2><p>{candidate.headline} {candidate.current_company && `at ${candidate.current_company}`}</p></div></div>
     <div className="profile-actions">
-      {candidate.latest_resume?.url && <a className="icon-action" href={candidate.latest_resume.url} aria-label="Resume" title="Resume"><FileText /></a>}
-      {candidate.linkedin_url && <a className="icon-action" href={candidate.linkedin_url} target="_blank" rel="noreferrer" aria-label="LinkedIn" title="LinkedIn"><Link /></a>}
-      {candidate.github_url && <a className="icon-action" href={candidate.github_url} target="_blank" rel="noreferrer" aria-label="GitHub" title="GitHub"><Code2 /></a>}
+      {candidate.linkedin_url && /^https?:\/\//i.test(candidate.linkedin_url) && <a className="icon-action" href={candidate.linkedin_url} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" title="LinkedIn"><LinkedInMark /></a>}
+      {candidate.github_url && /^https?:\/\//i.test(candidate.github_url) && <a className="icon-action" href={candidate.github_url} target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub"><GithubMark /></a>}
       {candidate.email && <a className="icon-action" href={`mailto:${candidate.email}`} aria-label="Email" title="Email"><Mail /></a>}
       {whatsapp && <a className="icon-action" href={whatsapp} target="_blank" rel="noreferrer" aria-label="WhatsApp" title="WhatsApp"><MessageCircle /></a>}
     </div>
+    <ResumeAccess resume={candidate.latest_resume} />
     {projects.length > 0 && <div className="profile-project-action"><FolderPlus /><div><b>Add to a project</b><span>Keep this candidate with the search context.</span></div><select aria-label="Profile project" value={projectId} onChange={event => setProjectId(event.target.value)}>{projects.map(project => <option key={project.id} value={project.id}>{project.name}</option>)}</select><button className="primary small" disabled={!projectId} onClick={() => addToProject(Number(projectId), candidate.id)}>Add</button></div>}
     {facts.length > 0 && <div className="profile-facts">{facts.map(([label, value]) => <div key={label}><span>{label}</span><b>{value}</b></div>)}</div>}
     {candidate.summary && <section><div className="section-kicker">ABOUT</div><p>{candidate.summary}</p></section>}
@@ -719,11 +720,11 @@ function CompareModal({ candidates, close }: { candidates: Candidate[]; close: (
     ['Education', c => c.education.join('\n') || 'Not added'],
     ['Meaningful work', c => c.meaningful_work || 'Not added'],
   ]
-  return <div ref={dialogRef as React.RefObject<HTMLDivElement>} tabIndex={-1} className="overlay" role="dialog" aria-modal="true" aria-labelledby="candidate-comparison-title"><div className="compare-modal"><button className="close" aria-label="Close candidate comparison" onClick={close}><X /></button><div className="eyebrow">SIDE-BY-SIDE</div><h2 id="candidate-comparison-title">Candidate comparison</h2>
-    <div className="compare-table" style={{ gridTemplateColumns: `150px repeat(${candidates.length}, minmax(190px, 1fr))` }}>
+  return <div ref={dialogRef as React.RefObject<HTMLDivElement>} tabIndex={-1} className="overlay recruiter-results-ui" role="dialog" aria-modal="true" aria-labelledby="candidate-comparison-title"><div className="compare-modal"><button className="close" aria-label="Close candidate comparison" onClick={close}><X /></button><div className="eyebrow">SIDE-BY-SIDE</div><h2 id="candidate-comparison-title">Candidate comparison</h2>
+    <div className="compare-scroll" role="region" aria-label="Comparison details" tabIndex={0}><div className="compare-table" style={{ gridTemplateColumns: `150px repeat(${candidates.length}, minmax(190px, 1fr))` }}>
       <div /><>{candidates.map(c => <div className="compare-name" key={c.id}><b>{c.full_name}</b><span>{c.headline}</span></div>)}</>
       {rows.map(([label, value]) => <div className="compare-row" key={label} style={{ display: 'contents' }}><b>{label}</b>{candidates.map(c => <div key={c.id}>{value(c).split('\n').map(line => <span key={line}>{line}</span>)}</div>)}</div>)}
-    </div>
+    </div></div>
   </div></div>
 }
 
@@ -744,6 +745,12 @@ const emptyRecruiterFilters = {
   notice_period_days: '', min_salary_lpa: '', max_salary_lpa: '',
   work_preferences: '', employment_type: '', stage: '',
 }
+const recruiterFilterLabels: Record<keyof typeof emptyRecruiterFilters, string> = {
+  role: 'Role', skills: 'Skills', location: 'Location', min_experience: 'Min. years',
+  max_experience: 'Max. years', notice_period_days: 'Max. notice (days)',
+  min_salary_lpa: 'Min. LPA', max_salary_lpa: 'Max. LPA',
+  work_preferences: 'Work setup', employment_type: 'Employment', stage: 'Stage',
+}
 
 function RecruiterPortal({ user, logout }: { user: User; logout: () => void }) {
   const [query, setQuery] = useState('')
@@ -763,7 +770,38 @@ function RecruiterPortal({ user, logout }: { user: User; logout: () => void }) {
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   const [filters, setFilters] = useState(emptyRecruiterFilters)
+  const [appliedFilters, setAppliedFilters] = useState(emptyRecruiterFilters)
   const [filterOpen, setFilterOpen] = useState(false)
+  const filterPanelRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const panel = filterPanelRef.current
+    if (!filterOpen || !panel) return
+    panel.querySelector<HTMLButtonElement>('button')?.focus()
+    // Account for wrapped queries and active-filter chips above the panel.
+    const fitPanel = () => {
+      const top = Math.max(78, panel.getBoundingClientRect().top)
+      panel.style.setProperty('--filter-available-height', `${Math.max(180, window.innerHeight - top - 16)}px`)
+    }
+    fitPanel()
+    const observer = new ResizeObserver(fitPanel)
+    const resultsView = panel.closest('.results-view')
+    if (resultsView) observer.observe(resultsView)
+    window.addEventListener('resize', fitPanel)
+    window.addEventListener('scroll', fitPanel, { passive: true })
+    return () => { observer.disconnect(); window.removeEventListener('resize', fitPanel); window.removeEventListener('scroll', fitPanel) }
+  }, [filterOpen])
+  function closeFilters() {
+    setFilterOpen(false)
+    document.querySelector<HTMLButtonElement>('.results-toolbar .filter-button')?.focus()
+  }
+  function filterPanelKeys(event: React.KeyboardEvent<HTMLElement>) {
+    if (event.key === 'Escape') { event.preventDefault(); closeFilters(); return }
+    if (event.key !== 'Tab' || !window.matchMedia('(max-width: 700px)').matches) return
+    const controls = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), input, select'))
+    const first = controls[0], last = controls[controls.length - 1]
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus() }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus() }
+  }
   const [workspacePanel, setWorkspacePanel] = useState<'recents' | 'projects' | 'updates' | null>(null)
   const [newProjectName, setNewProjectName] = useState('')
   const [voiceListening, setVoiceListening] = useState(false)
@@ -823,7 +861,7 @@ function RecruiterPortal({ user, logout }: { user: User; logout: () => void }) {
   async function loadResults(id = search?.id, nextFilters = filters) {
     if (!id) return
     const params = new URLSearchParams(Object.entries(nextFilters).filter(([, value]) => value)).toString()
-    try { const payload = await api.results(id, params ? `?${params}` : ''); setSearch(payload.search); setResults(payload.results); setResultsLoaded(true); setProjectDetail(null) }
+    try { const payload = await api.results(id, params ? `?${params}` : ''); setSearch(payload.search); setResults(payload.results); setAppliedFilters({ ...nextFilters }); setResultsLoaded(true); setProjectDetail(null) }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not load candidates.') }
   }
   async function openProfile(id: number) { try { const item = await api.candidate(id); setProfile(item); setResults(old => old.map(row => row.candidate.id === id ? { ...row, candidate: { ...row.candidate, viewed: true } } : row)) } catch (e) { setError(e instanceof Error ? e.message : 'Could not open profile.') } }
@@ -875,27 +913,34 @@ function RecruiterPortal({ user, logout }: { user: User; logout: () => void }) {
           projectName={activeProject?.name} clearProject={() => setSelectedProject(null)}
           voiceListening={voiceListening} startVoiceSearch={startVoiceSearch}
         />}
-        {resultsLoaded && <div className="results-view">
+        {resultsLoaded && <div className="results-view recruiter-results-ui">
           <div className="results-head results-toolbar"><div><h1>Showing {results.length} of {results.length} results</h1><p>{search?.query}{search?.project_name && ` · ${search.project_name}`}</p></div><div className="results-toolbar-actions"><button className="header-compare" aria-label="Compare" disabled={selected.length < 2} onClick={compare}>Compare ({selected.length})</button><select aria-label="Quick result filter" value={filters.stage} onChange={event => applyQuickStage(event.target.value)}><option value="">All stages</option><option value="unviewed">Not viewed</option><option value="viewed">Viewed</option>{recruiterStages.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select><button className={`filter-button ${filterOpen ? 'active' : ''}`} onClick={() => { setWorkspacePanel(null); setFilterOpen(value => !value) }} aria-expanded={filterOpen} aria-label={filterOpen ? 'Hide filters' : 'Refine'} title={filterOpen ? 'Hide filters' : 'Refine'}><SlidersHorizontal /></button></div></div>
+          {Object.values(appliedFilters).some(Boolean) && <div className="applied-result-filters" aria-label="Applied filters"><b>Applied filters</b>{Object.entries(appliedFilters).filter(([, value]) => value).map(([key, value]) => <span key={key}>{recruiterFilterLabels[key as keyof typeof emptyRecruiterFilters]}: {key === 'stage' ? ({ viewed: 'Viewed', unviewed: 'Not viewed' }[value] || recruiterStageLabel(value)) : value}</span>)}</div>}
           <div className={`results-layout ${filterOpen ? 'refine-open' : ''}`}>
           <div className="results-column">
           <InlineError value={error} />
           {results.length === 0 ? <div className="empty-results"><SearchIcon size={28} /><h2>No candidates match these filters</h2><p>Broaden the role, skills, location, experience, notice, compensation, or preference criteria.</p><button className="primary small" onClick={() => { setFilters(emptyRecruiterFilters); loadResults(search?.id, emptyRecruiterFilters) }}>Clear filters</button></div> : <div className="candidate-list">{results.map(result => <CandidateCard key={result.candidate.id} result={result} selected={selected.includes(result.candidate.id)} toggle={() => setSelected(old => old.includes(result.candidate.id) ? old.filter(id => id !== result.candidate.id) : old.length < 4 ? [...old, result.candidate.id] : old)} open={() => openProfile(result.candidate.id)} status={value => setStatus(result.candidate.id, result.candidate.full_name, value)} />)}</div>}
           </div>
-          {filterOpen && <aside className="results-filter-panel" aria-label="Refine candidate results"><div className="filter-panel-head"><div><span>REFINE</span><h2>Shape the shortlist</h2></div><button aria-label="Close filters" title="Close filters" onClick={() => setFilterOpen(false)}><X /></button></div><form className="filter-bar expanded" onSubmit={e => { e.preventDefault(); loadResults() }}>
+          {filterOpen && <aside ref={filterPanelRef} className="results-filter-panel" aria-label="Refine candidate results" onKeyDown={filterPanelKeys}><div className="filter-panel-head"><div><span>REFINE</span><h2>Shape the shortlist</h2></div><button aria-label="Close filters" title="Close filters" onClick={closeFilters}><X /></button></div><form id="recruiter-result-filters" className="filter-bar expanded" onSubmit={e => { e.preventDefault(); loadResults() }}>
+            <fieldset><legend>Role &amp; expertise</legend>
             <label>Role<input value={filters.role} onChange={e => setFilters({ ...filters, role: e.target.value })} placeholder="Backend engineer" /></label>
             <label>Skills<input value={filters.skills} onChange={e => setFilters({ ...filters, skills: e.target.value })} placeholder="Python, Django" /></label>
-            <label>Location<input value={filters.location} onChange={e => setFilters({ ...filters, location: e.target.value })} placeholder="Any location" /></label>
+            <div className="filter-pair">
             <label>Min. experience<input type="number" min="0" value={filters.min_experience} onChange={e => setFilters({ ...filters, min_experience: e.target.value })} placeholder="Years" /></label>
             <label>Max. experience<input type="number" min="0" value={filters.max_experience} onChange={e => setFilters({ ...filters, max_experience: e.target.value })} placeholder="Years" /></label>
+            </div></fieldset>
+            <fieldset><legend>Location &amp; availability</legend>
+            <label>Location<input value={filters.location} onChange={e => setFilters({ ...filters, location: e.target.value })} placeholder="Any location" /></label>
             <label>Max. notice<input type="number" min="0" value={filters.notice_period_days} onChange={e => setFilters({ ...filters, notice_period_days: e.target.value })} placeholder="Days" /></label>
+            </fieldset><fieldset><legend>Compensation</legend><div className="filter-pair">
             <label>Min. compensation<input type="number" min="0" value={filters.min_salary_lpa} onChange={e => setFilters({ ...filters, min_salary_lpa: e.target.value })} placeholder="LPA" /></label>
             <label>Max. compensation<input type="number" min="0" value={filters.max_salary_lpa} onChange={e => setFilters({ ...filters, max_salary_lpa: e.target.value })} placeholder="LPA" /></label>
+            </div></fieldset><fieldset><legend>Opportunity &amp; pipeline</legend>
             <label>Work preference<select value={filters.work_preferences} onChange={e => setFilters({ ...filters, work_preferences: e.target.value })}><option value="">Any setup</option><option>Flexible</option><option>Remote</option><option>Hybrid</option><option>On-site</option></select></label>
             <label>Employment type<select value={filters.employment_type} onChange={e => setFilters({ ...filters, employment_type: e.target.value })}><option value="">Any type</option><option>Full-time</option><option>Contract</option><option>Part-time</option></select></label>
             <label>Recruiting stage<select value={filters.stage} onChange={e => setFilters({ ...filters, stage: e.target.value })}><option value="">Any stage</option><option value="unviewed">Not viewed</option><option value="viewed">Viewed</option>{recruiterStages.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-            <div className="filter-actions"><button type="button" onClick={() => { setFilters(emptyRecruiterFilters); loadResults(search?.id, emptyRecruiterFilters) }}>Clear</button><button className="primary">Apply filters</button></div>
-          </form></aside>}
+            </fieldset>
+          </form><div className="filter-actions"><button type="button" onClick={() => { setFilters(emptyRecruiterFilters); loadResults(search?.id, emptyRecruiterFilters) }}>Clear</button><button className="primary" form="recruiter-result-filters" type="submit">Apply filters</button></div></aside>}
           </div>
         </div>}
       </section>

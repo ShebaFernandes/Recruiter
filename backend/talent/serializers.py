@@ -406,6 +406,26 @@ class ProjectCandidateSerializer(serializers.ModelSerializer):
 
 
 class SearchSerializer(serializers.ModelSerializer):
+    criteria = serializers.SerializerMethodField()
+
+    def get_criteria(self, obj):
+        from .search_grounding import ground_saved_search
+
+        return ground_saved_search(obj)[0]
+
+    def to_representation(self, instance):
+        from .search_grounding import ground_saved_search
+
+        data = super().to_representation(instance)
+        _, clarification = ground_saved_search(instance)
+        if clarification and instance.state == Search.State.COMPLETE:
+            data.update(
+                state=Search.State.NEEDS_CLARIFICATION,
+                follow_up_question=clarification,
+                follow_up_options=["Let me type it"],
+            )
+        return data
+
     project_name = serializers.CharField(source="project.name", read_only=True, default="")
 
     class Meta:

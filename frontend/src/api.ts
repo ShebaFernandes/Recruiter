@@ -29,7 +29,7 @@ async function ensureCsrfToken() {
   return csrfToken
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function request<T>(path: string, options: RequestInit = {}, binary = false): Promise<T> {
   const headers = new Headers(options.headers)
   const method = (options.method || 'GET').toUpperCase()
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) headers.set('X-CSRFToken', await ensureCsrfToken())
@@ -57,10 +57,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     throw new ApiError(message, response.status, code || (response.status === 401 ? 'auth_expired' : ''))
   }
   if (response.status === 204) return undefined as T
+  if (binary) return response.blob() as Promise<T>
   return response.json() as Promise<T>
 }
 
 export const api = {
+  resumeDocument: (id: number) => request<Blob>(`/resumes/${id}/download/`, { cache: 'no-store' }, true),
   me: () => request<User>('/auth/me/'),
   signup: (body: Record<string, string>) => request<SignupResponse>('/auth/signup/', { method: 'POST', body: JSON.stringify(body) }),
   login: (body: { email: string; password: string }) => request<AuthPayload>('/auth/login/', { method: 'POST', body: JSON.stringify(body) }),
