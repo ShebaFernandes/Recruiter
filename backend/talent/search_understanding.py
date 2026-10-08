@@ -1,18 +1,20 @@
 import logging
 import math
 from dataclasses import dataclass
-
 from django.conf import settings
-
 from .ai_providers import AIProviderError, AIProviderMalformedResponse, get_ai_provider
 from .search_grounding import CRITERIA_DEFAULTS, ground_criteria
 from .services import apply_search_answer, next_search_question, parse_search_query
 
+
+
 logger = logging.getLogger(__name__)
+
 
 
 class SearchUnderstandingUnavailable(Exception):
     """A safe, user-facing failure from the search-understanding boundary."""
+
 
     def __init__(
         self,
@@ -220,6 +222,9 @@ def _provider_interpret(query, criteria=None, question="", answer="", history=No
         result.request_id or "not-returned",
     )
     return interpretation
+
+
+
 
 
 def _public_provider_error(error):

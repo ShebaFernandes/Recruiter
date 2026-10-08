@@ -275,11 +275,49 @@ test('recruiter completes clarification, filters, compares, reviews and persists
   await expect(anikaCard.locator('.name-row .signal.viewed')).toBeVisible()
   await expect(anikaCard.locator('.contact-icon-row a')).toHaveCount(2)
   await expect(anikaCard.getByRole('link', { name: /Resume/ })).toHaveCount(0)
+  await anikaCard.getByLabel(`Stage for ${anikaName}`).selectOption('shortlisted')
+  await expect(anikaCard.getByLabel(`Stage for ${anikaName}`)).toHaveValue('shortlisted')
 
   await page.getByRole('button', { name: 'Projects' }).click()
   await page.locator('.workspace-sidepanel').getByRole('button', { name: new RegExp(`Backend hiring ${runId}`) }).click()
   await expect(page.getByRole('heading', { name: `Backend hiring ${runId}` })).toBeVisible()
   await expect(page.locator('.project-candidates').getByText(anikaName)).toBeVisible()
+  await expect(page.getByLabel('Hiring stage: Shortlisted')).toBeVisible()
+  for (const width of [1440, 1024, 390]) {
+    await page.setViewportSize({ width, height: 900 })
+    await page.evaluate(() => window.scrollTo(0, 0))
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
+    await expect(page.getByRole('button', { name: 'Projects', exact: true })).toHaveAttribute('aria-current', 'page')
+    await page.screenshot({ path: testInfo.outputPath(`workspace-project-${width}.png`) })
+    const view = page.locator('.project-candidates').getByRole('button', { name: 'View profile' })
+    await view.focus()
+    await page.keyboard.press('Enter')
+    await expect(page.getByRole('dialog', { name: 'Candidate profile' })).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(view).toBeFocused()
+    for (const panelName of ['Projects', 'Recent searches', 'Candidate updates']) {
+      const trigger = page.getByRole('button', { name: panelName, exact: true })
+      await trigger.click()
+      const panel = page.getByRole('complementary', { name: panelName })
+      await expect(panel).toBeVisible()
+      await expect(trigger).toHaveAttribute('aria-expanded', 'true')
+      await expect(panel.getByRole('button', { name: 'Close workspace panel' })).toBeFocused()
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
+      if (panelName === 'Projects') await expect(panel.getByRole('button', { name: new RegExp(`Backend hiring ${runId}`) })).toHaveAttribute('aria-current', 'true')
+      if (panelName === 'Recent searches') await expect(panel.locator('time').first()).toHaveAttribute('datetime', /\d{4}-\d{2}-\d{2}T/)
+      if (width === 390) {
+        await page.keyboard.press('Shift+Tab')
+        await expect(panel.locator('button:not(:disabled), input:not(:disabled)').last()).toBeFocused()
+        await page.keyboard.press('Tab')
+        await expect(panel.getByRole('button', { name: 'Close workspace panel' })).toBeFocused()
+      }
+      await page.screenshot({ path: testInfo.outputPath(`workspace-${panelName.replaceAll(' ', '-')}-${width}.png`) })
+      await page.keyboard.press('Escape')
+      await expect(panel).toHaveCount(0)
+      await expect(trigger).toBeFocused()
+    }
+  }
+  await page.setViewportSize({ width: 1440, height: 900 })
   await page.locator('.project-searches').getByRole('button').first().click()
   await expect(page.getByText(`Showing ${initialCount} of ${initialCount} results`)).toBeVisible()
 
@@ -329,6 +367,35 @@ test('recruiter completes clarification, filters, compares, reviews and persists
   await page.reload()
   await page.getByRole('button', { name: 'Candidate updates' }).click()
   await expect(page.getByText('Updated resume').first()).toBeVisible()
+  const updatesPanel = page.getByRole('complementary', { name: 'Candidate updates' })
+  await expect(updatesPanel.locator('.workspace-update-type').filter({ hasText: 'Resume' }).first()).toBeVisible()
+  await expect(updatesPanel.locator('.workspace-update-type').filter({ hasText: 'Profile' }).first()).toBeVisible()
+  for (const width of [1440, 1024, 390]) {
+    await page.setViewportSize({ width, height: 900 })
+    // Reopen at each size: Search's approved narrow-screen panel is inline,
+    // whereas its desktop panel is sticky. Opening moves focus to its header.
+    await page.getByRole('button', { name: 'Candidate updates', exact: true }).click()
+    await expect(updatesPanel).toHaveCount(0)
+    await page.getByRole('button', { name: 'Candidate updates', exact: true }).click()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
+    await expect(updatesPanel.getByRole('button', { name: 'Close workspace panel' })).toBeInViewport()
+    if (width === 390) {
+      expect(await updatesPanel.evaluate(element => getComputedStyle(element).position)).toBe('static')
+      const trigger = page.getByRole('button', { name: 'Candidate updates', exact: true })
+      expect(await trigger.evaluate(element => {
+        const rect = element.getBoundingClientRect()
+        return element.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2))
+      })).toBeTruthy()
+    }
+    await page.screenshot({ path: testInfo.outputPath(`workspace-updates-${width}.png`) })
+  }
+  await updatesPanel.getByRole('button', { name: /Updated resume/ }).first().click()
+  await expect(page.getByRole('dialog', { name: 'Candidate profile' })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('button', { name: 'Candidate updates', exact: true })).toBeFocused()
+  await page.getByRole('button', { name: 'Candidate updates' }).click()
+  await expect(page.getByRole('complementary', { name: 'Candidate updates' }).getByRole('button', { name: /Updated resume/ }).first()).toHaveClass('read')
+  await page.setViewportSize({ width: 1440, height: 900 })
   await page.getByRole('button', { name: 'Recent searches' }).click()
   await page.locator('.workspace-sidepanel .workspace-list').getByRole('button').first().click()
   await expect(page.getByText(`Showing ${initialCount} of ${initialCount} results`)).toBeVisible()
@@ -336,4 +403,31 @@ test('recruiter completes clarification, filters, compares, reviews and persists
   await expect(persisted.getByLabel(`Stage for ${anikaName}`)).toHaveValue('hired')
   await expect(persisted.locator('.name-row .signal.viewed')).toBeVisible()
   await expect(persisted.locator('.name-row .signal.updated')).toHaveText('Profile updated')
+  await page.getByRole('button', { name: 'Projects', exact: true }).click()
+  await page.locator('.workspace-sidepanel').getByRole('button', { name: new RegExp(`Backend hiring ${runId}`) }).click()
+  await expect(page.getByLabel('Hiring stage: Hired')).toBeVisible()
+  await page.getByRole('button', { name: `Remove ${anikaName} from project` }).click()
+  await expect(page.getByRole('heading', { name: 'No candidates saved yet' })).toBeVisible()
+  await page.getByRole('button', { name: 'Projects', exact: true }).click()
+  await expect(page.locator('.workspace-sidepanel').getByRole('button', { name: new RegExp(`Backend hiring ${runId}`) })).toContainText('0 candidates')
+  // Create real test projects through the UI to exercise a genuinely long list.
+  for (let index = 1; index <= 12; index += 1) {
+    const name = `Platform engineering — distributed systems hiring ${index}`
+    await page.getByLabel('New project name').fill(name)
+    await page.getByRole('button', { name: 'Create project' }).click()
+    await expect(page.locator('.workspace-sidepanel .workspace-list').getByRole('button', { name: `${name} 0 candidates · 0 searches`, exact: true })).toBeVisible()
+  }
+  for (const width of [1440, 1024, 390]) {
+    await page.setViewportSize({ width, height: 900 })
+    const body = page.locator('.workspace-panel-body')
+    await body.evaluate(element => { element.scrollTop = element.scrollHeight })
+    expect(await body.evaluate(element => element.scrollTop)).toBeGreaterThan(0)
+    await expect(page.getByRole('button', { name: 'Close workspace panel' })).toBeInViewport()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
+    await page.screenshot({ path: testInfo.outputPath(`workspace-project-list-scrolled-${width}.png`) })
+  }
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  expect(await page.locator('.workspace-list button').first().evaluate(element => getComputedStyle(element).transitionDuration)).toBe('0s')
+  await page.getByRole('button', { name: 'Close workspace panel' }).click()
+  await expect(page.getByRole('button', { name: 'Projects', exact: true })).toBeFocused()
 })

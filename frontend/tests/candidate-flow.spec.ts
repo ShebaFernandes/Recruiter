@@ -1,8 +1,22 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page, type TestInfo } from '@playwright/test'
 import path from 'node:path'
 import { issueLocalAccountToken } from './account-token'
 
-test('candidate completes a conversational resume profile and preferences persist', async ({ page }) => {
+async function checkCandidateLayouts(page: Page, testInfo: TestInfo, state: string, section?: string) {
+  for (const width of [1440, 1024, 390]) {
+    await page.setViewportSize({ width, height: 900 })
+    await page.evaluate(() => document.fonts.ready)
+    if (section) await page.locator(section).evaluate(el => el.scrollIntoView({ block: 'start', behavior: 'instant' }))
+    else await page.evaluate(() => window.scrollTo(0, 0))
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+    if (state === 'welcome' && width === 390) {
+      expect((await page.locator('.cv-drop-content').boundingBox())!.width).toBeGreaterThan(260)
+    }
+    await page.screenshot({ path: testInfo.outputPath(`candidate-${state}-${width}.png`), animations: 'disabled' })
+  }
+}
+
+test('candidate completes a conversational resume profile and preferences persist', async ({ page }, testInfo) => {
   const unique = Date.now()
   const email = `candidate-${unique}@example.com`
   const meaningfulWork = 'I led a payments recovery platform that reduced incident recovery time by 60%.'
@@ -22,19 +36,33 @@ test('candidate completes a conversational resume profile and preferences persis
   await expect(page.getByText('CANDIDATE PLATFORM')).toHaveCount(0)
   await expect(page.locator('.profile-board')).toHaveCount(0)
   await expect(page.getByText('Only missing details are shown for confirmation')).toBeVisible()
+  await expect(page.getByRole('heading', { name: "Let's find work that feels great." })).toBeVisible()
+  await expect(page.getByText('Join Leading Startups Building Their Teams with ENTER')).toBeVisible()
+  await expect(page.getByText('PDF or DOCX · Maximum 5 MB')).toBeVisible()
+  await checkCandidateLayouts(page, testInfo, 'welcome')
+  await page.getByLabel('Choose PDF or DOCX resume').focus()
+  await expect(page.getByLabel('Choose PDF or DOCX resume')).toBeFocused()
+  expect(await page.locator('.cv-file-button').evaluate(el => getComputedStyle(el).outlineStyle)).toBe('solid')
+
+  await page.getByTestId('resume-input').setInputFiles({ name: 'unsupported.txt', mimeType: 'text/plain', buffer: Buffer.from('Not a resume') })
+  await expect(page.locator('.candidate-upload-card .error')).toContainText(/PDF|DOCX/)
 
   const fixture = path.resolve('../backend/tests/fixtures/asha-rao-resume.docx')
   await page.getByTestId('resume-input').setInputFiles(fixture)
   await expect(page.getByText("We've built your starting profile", { exact: true })).toBeVisible()
-  await expect(page.getByRole('heading', { name: /Build a profile that/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: "Let's find work that feels great." })).toBeVisible()
   await expect(page.getByText('Your resume gave us a great start.')).toBeVisible()
   await expect(page.getByText('We need 3 more details to complete your profile.')).toBeVisible()
   await expect(page.locator('.experience-card').getByText('Senior Backend Engineer')).toBeVisible()
+  await checkCandidateLayouts(page, testInfo, 'profile')
 
   await page.getByRole('button', { name: /Complete my profile/ }).click()
   await expect(page.getByRole('heading', { name: /what kind of work setup works for you/i })).toBeVisible()
   const quickStep = page.locator('.quick-step')
-  await quickStep.getByRole('button', { name: 'Remote', exact: true }).click()
+  await quickStep.getByRole('button', { name: 'Remote', exact: true }).focus()
+  await page.keyboard.press('Enter')
+  await expect(quickStep.getByRole('button', { name: 'Remote', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await checkCandidateLayouts(page, testInfo, 'completion', '.quick-step')
   await quickStep.getByRole('button', { name: /Save and continue/ }).click()
   await expect(page.getByRole('heading', { name: /How should recruiters find you/i })).toBeVisible()
   await quickStep.getByRole('button', { name: /Only matching roles/ }).click()
@@ -46,12 +74,32 @@ test('candidate completes a conversational resume profile and preferences persis
   const about = page.locator('.about-card')
   await about.getByRole('button', { name: /Edit/ }).click()
   await about.getByLabel('Current role').fill('Staff Backend Engineer')
+  await checkCandidateLayouts(page, testInfo, 'about-edit', '.about-card')
   await about.getByRole('button', { name: 'Save', exact: true }).click()
+
+  const skills = page.locator('.skills-card')
+  await skills.getByLabel('Add skill').fill('Observability')
+  await skills.getByRole('button', { name: 'Save skill' }).click()
+  await expect(skills.getByRole('button', { name: 'Remove Observability' })).toBeVisible()
+  await skills.getByRole('button', { name: 'Remove Observability' }).click()
+  await expect(skills.getByRole('button', { name: 'Remove Observability' })).toHaveCount(0)
 
   const experience = page.locator('.experience-card')
   await experience.getByRole('button', { name: 'Edit' }).click()
   await experience.getByLabel('Experience role 1').fill('Lead Backend Engineer')
+  await checkCandidateLayouts(page, testInfo, 'experience-edit', '.experience-editor')
   await experience.getByRole('button', { name: 'Save experience' }).click()
+
+  const education = page.locator('.education-card')
+  await education.getByRole('button', { name: 'Edit' }).click()
+  await expect(education.getByLabel('Education')).not.toBeEmpty()
+  await education.getByLabel('Education').fill('B.Tech Computer Science, Example Institute, 2018')
+  await education.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(education.getByText('B.Tech Computer Science, Example Institute, 2018')).toBeVisible()
+  await education.getByRole('button', { name: 'Edit' }).click()
+  await education.getByLabel('Education').fill('Unsaved change')
+  await education.getByRole('button', { name: 'Cancel', exact: true }).click()
+  await expect(education.getByText('Unsaved change')).toHaveCount(0)
 
   const contact = page.locator('.contact-card')
   await contact.getByRole('button', { name: /Edit/ }).click()
@@ -66,13 +114,20 @@ test('candidate completes a conversational resume profile and preferences persis
   await expect(preferences.getByRole('button', { name: /Only matching roles/ })).toHaveClass(/selected/)
   await expect(preferences.getByRole('button', { name: 'Remote', exact: true })).toHaveClass(/selected/)
   await expect(preferences.getByRole('button', { name: 'Hybrid', exact: true })).toHaveClass(/selected/)
+  await expect(preferences.getByRole('button', { name: /Only matching roles/ })).toHaveAttribute('aria-pressed', 'true')
+  await checkCandidateLayouts(page, testInfo, 'preferences', '.preferences-card')
 
   await page.getByRole('button', { name: /Review & submit/ }).click()
   const review = page.locator('.review-submit')
   await expect(review.getByText('All required details are ready.')).toBeVisible()
+  await expect(review.getByRole('button', { name: /Submit my profile/ })).toBeDisabled()
+  await checkCandidateLayouts(page, testInfo, 'review', '.review-submit')
   await review.getByLabel('Profile-sharing consent').check()
   await review.getByRole('button', { name: /Submit my profile/ }).click()
   await expect(page.getByRole('heading', { name: /You’re all set/ })).toBeVisible()
+  await checkCandidateLayouts(page, testInfo, 'submitted', '.submission-stage')
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  expect(await page.locator('.submission-stage .primary, .submission-stage button').evaluate(el => getComputedStyle(el).transitionDuration)).toBe('0s')
 
   await page.getByRole('button', { name: 'Log out' }).click()
   await page.getByTestId('for-candidates').click()
@@ -96,6 +151,7 @@ test('candidate completes a conversational resume profile and preferences persis
   await expect(page.getByText('Staff Backend Engineer')).toBeVisible()
   await expect(page.getByText(meaningfulWork)).toBeVisible()
   await expect(page.getByText('Lead Backend Engineer')).toBeVisible()
+  await expect(page.getByText('B.Tech Computer Science, Example Institute, 2018')).toBeVisible()
   await expect(page.getByText('Version 1')).toBeVisible()
   await expect(page.getByRole('heading', { name: /You’re all set/ })).toBeVisible()
   const persistedPreferences = page.locator('.preferences-card')
@@ -114,4 +170,39 @@ test('candidate completes a conversational resume profile and preferences persis
   await deletion.getByLabel('Type DELETE to confirm').fill('DELETE')
   await deletion.getByRole('button', { name: 'Permanently delete my account' }).click()
   await expect(page.getByRole('heading', { name: 'Your account has been deleted' })).toBeVisible()
+})
+
+test('real processing failure supports retry and replacement without simulated progress', async ({ page }, testInfo) => {
+  test.setTimeout(180_000)
+  const email = `candidate-processing-${Date.now()}@example.com`
+  await page.goto('/')
+  await page.getByTestId('for-candidates').click()
+  await page.getByLabel('Full name').fill('Resume Recovery Test')
+  await page.getByLabel('Email').fill(email)
+  await page.getByLabel('Password').fill('strong-pass-123')
+  await page.getByRole('button', { name: 'Create account' }).click()
+  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible()
+  await page.goto(`/?verify-email=${issueLocalAccountToken(email, 'verify_email')}`)
+  await expect(page.getByRole('heading', { name: 'Drop your resume' })).toBeVisible()
+
+  const uploaded = page.waitForResponse(response => response.url().endsWith('/candidate/resumes/') && response.request().method() === 'POST')
+  await page.getByTestId('resume-input').setInputFiles({ name: 'unreadable.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.7\nInvalid PDF test document') })
+  const uploadResponse = await uploaded
+  expect(uploadResponse.status()).toBe(202)
+  expect((await uploadResponse.json()).latest_resume.processing_status).toBe('queued')
+  await expect(page.getByRole('heading', { name: 'Your resume is queued' })).toBeVisible()
+  await checkCandidateLayouts(page, testInfo, 'queued', '.processing-card')
+  await expect(page.getByRole('heading', { name: 'We couldn’t finish this resume' })).toBeVisible({ timeout: 100_000 })
+  await expect(page.locator('.profile-board')).toHaveCount(0)
+  await expect(page.locator('.processing-card')).not.toContainText(/\d+%/)
+  await checkCandidateLayouts(page, testInfo, 'failed', '.processing-card')
+
+  const retried = page.waitForResponse(response => /\/resumes\/\d+\/retry\/$/.test(response.url()) && response.request().method() === 'POST')
+  await page.getByRole('button', { name: 'Retry processing' }).click()
+  expect((await retried).status()).toBe(202)
+  await expect(page.getByRole('heading', { name: 'We couldn’t finish this resume' })).toBeVisible({ timeout: 100_000 })
+  await page.getByLabel('Upload a replacement resume').setInputFiles(path.resolve('../backend/tests/fixtures/asha-rao-resume.docx'))
+  await expect(page.getByText("We've built your starting profile", { exact: true })).toBeVisible({ timeout: 15_000 })
+  await expect(page.locator('.experience-card').getByText('Senior Backend Engineer')).toBeVisible()
+  await expect(page.getByText('Version 2')).toBeVisible()
 })

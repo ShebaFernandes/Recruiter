@@ -1,0 +1,223 @@
+/* Candidate-only presentation. Shared shell and approved recruiter/auth pages stay untouched. */
+.app-shell:has(> .candidate-ui) { background: #faf9f6; }
+.candidate-ui {
+  --ink: #24232b;
+  --muted: #696671;
+  --line: #e3e0e6;
+  --sage: #5940c4;
+  --sage-soft: #f2efff;
+  --candidate-accent: #6d4aff;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.candidate-ui.candidate-upload-first {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 28px;
+  padding: 48px 24px 64px;
+  background: #f8f7f4;
+}
+.candidate-ui.candidate-studio { max-width: 1120px; padding: 36px 24px 64px; }
+.candidate-ui .candidate-welcome { min-width: 0; }
+.candidate-upload-first .candidate-welcome { width: min(1000px, 100%); text-align: center; }
+.candidate-ui .candidate-welcome h1 {
+  font: 500 clamp(36px, 4vw, 54px)/1.08 'Newsreader', serif;
+  letter-spacing: -.025em;
+  text-wrap: balance;
+  margin: 0;
+}
+.candidate-ui .candidate-welcome p {
+  font: 400 14px/1.6 'DM Sans', sans-serif;
+  color: var(--muted);
+  margin: 14px 0 0;
+  max-width: none;
+}
+.candidate-ui .studio-hero { align-items: center; gap: 24px; margin-bottom: 26px; }
+.candidate-ui .completion-card { min-width: 240px; padding: 12px; box-shadow: none; gap: 10px; }
+.candidate-ui .completion-ring { width: 44px; height: 44px; flex: none; }
+.candidate-ui .completion-ring span, .candidate-ui .completion-card>div:last-child span { font-size: 12px; }
+.candidate-ui .completion-card b { font: 600 14px/1.4 'DM Sans', sans-serif; }
+.candidate-ui .candidate-upload-card { width: min(1000px, 100%); padding: 24px; border-radius: 12px; box-shadow: 0 4px 18px #24232b05; }
+.candidate-ui .cv-dropzone { grid-template-columns: minmax(0, 1fr); min-height: 260px; padding: 28px 90px; background: #fbfaf8; border: 1px dashed #b8b1ca; border-radius: 9px; transition: background-color 180ms ease, border-color 180ms ease; }
+.candidate-ui .cv-dropzone.dragging { background: var(--sage-soft); border-color: var(--candidate-accent); box-shadow: inset 0 0 0 1px var(--candidate-accent); }
+.candidate-ui .cv-dropzone.busy { border-style: solid; background: #f7f5ff; border-color: #c7bceb; }
+.candidate-ui .cv-dropzone.failed { border-style: solid; background: #fff8f7; border-color: #d8a6a0; }
+.candidate-ui .cv-mark { width: 48px; height: 48px; top: 24px; left: 24px; background: var(--sage-soft); color: var(--sage); font-size: 19px; }
+.candidate-ui .cv-drop-content { min-width: 0; width: 100%; }
+.candidate-ui .cv-drop-content h2 { font: 500 30px/1.15 'Newsreader', serif; margin: 0; }
+.candidate-ui .cv-drop-content p { font-size: 14px; line-height: 1.6; margin: 10px 0 20px; }
+.candidate-ui .cv-drop-content strong { font-size: 14px; overflow-wrap: anywhere; }
+.candidate-ui .cv-drop-content>small { font-size: 12px; color: var(--muted); }
+.candidate-ui .cv-file-button { min-height: 44px; padding: 10px 16px; border-color: var(--line); background: white; font-size: 14px; }
+.candidate-ui .candidate-upload-points { gap: 12px; margin-top: 20px; }
+.candidate-ui .candidate-upload-points>div { min-height: 0; padding: 16px; background: #fbfaf8; gap: 7px; border-radius: 8px; }
+.candidate-ui .candidate-upload-points span { font-size: 12px; color: var(--muted); letter-spacing: .05em; }
+.candidate-ui .candidate-upload-points b { font-size: 14px; font-weight: 500; }
+.candidate-ui .processing-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 20px; }
+.candidate-ui .resume-launch.has-resume { padding: 20px; gap: 14px; border-radius: 12px; box-shadow: none; background: white; }
+.candidate-ui .resume-icon { width: 42px; height: 42px; min-width: 42px; border-radius: 8px; }
+.candidate-ui .resume-launch-copy { gap: 12px; }
+.candidate-ui .resume-launch-copy span { font-size: 12px; letter-spacing: .08em; }
+.candidate-ui .resume-launch h2 { font-size: 26px; line-height: 1.2; }
+.candidate-ui .resume-launch p { font-size: 14px; line-height: 1.5; }
+.candidate-ui .resume-action { font-size: 14px; min-height: 44px; background: white; font-weight: 600; }
+.candidate-ui .resume-file>span { min-width: 0; flex-wrap: wrap; overflow-wrap: anywhere; font-size: 13px; }
+.candidate-ui .resume-file small { font-size: 12px; }
+.candidate-ui .resume-file a { flex: none; width: 44px; height: 44px; border-radius: 7px; }
+.candidate-ui .success, .candidate-ui .error { font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.candidate-ui .success { color: #21634e; background: #eff7f2; }
+.candidate-ui .missing-callout { background: #f5f2ff; border-color: #ddd5f5; padding: 20px; gap: 14px; }
+.candidate-ui .missing-callout-icon { width: 36px; height: 36px; background: var(--sage-soft); color: var(--sage); }
+.candidate-ui .missing-callout span { font-size: 12px; letter-spacing: .06em; }
+.candidate-ui .missing-callout p { font-size: 14px; color: var(--muted); }
+.candidate-ui .missing-preview span { letter-spacing: 0; font-size: 12px; line-height: 1.5; color: var(--muted); background: white; }
+.candidate-ui .missing-preview small { font-size: 12px; color: var(--muted); }
+.candidate-ui .quick-step { padding: 24px; border-color: #c7bceb; background: white; box-shadow: none; scroll-margin-top: 82px; }
+.candidate-ui .quick-step-count { font-size: 12px; }
+.candidate-ui .quick-step h2 { font-size: 28px; line-height: 1.2; padding-right: 28px; }
+.candidate-ui .quick-step p { font-size: 14px; }
+.candidate-ui .quick-step-close { width: 44px; height: 44px; }
+.candidate-ui .quick-step-form { flex-wrap: wrap; }
+.candidate-ui .quick-step-form>input { min-width: 0; }
+.candidate-ui .skip-detail { font-size: 14px; min-height: 44px; }
+.candidate-ui .profile-board { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.candidate-ui .profile-section { grid-column: 1; padding: 20px; box-shadow: none; min-width: 0; }
+.candidate-ui .profile-section-head>div { min-width: 0; }
+.candidate-ui .profile-section-head>div>span, .candidate-ui .proud-card>span { font-size: 12px; letter-spacing: .08em; }
+.candidate-ui .profile-section h2 { font-size: 27px; line-height: 1.2; margin: 4px 0; overflow-wrap: anywhere; }
+.candidate-ui .profile-section-head p, .candidate-ui .profile-summary { font-size: 14px; }
+.candidate-ui .profile-section-head>button, .candidate-ui .proud-answer button { font-size: 14px; min-height: 44px; padding: 9px 12px; flex: none; background: white; }
+.candidate-ui .profile-headline { font-family: 'DM Sans', sans-serif; font-size: 17px; margin: 12px 0 10px; }
+.candidate-ui .profile-fact-chips span { font-size: 13px; background: #f6f5f8; }
+.candidate-ui .profile-summary { margin-top: 12px; }
+.candidate-ui .card-edit-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; margin-top: 16px; }
+.candidate-ui .card-edit-grid label, .candidate-ui .experience-edit-row label, .candidate-ui .account-controls form label { font-size: 13px; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.candidate-ui input:not([type=file]):not([type=checkbox]), .candidate-ui textarea {
+  min-width: 0; max-width: 100%; font-size: 14px; color: var(--ink); background: white;
+  border: 1px solid #cfcbd5; border-radius: 7px; padding: 10px 12px;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+.candidate-ui textarea { resize: vertical; line-height: 1.6; }
+.candidate-ui .card-edit-actions { margin-top: 12px; gap: 10px; flex-wrap: wrap; }
+.candidate-ui .card-edit-actions>button:not(.primary) { font-size: 14px; min-height: 44px; }
+.candidate-ui .editable-chips { margin-top: 12px; }
+.candidate-ui .editable-chips>button { font-size: 14px; min-height: 40px; border-color: #ddd5f5; background: #f5f2ff; font-weight: 500; }
+.candidate-ui .editable-chips input { width: 150px; border-radius: 999px 0 0 999px; border-right: 0; }
+.candidate-ui .editable-chips form button { min-width: 44px; border-color: #cfcbd5; border-style: solid; }
+.candidate-ui .experience-list { margin-top: 14px; }
+.candidate-ui .experience-list article { padding-bottom: 16px; }
+.candidate-ui .experience-list article:last-child { padding-bottom: 0; }
+.candidate-ui .experience-list small { font-size: 12px; }
+.candidate-ui .experience-list h3 { font: 600 16px/1.5 'DM Sans', sans-serif; margin: 2px 0; }
+.candidate-ui .experience-list b, .candidate-ui .experience-list p { font-size: 14px; }
+.candidate-ui .experience-list article>div { min-width: 0; overflow-wrap: anywhere; }
+.candidate-ui .experience-mark { margin-top: 6px; border-color: #e7e0ff; }
+.candidate-ui .experience-edit-row { grid-template-columns: repeat(2, minmax(0, 1fr)); background: #faf9f7; padding: 16px; gap: 12px; border: 1px solid var(--line); }
+.candidate-ui .experience-description, .candidate-ui .experience-gap-reason { grid-column: 1/-1; }
+.candidate-ui .experience-edit-row>button { width: 44px; height: 44px; justify-self: end; grid-column: 1/-1; grid-row: auto; }
+.candidate-ui .experience-editor .add-row, .candidate-ui .empty-section { font-size: 14px; min-height: 44px; background: #faf9fd; }
+.candidate-ui .education-list span { font-size: 14px; background: #faf9f7; padding: 12px; overflow-wrap: anywhere; }
+.candidate-ui .education-list svg { flex: none; }
+.candidate-ui .proud-card { background: white; }
+.candidate-ui .proud-badge { width: 32px; height: 32px; background: var(--sage-soft); color: var(--sage); margin-bottom: 12px; }
+.candidate-ui .proud-badge svg { width: 18px; }
+.candidate-ui .proud-card>p { font-size: 14px; margin-bottom: 12px; }
+.candidate-ui .proud-card form { align-items: flex-start; flex-direction: column; gap: 12px; }
+.candidate-ui .proud-input { width: 100%; min-width: 0; }
+.candidate-ui .proud-input textarea { width: 100%; min-height: 130px; background: #fcfbff; }
+.candidate-ui .proud-input span { font-size: 12px; }
+.candidate-ui .proud-answer { margin-top: 14px; border-left-width: 2px; }
+.candidate-ui .proud-answer p { font-size: 20px; overflow-wrap: anywhere; }
+.candidate-ui .preferences-card>h3 { font-size: 14px; margin: 20px 0 10px; }
+.candidate-ui .visibility-grid>button { min-width: 0; padding: 14px; background: white; gap: 5px; }
+.candidate-ui .visibility-grid>button:hover { background: #faf9fd; border-color: #b6a8df; box-shadow: none; }
+.candidate-ui .visibility-grid>button.selected { border-color: var(--candidate-accent); background: #f5f2ff; box-shadow: inset 0 0 0 1px var(--candidate-accent); }
+.candidate-ui .visibility-grid b { font-size: 14px; }
+.candidate-ui .visibility-grid small { font-size: 12px; line-height: 1.5; }
+.candidate-ui .visibility-icon { background: var(--sage-soft); }
+.candidate-ui .work-mode-row button, .candidate-ui .choice-row button { font-size: 14px; min-height: 44px; background: white; }
+.candidate-ui .work-mode-row button.selected, .candidate-ui .choice-row button.selected { background: #f5f2ff; border-color: var(--candidate-accent); color: var(--sage); box-shadow: inset 0 0 0 1px var(--candidate-accent); }
+.candidate-ui .paused-note { font-size: 14px; align-items: flex-start; }
+.candidate-ui .paused-note svg { flex: none; margin-top: 3px; }
+.candidate-ui .contact-links { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.candidate-ui .contact-links span { font-size: 14px; background: #faf9f7; overflow: visible; overflow-wrap: anywhere; min-width: 0; }
+.candidate-ui .submission-stage { background: #f2effb; color: var(--ink); padding: 20px; border: 1px solid #ddd5f5; box-shadow: none; }
+.candidate-ui .submission-mark { background: white; color: var(--sage); width: 40px; height: 40px; }
+.candidate-ui .submission-stage span, .candidate-ui .review-submit-head span, .candidate-ui .account-controls>div>span { font-size: 12px; color: var(--sage); letter-spacing: .08em; }
+.candidate-ui .submission-stage p { font-size: 14px; color: var(--muted); }
+.candidate-ui .submission-stage small { font-size: 12px; color: var(--muted); }
+.candidate-ui .submission-stage>button:not(.primary) { color: var(--ink); border-color: var(--line); background: white; font-size: 14px; min-height: 44px; }
+.candidate-ui .submission-visibility-note { color: #765213 !important; }
+.candidate-ui .review-submit { padding: 24px; box-shadow: none; scroll-margin-top: 82px; }
+.candidate-ui .review-submit-head h2 { font-size: 30px; line-height: 1.2; }
+.candidate-ui .review-submit-head p { font-size: 14px; }
+.candidate-ui .review-submit-head>button { width: 44px; height: 44px; flex: none; }
+.candidate-ui .review-snapshot>div { background: #faf9f7; align-items: flex-start; }
+.candidate-ui .review-snapshot small { font-size: 12px; }
+.candidate-ui .review-snapshot b { font-size: 14px; white-space: normal; overflow-wrap: anywhere; }
+.candidate-ui .review-requirements h3 { font-size: 14px; }
+.candidate-ui .review-requirements button { margin-top: 8px; font-size: 14px; }
+.candidate-ui .review-requirements button small { font-size: 12px; }
+.candidate-ui .review-requirements ul { font-size: 14px; columns: 1; }
+.candidate-ui .requirement-ready { font-size: 14px; align-items: flex-start; }
+.candidate-ui .requirement-ready svg { flex: none; }
+.candidate-ui .submission-consent { background: #faf9fd; border-color: #ddd5f5; }
+.candidate-ui .submission-consent>span { font-size: 14px; color: var(--muted); }
+.candidate-ui .submission-consent b { font-size: 14px; }
+.candidate-ui .submission-consent small { font-size: 12px; }
+.candidate-ui .review-submit-actions>button:not(.primary) { font-size: 14px; min-height: 44px; }
+.candidate-ui .account-controls { padding: 20px; align-items: flex-start; }
+.candidate-ui .account-controls p { font-size: 14px; }
+.candidate-ui .account-controls form { min-width: 0; flex: 1 0 42%; grid-template-columns: minmax(0,1fr); }
+.candidate-ui .account-controls form button, .candidate-ui .delete-account-trigger { font-size: 14px; min-height: 44px; white-space: normal; }
+.candidate-ui .primary { background: var(--candidate-accent); font-size: 14px; min-height: 44px; padding: 11px 16px; font-weight: 600; }
+.candidate-ui .primary:hover { background: #5836db; transform: none; }
+.candidate-ui button, .candidate-ui a, .candidate-ui .resume-action, .candidate-ui .cv-file-button { transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease; }
+.candidate-ui button:focus-visible, .candidate-ui a:focus-visible, .candidate-ui input:focus-visible, .candidate-ui textarea:focus-visible, .candidate-ui .cv-file-button:focus-within, .candidate-ui .resume-action:focus-within { outline: 2px solid var(--candidate-accent); outline-offset: 3px; box-shadow: none; }
+.candidate-ui .resume-action:hover, .candidate-ui .cv-file-button:hover { transform: none; border-color: #b6a8df; background: #f8f6ff; }
+.candidate-ui .profile-section, .candidate-ui .review-submit, .candidate-ui .quick-step { scroll-margin-top: 82px; }
+@media (max-width: 1050px) {
+  .candidate-ui .studio-hero { align-items: flex-start; flex-direction: column; gap: 18px; }
+  .candidate-ui .completion-card { min-width: 0; margin: 0; width: auto; }
+  .candidate-ui .review-snapshot { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (max-width: 760px) {
+  .candidate-ui.candidate-upload-first, .candidate-ui.candidate-studio { padding: 28px 16px 48px; }
+  .candidate-ui .candidate-welcome h1 { font-size: 39px; }
+  .candidate-ui .candidate-welcome p { font-size: 13px; max-width: 320px; }
+  .candidate-upload-first .candidate-welcome p { margin-inline: auto; }
+  .candidate-ui .candidate-upload-card { padding: 16px; }
+  .candidate-ui .cv-dropzone { padding: 20px 16px; gap: 14px; min-height: 0; }
+  .candidate-ui .cv-mark { position: static; transform: none; }
+  .candidate-ui .cv-drop-content h2 { font-size: 28px; }
+  .candidate-ui .candidate-upload-points { grid-template-columns: 1fr; gap: 8px; }
+  .candidate-ui .candidate-upload-points>div { padding: 12px; }
+  .candidate-ui .resume-launch.has-resume { padding: 16px; grid-template-columns: minmax(0,1fr); }
+  .candidate-ui .resume-launch-copy { align-items: flex-start; }
+  .candidate-ui .resume-icon { width: 32px; height: 32px; min-width: 32px; }
+  .candidate-ui .resume-launch h2 { font-size: 24px; }
+  .candidate-ui .resume-action { white-space: normal; }
+  .candidate-ui .missing-callout { padding: 16px; grid-template-columns: minmax(0,1fr); }
+  .candidate-ui .missing-preview { display: flex; }
+  .candidate-ui .missing-preview span { flex-wrap: wrap; }
+  .candidate-ui .quick-step, .candidate-ui .profile-section, .candidate-ui .review-submit, .candidate-ui .account-controls { padding: 18px; }
+  .candidate-ui .quick-step-close { top: 8px; right: 8px; }
+  .candidate-ui .card-edit-grid, .candidate-ui .experience-edit-row, .candidate-ui .contact-links { grid-template-columns: minmax(0,1fr); }
+  .candidate-ui .experience-edit-row { padding: 12px; }
+  .candidate-ui input:not([type=file]):not([type=checkbox]), .candidate-ui textarea { font-size: 16px; }
+  .candidate-ui .editable-chips>button { min-height: 44px; }
+  .candidate-ui .profile-section-head { gap: 10px; }
+  .candidate-ui .visibility-grid { grid-template-columns: minmax(0,1fr); }
+  .candidate-ui .proud-card form>.primary { margin: 0; }
+  .candidate-ui .submission-stage { grid-template-columns: minmax(0,1fr); padding: 18px; gap: 12px; }
+  .candidate-ui .review-submit-head { gap: 8px; }
+  .candidate-ui .review-submit-head h2 { font-size: 27px; }
+  .candidate-ui .account-controls { display: block; }
+  .candidate-ui .account-controls form>div { flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .candidate-ui *, .candidate-ui *::before, .candidate-ui *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

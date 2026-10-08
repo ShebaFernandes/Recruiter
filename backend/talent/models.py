@@ -152,12 +152,19 @@ class Resume(models.Model):
         ordering = ["-version"]
 
 
+
+
+
+
 class ResumeProcessingJob(models.Model):
     class State(models.TextChoices):
         QUEUED = "queued", "Queued"
         PROCESSING = "processing", "Processing"
         COMPLETED = "completed", "Completed"
         FAILED = "failed", "Failed"
+
+
+
 
     resume = models.OneToOneField(
         Resume, on_delete=models.CASCADE, related_name="processing_job"
@@ -174,6 +181,7 @@ class ResumeProcessingJob(models.Model):
     last_error = models.CharField(max_length=255, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
 
     class Meta:
         indexes = [models.Index(fields=["state", "available_at"])]
