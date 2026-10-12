@@ -1,0 +1,304 @@
+{
+  "status": "Proposed final shortlist — awaiting user approval",
+  "scope": "Private review only; no integration into application",
+  "public_display_approved": false,
+  "heading_approved": false,
+  "artwork_treatment": "Original supplied colors and proportions; no recoloring, filters or opacity changes",
+  "companies": [
+    {
+      "id": "shiprocket",
+      "company": "Shiprocket",
+      "website": "https://www.shiprocket.in/",
+      "identity_asset_status": "Official site located",
+      "notes": "Original header SVG from the company-operated asset host.",
+      "additional_sources": [],
+      "source_page": "https://www.shiprocket.in/",
+      "asset_url": "https://sr-website-01.shiprocket.in/sr-website/shiprocket_logo-1-TWLqUy.svg",
+      "filename": "assets/shiprocket-official.svg",
+      "asset_method": "Original file downloaded unchanged",
+      "relationship": "User-reported company worked with; no public endorsement approval recorded",
+      "public_display_approved": false,
+      "approved_by": null,
+      "approved_at": null,
+      "permission_evidence": null,
+      "monochrome_status": "Recoloring / opacity changes NOT approved; preserve original artwork pending brand guidance",
+      "selection_reason": "Clean full SVG lockup; legible horizontal form.",
+      "preview_max_height_px": 31,
+      "shortlist_approved": false
+    },
+    {
+      "id": "bitscale",
+      "company": "Bitscale AI",
+      "website": "https://bitscale.ai/",
+      "identity_asset_status": "Official site located",
+      "notes": "Official Bitscale header wordmark; GTM data platform.",
+      "additional_sources": [],
+      "source_page": "https://bitscale.ai/",
+      "asset_url": "https://bitscale.ai/_next/static/media/bitscale.09m1-w2r_0wvt.svg",
+      "filename": "assets/bitscale-official.svg",
+      "asset_method": "Original file downloaded unchanged",
+      "relationship": "User-reported company worked with; no public endorsement approval recorded",
+      "public_display_approved": false,
+      "approved_by": null,
+      "approved_at": null,
+      "permission_evidence": null,
+      "monochrome_status": "Recoloring / opacity changes NOT approved; preserve original artwork pending brand guidance",
+      "selection_reason": "Strong full SVG wordmark; clear at compact sizes.",
+      "preview_max_height_px": 32,
+      "shortlist_approved": false
+    },
+    {
+      "id": "incubyte",
+      "company": "Incubyte",
+      "website": "https://incubyte.co/",
+      "identity_asset_status": "Official site located",
+      "notes": "Original inline header SVG; software engineering company.",
+      "additional_sources": [],
+      "source_page": "https://incubyte.co/",
+      "asset_url": "https://incubyte.co/ [inline SVG]",
+      "filename": "assets/incubyte-official.svg",
+      "asset_method": "Original site SVG extracted; standalone namespace added, page-only class/style removed",
+      "relationship": "User-reported company worked with; no public endorsement approval recorded",
+      "public_display_approved": false,
+      "approved_by": null,
+      "approved_at": null,
+      "permission_evidence": null,
+      "monochrome_status": "Recoloring / opacity changes NOT approved; preserve original artwork pending brand guidance",
+      "selection_reason": "Full SVG wordmark with a small recognizable symbol.",
+      "preview_max_height_px": 31,
+      "shortlist_approved": false
+    },
+    {
+      "id": "bridgetown",
+      "company": "Bridgetown Research",
+      "website": "https://www.bridgetownresearch.com/",
+      "identity_asset_status": "Official site located",
+      "notes": "Original header wordmark; AI research and strategy platform.",
+      "additional_sources": [],
+      "source_page": "https://www.bridgetownresearch.com/",
+      "asset_url": "https://www.bridgetownresearch.com/wordmark-logo.svg",
+      "filename": "assets/bridgetown-official.svg",
+      "asset_method": "Original file downloaded unchanged",
+      "relationship": "User-reported company worked with; no public endorsement approval recorded",
+      "public_display_approved": false,
+      "approved_by": null,
+      "approved_at": null,
+      "permission_evidence": null,
+      "monochrome_status": "Recoloring / opacity changes NOT approved; preserve original artwork pending brand guidance",
+      "selection_reason": "Distinctive two-line vector lockup; balances single-line marks.",
+      "preview_max_height_px": 36,
+      "shortlist_approved": false
+    },
+    {
+      "id": "doqfy",
+      "company": "Doqfy",
+      "website": "https://doqfy.in/",
+      "identity_asset_status": "Official site located",
+      "notes": "Official navigation SVG; contract automation platform.",
+      "additional_sources": [],
+      "source_page": "https://doqfy.in/",
+      "asset_url": "https://doqfy.in/assets/header/Logo.svg",
+      "filename": "assets/doqfy-official.svg",
+      "asset_method": "Original file downloaded unchanged",
+      "relationship": "User-reported company worked with; no public endorsement approval recorded",
+      "public_display_approved": false,
+      "approved_by": null,
+      "approved_at": null,
+      "permission_evidence": null,
+      "monochrome_status": "Recoloring / opacity changes NOT approved; preserve original artwork pending brand guidance",
+      "selection_reason": "Full vector symbol and wordmark; clear on a light surface.",
+      "preview_max_height_px": 33,
+      "shortlist_approved": false
+    },
+    {
+      "id": "peepalco",
+      "company": "Peepal Co",
+      "website": "https://peepal.co/",
+      "identity_asset_status": "Official site located",
+      "notes": "Official spelling PeepalCo; original header SVG.",
+      "additional_sources": [],
+      "source_page": "https://peepal.co/",
+      "asset_url": "https://peepal.co/images/headerLogo.svg",
+      "filename": "assets/peepalco-official.svg",
+      "asset_method": "Original file downloaded unchanged",
+      "relationship": "User-reported company worked with; no public endorsement approval recorded",
+      "public_display_approved": false,
+      "approved_by": null,
+      "approved_at": null,
+      "permission_evidence": null,
+      "monochrome_status": "Recoloring / opacity changes NOT approved; preserve original artwork pending brand guidance",
+      "selection_reason": "Readable full SVG wordmark; original brand colors preserved.",
+      "preview_max_height_px": 30,
+      "shortlist_approved": false
+    },
+    {
+      "id": "anthriq",
+      "company": "Anthriq",
+      "website": "https://www.anthriq.com/",
+      "identity_asset_status": "Official site located",
+      "notes": "Original header SVG; biosignal / neurotechnology company.",
+      "additional_sources": [],
+      "source_page": "https://www.anthriq.com/",
+      "asset_url": "https://www.anthriq.com/ [inline SVG]",
+      "filename": "assets/anthriq-official.svg",
+      "asset_method": "Original site SVG extracted; standalone namespace added, page-only class/style removed",
+      "relationship": "User-reported company worked with; no public endorsement approval recorded",
+      "public_display_approved": false,
+      "approved_by": null,
+      "approved_at": null,
+      "permission_evidence": null,
+      "monochrome_status": "Recoloring / opacity changes NOT approved; preserve original artwork pending brand guidance",
+      "selection_reason": "Fine-line vector symbol with an uncluttered wordmark.",
+      "preview_max_height_px": 34,
+      "shortlist_approved": false
+    },
+    {
+      "id": "tonetag",
+      "company": "ToneTag",
+      "website": "https://www.tonetag.com/",
+      "identity_asset_status": "Official site located",
+      "notes": "Original header high-resolution PNG.",
+      "additional_sources": [],
+      "source_page": "https://www.tonetag.com/",
+      "asset_url": "https://www.tonetag.com/wp-content/uploads/2025/07/Logo_1-scaled.png",
+      "filename": "assets/tonetag-official.png",
+      "asset_method": "Original file downloaded unchanged",
+      "relationship": "User-reported company worked with; no public endorsement approval recorded",
+      "public_display_approved": false,
+      "approved_by": null,
+      "approved_at": null,
+      "permission_evidence": null,
+      "monochrome_status": "Recoloring / opacity changes NOT approved; preserve original artwork pending brand guidance",
+      "selection_reason": "High-resolution full wordmark; readable at modest height.",
+      "preview_max_height_px": 56,
+      "shortlist_approved": false
+    },
+    {
+      "id": "navadhan",
+      "company": "Navadhan",
+      "website": "https://navadhan.com/",
+      "identity_asset_status": "Official site located",
+      "notes": "Original navigation PNG; rural finance company. Large original PNG (~945 KiB); optimize after approval.",
+      "additional_sources": [],
+      "source_page": "https://navadhan.com/",
+      "asset_url": "https://navadhan.com/images/uploads/2022/11/Frame-632414.png",
+      "filename": "assets/navadhan-official.png",
+      "asset_method": "Original file downloaded unchanged",
+      "relationship": "User-reported company worked with; no public endorsement approval recorded",
+      "public_display_approved": false,
+      "approved_by": null,
+      "approved_at": null,
+      "permission_evidence": null,
+      "monochrome_status": "Recoloring / opacity changes NOT approved; preserve original artwork pending brand guidance",
+      "selection_reason": "High-resolution full wordmark. Source PNG needs lossless/visual optimization before implementation.",
+      "preview_max_height_px": 56,
+      "shortlist_approved": false
+    },
+    {
+      "id": "wazirx",
+      "company": "WazirX",
+      "website": "https://wazirx.com/",
+      "identity_asset_status": "Official media kit",
+      "notes": "Original black horizontal SVG from official media kit. Black / white variations are documented; ENTER relationship and public-display permission remain unapproved.",
+      "additional_sources": [
+        "https://media-assets.wazirx.com/"
+      ],
+      "source_page": "https://media-assets.wazirx.com/",
+      "asset_url": "https://media-assets.wazirx.com/uploads/WazirX_Logo_Files.zip",
+      "filename": "assets/wazirx-official.svg",
+      "asset_method": "Original Horizontal_Black.svg extracted from official ZIP",
+      "relationship": "User-reported company worked with; no public endorsement approval recorded",
+      "public_display_approved": false,
+      "approved_by": null,
+      "approved_at": null,
+      "permission_evidence": null,
+      "monochrome_status": "Official black variant provided in media kit; no recoloring needed",
+      "selection_reason": "Official horizontal black SVG from the company media kit.",
+      "preview_max_height_px": 48,
+      "shortlist_approved": false
+    }
+  ],
+  "excluded": [
+    {
+      "company": "Aitainment",
+      "reason": "Explicitly excluded by user; identity unresolved"
+    },
+    {
+      "company": "Anaira.ai",
+      "reason": "Official white wordmark with gradient symbol. Needs an approved dark-on-light variant for the proposed strip."
+    },
+    {
+      "company": "Applied Retention",
+      "reason": "Official website uses an HTML text wordmark. Request an approved vector logo; do not recreate it in a guessed font."
+    },
+    {
+      "company": "BLVDPay",
+      "reason": "Official profile points to .com. Saved its green symbol only. Do not substitute assets from the separately surfaced .tech site; request the full wordmark."
+    },
+    {
+      "company": "Bynd",
+      "reason": "Explicitly excluded by user; identity unresolved"
+    },
+    {
+      "company": "CLAIREVOLEX",
+      "reason": "Explicitly excluded by user; identity unresolved"
+    },
+    {
+      "company": "Credable",
+      "reason": "Explicitly excluded by user; identity unresolved"
+    },
+    {
+      "company": "District",
+      "reason": "Explicitly excluded by user; identity unresolved"
+    },
+    {
+      "company": "Hoomanely",
+      "reason": "Original navigation symbol only (29 × 29 SVG); pet wellness / AI company. Request approved full wordmark."
+    },
+    {
+      "company": "Kuku FM",
+      "reason": "Current official homepage uses a compact k / red-dot mark, not a full Kuku FM wordmark. Confirm current brand lockup before publication."
+    },
+    {
+      "company": "Learntube AI",
+      "reason": "LearnTube by CareerNinja. Original 97×96 symbol only; request a complete SVG wordmark for a consistent horizontal strip."
+    },
+    {
+      "company": "Maxhome.ai",
+      "reason": "Official site located; browser remained at loading screen during inspection. No reliable logo selected. Request an approved brand asset."
+    },
+    {
+      "company": "M-League",
+      "reason": "Gaming-platform group, not the Japanese mahjong league at m-league.jp. Original horizontal SVG."
+    },
+    {
+      "company": "MyNaksh",
+      "reason": "Original footer wordmark; astrology platform."
+    },
+    {
+      "company": "Nanonets",
+      "reason": "Official Nanonets symbol only (100 × 100 SVG); request the approved full wordmark for a readable strip."
+    },
+    {
+      "company": "SciSpace",
+      "reason": "Main site returned an access error. Logo sourced from the official SciSpace Academy, not SciSpace LLC. Large square original (~1 MiB); request horizontal master and optimize after approval."
+    },
+    {
+      "company": "ThumpN",
+      "reason": "Official spelling thumpN. Homepage logo is animated GIF; do not run another animated brand mark inside the marquee. Request a static SVG / transparent PNG."
+    },
+    {
+      "company": "Timepay.ai",
+      "reason": "Official header renders the wordmark as text. Request an approved SVG rather than recreating its lettering."
+    },
+    {
+      "company": "TrueFoundry",
+      "reason": "Original white header wordmark in AVIF. Request an approved dark-on-light vector master for the strip."
+    },
+    {
+      "company": "Sparkinity",
+      "reason": "Official metadata logo JPEG; current navigation is a text wordmark. Review currency and request transparent / vector master."
+    }
+  ],
+  "motion_proposal": "Single horizontal track, 20px/second, pause hover/focus/control; reduced motion static wrap. Private preview only."
+}

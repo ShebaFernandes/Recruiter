@@ -1,0 +1,56 @@
+ENTER — PRIVATE LOGO REVIEW / 12 OCTOBER 2026
+
+Scope
+This directory is a review artifact only, outside frontend/public.
+No landing page, hero, animation, API, database or product screen was changed.
+index.html contains the full inventory; section-preview.html is a static layout
+study, not an implemented marquee. inventory.json records provenance and approvals.
+
+Placement and visual plan
+Immediately after the existing mountain hero and before the existing brand
+statement. Warm #FAF9F6, DM Sans label, original approved artwork. No new cards,
+borders around individual logos, or shadows. Optically balance approved assets
+around 28–34px tall; preserve aspect ratios and brand clear space.
+Use 48–64px desktop gaps and 28–36px mobile gaps. Final sizing depends on
+approved wordmark variants. The six preview selections are not a recommendation
+to prioritize those relationships.
+
+Heading and permission
+No company is approved for public display yet. User-reported work history is
+not permission to imply a public endorsement or alter trademarks.
+Use “Trusted By” only after explicit approval of relationships and logo uses.
+“Companies we’ve worked with” is the neutral proposed alternative if accurate
+and approved; it does not remove logo-permission requirements. Otherwise omit.
+Record company, exact asset/variant, permission evidence, approved heading,
+approver and date in inventory.json before publishing.
+
+Motion plan — not implemented
+One slow right-to-left track at approximately 18–22px/second, transformed with CSS.
+Two identical sequences with matched spacing prevent a loop jump. Duplicate
+sequence hidden from assistive technology; the real company names remain
+accessible. Pause on hover and focus-within. Provide a small accessible
+Pause/Resume control because continuous motion lasts longer than five seconds.
+Pause offscreen where practical. No fade filters on brand artwork.
+Reduced-motion preference: no movement; wrap all approved logos into static
+rows so none disappear. Mobile uses the same slow movement, generous spacing,
+and no horizontal document overflow. No new animation library.
+
+Assets and limitations
+23 source assets saved; 7 entries have no selected usable static artwork.
+Aitainment, Bynd and District need exact official domains.
+Confirm CLAIREVOLEX means Clairvolex, and Credable means Indian CredAble.
+Applied Retention and Timepay currently use HTML text wordmarks; request originals.
+MaxHome did not provide a reliably retrievable logo in this inspection.
+thumpN provides an animated GIF; request an approved static logo.
+BLVDPay, Hoomanely, Kuku FM, LearnTube and Nanonets assets are symbols; request full lockups.
+Anaira, M-League, MyNaksh and TrueFoundry have white/light wordmarks; request dark-on-light approved variants.
+Review square/opaque SciSpace and Sparkinity assets and request transparent masters.
+Navadhan and SciSpace source PNGs are large: optimize only after selecting variants.
+WazirX provides an official black-on-white media-kit variant; using that variant
+does not establish permission for ENTER's public endorsement strip.
+Other monochrome conversion is NOT approved. The review preserves source colors.
+
+Next approval
+Confirm ambiguous identities, supply missing/approved variants, identify exactly
+which relationships and logo uses may be displayed, and approve heading/motion.
+Only then implement. No deployment authorized.

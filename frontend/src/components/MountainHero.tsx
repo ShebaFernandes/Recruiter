@@ -26,6 +26,7 @@ export default function MountainHero() {
       for (const depth of ['distant', 'middle', 'foreground']) {
         element.style.setProperty(`--ce-${depth}-offset`, '0px')
       }
+      element.style.setProperty('--ce-scene-opacity', '1')
     }
     const update = () => {
       frame = 0
@@ -33,11 +34,12 @@ export default function MountainHero() {
       const { top, height } = hero.getBoundingClientRect()
       const progress = Math.min(1, Math.max(0, -top / height))
       // Reveal depth early in the scroll, then settle without a hard stop.
-      // Even the nearest ridge stays inside the existing 6% overscan.
+      // The nearest ridge stays inside the 10% overscan, even at full scroll.
       const depth = 1 - (1 - progress) ** 3
-      element.style.setProperty('--ce-distant-offset', `${height * 0.012 * depth}px`)
-      element.style.setProperty('--ce-middle-offset', `${height * 0.028 * depth}px`)
-      element.style.setProperty('--ce-foreground-offset', `${height * 0.045 * depth}px`)
+      element.style.setProperty('--ce-distant-offset', `${height * 0.02 * depth}px`)
+      element.style.setProperty('--ce-middle-offset', `${height * 0.05 * depth}px`)
+      element.style.setProperty('--ce-foreground-offset', `${height * 0.08 * depth}px`)
+      element.style.setProperty('--ce-scene-opacity', String(1 - 0.22 * progress))
     }
     const schedule = () => {
       if (!frame && visible && !document.hidden && !reducedMotion.matches && !mobile.matches) {
@@ -89,8 +91,8 @@ export default function MountainHero() {
     <svg className="ce-landscape-curves" viewBox="0 0 1440 800" preserveAspectRatio="xMidYMid slice" focusable="false">
       <path d="M-80 560 C100 565 175 510 235 445" />
       <path d="M1380 440 C1280 250 1370 155 1520 180" />
-      <circle cx="185" cy="490" r="3" />
-      <circle cx="1361.25" cy="230.625" r="3" />
+      <circle className="ce-curve-node ce-curve-node-left" r="3" />
+      <circle className="ce-curve-node ce-curve-node-right" r="3" />
     </svg>
   </div>
 }

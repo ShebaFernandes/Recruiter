@@ -5,7 +5,7 @@ test.describe('landing and authentication foundation', () => {
     await page.setViewportSize({ width: 1440, height: 960 })
     await page.goto('/')
 
-    await expect(page.getByRole('heading', { name: /A career is more than a job title/ })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /The best teams are built by ENTER/ })).toBeVisible()
     await expect(page.getByTestId('for-recruiters')).toBeVisible()
     await expect(page.getByTestId('for-candidates')).toBeVisible()
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(1440)
@@ -32,7 +32,7 @@ test.describe('landing and authentication foundation', () => {
   test('landing and candidate auth do not overflow on mobile', async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/')
-    await expect(page.getByRole('heading', { name: /A career is more than a job title/ })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /The best teams are built by ENTER/ })).toBeVisible()
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
     await page.evaluate(() => document.fonts.ready)
     await page.screenshot({ path: testInfo.outputPath('landing-mobile.png'), fullPage: true, animations: 'disabled' })

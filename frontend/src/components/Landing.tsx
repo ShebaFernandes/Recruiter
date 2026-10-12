@@ -1,8 +1,14 @@
-import { useEffect, useRef } from 'react'
+import { lazy, Suspense, useEffect, useRef } from 'react'
 import { ArrowRight, MoveUpRight } from 'lucide-react'
 import { Button } from './ui'
 import MountainHero from './MountainHero'
+import { isCompanyPreviewAllowed } from './companyPreviewGate'
 import './landing.css'
+
+// Vite removes this branch, its module, and imported company assets in production.
+// Public-display permission has NOT been granted.
+const CompanyLogoPreview = import.meta.env.DEV
+  ? lazy(() => import('./company-preview/CompanyLogoPreview')) : null
 
 export default function Landing({ choose }: {
   choose: (role: 'recruiter' | 'candidate', mode?: 'signup' | 'login') => void
@@ -37,7 +43,7 @@ export default function Landing({ choose }: {
     <div className="ce-mountain-hero">
     <MountainHero />
     <header className="ce-masthead">
-      <a className="ce-logo" href="#enter-home" aria-label="Enter home"><img src="/enter-logo.jpeg" alt="enter" /></a>
+      <a className="ce-logo" href="#enter-home" aria-label="Enter home"><img src="/enter-wordmark.svg" alt="enter" width={1400} height={600} /></a>
       <span className="ce-masthead-note">People. Work. Possibility.</span>
       <nav aria-label="Main navigation">
         <a href="#recruiter-entry">For recruiters <MoveUpRight size={13} aria-hidden="true" /></a>
@@ -60,15 +66,22 @@ export default function Landing({ choose }: {
     </header>
 
     <section className="ce-intro ce-page-width" id="enter-home" tabIndex={-1} aria-labelledby="ce-title">
-      <div className="ce-index"><span>THE ENTER PERSPECTIVE</span><span>01 / PEOPLE, IN CONTEXT</span></div>
       <div className="ce-intro-grid">
-        <h1 id="ce-title">A career is more<br />than a <em>job title.</em></h1>
+        <h1 id="ce-title">The best teams are<br />built by <em>ENTER.</em></h1>
         <div className="ce-intro-aside">
-          <p>Enter helps recruiters discover the people behind the résumé and candidates share the work that matters.</p>
+          <p className="ce-supporting-headline">What You Build Tomorrow Depends on Who You Hire Today</p>
+          <p>Every breakthrough product, high-performing team, and successful company is built by exceptional people. We help ambitious companies hire them.</p>
         </div>
       </div>
     </section>
     </div>
+
+    {CompanyLogoPreview && isCompanyPreviewAllowed(import.meta.env.DEV, window.location.hostname, window.location.search)
+      && <Suspense fallback={null}><CompanyLogoPreview /></Suspense>}
+
+    <section className="ce-brand-statement ce-page-width ce-reveal" aria-label="Our belief">
+      <p>The impact we create extends across entire organizations—but it always starts with the people who shape them.</p>
+    </section>
 
     <section className="ce-entry-section" aria-labelledby="ce-entry-title">
       <div className="ce-page-width">
@@ -85,6 +98,6 @@ export default function Landing({ choose }: {
         </article>
       </div>
     </section>
-    <footer className="ce-footer ce-page-width"><a className="ce-logo" href="#enter-home" aria-label="Enter home"><img src="/enter-logo.jpeg" alt="enter" /></a><p>Good work begins with understanding people.</p><a href="#enter-home">Back to top ↑</a></footer>
+    <footer className="ce-footer ce-page-width"><a className="ce-logo" href="#enter-home" aria-label="Enter home"><img src="/enter-wordmark.svg" alt="enter" width={1400} height={600} /></a><p>Good work begins with understanding people.</p><a href="#enter-home">Back to top ↑</a></footer>
   </main>
 }

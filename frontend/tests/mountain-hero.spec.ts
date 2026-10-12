@@ -20,7 +20,7 @@ for (const width of [1440, 1024, 390]) {
     }))).toBe(true)
     const dimensions = await layers.evaluateAll(images => images.map(image => [image.clientWidth, image.clientHeight]))
     expect(dimensions.every(size => size.toString() === dimensions[0].toString())).toBe(true)
-    await expect(page.getByRole('heading', { name: 'A career is more than a job title.' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'The best teams are built by ENTER.' })).toBeVisible()
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
     await page.screenshot({ path: testInfo.outputPath(`mountain-hero-${width}.png`), fullPage: true, animations: 'disabled' })
     const stableHeight = await hero.evaluate(element => element.getBoundingClientRect().height)
@@ -30,8 +30,9 @@ for (const width of [1440, 1024, 390]) {
       await expect.poll(() => offset('foreground')).toBeGreaterThan(0)
       expect(await offset('foreground')).toBeGreaterThan(await offset('middle'))
       expect(await offset('middle')).toBeGreaterThan(await offset('distant'))
-      expect(await offset('foreground')).toBeGreaterThan(20)
-      expect(await offset('foreground')).toBeLessThanOrEqual(stableHeight * 0.045)
+      expect(await offset('foreground')).toBeGreaterThan(40)
+      expect(await offset('foreground')).toBeLessThanOrEqual(stableHeight * 0.08)
+      expect(await scene.locator('.ce-landscape-canvas').evaluate(e => Number(getComputedStyle(e).opacity))).toBeLessThan(1)
     } else {
       expect(await offset('foreground')).toBe(0)
       await expect(scene.locator('.ce-landscape-foreground')).toHaveCSS('transform', 'none')
@@ -112,8 +113,8 @@ for (const width of [1440, 390]) {
     })
     const frontDelta = movement.after.front - movement.before.front
     const backDelta = movement.after.back - movement.before.back
-    expect(Math.abs(frontDelta)).toBeGreaterThan(width > 760 ? 8 : 1)
-    expect(Math.abs(backDelta)).toBeGreaterThan(width > 760 ? 5 : 0.5)
+    expect(Math.abs(frontDelta)).toBeGreaterThan(width > 760 ? 25 : 5)
+    expect(Math.abs(backDelta)).toBeGreaterThan(width > 760 ? 20 : 3)
     expect(frontDelta * backDelta).toBeLessThan(0)
     expect(movement.after.heading).toEqual(movement.before.heading)
     await page.emulateMedia({ reducedMotion: 'reduce' })
@@ -129,7 +130,7 @@ test('delayed artwork cannot move the content or entry sections', async ({ page 
   await page.route('**/hero/mountain-v1/*.webp', async route => { await gate; await route.continue() })
   await page.goto('/', { waitUntil: 'domcontentloaded' })
   await page.evaluate(() => document.fonts.ready)
-  const bounds = () => page.locator('.ce-mountain-hero, .ce-intro h1, .ce-entry-section').evaluateAll(elements => elements.map(element => {
+  const bounds = () => page.locator('.ce-mountain-hero, .ce-intro h1, .ce-brand-statement, .ce-entry-section').evaluateAll(elements => elements.map(element => {
     const { x, y, width, height } = element.getBoundingClientRect()
     return { x, y, width, height }
   }))
@@ -137,4 +138,43 @@ test('delayed artwork cannot move the content or entry sections', async ({ page 
   release()
   await page.locator('.ce-landscape-layer').evaluateAll(images => Promise.all(images.map(image => (image as HTMLImageElement).decode())))
   expect(await bounds()).toEqual(before)
+})
+
+test('original wordmark has transparent paper and unchanged navy ink', async ({ page }) => {
+  await page.goto('/')
+  const pixels = await page.locator('.ce-masthead .ce-logo img').evaluate(async element => {
+    const image = element as HTMLImageElement
+    await image.decode()
+    const canvas = document.createElement('canvas')
+    canvas.width = image.naturalWidth
+    canvas.height = image.naturalHeight
+    const context = canvas.getContext('2d')!
+    context.drawImage(image, 0, 0)
+    const pixel = (x: number, y: number) => [...context.getImageData(x, y, 1, 1).data]
+    return { size: [canvas.width, canvas.height], paper: pixel(50, 50), ink: pixel(720, 230) }
+  })
+  expect(pixels.size).toEqual([1400, 600])
+  expect(pixels.paper).toEqual([0, 0, 0, 0])
+  expect(pixels.ink).toEqual([17, 18, 62, 255])
+  await expect(page.locator('.ce-masthead .ce-logo img')).toHaveCSS('filter', 'none')
+})
+
+test('approved copy, brand reveal and decorative nodes remain accessible', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await page.goto('/')
+  await expect(page.getByText('What You Build Tomorrow Depends on Who You Hire Today')).toBeVisible()
+  await expect(page.getByText('Every breakthrough product, high-performing team, and successful company is built by exceptional people. We help ambitious companies hire them.')).toBeVisible()
+  await expect(page.getByText('Trusted By', { exact: true })).toHaveCount(0)
+  const node = page.locator('.ce-curve-node-left')
+  const start = await node.evaluate(e => getComputedStyle(e).offsetDistance)
+  await expect.poll(() => node.evaluate(e => getComputedStyle(e).offsetDistance)).not.toBe(start)
+  const statement = page.getByRole('region', { name: 'Our belief' })
+  await statement.scrollIntoViewIfNeeded()
+  await expect(statement).toHaveText('The impact we create extends across entire organizations—but it always starts with the people who shape them.')
+  await expect(statement).toHaveClass(/is-revealed/)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await expect(node).toHaveCSS('animation-name', 'none')
+  await expect(statement).toHaveCSS('animation-name', 'none')
+  await expect(page.locator('.ce-landscape-canvas')).toHaveCSS('opacity', '1')
 })
