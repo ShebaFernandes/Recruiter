@@ -1,0 +1,90 @@
+ENTER COMPANY LOGOS — LOCAL INTERACTIVE REVIEW
+Preview: http://127.0.0.1:5173/?preview=company-logos
+Normal homepage: http://127.0.0.1:5173/
+
+The query opt-in works only on loopback hosts in Vite development mode.
+Production removes the lazy component import and its source artwork. It is
+not sufficient to add the query to a deployed URL. No environment secrets,
+backend changes, permission grants, or public publication are involved.
+
+The preview adds one moving row directly after the unchanged mountain hero.
+No company cards or name grid. Original logo colors/proportions are retained.
+There is no visible preview toolbar or public relationship heading.
+All ten public-display permissions and the final heading remain pending.
+
+Hover or keyboard focus opens a company detail popup rendered outside the
+clipping strip. Escape/outside tap dismiss; tap again toggles. Keyboard mode
+uses a stationary horizontally scrollable row so every company remains
+reachable. Reduced motion also uses the single stationary scrollable row.
+A Pause/Resume button is available to screen readers and becomes visible on
+keyboard focus, without reserving a toolbar row in the layout.
+Desktop 20px/second, mobile 20px/second, identical repeated sequences.
+The preview pauses offscreen and when the browser document is hidden.
+
+Source artwork: ../assets; no logos copied into frontend/public.
+Navadhan uses the prepared source PNG in this development-only preview;
+optimize its delivery before any separately approved public implementation.
+
+Descriptions checked against official websites on 2026-10-12:
+Shiprocket
+  Category: E-commerce logistics
+  Shipping and fulfilment tools for e-commerce businesses.
+  Source: https://www.shiprocket.in/
+
+Bitscale AI
+  Category: Sales technology
+  AI-powered data enrichment and buying signals for go-to-market teams.
+  Source: https://bitscale.ai/
+
+Incubyte
+  Category: Software engineering
+  Product engineering and AI services for health technology companies.
+  Source: https://incubyte.co/
+
+Bridgetown Research
+  Category: AI research
+  Research tools for strategy, commercial diligence and customer insights.
+  Source: https://www.bridgetownresearch.com/
+
+Doqfy
+  Category: Contract technology
+  Digital contract workflows with e-stamping and electronic signatures.
+  Source: https://www.doqfy.in/blog/
+
+PeepalCo
+  Category: Financial technology
+  Technology infrastructure supporting financial products and services in India.
+  Source: https://peepal.co/
+
+Anthriq
+  Category: Neurotechnology
+  Biosignal hardware and infrastructure for human-aware technology.
+  Source: https://www.anthriq.com/
+
+ToneTag
+  Category: Payment technology
+  Payment technology using sound, proximity and voice interfaces.
+  Source: https://www.tonetag.com/about/
+
+Navadhan
+  Category: Financial services
+  Financing solutions for under-banked households and small businesses in India.
+  Source: https://navadhan.com/
+
+WazirX
+  Category: Digital assets
+  A cryptocurrency trading platform based in India.
+  Source: https://wazirx.com/
+
+Interaction inspiration: https://www.paraform.com/
+Its logo hover reveals contextual information. ENTER uses only the general
+hover principle, not its card layout, testimonials, branding or hiring counts.
+
+To verify:
+cd frontend
+npm run test
+npm run lint
+npm run build
+npm run test:e2e -- tests/company-logo-preview.spec.ts tests/mountain-hero.spec.ts tests/design-foundation.spec.ts
+
+No public permission is implied by successful tests. Stop for approval.

@@ -27,7 +27,7 @@ describe('private company-logo preview', () => {
   it('provides one accessible stop per logo and portaled, dismissible details', () => {
     const { container } = render(<CompanyLogoPreview />)
     expect(screen.getAllByRole('button', { name: /^About / })).toHaveLength(10)
-    expect(screen.getByText(/public logo permissions pending/)).toBeVisible()
+    expect(screen.queryByText(/public logo permissions pending/)).not.toBeInTheDocument()
     const button = screen.getByRole('button', { name: 'About Shiprocket' })
     fireEvent.click(button)
     const tooltip = screen.getByRole('tooltip')

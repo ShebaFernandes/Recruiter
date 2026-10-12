@@ -1,0 +1,34 @@
+ENTER logo spacing review — 2026-10-12
+
+Local opt-in: http://127.0.0.1:5173/?preview=company-logos
+Public-display permissions remain pending. No deployment performed.
+
+Before/after browser measurements (viewport height 900px):
+Width    Hero height unchanged    Hero bottom to first logo top    Logo section height
+1440     792px                    100.5px -> 32.5px                184px -> 96px
+1024     792px                    100.5px -> 32.5px                184px -> 96px
+390      700px                    100.89px -> 32.89px              184px -> 96px
+
+Cause: 44px preview toolbar plus section/window padding and margins.
+Fix: remove toolbar and its label; tighten section/window padding. No negative
+margins, hero changes, artwork changes, or changes to internal product screens.
+Pause/Resume remains screen-reader accessible and visible on keyboard focus.
+
+Screenshots: before-{1440,1024,390}.png and after-{1440,1024,390}.png.
+No horizontal overflow at all three widths. Headline position unchanged.
+
+Executed successfully:
+- npm run build (TypeScript project build and Vite production build)
+- npm run lint
+- npm run test: 37 tests across 8 files
+- Playwright company-logo-preview, mountain-hero, design-foundation: 22 passed
+  Includes real timed cloud/marquee movement, seam continuity, responsive
+  geometry, hover/focus pause, keyboard controls, Escape, mobile tap, reduced
+  motion, unclipped popups, layout stability and audience navigation.
+- Production asset scan: no company component/brand matches.
+- Chromium loaded Vite production preview with ?preview=company-logos:
+  zero company sections, zero company-logo requests; landing loaded.
+  Temporary production preview server stopped after this check.
+
+The package has no npm preview script; used the installed Vite preview
+executable for the production browser check. No dependency changes.

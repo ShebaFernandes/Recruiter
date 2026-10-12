@@ -1,6 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Pause, Play } from 'lucide-react'
 import { previewCompanies } from './companies'
 import './company-logo-preview.css'
 
@@ -82,14 +81,12 @@ export default function CompanyLogoPreview() {
         setDetail(null)
       }
     }}>
-    <div className="ce-company-toolbar ce-page-width">
-      <p>Private preview <span>— public logo permissions pending</span></p>
-      <button type="button" className="ce-company-pause" aria-pressed={paused}
-        aria-label={paused ? 'Resume company logos' : 'Pause company logos'} onClick={() => setPaused(value => !value)}>
-        {paused ? <Play size={14} aria-hidden="true" /> : <Pause size={14} aria-hidden="true" />}
-        <span>{paused ? 'Resume' : 'Pause'}</span>
-      </button>
-    </div>
+    {/* No visual toolbar: preserve a keyboard/screen-reader motion control
+        without reserving a row between the scenery and company artwork. */}
+    <button type="button" className="ce-company-pause" aria-pressed={paused}
+      onClick={() => setPaused(value => !value)}>
+      {paused ? 'Resume company logos' : 'Pause company logos'}
+    </button>
     <div className="ce-company-window" onPointerLeave={leave}>
       <div className="ce-company-track">
         {[false, true].map(duplicate => <div key={String(duplicate)} className="ce-company-sequence"

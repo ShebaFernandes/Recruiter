@@ -1,0 +1,38 @@
+Final verification — 12 October 2026
+
+PASS npm run build (TypeScript project checks and Vite production build)
+PASS npm run lint (ESLint)
+PASS npm run test — 37 tests across 8 files
+PASS relevant Playwright — 22 tests
+  company-logo-preview.spec.ts
+  mountain-hero.spec.ts
+  design-foundation.spec.ts
+
+At 1440, 1024 and 390px: image decoding, no document overflow, actual
+right-to-left movement, pointer pause, hoverable popup, keyboard access to
+all ten companies, Escape dismissal and reduced-motion horizontal access.
+Loop boundary positions agree within one pixel. Mobile tap toggles,
+switches company and dismisses with an outside tap. Popup is portaled to
+document.body, outside the clipped logo strip.
+
+An initial test waited for continuously moving logos to be stationary.
+Changed the test to move a real pointer to the current logo coordinates.
+The timing-boundary check was then isolated because programmatic animation
+play/pause overrides CSS animation-play-state. All final tests pass; none
+of the hover, motion or keyboard assertions were removed.
+
+Production build temporarily served on loopback port 5177:
+/?preview=company-logos still has no company section or logo requests.
+Compiled assets contain no preview module, company content or logo files.
+Temporary production-preview process stopped after the check.
+
+MountainHero.tsx and landing.css SHA256 stayed unchanged during this task.
+Landing.tsx has only the development-only lazy preview integration added.
+No backend, authentication, internal workflow or schema changes.
+
+Artifacts:
+desktop-hover.png
+mobile-tap.png
+company-logo-preview.webm (actual browser recording with drift and hover)
+
+No deployment. All public-display permissions remain pending.

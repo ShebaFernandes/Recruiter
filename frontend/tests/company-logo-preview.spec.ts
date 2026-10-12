@@ -21,31 +21,33 @@ for (const width of [1440, 1024, 390]) {
     await section.locator('img').evaluateAll(images => Promise.all(images.map(i => (i as HTMLImageElement).decode())))
     await expect(page.getByRole('button', { name: /^About / })).toHaveCount(10)
     expect(await section.evaluate(e => e.previousElementSibling?.classList.contains('ce-mountain-hero'))).toBe(true)
+    const spacing = await section.evaluate(element => {
+      const hero = element.previousElementSibling!.getBoundingClientRect()
+      const logo = element.querySelector('img')!.getBoundingClientRect()
+      return { gap: logo.top - hero.bottom, height: element.getBoundingClientRect().height }
+    })
+    expect(spacing.gap).toBeGreaterThan(20)
+    expect(spacing.gap).toBeLessThan(40)
+    expect(spacing.height).toBe(96)
+    await expect(section.getByText(/public logo permissions pending/)).toHaveCount(0)
+    const pause = page.getByRole('button', { name: 'Pause company logos' })
+    await expect(pause).toHaveCSS('clip-path', 'inset(50%)')
     await page.mouse.move(0, 0)
     await expect(section).toHaveAttribute('data-paused', 'false')
     const matrix = () => sequence.evaluate(e => getComputedStyle(e).transform)
     const before = await matrix()
     await expect.poll(matrix).not.toBe(before)
 
-    // Fast-forward CSS time to both sides of a loop: equivalent logo positions
-    // must join without a gap or visible jump, regardless of responsive spacing.
-    const seam = await section.evaluate(element => {
-      const groups = [...element.querySelectorAll<HTMLElement>('.ce-company-sequence')]
-      const animation = groups[0].getAnimations()[0]
-      const duration = Number(animation.effect!.getTiming().duration)
-      groups.forEach(g => g.getAnimations()[0].pause())
-      groups.forEach(g => { g.getAnimations()[0].currentTime = duration - 1 })
-      const end = groups[1].firstElementChild!.getBoundingClientRect().left
-      groups.forEach(g => { g.getAnimations()[0].currentTime = duration })
-      const start = groups[0].firstElementChild!.getBoundingClientRect().left
-      groups.forEach(g => { g.getAnimations()[0].currentTime = 0; g.getAnimations()[0].play() })
-      return Math.abs(start - end)
-    })
-    expect(seam).toBeLessThan(1)
     const logo = page.getByRole('button', { name: 'About Shiprocket', exact: true })
-    await logo.hover()
+    // Moving targets never satisfy Playwright's stationary-element check.
+    // Use their current on-screen coordinates, as a real pointer would.
+    const logoBounds = await logo.boundingBox()
+    await page.mouse.move(logoBounds!.x + logoBounds!.width / 2, logoBounds!.y + logoBounds!.height / 2)
     await expect(page.getByRole('tooltip')).toContainText('E-commerce logistics')
     await expect(sequence).toHaveCSS('animation-play-state', 'paused')
+    const stopped = await matrix()
+    await page.waitForTimeout(180)
+    expect(await matrix()).toBe(stopped)
     const tooltip = await page.getByRole('tooltip').boundingBox()
     expect(tooltip!.x).toBeGreaterThanOrEqual(0)
     expect(tooltip!.x + tooltip!.width).toBeLessThanOrEqual(width)
@@ -55,7 +57,11 @@ for (const width of [1440, 1024, 390]) {
     await page.screenshot({ path: testInfo.outputPath(`company-preview-${width}.png`) })
     await page.mouse.move(0, 0)
     await expect(page.getByRole('tooltip')).toHaveCount(0)
-    await page.getByRole('button', { name: 'Pause company logos' }).focus()
+    await pause.focus()
+    await expect(pause).toHaveCSS('clip-path', 'none')
+    await page.keyboard.press('Enter')
+    await expect(page.getByRole('button', { name: 'Resume company logos' })).toHaveAttribute('aria-pressed', 'true')
+    await page.keyboard.press('Enter')
     await page.keyboard.press('Tab')
     await expect(logo).toBeFocused()
     await expect(page.getByRole('tooltip')).toContainText('Shiprocket')
@@ -71,6 +77,27 @@ for (const width of [1440, 1024, 390]) {
     await expect(section.locator('[data-duplicate="true"]')).toBeHidden()
     await expect(section.locator('.ce-company-window')).toHaveCSS('overflow-x', 'auto')
   })
+
+  test(`company loop joins seamlessly at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await page.emulateMedia({ reducedMotion: 'no-preference' })
+    await page.goto('/?preview=company-logos')
+    const section = page.locator('.ce-company-preview')
+    await section.scrollIntoViewIfNeeded()
+    // Isolate time-seeking from interaction tests: WAAPI play/pause overrides
+    // CSS play-state, so it must not be reused to test normal hover pausing.
+    const seam = await section.evaluate(element => {
+      const groups = [...element.querySelectorAll<HTMLElement>('.ce-company-sequence')]
+      const duration = Number(groups[0].getAnimations()[0].effect!.getTiming().duration)
+      groups.forEach(g => g.getAnimations()[0].pause())
+      groups.forEach(g => { g.getAnimations()[0].currentTime = duration - 1 })
+      const end = groups[1].firstElementChild!.getBoundingClientRect().left
+      groups.forEach(g => { g.getAnimations()[0].currentTime = duration })
+      const start = groups[0].firstElementChild!.getBoundingClientRect().left
+      return Math.abs(start - end)
+    })
+    expect(seam).toBeLessThan(1)
+  })
 }
 
 test('mobile tap opens, switches and dismisses company details', async ({ browser }) => {
@@ -79,14 +106,18 @@ test('mobile tap opens, switches and dismisses company details', async ({ browse
   await page.goto('/?preview=company-logos')
   await page.locator('.ce-company-preview').scrollIntoViewIfNeeded()
   const first = page.getByRole('button', { name: 'About Shiprocket' })
-  await first.tap()
+  const tapMovingLogo = async (name: string) => {
+    const bounds = await page.getByRole('button', { name, exact: true }).boundingBox()
+    await page.touchscreen.tap(bounds!.x + bounds!.width / 2, bounds!.y + bounds!.height / 2)
+  }
+  await tapMovingLogo('About Shiprocket')
   await expect(page.getByRole('tooltip')).toContainText('Shiprocket')
   await first.tap()
   await expect(page.getByRole('tooltip')).toHaveCount(0)
-  await first.tap()
-  await page.getByRole('button', { name: 'About Bitscale AI' }).tap()
+  await tapMovingLogo('About Shiprocket')
+  await tapMovingLogo('About Bitscale AI')
   await expect(page.getByRole('tooltip')).toContainText('Bitscale AI')
-  await page.locator('.ce-company-toolbar p').tap()
+  await page.locator('.ce-brand-statement').tap()
   await expect(page.getByRole('tooltip')).toHaveCount(0)
   await context.close()
 })

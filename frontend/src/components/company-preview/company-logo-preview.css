@@ -2,17 +2,17 @@
 .ce-company-preview {
   --company-cell: 152px;
   --company-gap: 56px;
+  position: relative;
   background: var(--enter-bg);
   color: var(--enter-text);
   font-family: var(--enter-font-ui);
-  padding: 22px 0 24px;
+  padding: 8px 0;
 }
-.ce-company-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.ce-company-toolbar p { margin: 0; font-size: 12px; color: var(--enter-text-muted); }
-.ce-company-toolbar p span { font-weight: 400; }
-.ce-company-pause { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px; background: transparent; border: 0; color: var(--enter-text-muted); font: inherit; font-size: 12px; cursor: pointer; }
-.ce-company-pause:hover { color: var(--enter-primary); }
-.ce-company-window { overflow: hidden; padding: 12px 0; margin-top: 6px; }
+/* Discoverable to screen readers; visible on keyboard focus without moving
+   the row. Hover/focus, tap-to-pin, and reduced-motion remain additional controls. */
+.ce-company-pause { position: absolute; inset: 4px 20px auto auto; width: 1px; height: 1px; padding: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; font: inherit; font-size: 12px; }
+.ce-company-pause:focus-visible { z-index: 2; width: auto; height: 44px; padding: 8px 12px; clip-path: none; overflow: visible; background: var(--enter-surface); color: var(--enter-text); border: 1px solid var(--enter-border); border-radius: 8px; cursor: pointer; }
+.ce-company-window { overflow: hidden; padding: 8px 0; }
 .ce-company-track { display: flex; width: max-content; }
 .ce-company-sequence { display: flex; align-items: center; gap: var(--company-gap); padding-right: var(--company-gap); flex: none; animation: ce-company-travel 104s linear infinite; }
 .ce-company-preview .ce-company-logo { flex: none; width: var(--company-cell); min-width: var(--company-cell); height: 64px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 0; background: transparent; box-shadow: none; padding: 4px; margin: 0; cursor: pointer; }
@@ -31,9 +31,6 @@
 @media (max-width: 760px) {
   .ce-company-preview { --company-cell: 144px; --company-gap: 32px; }
   .ce-company-sequence { animation-duration: 88s; }
-  .ce-company-toolbar { gap: 8px; }
-  .ce-company-toolbar p { max-width: 220px; }
-  .ce-company-toolbar p span { display: block; }
 }
 @media (prefers-reduced-motion: reduce) {
   .ce-company-sequence { animation: none; }
