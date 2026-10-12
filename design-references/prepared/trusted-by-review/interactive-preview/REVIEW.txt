@@ -1,4 +1,8 @@
 ENTER COMPANY LOGOS — LOCAL INTERACTIVE REVIEW
+UPDATE: The original ten-company design inventory below is historical.
+The replacement list now controls the component: only Shiprocket and WazirX
+have usable verified artwork ready. See ../replacement-list-review.json for
+the complete requested list and pending assets. Public approval remains absent.
 Preview: http://127.0.0.1:5173/?preview=company-logos
 Normal homepage: http://127.0.0.1:5173/
 

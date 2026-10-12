@@ -4,7 +4,7 @@ for (const width of [1440, 1024, 390]) {
   test(`mountain hero at ${width}px: aligned layers, bounded motion, navigation`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 900 })
     await page.emulateMedia({ reducedMotion: 'no-preference' })
-    await page.goto('/')
+    await page.goto('/?preview=company-logos')
     await page.evaluate(() => document.fonts.ready)
     const hero = page.locator('.ce-mountain-hero')
     const scene = page.locator('.ce-mountain-scene')
@@ -23,6 +23,9 @@ for (const width of [1440, 1024, 390]) {
     await expect(page.getByRole('heading', { name: 'The best teams are built by ENTER.' })).toBeVisible()
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
     await page.screenshot({ path: testInfo.outputPath(`mountain-hero-${width}.png`), fullPage: true, animations: 'disabled' })
+    // Normal desktop is now a single screen. Exercise scroll-linked depth in
+    // a short window where the real hero content needs natural scrolling.
+    await page.setViewportSize({ width, height: 500 })
     const stableHeight = await hero.evaluate(element => element.getBoundingClientRect().height)
     await page.evaluate(() => window.scrollTo(0, 250))
     const offset = (depth: string) => scene.evaluate((element, name) => parseFloat((element as HTMLElement).style.getPropertyValue(`--ce-${name}-offset`) || '0'), depth)
@@ -30,7 +33,15 @@ for (const width of [1440, 1024, 390]) {
       await expect.poll(() => offset('foreground')).toBeGreaterThan(0)
       expect(await offset('foreground')).toBeGreaterThan(await offset('middle'))
       expect(await offset('middle')).toBeGreaterThan(await offset('distant'))
-      expect(await offset('foreground')).toBeGreaterThan(40)
+      // The simplified page can reach its scroll limit before 250px. Verify
+      // the same easing/depth against actual scroll instead of assuming the
+      // removed entry sections still provide that much document height.
+      const expectedForeground = await hero.evaluate(element => {
+        const { top, height } = element.getBoundingClientRect()
+        const progress = Math.min(1, Math.max(0, -top / height))
+        return height * .08 * (1 - (1 - progress) ** 3)
+      })
+      await expect.poll(async () => Math.abs(await offset('foreground') - expectedForeground)).toBeLessThan(.1)
       expect(await offset('foreground')).toBeLessThanOrEqual(stableHeight * 0.08)
       expect(await scene.locator('.ce-landscape-canvas').evaluate(e => Number(getComputedStyle(e).opacity))).toBeLessThan(1)
     } else {
@@ -55,22 +66,21 @@ for (const width of [1440, 1024, 390]) {
       }))
       expect(coverage).toBe(true)
     }
-    // The compact lower sections are shorter than a 900px desktop viewport.
-    // Use a short window to move the hero entirely offscreen, not merely partway.
-    await page.setViewportSize({ width, height: 500 })
+    // Only the 96px private logo row remains below the hero. A deliberately
+    // tiny viewport exercises offscreen pausing without artificial page content.
+    await page.setViewportSize({ width, height: 80 })
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
     expect(await hero.evaluate(element => element.getBoundingClientRect().bottom)).toBeLessThanOrEqual(0)
     await expect(scene).toHaveAttribute('data-active', 'false')
     await expect(scene.locator('.ce-landscape-clouds-back')).toHaveCSS('animation-play-state', 'paused')
-    await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'For recruiters' }).click()
-    await expect(page.locator('#recruiter-entry')).toBeInViewport()
-    await page.getByTestId('for-recruiters').click()
+    await page.setViewportSize({ width, height: 900 })
+    await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'For recruiters' }).click()
     await expect(page.getByLabel('Company')).toBeVisible()
   })
 }
 
 test('reduced motion and mobile resizing remove parallax immediately', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.setViewportSize({ width: 1440, height: 500 })
   await page.emulateMedia({ reducedMotion: 'no-preference' })
   await page.goto('/')
   const scene = page.locator('.ce-mountain-scene')
@@ -123,14 +133,14 @@ for (const width of [1440, 390]) {
   })
 }
 
-test('delayed artwork cannot move the content or entry sections', async ({ page }) => {
+test('delayed artwork cannot move the hero content', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   let release!: () => void
   const gate = new Promise<void>(resolve => { release = resolve })
   await page.route('**/hero/mountain-v1/*.webp', async route => { await gate; await route.continue() })
   await page.goto('/', { waitUntil: 'domcontentloaded' })
   await page.evaluate(() => document.fonts.ready)
-  const bounds = () => page.locator('.ce-mountain-hero, .ce-intro h1, .ce-brand-statement, .ce-entry-section').evaluateAll(elements => elements.map(element => {
+  const bounds = () => page.locator('.ce-mountain-hero, .ce-intro h1, .ce-intro-aside').evaluateAll(elements => elements.map(element => {
     const { x, y, width, height } = element.getBoundingClientRect()
     return { x, y, width, height }
   }))
@@ -159,7 +169,7 @@ test('original wordmark has transparent paper and unchanged navy ink', async ({ 
   await expect(page.locator('.ce-masthead .ce-logo img')).toHaveCSS('filter', 'none')
 })
 
-test('approved copy, brand reveal and decorative nodes remain accessible', async ({ page }) => {
+test('hero copy and decorative nodes remain accessible without lower sections', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.emulateMedia({ reducedMotion: 'no-preference' })
   await page.goto('/')
@@ -169,12 +179,9 @@ test('approved copy, brand reveal and decorative nodes remain accessible', async
   const node = page.locator('.ce-curve-node-left')
   const start = await node.evaluate(e => getComputedStyle(e).offsetDistance)
   await expect.poll(() => node.evaluate(e => getComputedStyle(e).offsetDistance)).not.toBe(start)
-  const statement = page.getByRole('region', { name: 'Our belief' })
-  await statement.scrollIntoViewIfNeeded()
-  await expect(statement).toHaveText('The impact we create extends across entire organizations—but it always starts with the people who shape them.')
-  await expect(statement).toHaveClass(/is-revealed/)
+  await expect(page.getByRole('region', { name: 'Our belief' })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: /Back to top/ })).toHaveCount(0)
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await expect(node).toHaveCSS('animation-name', 'none')
-  await expect(statement).toHaveCSS('animation-name', 'none')
   await expect(page.locator('.ce-landscape-canvas')).toHaveCSS('opacity', '1')
 })

@@ -1,0 +1,28 @@
+{
+  "review_date": "2026-10-12",
+  "public_display_approved": false,
+  "status": "Partial private preview; not a completed 33-logo inventory",
+  "monochrome": "Reversible grayscale/opacity local design treatment only. Brand-specific monochrome/public-use permissions remain unverified; do not publish.",
+  "usable_existing_artwork": ["Shiprocket", "WazirX"],
+  "excluded_pending_official_website": ["Nurix", "District", "Spiny", "Shield"],
+  "variant_review_required": {
+    "Nanonets": "Existing official asset is symbol only. Obtain/review full wordmark.",
+    "Truefoundry": "Existing official asset is a white header wordmark. Obtain/review dark-on-light variant."
+  },
+  "official_artwork_not_yet_prepared": [
+    "CRED", "MobiKwik", "CoinDCX", "Navi", "MPL", "Dream11", "Kindred Group",
+    "Curefit", "Practo", "Arintra", "Orange Health", "Zepto", "CoinSwitch",
+    "Pagarbook", "HackerEarth", "JustAnswer", "Mindtickle", "CommerceIQ",
+    "Satsure", "SpiceJet", "Signeasy", "Locus", "SpotOn", "Parspec", "Sentisum"
+  ],
+  "identity_notes": {
+    "Kindred Group": "https://www.kindredgroup.com/ redirects to https://www.fdjunited.com/. Do not substitute the parent's logo for Kindred; historical brand artwork needs verification."
+  },
+  "source_pages": {
+    "Shiprocket": "https://www.shiprocket.in/",
+    "WazirX": "https://media-assets.wazirx.com/",
+    "Nanonets": "https://nanonets.com/",
+    "Truefoundry": "https://www.truefoundry.com/"
+  },
+  "removed_from_previous_preview": ["Bitscale AI", "Incubyte", "Bridgetown Research", "Doqfy", "PeepalCo", "Anthriq", "ToneTag", "Navadhan"]
+}

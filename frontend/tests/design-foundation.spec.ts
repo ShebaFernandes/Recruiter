@@ -55,17 +55,20 @@ test.describe('landing and authentication foundation', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(1024)
   })
 
-  test('navigation scrolls to the recruiter and candidate entry points', async ({ page }) => {
+  test('audience navigation opens existing flows directly without anchor scrolling', async ({ page }) => {
     await page.goto('/')
     await expect(page.locator('#career-story')).toHaveCount(0)
     await expect(page.locator('.ce-intro').getByRole('button')).toHaveCount(0)
-    await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'For recruiters' }).click()
-    await expect(page).toHaveURL(/#recruiter-entry$/)
-    await expect(page.locator('#recruiter-entry')).toBeInViewport()
-    await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'For candidates' }).click()
-    await expect(page).toHaveURL(/#candidate-entry$/)
-    await expect(page.locator('#candidate-entry')).toBeInViewport()
-    await page.getByTestId('for-candidates').click()
+    const nav = page.getByRole('navigation', { name: 'Main navigation' })
+    await expect(nav.locator('.ce-audience-link svg')).toHaveCount(0)
+    await expect(page.locator('.ce-headline-wordmark image')).toHaveAttribute('href', '/enter-wordmark.svg')
+    await nav.getByRole('button', { name: 'For recruiters' }).click()
+    // No guest backend is enabled by a visual-only landing change.
+    await expect(page.getByLabel('Company')).toBeVisible()
+    expect(new URL(page.url()).hash).toBe('')
+    await page.getByRole('button', { name: '← Back to Enter' }).click()
+    await nav.getByRole('button', { name: 'For candidates' }).click()
+    expect(new URL(page.url()).hash).toBe('')
     await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible()
   })
 

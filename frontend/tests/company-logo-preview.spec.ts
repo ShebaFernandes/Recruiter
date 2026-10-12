@@ -17,9 +17,22 @@ for (const width of [1440, 1024, 390]) {
     const section = page.locator('.ce-company-preview')
     const sequence = section.locator('.ce-company-sequence').first()
     await expect(section).toBeVisible()
+    // Logos must sit comfortably inside the initial 900px viewport, not at
+    // its bottom edge; the headline/description remain above the logo row.
+    const initialLayout = await page.evaluate(() => ({
+      logoTop: document.querySelector('.ce-company-preview img')!.getBoundingClientRect().top,
+      copyBottom: document.querySelector('.ce-intro-aside')!.getBoundingClientRect().bottom,
+    }))
+    expect(initialLayout.logoTop).toBeLessThan(width > 760 ? 750 : 680)
+    expect(initialLayout.copyBottom).toBeLessThan(initialLayout.logoTop - 150)
+    await expect(page.locator('.ce-entry-section')).toHaveCount(0)
+    await expect(page.getByText(/The impact we create extends/)).toHaveCount(0)
+    await expect(page.locator('footer')).toHaveCount(0)
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(900)
     await section.scrollIntoViewIfNeeded()
     await section.locator('img').evaluateAll(images => Promise.all(images.map(i => (i as HTMLImageElement).decode())))
-    await expect(page.getByRole('button', { name: /^About / })).toHaveCount(10)
+    await expect(page.getByRole('button', { name: /^About / })).toHaveCount(2)
+    await expect(section.locator('img').first()).toHaveCSS('filter', 'grayscale(1)')
     expect(await section.evaluate(e => e.previousElementSibling?.classList.contains('ce-mountain-hero'))).toBe(true)
     const spacing = await section.evaluate(element => {
       const hero = element.previousElementSibling!.getBoundingClientRect()
@@ -39,10 +52,19 @@ for (const width of [1440, 1024, 390]) {
     await expect.poll(matrix).not.toBe(before)
 
     const logo = page.getByRole('button', { name: 'About Shiprocket', exact: true })
-    // Moving targets never satisfy Playwright's stationary-element check.
-    // Use their current on-screen coordinates, as a real pointer would.
-    const logoBounds = await logo.boundingBox()
-    await page.mouse.move(logoBounds!.x + logoBounds!.width / 2, logoBounds!.y + logoBounds!.height / 2)
+    // Pause at the strip edge like a real pointer entering it, then use a
+    // visible copy. The first original may have already travelled offscreen
+    // on a slower run; this must not assume a particular animation time.
+    const strip = await section.boundingBox()
+    await page.mouse.move(width / 2, strip!.y + 2)
+    await expect(sequence).toHaveCSS('animation-play-state', 'paused')
+    const logoPoint = await section.locator('.ce-company-logo:has(img[src*="shiprocket"])').evaluateAll(elements => {
+      const visible = elements.map(e => e.getBoundingClientRect())
+        .find(r => Math.min(r.right, innerWidth) - Math.max(r.left, 0) > 30)
+      return visible ? { x: (Math.max(visible.left, 0) + Math.min(visible.right, innerWidth)) / 2, y: visible.top + visible.height / 2 } : null
+    })
+    expect(logoPoint).not.toBeNull()
+    await page.mouse.move(logoPoint!.x, logoPoint!.y)
     await expect(page.getByRole('tooltip')).toContainText('E-commerce logistics')
     await expect(sequence).toHaveCSS('animation-play-state', 'paused')
     const stopped = await matrix()
@@ -65,7 +87,7 @@ for (const width of [1440, 1024, 390]) {
     await page.keyboard.press('Tab')
     await expect(logo).toBeFocused()
     await expect(page.getByRole('tooltip')).toContainText('Shiprocket')
-    for (let i = 0; i < 9; i++) await page.keyboard.press('Tab')
+    await page.keyboard.press('Tab')
     await expect(page.getByRole('button', { name: 'About WazirX' })).toBeFocused()
     await expect(page.getByRole('button', { name: 'About WazirX' })).toBeInViewport()
     await expect(page.getByRole('tooltip')).toContainText('WazirX')
@@ -115,9 +137,9 @@ test('mobile tap opens, switches and dismisses company details', async ({ browse
   await first.tap()
   await expect(page.getByRole('tooltip')).toHaveCount(0)
   await tapMovingLogo('About Shiprocket')
-  await tapMovingLogo('About Bitscale AI')
-  await expect(page.getByRole('tooltip')).toContainText('Bitscale AI')
-  await page.locator('.ce-brand-statement').tap()
+  await tapMovingLogo('About WazirX')
+  await expect(page.getByRole('tooltip')).toContainText('WazirX')
+  await page.locator('.ce-intro h1').tap()
   await expect(page.getByRole('tooltip')).toHaveCount(0)
   await context.close()
 })

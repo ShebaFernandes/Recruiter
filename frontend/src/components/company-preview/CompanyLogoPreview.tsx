@@ -18,6 +18,8 @@ export default function CompanyLogoPreview() {
   const [inView, setInView] = useState(true)
   const [pageHidden, setPageHidden] = useState(false)
   const [keyboardMode, setKeyboardMode] = useState(false)
+  // Fill wide screens while artwork is pending without duplicating tab stops.
+  const sequenceCompanies = Array.from({ length: Math.ceil(10 / previewCompanies.length) }, () => previewCompanies).flat()
 
   function cancelLeave() { clearTimeout(leaveTimer.current) }
   function show(company: Company, anchor: HTMLElement, pinned = false) {
@@ -91,11 +93,13 @@ export default function CompanyLogoPreview() {
       <div className="ce-company-track">
         {[false, true].map(duplicate => <div key={String(duplicate)} className="ce-company-sequence"
           aria-hidden={duplicate || undefined} data-duplicate={duplicate}>
-          {previewCompanies.map(company => {
+          {sequenceCompanies.map((company, index) => {
+            const repeated = index >= previewCompanies.length
             const image = <img src={company.logo} alt="" draggable={false} style={{ maxHeight: company.height }} />
             // The visual copy supports pointer/touch but never duplicates keyboard
             // or screen-reader stops. Keyboard mode exposes the original full row.
-            return duplicate ? <span key={company.id} className="ce-company-logo"
+            return duplicate || repeated ? <span key={`${company.id}-${index}`} className="ce-company-logo"
+              aria-hidden="true" data-repeated={repeated || undefined}
               onPointerEnter={event => { if (event.pointerType === 'mouse') show(company, event.currentTarget) }}
               onPointerLeave={leave}
               onClick={event => {

@@ -1,0 +1,75 @@
+ENTER — guest recruiter search proposal (NOT IMPLEMENTED)
+
+Inspected: frontend/src/App.tsx, api.ts; backend/talent/views.py,
+permissions.py, serializers.py, throttling.py; backend/config/settings.py.
+
+Current architecture
+- React switches among landing, auth and role portals using authenticated user
+  and local screen selection. There is no standalone public recruiter route.
+- Search creation/clarification/results require IsRecruiter. Saved searches are
+  owned by a recruiter; guessed search IDs are scoped to that owner.
+- Results use CandidateProfileSerializer, including candidate identity, email,
+  phone, links, employment history and resume metadata. Do not reuse publicly.
+- Profiles, comparisons, stages, projects, recent searches and notifications
+  rely on a recruiter identity. Resume download separately checks ownership or
+  permitted recruiter access and clean/completed file processing.
+- Discovery excludes drafts, unconsented and not-looking profiles. Matching-only
+  access requires grounded qualifying searches. Existing consent/visibility is
+  for recruiter discovery, not publication on an anonymous website.
+- Shared PostgreSQL fixed-window rate limits exist. Recruiter search defaults
+  to 120/hour in production and 1000/hour in DEBUG, keyed to authenticated users.
+  Those values are NOT an adequate public AI abuse/cost-control policy.
+
+Smallest secure proposal requiring separate approval
+1. Public /recruiter search composer reusing existing presentation. No automatic
+   candidate, project, notification, history or document requests.
+2. Separate guest interpretation/clarification API, NOT AllowAny on existing
+   recruiter APIs. Return validated criteria and clarification only. No candidate
+   records, identities, contact fields, resumes, match counts or recruiter IDs.
+3. Guest history bound to an expiring server-side session; use secure HttpOnly
+   cookie, CSRF, payload/turn limits, strict schema/grounding and existing AI
+   failures (no silent fallback). Never create a shared fake recruiter account.
+4. Before enabling: atomic per-IP AND per-session short/daily limits, trusted
+   proxy handling, global daily request/token budget with fail-closed cap,
+   concurrency/timeouts, bot challenge escalation and privacy-safe logs. Clearing
+   cookies must not reset IP/global budgets. CSRF/CORS are not bot protection.
+   Suggested starting limits for approval: 3/minute and 20/day per observed IP,
+   10/day per guest session; clarify turns count too. Global budget requires an
+   operator-selected cap. No paid provider tests without separate approval.
+5. Keep candidate results, profile/contact/resume access, shortlist/stages,
+   comparisons, projects, recents and notifications authenticated/authorized.
+   Public candidate previews would be a separate product/privacy decision and
+   require appropriate consent, a minimal public serializer and anti-enumeration
+   review. Redacting names alone is not sufficient anonymization.
+6. Add adversarial guest/candidate/recruiter tests before enablement: private
+   endpoint denial, cross-session isolation, forged IDs, drafts/not-looking/
+   matching-only restrictions, rate and budget boundaries and CSRF.
+
+This provides no-login search composition/AI clarification, not unrestricted
+talent browsing. It does not fulfill no-login candidate discovery. Please approve
+this boundary before any backend implementation.
+
+Visual-only interim navigation
+- Audience buttons no longer scroll to the lower sections.
+- Candidate opens the unchanged candidate signup/login flow.
+- Recruiter opens the existing protected entry flow until guest access is
+  separately approved. Login menu/accounts/backend remain unchanged.
+
+No backend changes, public endpoints, live AI requests or deployment performed.
+
+Executed visual-only verification
+- TypeScript/Vite build, ESLint: passed.
+- Frontend unit tests: 38 passed; relevant Playwright tests: 22 passed.
+- Measured 1440/1024/390px: no horizontal overflow; hero height and supporting
+  text positions unchanged from before the inline-wordmark change.
+- Browser tests cover candidate navigation, still-protected recruiter entry,
+  real cloud/marquee movement, hover, keyboard, mobile tap, Escape, reduced
+  motion, original transparent logo and default preview exclusion.
+- Production bundle scan found no Shiprocket/WazirX/company-preview assets.
+- Read-only anonymous GET /api/v1/searches/ on the running Django server:
+  HTTP 401. No AI invocation. This is not a new full authorization-suite run.
+- Screenshots: spacing-review/replacement-{1440,1024,390}.png.
+
+Logo work remains partial: two usable existing logos, four explicitly excluded
+identities, two variants requiring review and 25 unprepared official assets.
+See replacement-list-review.json. No public permission has been inferred.

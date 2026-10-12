@@ -16,12 +16,13 @@
 .ce-company-track { display: flex; width: max-content; }
 .ce-company-sequence { display: flex; align-items: center; gap: var(--company-gap); padding-right: var(--company-gap); flex: none; animation: ce-company-travel 104s linear infinite; }
 .ce-company-preview .ce-company-logo { flex: none; width: var(--company-cell); min-width: var(--company-cell); height: 64px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 0; background: transparent; box-shadow: none; padding: 4px; margin: 0; cursor: pointer; }
-.ce-company-logo img { display: block; width: auto; height: auto; max-width: 100%; object-fit: contain; }
+.ce-company-logo img { display: block; width: auto; height: auto; max-width: 100%; object-fit: contain; filter: grayscale(1); opacity: .55; }
 .ce-company-preview :is(button, .ce-company-window):focus-visible { outline: var(--enter-focus-ring, 2px solid #6D4AFF); outline-offset: -2px; }
 .ce-company-preview[data-paused="true"] .ce-company-sequence,
 .ce-company-preview:is(:hover, :focus-within) .ce-company-sequence { animation-play-state: paused; }
 .ce-company-preview[data-keyboard="true"] .ce-company-sequence { animation: none; }
 .ce-company-preview[data-keyboard="true"] [data-duplicate="true"] { display: none; }
+.ce-company-preview[data-keyboard="true"] [data-repeated="true"] { display: none; }
 .ce-company-preview[data-keyboard="true"] .ce-company-window { overflow-x: auto; scrollbar-width: thin; }
 .ce-company-popover { position: fixed; z-index: 100; width: min(288px, calc(100vw - 32px)); padding: 18px 20px; background: var(--enter-surface); color: var(--enter-text); font: 14px/1.5 var(--enter-font-ui); border: 1px solid var(--enter-border); border-radius: 12px; box-shadow: 0 8px 28px rgb(25 21 43 / 10%); }
 .ce-company-popover strong { display: block; font-size: 16px; font-weight: 600; }
@@ -35,6 +36,7 @@
 @media (prefers-reduced-motion: reduce) {
   .ce-company-sequence { animation: none; }
   .ce-company-preview [data-duplicate="true"] { display: none; }
+  .ce-company-preview [data-repeated="true"] { display: none; }
   .ce-company-window { overflow-x: auto; scrollbar-width: thin; }
   .ce-company-pause { display: none; }
 }
