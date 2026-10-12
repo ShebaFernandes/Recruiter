@@ -2,6 +2,7 @@ import { expect, test, type APIRequestContext } from '@playwright/test'
 import fs from 'node:fs'
 import path from 'node:path'
 import { issueLocalAccountToken } from './account-token'
+import { expectEnterCard, expectEnterField, expectEnterPage, expectEnterPrimary } from './design-contract'
 
 const API = process.env.PLAYWRIGHT_API_URL || 'http://127.0.0.1:8010/api/v1'
 const password = 'strong-pass-123'
@@ -86,6 +87,9 @@ test('recruiter completes clarification, filters, compares, reviews and persists
   await page.getByRole('button', { name: 'Create account' }).click()
 
   await page.getByRole('button', { name: 'Projects' }).click()
+  await expectEnterPage(page, page.locator('.recruiter-page'))
+  await expectEnterField(page.getByLabel('New project name'))
+  await expectEnterPrimary(page.getByRole('button', { name: 'Create project' }))
   await page.getByLabel('New project name').fill(`Backend hiring ${runId}`)
   await page.getByRole('button', { name: 'Create project' }).click()
   await expect(page.locator('.workspace-sidepanel').getByText(`Backend hiring ${runId}`)).toBeVisible()
@@ -104,6 +108,8 @@ test('recruiter completes clarification, filters, compares, reviews and persists
   await expect(page.getByText(/preferred location/)).toBeVisible()
   await page.getByRole('button', { name: 'Bengaluru', exact: true }).click()
   const cards = page.locator('.candidate-card')
+  await expectEnterCard(cards.first())
+  await expectEnterPrimary(cards.first().getByRole('button', { name: 'View profile', exact: true }))
   await expect(cards.first()).toBeVisible()
   const seededAnikaCard = cards.filter({ has: page.locator(`a[href="mailto:${candidates[0].email}"]`) })
   const initialCount = await cards.count()
@@ -128,8 +134,8 @@ test('recruiter completes clarification, filters, compares, reviews and persists
   await expect(page.locator('.candidate-rank')).toHaveCount(0)
   await expect(page.getByText('Why this match')).toHaveCount(0)
 
-  for (const width of [1440, 1024, 390]) {
-    await page.setViewportSize({ width, height: 900 })
+  for (const [width, height] of [[1440, 900], [1024, 900], [390, 900], [1440, 768], [1024, 768], [390, 844]]) {
+    await page.setViewportSize({ width, height })
     await page.mouse.move(0, 0)
     await page.evaluate(() => window.scrollTo(0, 0))
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
@@ -152,14 +158,11 @@ test('recruiter completes clarification, filters, compares, reviews and persists
     await expect(careerJob.locator('.career-detail')).toBeInViewport()
     await page.screenshot({ path: testInfo.outputPath(`career-detail-${width}.png`) })
     await page.keyboard.press('Escape')
+    const scrollBeforeFilters = await page.evaluate(() => window.scrollY)
     await page.getByRole('button', { name: 'Refine', exact: true }).click()
     await expect(page.getByRole('button', { name: 'Close filters' })).toBeFocused()
-    if (width === 390) {
-      await page.keyboard.press('Shift+Tab')
-      await expect(page.getByRole('button', { name: 'Apply filters' })).toBeFocused()
-      await page.keyboard.press('Tab')
-      await expect(page.getByRole('button', { name: 'Close filters' })).toBeFocused()
-    }
+    await page.keyboard.press('Tab')
+    await expect(page.getByRole('textbox', { name: 'Role', exact: true })).toBeFocused()
     await expect(page.getByRole('group', { name: 'Role & expertise' })).toBeVisible()
     if (width >= 1024) {
       const card = await cards.first().boundingBox()
@@ -167,13 +170,24 @@ test('recruiter completes clarification, filters, compares, reviews and persists
       expect(panel!.x).toBeGreaterThanOrEqual(card!.x + card!.width)
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
-    await page.screenshot({ path: testInfo.outputPath(`filters-${width}.png`) })
+    await page.screenshot({ path: testInfo.outputPath(`filters-${width}-${height}.png`) })
     const filterBody = page.locator('.results-filter-panel form')
     await filterBody.evaluate(element => { element.scrollTop = element.scrollHeight })
-    expect(await filterBody.evaluate(element => element.scrollTop)).toBeGreaterThan(0)
-    await expect(page.getByRole('button', { name: 'Close filters' })).toBeInViewport()
+    expect(await filterBody.evaluate(element => element.scrollTop)).toBe(0)
+    await expect(filterBody).toHaveCSS('overflow-y', 'visible')
+    // Every filter and both actions must be fully visible immediately, without scrolling.
+    const panel = page.locator('.results-filter-panel')
+    const panelBox = (await panel.boundingBox())!
+    expect(panelBox.y).toBeGreaterThanOrEqual(66)
+    expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(width === 390 ? height - 58 : height)
+    expect(await panel.evaluate(element => element.scrollHeight <= element.clientHeight + 1)).toBe(true)
+    for (const control of await panel.locator('input, select, button').all()) {
+      await expect(control).toBeInViewport({ ratio: 1 })
+    }
     await expect(page.getByRole('button', { name: 'Apply filters' })).toBeInViewport()
     await expect(page.getByRole('combobox', { name: 'Recruiting stage', exact: true })).toBeInViewport()
+    expect(await page.evaluate(() => window.scrollY)).toBe(scrollBeforeFilters)
+    expect(await filterBody.evaluate(element => element.scrollTop)).toBe(0)
     await page.getByRole('button', { name: 'Close filters' }).click()
     await expect(page.getByRole('button', { name: 'Refine', exact: true })).toBeFocused()
   }

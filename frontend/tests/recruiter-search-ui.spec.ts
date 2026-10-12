@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { pathToFileURL } from 'node:url'
+import { expectEnterPage, expectEnterPrimary } from './design-contract'
 
 async function enterWorkspace(page: Page) {
   await page.goto('/')
@@ -16,6 +17,7 @@ for (const width of [1440, 1024, 390]) {
   test(`real recruiter search and clarification at ${width}px`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 960 })
     await enterWorkspace(page)
+    await expectEnterPage(page, page.locator('.recruiter-page'))
     const composer = page.getByLabel('Candidate search', { exact: true })
     await expect(page.getByRole('button', { name: 'Search talent' })).toBeDisabled()
     const longQuery = 'Backend engineers with experience building reliable distributed services and production APIs. '.repeat(5)
@@ -58,6 +60,7 @@ for (const width of [1440, 1024, 390]) {
     expect(search.state).toBe('needs_clarification')
     expect(search.criteria).toHaveProperty('min_experience', 4)
     await expect(page.getByText('One detail before I search')).toBeVisible()
+    await expectEnterPrimary(page.getByRole('button', { name: 'Continue', exact: true }))
     await expect(page.getByText(/preferred location/)).toBeVisible()
     await page.getByRole('button', { name: 'Let me type it', exact: true }).click()
     await expect(page.getByLabel('Clarification answer')).toBeFocused()
@@ -135,7 +138,8 @@ test('desktop search proportions match the supplied original HTML', async ({ pag
   }
   for (const index of [0, 3]) {
     expect(current[index].fontSize).toBe(original[index].fontSize)
-    expect(current[index].fontFamily).toBe(original[index].fontFamily)
+    // Phase 6.5 intentionally unifies the UI font; reference proportions stay exact.
+    expect(current[index].fontFamily).toContain('DM Sans')
     expect(current[index].height).toBeCloseTo(original[index].height, 0)
   }
   expect(current[1].y - current[0].bottom).toBeCloseTo(original[1].y - original[0].bottom, 0)

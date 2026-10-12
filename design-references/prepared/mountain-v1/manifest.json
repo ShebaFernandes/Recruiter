@@ -1,0 +1,119 @@
+{
+  "version": 1,
+  "status": "Asset review only; not integrated into application",
+  "reference": "design-references/ENTER_ Building Brighter Teams.png",
+  "generation": "Built-in image generation; reconstructed artwork, not recovered source layers",
+  "canvas": {
+    "width": 1536,
+    "height": 1024
+  },
+  "alignment": "All images share the same full-canvas origin. Do not individually trim.",
+  "composition": [
+    {
+      "file": "sky.webp",
+      "opacity": 1
+    },
+    {
+      "file": "mountains-distant.webp",
+      "opacity": 1
+    },
+    {
+      "file": "mountains-middle.webp",
+      "opacity": 0.72
+    },
+    {
+      "file": "clouds-back.webp",
+      "opacity": 0.65
+    },
+    {
+      "file": "mountains-foreground.webp",
+      "opacity": 0.4
+    },
+    {
+      "file": "clouds-front.webp",
+      "opacity": 0.75
+    }
+  ],
+  "movementPreparation": "For implementation, render stack with 6% overscan per side; keep shifts within 3% horizontal and 2% vertical. Plates are not tileable; use slow reversing drift, not wraparound.",
+  "limitations": "Flattened screenshot cannot reveal hidden terrain or original alpha. These plates reconstruct the palette and valley composition, not exact source geometry. Static preview uses the listed layer opacities. No animation or responsive crops have been implemented.",
+  "assets": [
+    {
+      "name": "sky",
+      "file": "sky.webp",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 16914,
+      "alpha": {
+        "transparent": 0,
+        "partial": 0,
+        "opaque": 1572864
+      },
+      "prompt": "Use case: precise-object-edit. Asset type: clean sky base plate for a layered website landscape. Image 1 is the approved visual reference, not content to copy. Generate exactly ONE image, a 1536 x 1024 landscape canvas. Reconstruct ONLY its delicate warm off-white cream sky, slight pale lavender-gray atmospheric tint toward left and upper edges, very restrained warm ivory light low right of center. Completely remove ALL typography, logo, nav, buttons, company logos, dots, lines, mountains, trees, clouds and UI. No objects, no visible sun, no shapes, no hard gradient banding. This is the bottom opaque background plate: soft natural atmospheric illumination, mostly #FAF9F6, not pink or saturated. Full bleed to all four edges, no borders. Preserve the reference's airy understated premium feeling. Output only the sky image, not a mockup or contact sheet."
+    },
+    {
+      "name": "distant",
+      "file": "mountains-distant.webp",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 75826,
+      "alpha": {
+        "transparent": 1006194,
+        "partial": 566670,
+        "opaque": 0
+      },
+      "prompt": "Use case: background-extraction. Asset type: distant-mountains transparent parallax plate. Image 1 is the approved composition/style reference. Produce ONE RGBA PNG 1536x1024, GENUINELY TRANSPARENT above the mountain silhouette, no baked checkerboard or colored sky. Same fixed canvas coordinates for every plate in this set, do not auto-crop. Reconstruct ONLY the farthest pale lavender-gray mountain ranges. Profile: left-edge ridge at y=670, softly irregular peak near (355,650), descends to a hazy central valley near (780,790), rises to a distant right shoulder near (1220,715), far right near y=675. Restrict all visible terrain to bottom 37% of canvas. Fill mountainous terrain continuously down to the bottom edge and across both side edges, extending naturally off-canvas for overscan. Airy low-contrast photographic mountain texture, thin atmospheric haze, cream reflected light, distant naturally eroded contours, not triangles. No middle/foreground mountains, no trees, no clouds, no sun, no text/UI/branding, no decorative lines/dots. This is a clean isolated distant terrain plate, not a whole finished landscape. Preserve reference color mood and central open valley. Use transparency for all sky and soft antialiased ridge edges."
+    },
+    {
+      "name": "middle",
+      "file": "mountains-middle.webp",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 97748,
+      "alpha": {
+        "transparent": 1176978,
+        "partial": 395886,
+        "opaque": 0
+      },
+      "prompt": "Create ONE transparent RGBA PNG 1536x1024: isolated middle-distance mountain layer matching the supplied image's soft lavender-gray and cream photographic scenery. Genuine transparency, no checkerboard/background/sky. Fixed frame: leave upper 65% fully transparent. Left ridge enters at y740, gentle peak x270 y700, slopes down to center valley x820 y940. Right shoulder rises from x980 y920 to right edge y730. Terrain fills bottom corners and extends past both sides. Pale, subtle natural rock texture and haze. No text, logos, interface, clouds, trees or distant panorama. This is one terrain plate for stacking, not a finished hero. Keep open central valley and airy quiet neutral coloring."
+    },
+    {
+      "name": "foreground",
+      "file": "mountains-foreground.webp",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 135526,
+      "alpha": {
+        "transparent": 1266902,
+        "partial": 305962,
+        "opaque": 0
+      },
+      "prompt": "Use case: background-extraction. ONE genuinely transparent RGBA PNG 1536x1024 fixed canvas, isolated FOREGROUND mountain plate for image1. Leave upper 77% fully transparent. ONLY low foreground slopes in bottom corners: left edge y805 warm gray rocky shoulder descends toward bottom at x720; right edge y830 pale lavender-gray ridge curves to bottom near x1000. Open transparent central valley between them. Natural weathered rock, fine distant scrub texture, delicate pale tonal range a little deeper than far mountains, cream highlights. Terrain fills bottom corners and runs off left/right edges. True alpha, no checkerboard or black/white sky. No additional full panorama, no clouds, no text/UI/logos/curves/dots. Quiet premium atmospheric photograph style; no geometric triangles. Single layer not a complete landscape."
+    },
+    {
+      "name": "clouds_back",
+      "file": "clouds-back.webp",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 215790,
+      "alpha": {
+        "transparent": 1087858,
+        "partial": 485006,
+        "opaque": 0
+      },
+      "prompt": "Use case: background-extraction. ONE transparent RGBA PNG 1536x1024: isolated wispy valley MIST layer for the atmospheric mountain reference. No mountains, sky, terrain, text, interface, objects. Genuine alpha, no baked checkerboard. Leave top 65% completely transparent. Soft warm white/cream and very pale lavender-gray horizontal mist tendrils sweep along y780-940, strongest lower-left and lower-center, taper gently toward right. Delicate semi-transparent feathered edges and translucent interior, not opaque cotton puff clouds. Thin natural photographic atmospheric vapor with a few gently rolling cloud folds. Mist extends continuously beyond both left/right edges for gentle horizontal drift. Lower bottom edge remains softly translucent. No hard rectangular boundary, no dark outlines. Fixed 1536x1024 full canvas, do not crop around mist."
+    },
+    {
+      "name": "clouds_front",
+      "file": "clouds-front.webp",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 211634,
+      "alpha": {
+        "transparent": 1022536,
+        "partial": 550328,
+        "opaque": 0
+      },
+      "prompt": "Use case: background-extraction. Make ONE genuinely transparent RGBA PNG 1536x1024: very thin foreground mist isolated for the supplied lavender mountain reference. No scenery or sky. Top 75% fully transparent. ONLY a delicate soft cream-white wisp draping horizontally around y890 to bottom; strongest on bottom-right, a thinner tendril towards bottom-left. Mostly TRANSLUCENT even inside the mist, mountains must stay visible behind it. Wispy natural photographic vapor, pale lavender-gray undertones, not large opaque cumulus clouds. Feathered edges, true alpha transparency, no black/white/checkerboard backdrop. Mist runs off left/right/bottom canvas edges for lateral overscan. No text, logos, UI, symbols, mountains, trees, stars, lines. Fixed full canvas alignment, do not crop to the cloud."
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test'
 import path from 'node:path'
 import { issueLocalAccountToken } from './account-token'
+import { expectEnterCard, expectEnterField, expectEnterPage, expectEnterPrimary } from './design-contract'
 
 async function checkCandidateLayouts(page: Page, testInfo: TestInfo, state: string, section?: string) {
   for (const width of [1440, 1024, 390]) {
@@ -39,6 +40,8 @@ test('candidate completes a conversational resume profile and preferences persis
   await expect(page.getByRole('heading', { name: "Let's find work that feels great." })).toBeVisible()
   await expect(page.getByText('Join Leading Startups Building Their Teams with ENTER')).toBeVisible()
   await expect(page.getByText('PDF or DOCX · Maximum 5 MB')).toBeVisible()
+  await expectEnterPage(page, page.locator('.candidate-upload-first'))
+  await expectEnterCard(page.locator('.candidate-upload-card'))
   await checkCandidateLayouts(page, testInfo, 'welcome')
   await page.getByLabel('Choose PDF or DOCX resume').focus()
   await expect(page.getByLabel('Choose PDF or DOCX resume')).toBeFocused()
@@ -54,6 +57,8 @@ test('candidate completes a conversational resume profile and preferences persis
   await expect(page.getByText('Your resume gave us a great start.')).toBeVisible()
   await expect(page.getByText('We need 3 more details to complete your profile.')).toBeVisible()
   await expect(page.locator('.experience-card').getByText('Senior Backend Engineer')).toBeVisible()
+  await expectEnterCard(page.locator('.about-card'))
+  await expectEnterPrimary(page.getByRole('button', { name: /Complete my profile/ }))
   await checkCandidateLayouts(page, testInfo, 'profile')
 
   await page.getByRole('button', { name: /Complete my profile/ }).click()
@@ -73,6 +78,8 @@ test('candidate completes a conversational resume profile and preferences persis
 
   const about = page.locator('.about-card')
   await about.getByRole('button', { name: /Edit/ }).click()
+  await expectEnterField(about.getByLabel('Current role'))
+  await expect(about.getByLabel('Current role')).toHaveCSS('font-weight', '400')
   await about.getByLabel('Current role').fill('Staff Backend Engineer')
   await checkCandidateLayouts(page, testInfo, 'about-edit', '.about-card')
   await about.getByRole('button', { name: 'Save', exact: true }).click()
@@ -120,11 +127,13 @@ test('candidate completes a conversational resume profile and preferences persis
   await page.getByRole('button', { name: /Review & submit/ }).click()
   const review = page.locator('.review-submit')
   await expect(review.getByText('All required details are ready.')).toBeVisible()
+  await expect(review.getByText('All required details are ready.')).toHaveCSS('color', 'rgb(33, 99, 78)')
   await expect(review.getByRole('button', { name: /Submit my profile/ })).toBeDisabled()
   await checkCandidateLayouts(page, testInfo, 'review', '.review-submit')
   await review.getByLabel('Profile-sharing consent').check()
   await review.getByRole('button', { name: /Submit my profile/ }).click()
   await expect(page.getByRole('heading', { name: /You’re all set/ })).toBeVisible()
+  await expect(page.locator('.submission-stage.submitted')).toHaveCSS('background-color', 'rgb(239, 247, 242)')
   await checkCandidateLayouts(page, testInfo, 'submitted', '.submission-stage')
   await page.emulateMedia({ reducedMotion: 'reduce' })
   expect(await page.locator('.submission-stage .primary, .submission-stage button').evaluate(el => getComputedStyle(el).transitionDuration)).toBe('0s')

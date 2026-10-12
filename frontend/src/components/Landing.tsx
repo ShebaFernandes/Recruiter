@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { ArrowRight, MoveUpRight } from 'lucide-react'
 import { Button } from './ui'
+import MountainHero from './MountainHero'
 import './landing.css'
 
 export default function Landing({ choose }: {
@@ -33,6 +34,8 @@ export default function Landing({ choose }: {
 
   return <main className="career-edition" ref={root}>
     <a className="ce-skip" href="#enter-home">Skip to content</a>
+    <div className="ce-mountain-hero">
+    <MountainHero />
     <header className="ce-masthead">
       <a className="ce-logo" href="#enter-home" aria-label="Enter home"><img src="/enter-logo.jpeg" alt="enter" /></a>
       <span className="ce-masthead-note">People. Work. Possibility.</span>
@@ -65,6 +68,7 @@ export default function Landing({ choose }: {
         </div>
       </div>
     </section>
+    </div>
 
     <section className="ce-entry-section" aria-labelledby="ce-entry-title">
       <div className="ce-page-width">

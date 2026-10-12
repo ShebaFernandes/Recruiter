@@ -754,19 +754,7 @@ function RecruiterPortal({ user, logout }: { user: User; logout: () => void }) {
   useEffect(() => {
     const panel = filterPanelRef.current
     if (!filterOpen || !panel) return
-    panel.querySelector<HTMLButtonElement>('button')?.focus()
-    // Account for wrapped queries and active-filter chips above the panel.
-    const fitPanel = () => {
-      const top = Math.max(78, panel.getBoundingClientRect().top)
-      panel.style.setProperty('--filter-available-height', `${Math.max(180, window.innerHeight - top - 16)}px`)
-    }
-    fitPanel()
-    const observer = new ResizeObserver(fitPanel)
-    const resultsView = panel.closest('.results-view')
-    if (resultsView) observer.observe(resultsView)
-    window.addEventListener('resize', fitPanel)
-    window.addEventListener('scroll', fitPanel, { passive: true })
-    return () => { observer.disconnect(); window.removeEventListener('resize', fitPanel); window.removeEventListener('scroll', fitPanel) }
+    panel.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true })
   }, [filterOpen])
   function closeFilters() {
     setFilterOpen(false)

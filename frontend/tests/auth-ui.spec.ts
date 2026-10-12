@@ -1,5 +1,6 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test'
 import { issueLocalAccountToken } from './account-token'
+import { expectEnterCard, expectEnterField, expectEnterPage, expectEnterPrimary } from './design-contract'
 
 async function screenshot(page: Page, info: TestInfo, name: string, width: number) {
   await page.evaluate(() => document.fonts.ready)
@@ -15,6 +16,10 @@ for (const width of [1440, 1024, 390]) {
       await page.getByTestId(`for-${role}`).click()
       await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible()
       await expect(page.getByLabel('Full name')).toBeVisible()
+      await expectEnterPage(page, page.locator('.auth-editorial'))
+      await expectEnterCard(page.locator('.auth-card'))
+      await expectEnterPrimary(page.getByRole('button', { name: 'Create account' }))
+      await expectEnterField(page.getByLabel('Email'))
       await expect(page.getByText(role === 'recruiters' ? 'RECRUITER WORKSPACE' : 'CANDIDATE PROFILE', { exact: true })).toBeVisible()
       await page.getByLabel('Email').focus()
       await expect(page.getByLabel('Email')).toHaveCSS('border-color', 'rgb(109, 74, 255)')
