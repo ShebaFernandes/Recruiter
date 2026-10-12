@@ -6,7 +6,7 @@ import './recruiter-search.css'
 type Props = {
   query: string
   setQuery: (query: string) => void
-  search: Search | null
+  search: (Pick<Search, 'query' | 'state' | 'follow_up_question' | 'follow_up_options'> & { id: string | number }) | null
   answer: string
   setAnswer: (answer: string) => void
   submit: (event: FormEvent) => void

@@ -77,6 +77,7 @@ test('candidate created in the UI is discovered and updated in the recruiter UI'
 
   await page.getByRole('button', { name: 'Log out' }).click()
   await page.getByTestId('for-recruiters').click()
+  await page.getByRole('button', { name: 'Recruiter workspace', exact: true }).click()
   await page.getByLabel('Full name').fill('Audit Recruiter')
   await page.getByLabel('Company').fill('Audit Hiring')
   await page.getByLabel('Email').fill(recruiterEmail)
@@ -129,6 +130,7 @@ test('candidate created in the UI is discovered and updated in the recruiter UI'
 
   await page.getByRole('button', { name: 'Log out' }).click()
   await page.getByTestId('for-recruiters').click()
+  await page.getByRole('button', { name: 'Recruiter workspace', exact: true }).click()
   await page.getByRole('button', { name: /Already have an account/ }).click()
   await page.getByLabel('Email').fill(recruiterEmail)
   await page.getByLabel('Password').fill(password)

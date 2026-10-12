@@ -5,6 +5,7 @@ import { expectEnterPage, expectEnterPrimary } from './design-contract'
 async function enterWorkspace(page: Page) {
   await page.goto('/')
   await page.getByTestId('for-recruiters').click()
+  await page.getByRole('button', { name: 'Recruiter workspace', exact: true }).click()
   await page.getByLabel('Full name').fill('Riya Sen')
   await page.getByLabel('Company').fill('Search UI Verification')
   await page.getByLabel('Email').fill(`search-ui-${Date.now()}@example.com`)

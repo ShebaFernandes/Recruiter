@@ -1,21 +1,19 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
-import { isCompanyPreviewAllowed } from '../companyPreviewGate'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import Landing from '../Landing'
 import CompanyLogoPreview from './CompanyLogoPreview'
 import { previewCompanies } from './companies'
 
 afterEach(cleanup)
 
-describe('private company-logo preview', () => {
-  it('requires development, a loopback hostname and explicit opt-in', () => {
-    expect(isCompanyPreviewAllowed(true, '127.0.0.1', '?preview=company-logos')).toBe(true)
-    expect(isCompanyPreviewAllowed(true, 'localhost', '?preview=company-logos')).toBe(true)
-    expect(isCompanyPreviewAllowed(true, '[::1]', '?preview=company-logos')).toBe(true)
-    expect(isCompanyPreviewAllowed(false, '127.0.0.1', '?preview=company-logos')).toBe(false)
-    expect(isCompanyPreviewAllowed(true, 'enter.example.com', '?preview=company-logos')).toBe(false)
-    expect(isCompanyPreviewAllowed(true, '127.0.0.1', '')).toBe(false)
-    expect(isCompanyPreviewAllowed(true, 'localhost.evil.example', '?preview=company-logos')).toBe(false)
+describe('public company-logo marquee', () => {
+  it('appears on the default landing page without preview opt-in', () => {
+    window.history.replaceState({}, '', '/')
+    render(<Landing choose={vi.fn()} />)
+    expect(screen.getByRole('region', { name: 'Company logos' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'About Shiprocket' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'About WazirX' })).toBeVisible()
   })
 
   it('contains only verified usable artwork from the replacement list', () => {

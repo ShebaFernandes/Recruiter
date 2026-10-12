@@ -26,17 +26,10 @@
 .ce-masthead nav { display: flex; align-items: center; gap: 30px; margin-left: auto; }
 .ce-masthead .ce-audience-link { display: inline-flex; align-items: center; gap: 8px; color: var(--ce-ink); font-size: var(--enter-text-xs); text-decoration: none; padding-block: 12px; }
 .ce-masthead .ce-audience-link { border: 0; border-radius: 0; background: transparent; padding-inline: 0; font-family: inherit; font-weight: 400; cursor: pointer; box-shadow: none; }
-.ce-masthead .ce-audience-link, .ce-login summary { position: relative; }
-.ce-masthead .ce-audience-link::after, .ce-login summary::after { content: ''; position: absolute; bottom: 5px; left: 0; right: 0; height: 1px; background: var(--ce-violet); transform: scaleX(0); transform-origin: left; transition: transform .2s ease; }
-.ce-masthead .ce-audience-link:is(:hover, :focus-visible)::after, .ce-login summary:is(:hover, :focus-visible)::after { transform: scaleX(1); }
+.ce-masthead .ce-audience-link { position: relative; }
+.ce-masthead .ce-audience-link::after { content: ''; position: absolute; bottom: 5px; left: 0; right: 0; height: 1px; background: var(--ce-violet); transform: scaleX(0); transform-origin: left; transition: transform .2s ease; }
+.ce-masthead .ce-audience-link:is(:hover, :focus-visible)::after { transform: scaleX(1); }
 .ce-masthead .ce-audience-link:hover { color: var(--ce-violet); }
-.ce-login { position: relative; flex: none; }
-.ce-login summary { cursor: pointer; list-style: none; padding-block: 12px; font-size: var(--enter-text-xs); transition: color .2s ease; }
-.ce-login summary::-webkit-details-marker { display: none; }
-.ce-login summary:hover, .ce-login[open] summary { color: var(--ce-violet); }
-.ce-login-options { position: absolute; z-index: 5; top: calc(100% + 8px); right: 0; width: 190px; padding: 6px; background: var(--ce-paper); border: 1px solid var(--ce-rule); border-radius: var(--enter-radius-control); box-shadow: var(--enter-shadow-popover); }
-.ce-login-options button { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: var(--enter-control-standard); padding: 10px; border: 0; background: transparent; text-align: left; font-size: var(--enter-text-xs); }
-.ce-login-options button:hover { color: var(--ce-violet); background: var(--enter-bg); }
 .ce-intro { padding-bottom: 22px; }
 .ce-intro-grid { display: grid; justify-items: center; gap: 24px; text-align: center; margin: 42px 0 27px; }
 .ce-intro h1 { font-size: clamp(60px, 6.4vw, 92px); line-height: .98; letter-spacing: -.045em; margin: 0; animation: ce-headline-reveal 480ms ease-out both; }
@@ -98,7 +91,6 @@
   .ce-masthead-note { display: none; }
   .ce-masthead nav { gap: 14px; }
   .ce-masthead .ce-audience-link { font-size: 10px; gap: 3px; }
-  .ce-login summary { font-size: 10px; }
   .ce-masthead nav svg { display: none; }
   .ce-intro-grid { grid-template-columns: 1fr; gap: 23px; margin-top: 28px; }
   .ce-intro h1 { font-size: clamp(44px, 11.8vw, 68px); line-height: 1.02; letter-spacing: -.04em; }

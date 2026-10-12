@@ -1,14 +1,28 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 
 afterEach(() => {
   cleanup()
   window.history.replaceState({}, '', '/')
+  vi.restoreAllMocks()
 })
 
 describe('Enter Talent landing', () => {
+  it('opens guest recruiter search directly without a landing login menu', async () => {
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
+    render(<App />)
+    const entry = await screen.findByTestId('for-recruiters')
+    expect(screen.queryByText('Log in')).not.toBeInTheDocument()
+    fireEvent.click(entry)
+    expect(screen.getByRole('heading', { name: 'Who are we hiring today?' })).toBeVisible()
+    expect(screen.queryByLabelText('Company')).not.toBeInTheDocument()
+    expect(window.location.pathname).toBe('/recruiter')
+    fireEvent.click(screen.getByRole('button', { name: 'Recruiter workspace' }))
+    expect(screen.getByRole('heading', { name: 'Create your account' })).toBeVisible()
+    expect(window.location.pathname).toBe('/recruiter/account')
+  })
   it('offers connected recruiter and candidate entry points', async () => {
     render(<App />)
     expect(await screen.findByTestId('for-recruiters')).toBeVisible()

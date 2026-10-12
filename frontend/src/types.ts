@@ -86,6 +86,7 @@ export type Search = {
   created_at: string
 }
 export type SearchResult = { candidate: Candidate; match_score: number; match_reasons: string[] }
+export type GuestSearch = Pick<Search, 'query' | 'criteria' | 'state' | 'follow_up_question' | 'follow_up_options' | 'understanding_source' | 'understanding_model'> & { id: string; token: string }
 export type Project = {
   id: number
   name: string

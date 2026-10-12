@@ -80,6 +80,7 @@ test('recruiter completes clarification, filters, compares, reviews and persists
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/')
   await page.getByTestId('for-recruiters').click()
+  await page.getByRole('button', { name: 'Recruiter workspace', exact: true }).click()
   await page.getByLabel('Full name').fill('Ritu Mehta')
   await page.getByLabel('Company').fill('Enter Labs')
   await page.getByLabel('Email').fill(`recruiter-${runId}@company.example`)

@@ -1,19 +1,19 @@
 import { expect, test } from '@playwright/test'
 
-test('normal homepage has no company endorsement section or logo requests', async ({ page }) => {
-  const requests: string[] = []
-  page.on('request', request => requests.push(request.url()))
+test('normal homepage includes the approved logos without a preview flag', async ({ page }) => {
   await page.goto('/')
-  await expect(page.locator('.ce-company-preview')).toHaveCount(0)
+  await expect(page.getByRole('region', { name: 'Company logos', exact: true })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'The best teams are built by ENTER.' })).toBeVisible()
-  expect(requests.some(url => url.includes('-official.') || url.includes('CompanyLogoPreview'))).toBe(false)
+  await page.locator('.ce-company-preview img').evaluateAll(images => Promise.all(images.map(image => (image as HTMLImageElement).decode())))
+  await expect(page.getByRole('button', { name: 'About Shiprocket' })).toHaveCount(1)
+  await expect(page.getByRole('button', { name: 'About WazirX' })).toHaveCount(1)
 })
 
 for (const width of [1440, 1024, 390]) {
-  test(`private company row at ${width}: hover, keyboard, motion and overflow`, async ({ page }, testInfo) => {
+  test(`public company row at ${width}: hover, keyboard, motion and overflow`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 900 })
     await page.emulateMedia({ reducedMotion: 'no-preference' })
-    await page.goto('/?preview=company-logos')
+    await page.goto('/')
     const section = page.locator('.ce-company-preview')
     const sequence = section.locator('.ce-company-sequence').first()
     await expect(section).toBeVisible()
@@ -103,7 +103,7 @@ for (const width of [1440, 1024, 390]) {
   test(`company loop joins seamlessly at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
     await page.emulateMedia({ reducedMotion: 'no-preference' })
-    await page.goto('/?preview=company-logos')
+    await page.goto('/')
     const section = page.locator('.ce-company-preview')
     await section.scrollIntoViewIfNeeded()
     // Isolate time-seeking from interaction tests: WAAPI play/pause overrides
@@ -125,7 +125,7 @@ for (const width of [1440, 1024, 390]) {
 test('mobile tap opens, switches and dismisses company details', async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })
   const page = await context.newPage()
-  await page.goto('/?preview=company-logos')
+  await page.goto('/')
   await page.locator('.ce-company-preview').scrollIntoViewIfNeeded()
   const first = page.getByRole('button', { name: 'About Shiprocket' })
   const tapMovingLogo = async (name: string) => {

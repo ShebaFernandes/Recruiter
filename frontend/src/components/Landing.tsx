@@ -1,13 +1,6 @@
-import { lazy, Suspense } from 'react'
-import { ArrowRight } from 'lucide-react'
 import MountainHero from './MountainHero'
-import { isCompanyPreviewAllowed } from './companyPreviewGate'
+import CompanyLogoMarquee from './company-preview/CompanyLogoPreview'
 import './landing.css'
-
-// Vite removes this branch, its module, and imported company assets in production.
-// Public-display permission has NOT been granted.
-const CompanyLogoPreview = import.meta.env.DEV
-  ? lazy(() => import('./company-preview/CompanyLogoPreview')) : null
 
 export default function Landing({ choose }: {
   choose: (role: 'recruiter' | 'candidate', mode?: 'signup' | 'login') => void
@@ -20,24 +13,8 @@ export default function Landing({ choose }: {
       <a className="ce-logo" href="#enter-home" aria-label="Enter home"><img src="/enter-wordmark.svg" alt="enter" width={1400} height={600} /></a>
       <span className="ce-masthead-note">People. Work. Possibility.</span>
       <nav aria-label="Main navigation">
-        {/* Guest search needs a separately approved secure backend. Keep this
-            entry protected in the meantime, without the old scroll detour. */}
         <button className="ce-audience-link" data-testid="for-recruiters" onClick={() => choose('recruiter')}>For recruiters</button>
         <button className="ce-audience-link" data-testid="for-candidates" onClick={() => choose('candidate')}>For candidates</button>
-        <details className="ce-login" onBlur={event => {
-          if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false
-        }} onKeyDown={event => {
-          if (event.key === 'Escape') {
-            event.currentTarget.open = false
-            event.currentTarget.querySelector('summary')?.focus()
-          }
-        }}>
-          <summary>Log in</summary>
-          <div className="ce-login-options">
-            <button onClick={() => choose('recruiter', 'login')}>Recruiter log in <ArrowRight size={14} aria-hidden="true" /></button>
-            <button onClick={() => choose('candidate', 'login')}>Candidate log in <ArrowRight size={14} aria-hidden="true" /></button>
-          </div>
-        </details>
       </nav>
     </header>
 
@@ -52,8 +29,7 @@ export default function Landing({ choose }: {
     </section>
     </div>
 
-    {CompanyLogoPreview && isCompanyPreviewAllowed(import.meta.env.DEV, window.location.hostname, window.location.search)
-      && <Suspense fallback={null}><CompanyLogoPreview /></Suspense>}
+    <CompanyLogoMarquee />
 
   </main>
 }

@@ -12,6 +12,7 @@ import type { Candidate, Notification, Project, ProjectDetail, Search, SearchRes
 import { Badge, Button, Card, FormField } from './components/ui'
 import Landing from './components/Landing'
 import RecruiterSearch from './components/RecruiterSearch'
+import GuestRecruiterSearch from './components/GuestRecruiterSearch'
 import ResumeAccess from './components/ResumeAccess'
 import { GithubMark, LinkedInMark } from './components/ProfileMarks'
 import { ProjectWorkspace, WorkspacePanel } from './components/RecruiterWorkspace'
@@ -919,11 +920,22 @@ function RecruiterPortal({ user, logout }: { user: User; logout: () => void }) {
 }
 
 export default function App() {
+  const [path, setPath] = useState(window.location.pathname)
   const [user, setUser] = useState<User | null | undefined>(undefined)
   const [choice, setChoice] = useState<'candidate' | 'recruiter' | null>(null)
   const [authMode, setAuthMode] = useState<'signup' | 'login'>('signup')
   const [accountRemoved, setAccountRemoved] = useState(false)
-  const screen = useMemo(() => user?.role || choice, [user, choice])
+  const screen = useMemo(() => user?.role || choice || (path === '/recruiter/account' ? 'recruiter' : null), [user, choice, path])
+  function navigate(next: string) {
+    window.history.pushState({}, '', next)
+    setPath(next); setChoice(null)
+    window.scrollTo(0, 0)
+  }
+  useEffect(() => {
+    const onBack = () => { setPath(window.location.pathname); setChoice(null) }
+    window.addEventListener('popstate', onBack)
+    return () => window.removeEventListener('popstate', onBack)
+  }, [])
   useEffect(() => {
     api.me().then(setUser).catch(() => setUser(null))
   }, [])
@@ -936,8 +948,7 @@ export default function App() {
     window.addEventListener('enter-auth-expired', expireSession)
     return () => window.removeEventListener('enter-auth-expired', expireSession)
   }, [])
-  async function logout() { try { await api.logout() } catch { /* local logout still applies */ } auth.clear(); setUser(null); setChoice(null) }
-  const path = window.location.pathname
+  async function logout() { try { await api.logout() } catch { /* local logout still applies */ } auth.clear(); setUser(null); navigate('/') }
   const query = new URLSearchParams(window.location.search)
   if (path === '/privacy') return <LegalPlaceholder kind="privacy" />
   if (path === '/terms') return <LegalPlaceholder kind="terms" />
@@ -947,7 +958,8 @@ export default function App() {
   if (resetToken) return <PasswordResetScreen token={resetToken} done={() => { setAuthMode('login'); setChoice('candidate'); setUser(null) }} />
   if (user === undefined) return <main className="auth-page"><div className="candidate-profile-loading" role="status">Opening Enter…</div></main>
   if (accountRemoved) return <main className="auth-page"><section className="auth-card auth-state-card"><Brand /><div className="auth-state-icon"><CheckCircle2 /></div><h1>Your account has been deleted</h1><p>Your candidate profile and stored resumes were permanently removed.</p><button className="primary" onClick={() => { setAccountRemoved(false); setChoice(null) }}>Return to Enter</button></section></main>
-  if (!screen) return <Landing choose={(role, mode = 'signup') => { setAuthMode(mode); setChoice(role) }} />
-  if (!user) return <AuthScreen role={screen} initialMode={authMode} back={() => setChoice(null)} onDone={payload => setUser(payload.user)} />
+  if (!screen && path === '/recruiter') return <GuestRecruiterSearch home={() => navigate('/')} workspace={() => { setAuthMode('signup'); navigate('/recruiter/account') }} />
+  if (!screen) return <Landing choose={(role, mode = 'signup') => { if (role === 'recruiter') navigate('/recruiter'); else { setAuthMode(mode); setChoice(role) } }} />
+  if (!user) return <AuthScreen role={screen} initialMode={authMode} back={() => navigate('/')} onDone={payload => setUser(payload.user)} />
   return user.role === 'candidate' ? <CandidatePortal user={user} logout={logout} accountDeleted={() => { setUser(null); setChoice(null); setAccountRemoved(true) }} /> : <RecruiterPortal user={user} logout={logout} />
 }

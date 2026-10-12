@@ -1,8 +1,11 @@
 from django.urls import path
 
 from . import views
+from .guest_search import guest_search
 
 urlpatterns = [
+    path("guest/searches/", guest_search),
+    path("guest/searches/answer/", guest_search, {"answering": True}),
     path("health/", views.health),
     path("health/ready/", views.readiness),
     path("auth/csrf/", views.csrf_token),

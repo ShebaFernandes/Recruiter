@@ -1,4 +1,4 @@
-import type { Candidate, Notification, Project, ProjectDetail, Search, SearchResult, User } from './types'
+import type { Candidate, GuestSearch, Notification, Project, ProjectDetail, Search, SearchResult, User } from './types'
 
 export type AuthPayload = { token?: string; user: User }
 export type SignupResponse = AuthPayload | { detail: string; requires_email_verification: true; local_verification_url?: string }
@@ -62,6 +62,8 @@ async function request<T>(path: string, options: RequestInit = {}, binary = fals
 }
 
 export const api = {
+  guestSearch: (query: string) => request<GuestSearch>('/guest/searches/', { method: 'POST', body: JSON.stringify({ query, request_id: crypto.randomUUID() }) }),
+  guestAnswer: (token: string, answer: string) => request<GuestSearch>('/guest/searches/answer/', { method: 'POST', body: JSON.stringify({ token, answer }) }),
   resumeDocument: (id: number) => request<Blob>(`/resumes/${id}/download/`, { cache: 'no-store' }, true),
   me: () => request<User>('/auth/me/'),
   signup: (body: Record<string, string>) => request<SignupResponse>('/auth/signup/', { method: 'POST', body: JSON.stringify(body) }),

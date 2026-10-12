@@ -6,8 +6,8 @@ import './company-logo-preview.css'
 type Company = typeof previewCompanies[number]
 type Detail = { company: Company; anchor: HTMLElement; left: number; top: number; above: boolean; pinned: boolean }
 
-/** Review-only module: lazy imported in DEV, never shipped in the production build. */
-export default function CompanyLogoPreview() {
+/** Public landing marquee; the owner approved public display on 2026-10-12. */
+export default function CompanyLogoMarquee() {
   const root = useRef<HTMLElement>(null)
   const popup = useRef<HTMLDivElement>(null)
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -40,9 +40,17 @@ export default function CompanyLogoPreview() {
 
   useEffect(() => {
     const element = root.current
-    const observer = typeof IntersectionObserver === 'function'
-      ? new IntersectionObserver(entries => setInView(entries[0].isIntersecting)) : null
-    if (element) observer?.observe(element)
+    let observer: IntersectionObserver | null = null
+    try {
+      if (typeof IntersectionObserver === 'function') {
+        observer = new IntersectionObserver(entries => setInView(entries[0].isIntersecting))
+        if (element) observer.observe(element)
+      }
+    } catch {
+      // An optional offscreen optimization must never break the public page.
+      observer?.disconnect()
+      observer = null
+    }
     const visibility = () => setPageHidden(document.hidden)
     document.addEventListener('visibilitychange', visibility)
     return () => {
@@ -75,7 +83,7 @@ export default function CompanyLogoPreview() {
     }
   }, [detail])
 
-  return <section ref={root} className="ce-company-preview" aria-label="Company logos — private preview"
+  return <section ref={root} className="ce-company-preview" aria-label="Company logos"
     data-paused={paused || !!detail || !inView || pageHidden} data-keyboard={keyboardMode}
     onBlur={event => {
       if (!event.currentTarget.contains(event.relatedTarget)) {

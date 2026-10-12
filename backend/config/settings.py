@@ -103,6 +103,19 @@ RATE_LIMIT_TRUST_X_FORWARDED_FOR = (
     os.getenv("RATE_LIMIT_TRUST_X_FORWARDED_FOR", "false").lower() == "true"
 )
 
+# Guest endpoints only interpret a hiring brief; they cannot discover candidates.
+# Local use is enabled. Public rollout needs an explicit operator decision.
+GUEST_SEARCH_ENABLED = os.getenv(
+    "GUEST_SEARCH_ENABLED", "true" if DEBUG else "false"
+).lower() == "true"
+GUEST_SEARCH_RATES = {
+    "guest_ip_burst": os.getenv("GUEST_SEARCH_IP_BURST", "3/minute"),
+    "guest_ip_daily": os.getenv("GUEST_SEARCH_IP_DAILY", "20/day"),
+    "guest_browser_daily": os.getenv("GUEST_SEARCH_BROWSER_DAILY", "10/day"),
+    "guest_global_burst": os.getenv("GUEST_SEARCH_GLOBAL_BURST", "5/minute"),
+    "guest_global_daily": os.getenv("GUEST_SEARCH_GLOBAL_DAILY", "50/day"),
+}
+
 if os.getenv("AWS_STORAGE_BUCKET_NAME"):
     STORAGES["default"] = {
         "BACKEND": "storages.backends.s3.S3Storage",

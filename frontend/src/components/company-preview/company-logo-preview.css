@@ -1,4 +1,4 @@
-/* Private localhost preview only. No selectors touch the approved hero. */
+/* Public company-logo row. No selectors touch the approved hero. */
 .ce-company-preview {
   --company-cell: 152px;
   --company-gap: 56px;

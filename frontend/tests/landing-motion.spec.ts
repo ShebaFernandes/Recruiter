@@ -32,10 +32,7 @@ test(`landing motion at ${width}px preserves layout without lower scroll section
   const candidateLink = page.getByRole('navigation').getByRole('button', { name: 'For candidates' })
   await expect(candidateLink).toBeFocused()
   await expect.poll(() => candidateLink.evaluate(element => getComputedStyle(element, '::after').transform)).toBe('matrix(1, 0, 0, 1, 0, 0)')
-  await candidateLink.press('Tab')
-  const login = page.locator('.ce-login summary')
-  await expect(login).toBeFocused()
-  await expect.poll(() => login.evaluate(element => getComputedStyle(element, '::after').transform)).toBe('matrix(1, 0, 0, 1, 0, 0)')
+  await expect(page.locator('.ce-login')).toHaveCount(0)
   await page.screenshot({ path: testInfo.outputPath(`landing-${width}.png`), fullPage: true, animations: 'disabled' })
 })
 }
@@ -75,8 +72,8 @@ for (const failure of ['missing', 'throws', 'never calls back']) {
     await expect(page.getByTestId('for-recruiters')).toBeVisible()
     await expect(page.locator('.ce-intro h1')).toBeVisible()
     await page.getByTestId('for-recruiters').click()
-    await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible()
-    await expect(page.getByLabel('Company')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Who are we hiring today?' })).toBeVisible()
+    await expect(page.getByLabel('Company')).toHaveCount(0)
     expect(errors).toEqual([])
   })
 }

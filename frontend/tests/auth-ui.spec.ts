@@ -14,6 +14,7 @@ for (const width of [1440, 1024, 390]) {
     await page.goto('/')
     for (const role of ['recruiters', 'candidates']) {
       await page.getByTestId(`for-${role}`).click()
+      if (role === 'recruiters') await page.getByRole('button', { name: 'Recruiter workspace', exact: true }).click()
       await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible()
       await expect(page.getByLabel('Full name')).toBeVisible()
       await expectEnterPage(page, page.locator('.auth-editorial'))
@@ -104,6 +105,7 @@ test('recruiter signup and login keep their existing workspace destination', asy
   const email = `auth-ui-recruiter-${Date.now()}@example.com`
   await page.goto('/')
   await page.getByTestId('for-recruiters').click()
+  await page.getByRole('button', { name: 'Recruiter workspace', exact: true }).click()
   await page.getByLabel('Full name').fill('Robin Shah')
   await page.getByLabel('Company').fill('Auth UI Test Company')
   await page.getByLabel('Email').fill(email)
@@ -111,8 +113,9 @@ test('recruiter signup and login keep their existing workspace destination', asy
   await page.getByRole('button', { name: 'Create account' }).click()
   await expect(page.getByRole('heading', { name: 'Who are we hiring today?' })).toBeVisible()
   await page.getByRole('button', { name: 'Log out' }).click()
-  await page.locator('.ce-login summary').click()
-  await page.getByRole('button', { name: 'Recruiter log in', exact: true }).click()
+  await page.getByTestId('for-recruiters').click()
+  await page.getByRole('button', { name: 'Recruiter workspace', exact: true }).click()
+  await page.getByRole('button', { name: /Already have an account/ }).click()
   await page.getByLabel('Email').fill(email)
   await page.getByLabel('Password', { exact: true }).fill('Incorrect-password-123!')
   await page.getByRole('button', { name: 'Log in', exact: true }).click()

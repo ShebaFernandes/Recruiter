@@ -108,6 +108,47 @@ Rollback by returning ECS services and frontend/CDN to the prior immutable image
 
 For a dormant staging environment, set web/worker desired count to zero, stop nonessential scanner tasks, shorten noncritical log retention, and use a single-AZ/small RDS instance only if the staging recovery tradeoff is accepted. RDS continues charging while running; snapshot then delete it only through an approved teardown procedure. S3 data, snapshots, NAT gateways, ALBs, public IPv4 addresses, CloudWatch retention, and KMS keys can continue to incur cost. Prefer VPC endpoints or carefully evaluate NAT cost, Fargate Spot for noncritical workers, SQS long polling, autoscaling-to-zero workers, and CloudFront/S3 static hosting.
 
+## Anonymous recruiter search boundary
+
+`/recruiter` is a public UI for interpreting a hiring brief, not public candidate
+discovery. `POST /api/v1/guest/searches/` accepts a query (up to 2,000 characters)
+and UUID `request_id`. `POST /api/v1/guest/searches/answer/` accepts the returned
+signed token and an answer (up to 500 characters). Existing AI schema validation
+and grounding are reused. Neither endpoint queries candidates or creates recruiter
+searches, accounts, projects, or access grants. Private API permissions are unchanged.
+`/recruiter/account` retains account access for the protected workspace; candidate
+entry retains its signup/login switch. There is no separate landing login menu.
+
+Guest briefs are ephemeral and kept in browser memory, not localStorage. Refresh
+starts a new brief without calling AI. Clarification state is signed by Django,
+bound to an HttpOnly cookie, expires after 30 minutes, and permits at most five
+answers. Signed state is not encrypted: it contains only the guest's own brief and
+is never an authentication credential. Do not log request bodies, cookies or tokens.
+CSRF is explicitly enforced for anonymous POSTs. Cookies use the existing
+Secure/SameSite configuration. Replayed request IDs/tokens cannot generate duplicate
+provider calls. Provider errors are surfaced without automatic retries or fake AI.
+
+`GUEST_SEARCH_ENABLED` defaults to true only in DEBUG and false in production.
+Leave it false for public deployments pending abuse-control review. PostgreSQL
+enforces independent fixed-window quotas across replicas:
+
+| Variable | Default |
+| --- | --- |
+| `GUEST_SEARCH_IP_BURST` | `3/minute` |
+| `GUEST_SEARCH_IP_DAILY` | `20/day` |
+| `GUEST_SEARCH_BROWSER_DAILY` | `10/day` |
+| `GUEST_SEARCH_GLOBAL_BURST` | `5/minute` |
+| `GUEST_SEARCH_GLOBAL_DAILY` | `50/day` |
+
+Provider failures also consume quotas. Clearing cookies cannot bypass IP/global
+limits. These cap request counts, not money: configure provider spend limits before
+public rollout. Verify edge bot/challenge protection, trusted-proxy handling,
+alerting, and origin restrictions before public enablement. Never trust arbitrary
+X-Forwarded-For headers. Rate-bucket housekeeping must retain at least 24 hours of
+quota history and consumed clarification markers for their 30-minute validity.
+No schema migration is required. Automated tests mock the provider boundary while
+exercising actual schema validation, PostgreSQL limits and Django permissions.
+
 ## Required external decisions before real users
 
 Counsel must replace the clearly marked Privacy Policy and Terms placeholders. Owners must approve a data-retention/deletion policy, backup/restore policy with tested RPO/RTO, and incident-response policy with breach escalation. Malware signatures/scanner operations, SES production access, domain/HTTPS, alert destinations, on-call ownership, and a production restore exercise also remain external requirements. Do not represent these as completed by application code.
