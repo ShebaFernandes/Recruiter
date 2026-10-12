@@ -19,6 +19,7 @@ from talent.models import (
     WorkExperience,
 )
 
+from .recruiter_helpers import provision_recruiter
 from .test_candidate_flow import complete_resume_upload, resume_docx
 
 PASSWORD = "strong-pass-123"
@@ -55,6 +56,9 @@ def _signup_and_verify(client, email="verified@example.com"):
 
 @pytest.mark.django_db
 def test_candidate_email_verification_resend_expiry_and_one_time_use(settings):
+    settings.DEBUG = True
+    settings.APP_ENV = "test"
+    settings.EXPOSE_LOCAL_EMAIL_LINKS = True
     client = APIClient()
     mail.outbox.clear()
     signup = client.post(
@@ -259,8 +263,7 @@ def test_candidate_account_deletion_removes_profile_relations_and_resume_files(t
         assert submitted.data["submission_consent_at"]
 
         recruiter = APIClient()
-        recruiter_signup = recruiter.post(
-            "/api/v1/auth/signup/",
+        recruiter_signup = provision_recruiter(recruiter,
             {
                 "email": "deletion-recruiter@example.com",
                 "password": PASSWORD,

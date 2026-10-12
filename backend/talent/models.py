@@ -35,6 +35,12 @@ class RecruiterProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="recruiter_profile")
     full_name = models.CharField(max_length=180)
     company = models.CharField(max_length=180, blank=True)
+    is_approved = models.BooleanField(default=False)
+    approved_at = models.DateTimeField(null=True, blank=True)
+    approved_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="approved_recruiters",
+    )
 
 
 class CandidateProfile(models.Model):

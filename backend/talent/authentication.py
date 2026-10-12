@@ -9,6 +9,16 @@ from rest_framework.authentication import (
 )
 from rest_framework.exceptions import AuthenticationFailed
 
+from .permissions import is_approved_recruiter, is_verified_candidate
+
+
+class CsrfProtectedPublicAuthentication(SessionAuthentication):
+    """Require CSRF on anonymous auth POSTs without authenticating a session."""
+
+    def authenticate(self, request):
+        self.enforce_csrf(request)
+        return None
+
 
 class ExpiringTokenAuthentication(TokenAuthentication):
     def authenticate(self, request):
@@ -24,6 +34,12 @@ class ExpiringTokenAuthentication(TokenAuthentication):
 
     def authenticate_credentials(self, key):
         user, token = super().authenticate_credentials(key)
+        if hasattr(user, "candidate_profile") and not is_verified_candidate(user):
+            raise AuthenticationFailed("Verify your email before accessing your account.")
+        if hasattr(user, "recruiter_profile") and not is_approved_recruiter(user):
+            raise AuthenticationFailed(
+                "Recruiter access is not approved. Contact ENTER administration."
+            )
         expires_before = timezone.now() - timedelta(seconds=settings.AUTH_TOKEN_TTL_SECONDS)
         if token.created <= expires_before:
             token.delete()

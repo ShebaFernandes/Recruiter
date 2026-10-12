@@ -11,7 +11,7 @@ from django.db.models import Count, Q
 from django.http import FileResponse
 from django.middleware.csrf import get_token
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
+from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import (
@@ -28,10 +28,12 @@ from rest_framework.response import Response
 from .account_security import (
     consume_account_token,
     inspect_account_token,
+    local_email_shortcuts_enabled,
     recently_issued,
     send_password_reset_email,
     send_verification_email,
 )
+from .authentication import CsrfProtectedPublicAuthentication
 from .models import (
     AccountActionToken,
     CandidateProfile,
@@ -46,7 +48,7 @@ from .models import (
     Search,
     UserRole,
 )
-from .permissions import IsCandidate, IsRecruiter
+from .permissions import IsCandidate, IsRecruiter, is_approved_recruiter, is_verified_candidate
 from .resume_processing import enqueue_resume_job
 from .search_grounding import ground_saved_search
 from .search_understanding import (
@@ -138,64 +140,53 @@ def csrf_token(request):
     return Response({"csrfToken": get_token(request)})
 
 
-@csrf_protect
 @api_view(["POST"])
-@authentication_classes([])
+@authentication_classes([CsrfProtectedPublicAuthentication])
 @permission_classes([AllowAny])
 @throttle_classes([SignupRateThrottle])
 def signup(request):
+    if request.data.get("role") == UserRole.Role.RECRUITER:
+        return Response(
+            {"detail": "Recruiter accounts are created by ENTER administrators."}, status=403
+        )
     serializer = SignupSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     data = serializer.validated_data
     with transaction.atomic():
-        is_candidate = data["role"] == UserRole.Role.CANDIDATE
         user = User.objects.create_user(
             username=data["email"],
             email=data["email"],
             password=data["password"],
-            is_active=not is_candidate,
+            is_active=False,
         )
         UserRole.objects.create(user=user, role=data["role"])
-        if is_candidate:
-            CandidateProfile.objects.create(
-                user=user, full_name=data["full_name"], email=data["email"]
-            )
-        else:
-            RecruiterProfile.objects.create(
-                user=user, full_name=data["full_name"], company=data.get("company", "")
-            )
-    if is_candidate:
-        try:
-            verification_url = send_verification_email(user)
-        except Exception:
-            return Response(
-                {
-                    "detail": (
-                        "Your account was created, but the verification email could not be sent. "
-                        "Use resend verification to try again."
-                    ),
-                    "requires_email_verification": True,
-                },
-                status=status.HTTP_503_SERVICE_UNAVAILABLE,
-            )
-        payload = {
-            "detail": "Check your email to verify your candidate account.",
-            "requires_email_verification": True,
-        }
-        if settings.EXPOSE_LOCAL_EMAIL_LINKS and settings.EMAIL_BACKEND in {
-            "django.core.mail.backends.locmem.EmailBackend",
-            "django.core.mail.backends.console.EmailBackend",
-            "django.core.mail.backends.filebased.EmailBackend",
-        }:
-            payload["local_verification_url"] = verification_url
-        return Response(payload, status=status.HTTP_201_CREATED)
-    token = Token.objects.create(user=user)
-    return _authenticated_response(user, token, status.HTTP_201_CREATED)
+        CandidateProfile.objects.create(
+            user=user, full_name=data["full_name"], email=data["email"]
+        )
+    try:
+        verification_url = send_verification_email(user)
+    except Exception:
+        return Response(
+            {
+                "detail": (
+                    "Your account was created, but the verification email could not be sent. "
+                    "Use resend verification to try again."
+                ),
+                "requires_email_verification": True,
+            },
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+    payload = {
+        "detail": "Check your email to verify your candidate account.",
+        "requires_email_verification": True,
+    }
+    if local_email_shortcuts_enabled():
+        payload["local_verification_url"] = verification_url
+    return Response(payload, status=status.HTTP_201_CREATED)
 
 
-@csrf_protect
 @api_view(["POST"])
-@authentication_classes([])
+@authentication_classes([CsrfProtectedPublicAuthentication])
 @permission_classes([AllowAny])
 @throttle_classes([LoginRateThrottle])
 def login(request):
@@ -204,7 +195,11 @@ def login(request):
     user = authenticate(request, username=email, password=password)
     if not user:
         inactive = User.objects.filter(username__iexact=email, is_active=False).first()
-        if inactive and inactive.check_password(password):
+        if (
+            inactive and hasattr(inactive, "candidate_profile")
+            and inactive.candidate_profile.email_verified_at is None
+            and inactive.check_password(password)
+        ):
             return Response(
                 {
                     "detail": "Verify your email before logging in.",
@@ -215,28 +210,44 @@ def login(request):
         return Response(
             {"detail": "Invalid email or password."}, status=status.HTTP_400_BAD_REQUEST
         )
+    if hasattr(user, "candidate_profile") and not is_verified_candidate(user):
+        return Response(
+            {"detail": "Verify your email before logging in.", "code": "email_not_verified"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+    if not hasattr(user, "candidate_profile") and not is_approved_recruiter(user):
+        return Response(
+            {"detail": "Recruiter access requires approval from an ENTER administrator.",
+             "code": "recruiter_not_approved"}, status=403,
+        )
     Token.objects.filter(user=user).delete()
     token = Token.objects.create(user=user)
     return _authenticated_response(user, token)
 
 
-@csrf_protect
 @api_view(["POST"])
-@authentication_classes([])
+@authentication_classes([CsrfProtectedPublicAuthentication])
 @permission_classes([AllowAny])
 @throttle_classes([VerificationConsumeRateThrottle])
+@transaction.atomic
 def verify_email(request):
     user = consume_account_token(
         request.data.get("token"), AccountActionToken.Purpose.VERIFY_EMAIL
     )
-    if not user or not hasattr(user, "candidate_profile"):
+    profile = (
+        CandidateProfile.objects.select_for_update().filter(
+            user=user, email_verified_at__isnull=True,
+        ).first() if user else None
+    )
+    # An already verified account may be deliberately disabled. Verification
+    # must never clear that administrative decision, even with an old valid token.
+    if not profile:
         return Response(
             {"detail": "This verification link is invalid or has expired."},
             status=status.HTTP_400_BAD_REQUEST,
         )
     user.is_active = True
     user.save(update_fields=["is_active"])
-    profile = user.candidate_profile
     profile.email_verified_at = timezone.now()
     profile.save(update_fields=["email_verified_at", "profile_updated_at"])
     Token.objects.filter(user=user).delete()
@@ -244,14 +255,17 @@ def verify_email(request):
     return _authenticated_response(user, token)
 
 
-@csrf_protect
 @api_view(["POST"])
-@authentication_classes([])
+@authentication_classes([CsrfProtectedPublicAuthentication])
 @permission_classes([AllowAny])
 @throttle_classes([VerificationRateThrottle])
 def resend_verification(request):
     email = str(request.data.get("email", "")).strip().lower()
-    user = User.objects.filter(username__iexact=email, is_active=False).first()
+    user = User.objects.filter(
+        username__iexact=email,
+        candidate_profile__isnull=False,
+        candidate_profile__email_verified_at__isnull=True,
+    ).first()
     if (
         user
         and hasattr(user, "candidate_profile")
@@ -266,9 +280,8 @@ def resend_verification(request):
     )
 
 
-@csrf_protect
 @api_view(["POST"])
-@authentication_classes([])
+@authentication_classes([CsrfProtectedPublicAuthentication])
 @permission_classes([AllowAny])
 @throttle_classes([PasswordResetRateThrottle])
 def request_password_reset(request):
@@ -288,9 +301,8 @@ def request_password_reset(request):
     )
 
 
-@csrf_protect
 @api_view(["POST"])
-@authentication_classes([])
+@authentication_classes([CsrfProtectedPublicAuthentication])
 @permission_classes([AllowAny])
 @throttle_classes([PasswordResetConfirmRateThrottle])
 def confirm_password_reset(request):
@@ -320,7 +332,10 @@ def confirm_password_reset(request):
         purpose=AccountActionToken.Purpose.RESET_PASSWORD,
         used_at__isnull=True,
     ).update(used_at=timezone.now())
-    return Response({"detail": "Your password has been reset. You can now log in."})
+    return Response({
+        "detail": "Your password has been reset. You can now log in.",
+        "role": user.role_profile.role if hasattr(user, "role_profile") else None,
+    })
 
 
 @api_view(["POST"])
@@ -934,6 +949,8 @@ def _numeric_filter(value, label):
 
 def _recruiter_can_access_candidate(recruiter, candidate):
     """Apply candidate-controlled discovery rules to direct recruiter access."""
+    if not is_approved_recruiter(recruiter.user):
+        return False
     if candidate.profile_status != CandidateProfile.ProfileStatus.SUBMITTED:
         return False
     if not candidate.submission_consent_at:

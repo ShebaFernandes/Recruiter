@@ -14,6 +14,7 @@ from talent.resume_processing import (
     process_resume_job,
 )
 
+from .recruiter_helpers import provision_recruiter
 from .test_candidate_flow import resume_docx
 
 
@@ -170,8 +171,7 @@ def test_http_only_cookie_auth_requires_csrf_and_logout_clears_cookie():
     csrf_token = csrf.data["csrfToken"]
     headers = {"HTTP_X_CSRFTOKEN": csrf_token}
     with override_settings(TESTING=False, DEBUG=False, AUTH_COOKIE_SECURE=True):
-        signup = client.post(
-            "/api/v1/auth/signup/",
+        signup = provision_recruiter(client,
             {
                 "email": "cookie-recruiter@example.com",
                 "password": "strong-pass-123",
@@ -182,7 +182,7 @@ def test_http_only_cookie_auth_requires_csrf_and_logout_clears_cookie():
             format="json",
             **headers,
         )
-        assert signup.status_code == 201
+        assert signup.status_code == 200
         assert "token" not in signup.data
         auth_cookie = signup.cookies["enter_session"]
         assert auth_cookie["httponly"] is True
@@ -311,8 +311,7 @@ def test_authenticated_upload_and_search_rate_limits_are_backend_enforced(
     assert limited_upload.status_code == 429
 
     client.post("/api/v1/auth/logout/")
-    signup = client.post(
-        "/api/v1/auth/signup/",
+    signup = provision_recruiter(client,
         {
             "email": "throttled-recruiter@example.com",
             "password": "strong-pass-123",

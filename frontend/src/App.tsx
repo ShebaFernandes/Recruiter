@@ -12,7 +12,6 @@ import type { Candidate, Notification, Project, ProjectDetail, Search, SearchRes
 import { Badge, Button, Card, FormField } from './components/ui'
 import Landing from './components/Landing'
 import RecruiterSearch from './components/RecruiterSearch'
-import GuestRecruiterSearch from './components/GuestRecruiterSearch'
 import ResumeAccess from './components/ResumeAccess'
 import { GithubMark, LinkedInMark } from './components/ProfileMarks'
 import { ProjectWorkspace, WorkspacePanel } from './components/RecruiterWorkspace'
@@ -142,7 +141,7 @@ function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
   role: 'candidate' | 'recruiter'; onDone: (payload: AuthPayload) => void; back: () => void
   initialMode?: 'signup' | 'login'
 }) {
-  const [mode, setMode] = useState<'signup' | 'login' | 'forgot'>(initialMode)
+  const [mode, setMode] = useState<'signup' | 'login' | 'forgot'>(role === 'recruiter' ? 'login' : initialMode)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
@@ -173,7 +172,7 @@ function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
       if (payload.user.role !== role) throw new ApiError(`This account belongs to the ${payload.user.role} platform.`, 400)
       auth.save(payload); onDone(payload)
     } catch (err) {
-      if (role === 'candidate' && mode === 'login' && err instanceof ApiError && err.status === 403) {
+      if (role === 'candidate' && mode === 'login' && err instanceof ApiError && err.code === 'email_not_verified') {
         setPendingEmail(data.email)
       }
       setError(err instanceof Error ? err.message : 'Could not continue.')
@@ -206,7 +205,6 @@ function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
         <p>{mode === 'forgot' ? 'Enter your email. If an account exists, we’ll send a secure reset link.' : role === 'recruiter' ? 'Search real candidate profiles and build a thoughtful shortlist.' : 'Turn your resume into a profile you control.'}</p>
         <div className="auth-fields">
           {mode === 'signup' && <FormField label="Full name" name="full_name" required autoComplete="name" />}
-          {mode === 'signup' && role === 'recruiter' && <FormField label="Company" name="company" required autoComplete="organization" />}
           <FormField label="Email" name="email" type="email" required autoComplete="email" />
           {mode !== 'forgot' && <FormField label="Password" name="password" type="password" minLength={8} required autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} hint={mode === 'signup' ? 'Use at least 8 characters.' : undefined} />}
         </div>
@@ -214,9 +212,9 @@ function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
         {message && <div className="success" role="status"><Check size={17} aria-hidden="true" />{message}</div>}
         <Button size="large" fullWidth disabled={busy}>{busy ? 'Please wait…' : mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send reset link' : 'Log in'}</Button>
         {mode === 'login' && <Button type="button" variant="ghost" fullWidth onClick={() => { setMode('forgot'); setError(''); setMessage('') }}>Forgot password?</Button>}
-        <Button type="button" variant="ghost" fullWidth onClick={() => { setMode(mode === 'signup' ? 'login' : mode === 'login' ? 'signup' : 'login'); setError(''); setMessage('') }}>
+        {(role === 'candidate' || mode === 'forgot') && <Button type="button" variant="ghost" fullWidth onClick={() => { setMode(mode === 'signup' ? 'login' : mode === 'login' ? 'signup' : 'login'); setError(''); setMessage('') }}>
           {mode === 'signup' ? 'Already have an account? Log in' : mode === 'login' ? 'New here? Create an account' : 'Back to login'}
-        </Button>
+        </Button>}
       </form>
     </Card>
   </AuthLayout>
@@ -242,22 +240,23 @@ function EmailVerificationScreen({ token, onDone }: { token: string; onDone: (pa
   </Card></AuthLayout>
 }
 
-function PasswordResetScreen({ token, done }: { token: string; done: () => void }) {
+function PasswordResetScreen({ token, done }: { token: string; done: (role: 'candidate' | 'recruiter') => void }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [complete, setComplete] = useState(false)
+  const [accountRole, setAccountRole] = useState<'candidate' | 'recruiter'>('candidate')
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setBusy(true); setError('')
     const data = Object.fromEntries(new FormData(event.currentTarget).entries()) as Record<string, string>
     if (data.password !== data.confirm_password) { setError('Passwords do not match.'); setBusy(false); return }
-    try { await api.confirmPasswordReset(token, data.password); setComplete(true); window.history.replaceState({}, '', '/') }
+    try { const response = await api.confirmPasswordReset(token, data.password); setAccountRole(response.role === 'recruiter' ? 'recruiter' : 'candidate'); setComplete(true); window.history.replaceState({}, '', '/') }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'This reset link could not be used.') }
     finally { setBusy(false) }
   }
   return <AuthLayout><Card className="auth-card auth-state-card">
     <div className="auth-state-icon"><ShieldCheck aria-hidden="true" /></div>
     <h1>{complete ? 'Password updated' : 'Choose a new password'}</h1>
-    {complete ? <><p role="status">Your password has been changed and existing sessions have been signed out.</p><Button fullWidth onClick={done}>Continue to login</Button></>
+    {complete ? <><p role="status">Your password has been changed and existing sessions have been signed out.</p><Button fullWidth onClick={() => done(accountRole)}>Continue to login</Button></>
       : <form className="nested-auth-form" onSubmit={submit}><p>Use a strong password you don’t use elsewhere.</p><FormField label="New password" name="password" type="password" minLength={8} required autoComplete="new-password" /><FormField label="Confirm password" name="confirm_password" type="password" minLength={8} required autoComplete="new-password" /><InlineError value={error} /><Button fullWidth disabled={busy}>{busy ? 'Updating…' : 'Reset password'}</Button></form>}
   </Card></AuthLayout>
 }
@@ -925,7 +924,7 @@ export default function App() {
   const [choice, setChoice] = useState<'candidate' | 'recruiter' | null>(null)
   const [authMode, setAuthMode] = useState<'signup' | 'login'>('signup')
   const [accountRemoved, setAccountRemoved] = useState(false)
-  const screen = useMemo(() => user?.role || choice || (path === '/recruiter/account' ? 'recruiter' : null), [user, choice, path])
+  const screen = useMemo(() => user?.role || choice || (path === '/recruiter' || path === '/recruiter/account' ? 'recruiter' : null), [user, choice, path])
   function navigate(next: string) {
     window.history.pushState({}, '', next)
     setPath(next); setChoice(null)
@@ -955,10 +954,9 @@ export default function App() {
   const verificationToken = query.get('verify-email')
   if (verificationToken) return <EmailVerificationScreen token={verificationToken} onDone={payload => setUser(payload.user)} />
   const resetToken = query.get('reset-password')
-  if (resetToken) return <PasswordResetScreen token={resetToken} done={() => { setAuthMode('login'); setChoice('candidate'); setUser(null) }} />
+  if (resetToken) return <PasswordResetScreen token={resetToken} done={role => { setAuthMode('login'); if (role === 'recruiter') navigate('/recruiter'); else setChoice('candidate'); setUser(null) }} />
   if (user === undefined) return <main className="auth-page"><div className="candidate-profile-loading" role="status">Opening Enter…</div></main>
   if (accountRemoved) return <main className="auth-page"><section className="auth-card auth-state-card"><Brand /><div className="auth-state-icon"><CheckCircle2 /></div><h1>Your account has been deleted</h1><p>Your candidate profile and stored resumes were permanently removed.</p><button className="primary" onClick={() => { setAccountRemoved(false); setChoice(null) }}>Return to Enter</button></section></main>
-  if (!screen && path === '/recruiter') return <GuestRecruiterSearch home={() => navigate('/')} workspace={() => { setAuthMode('signup'); navigate('/recruiter/account') }} />
   if (!screen) return <Landing choose={(role, mode = 'signup') => { if (role === 'recruiter') navigate('/recruiter'); else { setAuthMode(mode); setChoice(role) } }} />
   if (!user) return <AuthScreen role={screen} initialMode={authMode} back={() => navigate('/')} onDone={payload => setUser(payload.user)} />
   return user.role === 'candidate' ? <CandidatePortal user={user} logout={logout} accountDeleted={() => { setUser(null); setChoice(null); setAccountRemoved(true) }} /> : <RecruiterPortal user={user} logout={logout} />

@@ -72,7 +72,7 @@ for (const failure of ['missing', 'throws', 'never calls back']) {
     await expect(page.getByTestId('for-recruiters')).toBeVisible()
     await expect(page.locator('.ce-intro h1')).toBeVisible()
     await page.getByTestId('for-recruiters').click()
-    await expect(page.getByRole('heading', { name: 'Who are we hiring today?' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
     await expect(page.getByLabel('Company')).toHaveCount(0)
     expect(errors).toEqual([])
   })

@@ -8,6 +8,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 from talent.models import CandidateProfile, Resume
 
+from .recruiter_helpers import provision_recruiter
 from .test_candidate_flow import complete_resume_upload, resume_docx
 
 PASSWORD = "strong-pass-123"
@@ -195,8 +196,7 @@ def test_recruiter_resume_access_follows_submission_and_visibility_rules(tmp_pat
         )
 
         recruiter = APIClient()
-        signup = recruiter.post(
-            "/api/v1/auth/signup/",
+        signup = provision_recruiter(recruiter,
             {
                 "email": "privacy-recruiter@example.com",
                 "password": PASSWORD,

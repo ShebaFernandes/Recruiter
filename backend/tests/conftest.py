@@ -4,6 +4,8 @@ from django.utils import timezone
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
+from .recruiter_helpers import provision_recruiter
+
 
 @pytest.fixture
 def client():
@@ -38,8 +40,7 @@ def candidate_account(client):
 
 @pytest.fixture
 def recruiter_account(client):
-    response = client.post(
-        "/api/v1/auth/signup/",
+    response = provision_recruiter(client,
         {
             "email": "recruiter@company.example",
             "password": "strong-pass-123",
@@ -49,6 +50,6 @@ def recruiter_account(client):
         },
         format="json",
     )
-    assert response.status_code == 201
+    assert response.status_code == 200
     client.credentials(HTTP_AUTHORIZATION=f"Token {response.data['token']}")
     return response.data

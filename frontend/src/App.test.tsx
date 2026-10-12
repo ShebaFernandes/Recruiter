@@ -2,6 +2,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
+import { api } from './api'
 
 afterEach(() => {
   cleanup()
@@ -10,18 +11,27 @@ afterEach(() => {
 })
 
 describe('Enter Talent landing', () => {
-  it('opens guest recruiter search directly without a landing login menu', async () => {
+  it('opens the workspace directly for a valid recruiter session', async () => {
+    vi.spyOn(api, 'me').mockResolvedValue({ id: 9, role: 'recruiter', email: 'test@example.com', full_name: 'Approved Recruiter' })
+    vi.spyOn(api, 'searches').mockResolvedValue([])
+    vi.spyOn(api, 'projects').mockResolvedValue([])
+    vi.spyOn(api, 'notifications').mockResolvedValue([])
+    window.history.replaceState({}, '', '/recruiter')
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: 'Who are we hiring today?' })).toBeVisible()
+    expect(screen.queryByLabelText('Password')).not.toBeInTheDocument()
+  })
+
+  it('opens recruiter login without public signup or a guest search', async () => {
     vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
     render(<App />)
     const entry = await screen.findByTestId('for-recruiters')
     expect(screen.queryByText('Log in')).not.toBeInTheDocument()
     fireEvent.click(entry)
-    expect(screen.getByRole('heading', { name: 'Who are we hiring today?' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
     expect(screen.queryByLabelText('Company')).not.toBeInTheDocument()
     expect(window.location.pathname).toBe('/recruiter')
-    fireEvent.click(screen.getByRole('button', { name: 'Recruiter workspace' }))
-    expect(screen.getByRole('heading', { name: 'Create your account' })).toBeVisible()
-    expect(window.location.pathname).toBe('/recruiter/account')
+    expect(screen.queryByRole('button', { name: /Create an account/i })).not.toBeInTheDocument()
   })
   it('offers connected recruiter and candidate entry points', async () => {
     render(<App />)

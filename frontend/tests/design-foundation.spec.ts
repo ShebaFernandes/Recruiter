@@ -25,10 +25,8 @@ test.describe('landing and authentication foundation', () => {
 
     await page.goto('/')
     await page.getByTestId('for-recruiters').click()
-    await expect(page.getByRole('heading', { name: 'Who are we hiring today?' })).toBeVisible()
-    await page.getByRole('button', { name: 'Recruiter workspace', exact: true }).click()
-    await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible()
-    await expect(page.getByLabel('Company')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
+    await expect(page.getByLabel('Company')).toHaveCount(0)
   })
 
   test('landing and candidate auth do not overflow on mobile', async ({ page }, testInfo) => {
@@ -53,8 +51,8 @@ test.describe('landing and authentication foundation', () => {
     await page.screenshot({ path: testInfo.outputPath('landing-tablet.png'), fullPage: true, animations: 'disabled' })
 
     await page.getByTestId('for-recruiters').click()
-    await page.getByRole('button', { name: 'Recruiter workspace', exact: true }).click()
-    await expect(page.getByLabel('Company')).toBeVisible()
+    await expect(page.getByLabel('Company')).toHaveCount(0)
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(1024)
   })
 
@@ -66,10 +64,10 @@ test.describe('landing and authentication foundation', () => {
     await expect(nav.locator('.ce-audience-link svg')).toHaveCount(0)
     await expect(page.locator('.ce-headline-wordmark image')).toHaveAttribute('href', '/enter-wordmark.svg')
     await nav.getByRole('button', { name: 'For recruiters' }).click()
-    await expect(page.getByRole('heading', { name: 'Who are we hiring today?' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
     await expect(page.getByLabel('Company')).toHaveCount(0)
     expect(new URL(page.url()).hash).toBe('')
-    await page.getByRole('button', { name: 'Back to Enter', exact: true }).click()
+    await page.getByRole('button', { name: '← Back to Enter', exact: true }).click()
     await nav.getByRole('button', { name: 'For candidates' }).click()
     expect(new URL(page.url()).hash).toBe('')
     await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible()
@@ -82,8 +80,7 @@ test.describe('landing and authentication foundation', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
     for (const role of ['Recruiter', 'Candidate']) {
       await page.getByTestId(role === 'Recruiter' ? 'for-recruiters' : 'for-candidates').click()
-      if (role === 'Recruiter') await page.getByRole('button', { name: 'Recruiter workspace', exact: true }).click()
-      await page.getByRole('button', { name: /Already have an account/ }).click()
+      if (role === 'Candidate') await page.getByRole('button', { name: /Already have an account/ }).click()
       await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
       await expect(page.getByLabel('Email')).toBeVisible()
       await expect(page.getByLabel('Password', { exact: true })).toBeVisible()

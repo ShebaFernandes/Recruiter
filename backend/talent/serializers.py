@@ -1,4 +1,6 @@
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from rest_framework import serializers
 
 from .models import (
@@ -16,13 +18,21 @@ class SignupSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(min_length=8, write_only=True)
     full_name = serializers.CharField(max_length=180)
-    role = serializers.ChoiceField(choices=["recruiter", "candidate"])
+    role = serializers.ChoiceField(choices=["candidate"])
     company = serializers.CharField(max_length=180, required=False, allow_blank=True)
 
     def validate_email(self, value):
         if User.objects.filter(username__iexact=value).exists():
             raise serializers.ValidationError("An account with this email already exists.")
         return value.lower()
+
+    def validate(self, attrs):
+        user = User(username=attrs["email"], email=attrs["email"])
+        try:
+            validate_password(attrs["password"], user)
+        except ValidationError as error:
+            raise serializers.ValidationError({"password": error.messages}) from error
+        return attrs
 
 
 class WorkExperienceSerializer(serializers.ModelSerializer):

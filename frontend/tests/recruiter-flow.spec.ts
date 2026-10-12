@@ -1,3 +1,4 @@
+import { provisionRecruiter } from './recruiter-admin'
 import { expect, test, type APIRequestContext } from '@playwright/test'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -26,13 +27,15 @@ async function seedCandidate(request: APIRequestContext, index: number, runId: n
   const [baseName, headline, company, experience, notice, salary] = people[index]
   const name = baseName
   const email = `seed-${runId}-${index}@example.com`
+  const csrf = await (await request.get(`${API}/auth/csrf/`)).json()
+  const csrfHeaders = { 'X-CSRFToken': csrf.csrfToken }
   const signup = await request.post(`${API}/auth/signup/`, {
-    data: { email, password, full_name: name, role: 'candidate' },
+    headers: csrfHeaders, data: { email, password, full_name: name, role: 'candidate' },
   })
   expect(signup.ok()).toBeTruthy()
   const verificationToken = issueLocalAccountToken(email, 'verify_email')
   const verified = await request.post(`${API}/auth/verify-email/`, {
-    data: { token: verificationToken },
+    headers: csrfHeaders, data: { token: verificationToken },
   })
   expect(verified.ok()).toBeTruthy()
   const auth = await verified.json()
@@ -80,12 +83,10 @@ test('recruiter completes clarification, filters, compares, reviews and persists
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/')
   await page.getByTestId('for-recruiters').click()
-  await page.getByRole('button', { name: 'Recruiter workspace', exact: true }).click()
-  await page.getByLabel('Full name').fill('Ritu Mehta')
-  await page.getByLabel('Company').fill('Enter Labs')
+  provisionRecruiter(`recruiter-${runId}@company.example`, password)
   await page.getByLabel('Email').fill(`recruiter-${runId}@company.example`)
   await page.getByLabel('Password').fill(password)
-  await page.getByRole('button', { name: 'Create account' }).click()
+  await page.getByRole('button', { name: 'Log in', exact: true }).click()
 
   await page.getByRole('button', { name: 'Projects' }).click()
   await expectEnterPage(page, page.locator('.recruiter-page'))

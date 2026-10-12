@@ -1,3 +1,4 @@
+import { provisionRecruiter } from './recruiter-admin'
 import { expect, test, type Page } from '@playwright/test'
 import { pathToFileURL } from 'node:url'
 import { expectEnterPage, expectEnterPrimary } from './design-contract'
@@ -5,12 +6,11 @@ import { expectEnterPage, expectEnterPrimary } from './design-contract'
 async function enterWorkspace(page: Page) {
   await page.goto('/')
   await page.getByTestId('for-recruiters').click()
-  await page.getByRole('button', { name: 'Recruiter workspace', exact: true }).click()
-  await page.getByLabel('Full name').fill('Riya Sen')
-  await page.getByLabel('Company').fill('Search UI Verification')
-  await page.getByLabel('Email').fill(`search-ui-${Date.now()}@example.com`)
+  const email = `search-ui-${Date.now()}@example.com`
+  provisionRecruiter(email, 'Search-ui-password-123!')
+  await page.getByLabel('Email').fill(email)
   await page.getByLabel('Password').fill('Search-ui-password-123!')
-  await page.getByRole('button', { name: 'Create account' }).click()
+  await page.getByRole('button', { name: 'Log in', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Who are we hiring today?' })).toBeVisible()
 }
 

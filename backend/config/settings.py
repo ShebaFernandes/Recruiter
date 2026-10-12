@@ -9,6 +9,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "enter-local-development-key")
 DEBUG = os.getenv("DEBUG", "true").lower() == "true"
 TESTING = "pytest" in sys.modules or os.getenv("TESTING", "false").lower() == "true"
+APP_ENV = os.getenv("APP_ENV", "local" if DEBUG else "production").lower()
+if APP_ENV not in {"local", "test", "staging", "production"}:
+    raise ImproperlyConfigured("APP_ENV must be local, test, staging, or production.")
+if APP_ENV in {"staging", "production"} and (DEBUG or TESTING):
+    raise ImproperlyConfigured("Staging and production must disable DEBUG and TESTING.")
+if os.getenv("EXPOSE_LOCAL_EMAIL_LINKS", "false").lower() == "true" and (
+    not DEBUG or APP_ENV not in {"local", "test"}
+):
+    raise ImproperlyConfigured("Local email shortcuts are forbidden outside local/test DEBUG mode.")
 
 
 def env_list(name, default=""):
@@ -102,19 +111,6 @@ AUTH_COOKIE_SECURE = os.getenv("AUTH_COOKIE_SECURE", "false" if DEBUG else "true
 RATE_LIMIT_TRUST_X_FORWARDED_FOR = (
     os.getenv("RATE_LIMIT_TRUST_X_FORWARDED_FOR", "false").lower() == "true"
 )
-
-# Guest endpoints only interpret a hiring brief; they cannot discover candidates.
-# Local use is enabled. Public rollout needs an explicit operator decision.
-GUEST_SEARCH_ENABLED = os.getenv(
-    "GUEST_SEARCH_ENABLED", "true" if DEBUG else "false"
-).lower() == "true"
-GUEST_SEARCH_RATES = {
-    "guest_ip_burst": os.getenv("GUEST_SEARCH_IP_BURST", "3/minute"),
-    "guest_ip_daily": os.getenv("GUEST_SEARCH_IP_DAILY", "20/day"),
-    "guest_browser_daily": os.getenv("GUEST_SEARCH_BROWSER_DAILY", "10/day"),
-    "guest_global_burst": os.getenv("GUEST_SEARCH_GLOBAL_BURST", "5/minute"),
-    "guest_global_daily": os.getenv("GUEST_SEARCH_GLOBAL_DAILY", "50/day"),
-}
 
 if os.getenv("AWS_STORAGE_BUCKET_NAME"):
     STORAGES["default"] = {
@@ -225,8 +221,15 @@ EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "true").lower() == "true"
+EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "false").lower() == "true"
+EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "10"))
+if not 1 <= EMAIL_TIMEOUT <= 60:
+    raise ImproperlyConfigured("EMAIL_TIMEOUT must be between 1 and 60 seconds.")
+if EMAIL_USE_TLS and EMAIL_USE_SSL:
+    raise ImproperlyConfigured("Choose either SMTP STARTTLS or implicit SSL, not both.")
 EXPOSE_LOCAL_EMAIL_LINKS = (
-    DEBUG and os.getenv("EXPOSE_LOCAL_EMAIL_LINKS", "true").lower() == "true"
+    DEBUG and APP_ENV in {"local", "test"}
+    and os.getenv("EXPOSE_LOCAL_EMAIL_LINKS", "false").lower() == "true"
 )
 if not DEBUG and EMAIL_BACKEND in {
     "django.core.mail.backends.locmem.EmailBackend",
@@ -236,6 +239,8 @@ if not DEBUG and EMAIL_BACKEND in {
 }:
     raise ImproperlyConfigured("Production requires a transactional email backend.")
 if not DEBUG and EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend":
+    if not (EMAIL_USE_TLS or EMAIL_USE_SSL):
+        raise ImproperlyConfigured("Production SMTP requires STARTTLS or implicit SSL.")
     missing_email_variables = [
         name
         for name in ("EMAIL_HOST", "EMAIL_HOST_USER", "EMAIL_HOST_PASSWORD", "DEFAULT_FROM_EMAIL")
@@ -253,6 +258,8 @@ PASSWORD_RESET_TOKEN_TTL_SECONDS = int(os.getenv("PASSWORD_RESET_TOKEN_TTL_SECON
 ACCOUNT_EMAIL_RESEND_COOLDOWN_SECONDS = int(
     os.getenv("ACCOUNT_EMAIL_RESEND_COOLDOWN_SECONDS", "60")
 )
+if EMAIL_VERIFICATION_TOKEN_TTL_SECONDS <= 0 or PASSWORD_RESET_TOKEN_TTL_SECONDS <= 0:
+    raise ImproperlyConfigured("Account token lifetimes must be positive.")
 AUTH_TOKEN_TTL_SECONDS = int(os.getenv("AUTH_TOKEN_TTL_SECONDS", "604800"))
 SUBMISSION_CONSENT_VERSION = os.getenv(
     "SUBMISSION_CONSENT_VERSION", "candidate-profile-sharing-v1"

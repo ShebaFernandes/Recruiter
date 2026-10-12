@@ -1,8 +1,7 @@
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand, CommandError
 
-from talent.account_security import issue_account_token
+from talent.account_security import issue_account_token, local_email_shortcuts_enabled
 from talent.models import AccountActionToken
 
 
@@ -20,8 +19,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        if not settings.DEBUG:
-            raise CommandError("Local account-token issuance is disabled outside DEBUG mode.")
+        if not local_email_shortcuts_enabled():
+            raise CommandError("Local account-token issuance requires explicit local/test opt-in.")
         try:
             user = User.objects.get(username__iexact=options["email"])
         except User.DoesNotExist as error:

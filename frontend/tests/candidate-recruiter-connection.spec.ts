@@ -1,3 +1,4 @@
+import { provisionRecruiter } from './recruiter-admin'
 import { expect, test, type Download } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 import { spawnSync } from 'node:child_process'
@@ -77,12 +78,10 @@ test('candidate created in the UI is discovered and updated in the recruiter UI'
 
   await page.getByRole('button', { name: 'Log out' }).click()
   await page.getByTestId('for-recruiters').click()
-  await page.getByRole('button', { name: 'Recruiter workspace', exact: true }).click()
-  await page.getByLabel('Full name').fill('Audit Recruiter')
-  await page.getByLabel('Company').fill('Audit Hiring')
+  provisionRecruiter(recruiterEmail, password)
   await page.getByLabel('Email').fill(recruiterEmail)
   await page.getByLabel('Password').fill(password)
-  await page.getByRole('button', { name: 'Create account' }).click()
+  await page.getByRole('button', { name: 'Log in', exact: true }).click()
   await page.getByLabel('Candidate search').fill('Backend engineer with 4 years experience')
   await page.getByRole('button', { name: 'Search talent' }).click()
   await page.getByRole('button', { name: 'Let me type it' }).click()
@@ -130,8 +129,6 @@ test('candidate created in the UI is discovered and updated in the recruiter UI'
 
   await page.getByRole('button', { name: 'Log out' }).click()
   await page.getByTestId('for-recruiters').click()
-  await page.getByRole('button', { name: 'Recruiter workspace', exact: true }).click()
-  await page.getByRole('button', { name: /Already have an account/ }).click()
   await page.getByLabel('Email').fill(recruiterEmail)
   await page.getByLabel('Password').fill(password)
   await page.getByRole('button', { name: 'Log in', exact: true }).click()

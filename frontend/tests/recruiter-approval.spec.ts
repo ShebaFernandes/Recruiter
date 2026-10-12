@@ -1,0 +1,61 @@
+import { expect, test } from '@playwright/test'
+import { createTestAdministrator } from './recruiter-admin'
+import { randomUUID } from 'node:crypto'
+
+const backend = (process.env.PLAYWRIGHT_API_URL || 'http://127.0.0.1:8010/api/v1').replace('/api/v1', '')
+
+test('superuser creates, approves and revokes a recruiter without deleting saved work', async ({ page, browser }) => {
+  const administrator = createTestAdministrator()
+  const adminContext = await browser.newContext()
+  const adminPage = await adminContext.newPage()
+  const email = `review-${randomUUID()}@example.com`
+  const password = randomUUID()
+  await adminPage.goto(`${backend}/admin/`)
+  await adminPage.getByLabel('Username:').fill(administrator.username)
+  await adminPage.getByLabel('Password:').fill(administrator.password)
+  await adminPage.getByRole('button', { name: 'Log in' }).click()
+  await adminPage.goto(`${backend}/admin/talent/recruiterprofile/add/`)
+  await adminPage.getByLabel('Email:').fill(email)
+  await adminPage.getByLabel('Password:').fill(password)
+  await adminPage.getByLabel('Full name:').fill('Review Recruiter')
+  await adminPage.locator('input[name="_continue"]').click()
+  await expect(adminPage.locator('.success')).toBeVisible()
+  const changeUrl = adminPage.url()
+
+  await page.goto('/recruiter')
+  await page.getByLabel('Email').fill(email)
+  await page.getByLabel('Password', { exact: true }).fill(password)
+  await page.getByRole('button', { name: 'Log in', exact: true }).click()
+  await expect(page.getByRole('alert')).toContainText('approval')
+
+  await adminPage.getByLabel('Is approved').check()
+  await adminPage.locator('input[name="_continue"]').click()
+  await expect(adminPage.locator('.success')).toBeVisible()
+  await page.getByRole('button', { name: 'Log in', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Who are we hiring today?' })).toBeVisible()
+  await page.getByRole('button', { name: 'Projects', exact: true }).click()
+  await page.getByLabel('New project name').fill('Preserved after review')
+  await page.getByRole('button', { name: 'Create project' }).click()
+  await expect(page.locator('.workspace-sidepanel').getByText('Preserved after review')).toBeVisible()
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Who are we hiring today?' })).toBeVisible()
+
+  await adminPage.goto(changeUrl)
+  await adminPage.getByLabel('Is approved').uncheck()
+  await adminPage.locator('input[name="_continue"]').click()
+  await expect(adminPage.locator('.success')).toBeVisible()
+  // Existing browser cookie is now rejected at the API; no logout required.
+  const denied = await page.request.get(`${backend}/api/v1/projects/`)
+  expect(denied.status()).toBe(401)
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
+  await adminPage.getByLabel('Is approved').check()
+  await adminPage.locator('input[name="_continue"]').click()
+  await expect(adminPage.locator('.success')).toBeVisible()
+  await page.getByLabel('Email').fill(email)
+  await page.getByLabel('Password', { exact: true }).fill(password)
+  await page.getByRole('button', { name: 'Log in', exact: true }).click()
+  await page.getByRole('button', { name: 'Projects', exact: true }).click()
+  await expect(page.locator('.workspace-sidepanel').getByText('Preserved after review')).toBeVisible()
+  await adminContext.close()
+})

@@ -1,5 +1,7 @@
 import hashlib
+import logging
 import secrets
+import smtplib
 from datetime import timedelta
 from urllib.parse import quote
 
@@ -9,6 +11,64 @@ from django.db import transaction
 from django.utils import timezone
 
 from .models import AccountActionToken
+
+logger = logging.getLogger(__name__)
+
+
+class AccountEmailDeliveryError(Exception):
+    """Safe error with no SMTP response, address, credential, or token attached."""
+
+
+def local_email_shortcuts_enabled():
+    return (
+        settings.DEBUG
+        and settings.APP_ENV in {"local", "test"}
+        and settings.EXPOSE_LOCAL_EMAIL_LINKS
+        and settings.EMAIL_BACKEND in {
+            "django.core.mail.backends.locmem.EmailBackend",
+            "django.core.mail.backends.console.EmailBackend",
+            "django.core.mail.backends.filebased.EmailBackend",
+        }
+    )
+
+
+def _expiry_wording(seconds):
+    for unit, size in (("day", 86400), ("hour", 3600), ("minute", 60), ("second", 1)):
+        if seconds % size == 0:
+            count = seconds // size
+            return f"{count} {unit}{'' if count == 1 else 's'}"
+
+
+def _send_account_email(user, purpose, parameter, subject, introduction, ttl):
+    try:
+        token = issue_account_token(user, purpose)
+        link = f"{settings.FRONTEND_URL.rstrip('/')}/?{parameter}={quote(token)}"
+        sent = send_mail(
+            subject,
+            f"{introduction}\n\n{link}\n\n"
+            f"This link expires in {_expiry_wording(ttl)} and can only be used once. "
+            "If you did not request this, ignore this email.",
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=False,
+        )
+        if sent != 1:
+            raise smtplib.SMTPException("No message accepted")
+        return link
+    except Exception as error:
+        if isinstance(error, smtplib.SMTPAuthenticationError):
+            category = "smtp_authentication"
+        elif isinstance(error, TimeoutError):
+            category = "timeout"
+        elif isinstance(error, smtplib.SMTPException):
+            category = "smtp_failure"
+        elif isinstance(error, OSError):
+            category = "connection_failure"
+        else:
+            category = "internal_failure"
+        # Never log the exception/body/recipient: provider responses can contain secrets.
+        logger.warning("account_email_delivery_failed purpose=%s category=%s", purpose, category)
+        raise AccountEmailDeliveryError("Account email delivery failed.") from None
 
 
 def _token_hash(raw_token):
@@ -74,34 +134,22 @@ def recently_issued(user, purpose):
 
 
 def send_verification_email(user):
-    token = issue_account_token(user, AccountActionToken.Purpose.VERIFY_EMAIL)
-    link = f"{settings.FRONTEND_URL.rstrip('/')}/?verify-email={quote(token)}"
-    send_mail(
+    return _send_account_email(
+        user,
+        AccountActionToken.Purpose.VERIFY_EMAIL,
+        "verify-email",
         "Verify your Enter candidate account",
-        (
-            "Welcome to Enter. Verify your email to start building your candidate profile.\n\n"
-            f"{link}\n\n"
-            "This link expires in 24 hours. If you did not create this account, ignore this email."
-        ),
-        settings.DEFAULT_FROM_EMAIL,
-        [user.email],
-        fail_silently=False,
+        "Welcome to Enter. Verify your email to start building your candidate profile.",
+        settings.EMAIL_VERIFICATION_TOKEN_TTL_SECONDS,
     )
-    return link
 
 
 def send_password_reset_email(user):
-    token = issue_account_token(user, AccountActionToken.Purpose.RESET_PASSWORD)
-    link = f"{settings.FRONTEND_URL.rstrip('/')}/?reset-password={quote(token)}"
-    send_mail(
+    return _send_account_email(
+        user,
+        AccountActionToken.Purpose.RESET_PASSWORD,
+        "reset-password",
         "Reset your Enter password",
-        (
-            "Use the secure link below to choose a new Enter password.\n\n"
-            f"{link}\n\n"
-            "This link expires in one hour and can only be used once. "
-            "If you did not request this, ignore this email."
-        ),
-        settings.DEFAULT_FROM_EMAIL,
-        [user.email],
-        fail_silently=False,
+        "Use the secure link below to choose a new Enter password.",
+        settings.PASSWORD_RESET_TOKEN_TTL_SECONDS,
     )

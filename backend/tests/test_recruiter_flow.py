@@ -5,6 +5,7 @@ from django.test import override_settings
 from django.utils import timezone
 from talent.models import CandidateProfile, CandidateStatus, CandidateUpdateNotification, UserRole
 
+from .recruiter_helpers import provision_recruiter
 from .test_candidate_flow import complete_resume_upload, resume_docx
 
 
@@ -34,8 +35,7 @@ def test_clarified_search_profile_view_status_and_resume_update_notification(
         assert submitted.data["profile_status"] == "submitted"
         client.post("/api/v1/auth/logout/")
         client.credentials()
-        recruiter = client.post(
-            "/api/v1/auth/signup/",
+        recruiter = provision_recruiter(client,
             {
                 "email": "recruiter@company.example",
                 "password": "strong-pass-123",
@@ -229,8 +229,7 @@ def test_not_looking_candidate_is_excluded_from_recruiter_search(
 
     client.post("/api/v1/auth/logout/")
     client.credentials()
-    recruiter = client.post(
-        "/api/v1/auth/signup/",
+    recruiter = provision_recruiter(client,
         {
             "email": "paused-search@company.example",
             "password": "strong-pass-123",
@@ -271,8 +270,7 @@ def test_draft_candidate_is_excluded_from_recruiter_search(client, candidate_acc
 
     client.post("/api/v1/auth/logout/")
     client.credentials()
-    recruiter = client.post(
-        "/api/v1/auth/signup/",
+    recruiter = provision_recruiter(client,
         {
             "email": "draft-search@company.example",
             "password": "strong-pass-123",

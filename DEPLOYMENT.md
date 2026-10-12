@@ -108,46 +108,164 @@ Rollback by returning ECS services and frontend/CDN to the prior immutable image
 
 For a dormant staging environment, set web/worker desired count to zero, stop nonessential scanner tasks, shorten noncritical log retention, and use a single-AZ/small RDS instance only if the staging recovery tradeoff is accepted. RDS continues charging while running; snapshot then delete it only through an approved teardown procedure. S3 data, snapshots, NAT gateways, ALBs, public IPv4 addresses, CloudWatch retention, and KMS keys can continue to incur cost. Prefer VPC endpoints or carefully evaluate NAT cost, Fargate Spot for noncritical workers, SQS long polling, autoscaling-to-zero workers, and CloudFront/S3 static hosting.
 
-## Anonymous recruiter search boundary
+## ENTER recruiter access administration
 
-`/recruiter` is a public UI for interpreting a hiring brief, not public candidate
-discovery. `POST /api/v1/guest/searches/` accepts a query (up to 2,000 characters)
-and UUID `request_id`. `POST /api/v1/guest/searches/answer/` accepts the returned
-signed token and an answer (up to 500 characters). Existing AI schema validation
-and grounding are reused. Neither endpoint queries candidates or creates recruiter
-searches, accounts, projects, or access grants. Private API permissions are unchanged.
-`/recruiter/account` retains account access for the protected workspace; candidate
-entry retains its signup/login switch. There is no separate landing login menu.
+The public landing page and candidate registration remain open. Recruiter signup
+is closed. `/recruiter` and the legacy `/recruiter/account` show password login;
+a valid approved recruiter session opens the existing workspace. Guest-search
+routes have been removed: old guest tokens and `GUEST_SEARCH_*` settings grant
+no access. No passwordless invitation flow is implemented.
 
-Guest briefs are ephemeral and kept in browser memory, not localStorage. Refresh
-starts a new brief without calling AI. Clarification state is signed by Django,
-bound to an HttpOnly cookie, expires after 30 minutes, and permits at most five
-answers. Signed state is not encrypted: it contains only the guest's own brief and
-is never an authentication credential. Do not log request bodies, cookies or tokens.
-CSRF is explicitly enforced for anonymous POSTs. Cookies use the existing
-Secure/SameSite configuration. Replayed request IDs/tokens cannot generate duplicate
-provider calls. Provider errors are surfaced without automatic retries or fake AI.
+A recruiter must have an active Django user, recruiter role/profile, no candidate
+profile, and explicit administrator approval. Django checks this on every API
+request (including existing tokens/cookies), and again for candidate/resume
+authorization. Candidate consent, submission, visibility and matching-search rules
+still apply. Only active superusers can manage recruiter approval, users, groups,
+and roles in Django Admin. Ordinary staff/model permissions cannot grant approval.
+Normal recruiters must NOT be given staff or superuser status.
 
-`GUEST_SEARCH_ENABLED` defaults to true only in DEBUG and false in production.
-Leave it false for public deployments pending abuse-control review. PostgreSQL
-enforces independent fixed-window quotas across replicas:
+### Local rollout and existing accounts
 
-| Variable | Default |
-| --- | --- |
-| `GUEST_SEARCH_IP_BURST` | `3/minute` |
-| `GUEST_SEARCH_IP_DAILY` | `20/day` |
-| `GUEST_SEARCH_BROWSER_DAILY` | `10/day` |
-| `GUEST_SEARCH_GLOBAL_BURST` | `5/minute` |
-| `GUEST_SEARCH_GLOBAL_DAILY` | `50/day` |
+Migration `0012_recruiter_administrator_approval` adds only approval fields.
+Existing profiles default to unapproved; IDs, projects, stages and searches remain
+unchanged. Review each existing recruiter before approving them; never bulk-approve
+accounts based on email domain. Applying this migration intentionally blocks
+existing recruiter sessions until review. Do not delete/recreate accounts.
 
-Provider failures also consume quotas. Clearing cookies cannot bypass IP/global
-limits. These cap request counts, not money: configure provider spend limits before
-public rollout. Verify edge bot/challenge protection, trusted-proxy handling,
-alerting, and origin restrictions before public enablement. Never trust arbitrary
-X-Forwarded-For headers. Rate-bucket housekeeping must retain at least 24 hours of
-quota history and consumed clarification markers for their 30-minute validity.
-No schema migration is required. Automated tests mock the provider boundary while
-exercising actual schema validation, PostgreSQL limits and Django permissions.
+Commands below explicitly load the root `.env`; do not paste secrets into commands
+or logs. From the repository root:
+
+```bash
+uv run --env-file .env python backend/manage.py migrate
+uv run --env-file .env python backend/manage.py runserver 127.0.0.1:8010
+```
+
+For future deployments, migrations remain an explicit one-off release operation,
+not web replica startup. Never roll back to a version allowing public signup or
+guest search; forward-fix security regressions.
+
+### Create an ENTER recruiter
+
+1. Sign in to `http://127.0.0.1:8010/admin/` with a designated superuser.
+2. Open **Talent → Recruiter profiles → Add**.
+3. Leave **User** empty for a new account. Enter the employee's email, a strong
+   initial password, full name and optional company. For an existing user, select
+   **User** and leave new-email/password fields blank. Candidate accounts cannot
+   be converted to recruiters.
+4. Confirm employment/authorization outside the app; only then select
+   **Is approved** and save. The form atomically creates the user, role and profile.
+   New users are active but not staff/superusers. To create a pending account,
+   leave approval unchecked.
+5. Have the recruiter use **For recruiters → Forgot password?** to set their own
+   password through the existing reset flow (working email delivery required),
+   or securely provide the initial password through an approved channel.
+   Never email plaintext passwords. Password reset does not approve an account.
+
+### Approve or revoke an existing recruiter
+
+- **Approve:** open the existing recruiter profile, check **Is approved**, save.
+  Ensure the related user is **Active** under **Authentication and Authorization →
+  Users**. The approver and timestamp are recorded; Django Admin logs changes.
+- **Revoke:** uncheck **Is approved**, save. Tokens are deleted, and every new API
+  request checks current approval. A page already open may retain previously
+  rendered information, but cannot fetch private data or perform actions.
+  Projects, searches and stages are retained. Inactivation also blocks access.
+- **Log in:** visit the public website, select **For recruiters**, and enter the
+  approved account's email/password. An existing valid session opens Search.
+  Approval never bypasses candidate visibility or resume authorization.
+
+### Administrator recovery
+
+Use another designated superuser to restore access where possible. Otherwise an
+authorized operator with access to the correct server/environment may run:
+
+```bash
+uv run --env-file .env python backend/manage.py changepassword ADMIN_USERNAME
+# Only if no usable administrator exists:
+uv run --env-file .env python backend/manage.py createsuperuser
+```
+
+Both commands prompt interactively; do not pass passwords on the command line.
+If the old administrator is inactive, another designated superuser must restore
+its Active status, or use the new recovery superuser. Do not grant superuser
+privileges to a normal recruiter or weaken application permissions as a workaround.
+Review/audit recovery access and disable temporary administrators afterward.
+
+### Authentication security and verification
+
+Public auth POSTs explicitly enforce CSRF, even before login. Clients must first
+GET `/api/v1/auth/csrf/`, retain its cookie, and send `X-CSRFToken` with mutations.
+The React client already does this. Existing cookie security, expiry, password
+reset/verification limits and database-backed rate limits are retained.
+The Django Admin login also enforces CSRF and shares the existing login quota;
+switching between admin and API login cannot evade the limit.
+
+Browser fixtures provision approved test recruiters using the same admin form,
+not a public bypass. Run browser tests against an isolated local PostgreSQL
+database with `_e2e` in its name, plus a matching backend, worker and frontend.
+Set `DATABASE_URL`, `PLAYWRIGHT_API_URL`, `PLAYWRIGHT_BASE_URL`, and
+`RUN_CONNECTION_AUDIT=1`. Use `TESTING=true AI_PROVIDER=deterministic` on that
+test server only; keep real provider configuration untouched. Candidate tests
+still register, verify, upload, process and submit through the real APIs.
+
+### Candidate verification and transactional email
+
+Candidate signup stays public and requires no administrator approval. Candidate
+login and every authenticated request require an active user and a non-null
+`email_verified_at`. Existing profiles are not automatically marked verified.
+Verification/resend only operate on unverified candidates; an already-verified
+account disabled by an administrator cannot reactivate itself with verification
+or password reset. The existing schema represents both a pending signup and an
+inactive unverified account identically: do not use the already-false Active
+checkbox alone to distinguish suspension of a never-verified signup. A separate
+suspension state would require a separately approved schema change.
+
+Set `APP_ENV=staging` or `APP_ENV=production`, `DEBUG=false`, `TESTING=false`, and
+`EXPOSE_LOCAL_EMAIL_LINKS=false` for deployments. Startup rejects DEBUG, TESTING,
+or local-email opt-in in these environments. Development defaults to local when
+DEBUG is true; deployment configuration must explicitly declare its environment.
+Local shortcuts default off and both the signup link and `issue_local_account_token`
+command require explicit local/test opt-in, DEBUG, and a non-delivering local
+email backend. Browser tests must use `APP_ENV=test DEBUG=true
+EXPOSE_LOCAL_EMAIL_LINKS=true EMAIL_BACKEND=django.core.mail.backends.locmem.EmailBackend`
+on their isolated test server and token-helper process. Never apply that test
+configuration to staging or production.
+
+For real delivery, configure these existing server-side SMTP variables (no
+credentials belong in React or any `VITE_` variable):
+
+```dotenv
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=<transactional-provider-SMTP-host>
+EMAIL_PORT=587
+EMAIL_HOST_USER=<SMTP-username>
+EMAIL_HOST_PASSWORD=<SMTP-password>
+EMAIL_USE_TLS=true
+EMAIL_USE_SSL=false
+EMAIL_TIMEOUT=10
+DEFAULT_FROM_EMAIL=ENTER <noreply@verified-sending-domain>
+FRONTEND_URL=https://your-frontend-domain
+EMAIL_VERIFICATION_TOKEN_TTL_SECONDS=86400
+PASSWORD_RESET_TOKEN_TTL_SECONDS=3600
+ACCOUNT_EMAIL_RESEND_COOLDOWN_SECONDS=60
+```
+
+Production SMTP requires credentials, a sender, and either STARTTLS or implicit
+SSL (not both). Implicit SSL typically uses port 465 with TLS false and SSL true.
+The SMTP socket timeout is bounded to 1–60 seconds; it is not a total request
+deadline. Mail remains synchronous. Expiry wording uses the configured positive
+token lifetimes. Failed delivery logs only purpose and a fixed error category,
+never exception details, recipient addresses, credentials, or token-bearing URLs.
+Password-reset/resend responses stay generic even on delivery failure. Monitor
+`account_email_delivery_failed` and the provider's delivery/bounce dashboard.
+A failed send still consumes the resend cooldown; retry after it expires.
+
+Before enabling real email: obtain provider credentials, verify the sender/domain
+and provider-required DNS records (including DKIM and appropriate SPF/DMARC),
+configure HTTPS origins and deployment secrets, then restart with the production
+settings. With approval, test actual delivery, spam placement, expiry, resend,
+reset, and bounce handling. No provider connectivity or delivery is implied by
+configuration/unit tests. An email queue is a follow-up scaling improvement.
 
 ## Required external decisions before real users
 

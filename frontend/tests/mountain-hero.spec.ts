@@ -75,7 +75,7 @@ for (const width of [1440, 1024, 390]) {
     await expect(scene.locator('.ce-landscape-clouds-back')).toHaveCSS('animation-play-state', 'paused')
     await page.setViewportSize({ width, height: 900 })
     await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'For recruiters' }).click()
-    await expect(page.getByRole('heading', { name: 'Who are we hiring today?' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
     await expect(page.getByLabel('Company')).toHaveCount(0)
   })
 }
