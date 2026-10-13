@@ -14,9 +14,13 @@
 .ce-company-pause:focus-visible { z-index: 2; width: auto; height: 44px; padding: 8px 12px; clip-path: none; overflow: visible; background: var(--enter-surface); color: var(--enter-text); border: 1px solid var(--enter-border); border-radius: 8px; cursor: pointer; }
 .ce-company-window { overflow: hidden; padding: 8px 0; }
 .ce-company-track { display: flex; width: max-content; }
-.ce-company-sequence { display: flex; align-items: center; gap: var(--company-gap); padding-right: var(--company-gap); flex: none; animation: ce-company-travel 104s linear infinite; }
+.ce-company-sequence { display: flex; align-items: center; gap: var(--company-gap); padding-right: var(--company-gap); flex: none; animation: ce-company-travel calc(104s * var(--company-loop-scale, 1)) linear infinite; }
 .ce-company-preview .ce-company-logo { flex: none; width: var(--company-cell); min-width: var(--company-cell); height: 64px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 0; background: transparent; box-shadow: none; padding: 4px; margin: 0; cursor: pointer; }
 .ce-company-logo img { display: block; width: auto; height: auto; max-width: 100%; object-fit: contain; filter: grayscale(1); opacity: .55; }
+/* Transparent white wordmarks need a dark monochrome silhouette on this sky.
+   Keep downloaded artwork untouched and respect explicit brand restrictions. */
+.ce-company-logo img[data-treatment="silhouette"] { filter: grayscale(1) brightness(0); }
+.ce-company-logo img[data-treatment="original"] { filter: none; opacity: 1; }
 .ce-company-preview :is(button, .ce-company-window):focus-visible { outline: var(--enter-focus-ring, 2px solid #6D4AFF); outline-offset: -2px; }
 .ce-company-preview[data-paused="true"] .ce-company-sequence,
 .ce-company-preview:is(:hover, :focus-within) .ce-company-sequence { animation-play-state: paused; }
@@ -31,7 +35,7 @@
 @keyframes ce-company-travel { to { transform: translateX(-100%); } }
 @media (max-width: 760px) {
   .ce-company-preview { --company-cell: 144px; --company-gap: 32px; }
-  .ce-company-sequence { animation-duration: 88s; }
+  .ce-company-sequence { animation-duration: calc(88s * var(--company-loop-scale, 1)); }
 }
 @media (prefers-reduced-motion: reduce) {
   .ce-company-sequence { animation: none; }

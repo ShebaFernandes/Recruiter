@@ -9,6 +9,26 @@ test('normal homepage includes the approved logos without a preview flag', async
   await expect(page.getByRole('button', { name: 'About WazirX' })).toHaveCount(1)
 })
 
+test('every added company is reachable by keyboard with readable details', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Pause company logos' }).focus()
+  const logos = page.getByRole('button', { name: /^About / })
+  await expect(logos).toHaveCount(28)
+  for (let index = 0; index < await logos.count(); index++) {
+    await page.keyboard.press('Tab')
+    const logo = logos.nth(index)
+    await expect(logo).toBeFocused()
+    await expect(logo).toBeInViewport()
+    const name = (await logo.getAttribute('aria-label'))!.replace(/^About /, '')
+    await expect(page.getByRole('tooltip')).toContainText(name)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
+  }
+  await expect(page.getByRole('button', { name: 'About MobiKwik' }).locator('img')).toHaveCSS('filter', 'none')
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+})
+
 for (const width of [1440, 1024, 390]) {
   test(`public company row at ${width}: hover, keyboard, motion and overflow`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 900 })
@@ -31,7 +51,7 @@ for (const width of [1440, 1024, 390]) {
     expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(900)
     await section.scrollIntoViewIfNeeded()
     await section.locator('img').evaluateAll(images => Promise.all(images.map(i => (i as HTMLImageElement).decode())))
-    await expect(page.getByRole('button', { name: /^About / })).toHaveCount(2)
+    await expect(page.getByRole('button', { name: /^About / })).toHaveCount(28)
     await expect(section.locator('img').first()).toHaveCSS('filter', 'grayscale(1)')
     expect(await section.evaluate(e => e.previousElementSibling?.classList.contains('ce-mountain-hero'))).toBe(true)
     const spacing = await section.evaluate(element => {

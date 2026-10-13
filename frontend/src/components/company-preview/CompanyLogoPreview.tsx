@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { previewCompanies } from './companies'
 import './company-logo-preview.css'
@@ -84,6 +84,7 @@ export default function CompanyLogoMarquee() {
   }, [detail])
 
   return <section ref={root} className="ce-company-preview" aria-label="Company logos"
+    style={{ '--company-loop-scale': sequenceCompanies.length / 10 } as CSSProperties}
     data-paused={paused || !!detail || !inView || pageHidden} data-keyboard={keyboardMode}
     onBlur={event => {
       if (!event.currentTarget.contains(event.relatedTarget)) {
@@ -103,7 +104,8 @@ export default function CompanyLogoMarquee() {
           aria-hidden={duplicate || undefined} data-duplicate={duplicate}>
           {sequenceCompanies.map((company, index) => {
             const repeated = index >= previewCompanies.length
-            const image = <img src={company.logo} alt="" draggable={false} style={{ maxHeight: company.height }} />
+            const image = <img src={company.logo} alt="" draggable={false} data-treatment={company.treatment}
+              style={{ maxHeight: company.height }} />
             // The visual copy supports pointer/touch but never duplicates keyboard
             // or screen-reader stops. Keyboard mode exposes the original full row.
             return duplicate || repeated ? <span key={`${company.id}-${index}`} className="ce-company-logo"
@@ -126,7 +128,11 @@ export default function CompanyLogoMarquee() {
                   cancelAnimationFrame(focusFrame.current)
                   focusFrame.current = requestAnimationFrame(() => {
                     anchor.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' })
-                    show(company, anchor)
+                    // Let the row's scroll event settle before opening details;
+                    // otherwise scrolling to later logos immediately dismisses them.
+                    focusFrame.current = requestAnimationFrame(() => {
+                      if (document.activeElement === anchor) show(company, anchor)
+                    })
                   })
                 }}
                 onClick={event => {

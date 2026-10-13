@@ -1,0 +1,42 @@
+{
+  "note": "Official-source artwork for the requested landing marquee. Original files retained without redrawing. Public display requested by the owner; this inventory does not independently certify trademark permissions.",
+  "retrieved": "2026-10-12",
+  "assets": {
+    "cred-wordmark.png": "https://web-images.credcdn.in/_next/assets/images/home-page/cred-logo-horizontal.png",
+    "nanonets.svg": "https://nanonets.com/logos/nanonets.svg",
+    "navi.svg": "https://navi.com/static/media/naviLogo.c2380d7b.svg",
+    "mpl.webp": "https://cms-origin.mpl.live/cms-latest-env/images/MPL_logo_13457e45ff.webp",
+    "mobikwik.svg": "https://promotions.mobikwik.com/files/blog/press-kit/logo/RGB-Digital/SVG/digital/MBK-Logo-Blue.svg",
+    "justanswer.png": "https://ww2-secure.justanswer.com/static/fe/ja-logo/ja-logo-default.png",
+    "kindred-group.png": "https://mb.cision.com/Public/824/logo/b4fed9ec6c8f0bc2_org.png",
+    "zepto-wordmark.svg": "https://cdn.zeptonow.com/ext-seller-prod/assets/root-shell/tr:w-0.5,h-0.5/assets/icons/zepto-logo-2.svg?v=77ac0a9a",
+    "coindcx.png": "https://docs.coindcx.com/images/logo-09cbe1a4.png",
+    "truefoundry.svg": "https://cdn.prod.website-files.com/6291b38507a5238373237679/62970dc1cc409a81a0d1bb21_trueFoundry-black.svg",
+    "dream11.svg": "https://www.dream11.com/_assets/v11/0dc94e97699469f8212fa4fe28e97e771e07dea8.svg",
+    "spicejet.svg": "https://www.spicejet.com/v1.svg",
+    "practo.svg": "https://www.practo.com/bundles/practopractoapp/images/logos/practo_new_logo.svg",
+    "arintra.svg": "https://cdn.prod.website-files.com/654b2d530601810c247fdd5d/6a8186c70ffe83c819bf80c5_Group%202147259684.svg",
+    "orange-health.svg": "https://assets.orangehealth.in/website/static/images/logo/wide.svg",
+    "coinswitch.svg": "https://coinswitch.co/_next/static/media/logo.bb8c9a54.svg",
+    "pagarbook.svg": "https://pagarbook.com/assets/revamp/pagarbook-wordmark.svg",
+    "hackerearth.svg": "https://cdn.prod.website-files.com/67767d919e878fb670aab52d/67bb7eb79b970d0e42b0f32f_Light-table-logo.svg",
+    "mindtickle.webp": "https://superb-activity-b7b8c463f3.media.strapiapp.com/logo_0e2ef7d0ed.webp",
+    "commerceiq.avif": "https://djijnrz4nj20x.cloudfront.net/67ab6b46d888a5e543dd3dc6/67af500ba1590bf6791dcee0_95bf63a896b17b794bf4fef1a0a3ef47_CIQ-logo-white.avif",
+    "satsure.svg": "https://www.satsure.co/wp-content/uploads/2025/07/Satsure-Logo.svg",
+    "signeasy.webp": "https://cdn.prod.website-files.com/5f7d6d69c230c16738e9c910/6a6a587ada4adf9166f0b566_signeasy-logo-p-500.webp",
+    "locus.svg": "https://locus.sh/assets/img/logo/locus-black.svg",
+    "spoton.svg": "https://www.spoton.com/_next/static/media/spoton-logo-black.2472723e.svg",
+    "parspec.svg": "https://www.parspec.io/hubfs/parspec_april_2026/Images/Logo.svg",
+    "sentisum.svg": "https://cdn.prod.website-files.com/5ec6a200fe35e26d96b4cb04/642acf6e78fd174690d0a272_Logo%20(10).svg"
+  },
+  "excluded": {
+    "Nurix": "Official website needed to identify the intended company.",
+    "District": "Official website needed to identify the intended company.",
+    "Spiny": "Official website needed to identify the intended company.",
+    "Shield": "Official website needed to identify the intended company.",
+    "Curefit": "Official cure.fit redirects to cult.fit. Need approved Curefit artwork rather than substituting the Cult brand."
+  },
+  "brandExceptions": {
+    "MobiKwik": "Official brand manual restricts color changes; display original blue without grayscale or opacity reduction. https://promotions.mobikwik.com/files/blog/press-kit/MobiKwik-Brand-Manual_Final11April2022.pdf"
+  }
+}
