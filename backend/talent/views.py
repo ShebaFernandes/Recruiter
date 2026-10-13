@@ -390,9 +390,15 @@ def _notify_recruiters_of_candidate_update(profile, change_type, resume=None, me
 
 @api_view(["GET", "PATCH"])
 @permission_classes([IsCandidate])
+@transaction.atomic
 def candidate_profile(request):
-    profile = request.user.candidate_profile
+    # Keep the profile and resume status in the same snapshot as a worker finishes.
+    profile = CandidateProfile.objects.select_for_update().get(user=request.user)
     if request.method == "PATCH":
+        from .candidate_experience import profile_values, record_candidate_edits
+
+        before = profile_values(profile)
+        previous_strongest = profile.career_preferences.get("strongest_skills")
         was_submitted = profile.profile_status == CandidateProfile.ProfileStatus.SUBMITTED
         previous_experience_count = profile.work_experiences.count()
         serializer = CandidateProfileSerializer(
@@ -400,6 +406,11 @@ def candidate_profile(request):
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        after = profile_values(profile)
+        edited_fields = {field for field in before if before[field] != after[field]}
+        if previous_strongest != profile.career_preferences.get("strongest_skills"):
+            edited_fields.add("skills")
+        record_candidate_edits(profile, edited_fields)
         if (
             was_submitted
             and profile.profile_status == CandidateProfile.ProfileStatus.SUBMITTED

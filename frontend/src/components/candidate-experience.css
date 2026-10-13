@@ -35,14 +35,7 @@
 .cp-identity h3 { margin:0 0 8px; font:500 clamp(28px,3vw,36px)/1.15 var(--enter-font-editorial); letter-spacing:-.025em; }
 .cp-identity p { margin:4px 0; }
 
-/* A single baseline, with labels in normal flow so long names and overlapping jobs stay readable. */
-.cp-timeline { display:flex; list-style:none; margin:24px 0; padding:6px 4px 16px; overflow-x:auto; scrollbar-width:thin; scrollbar-color:var(--enter-border) transparent; overscroll-behavior-x:contain; }
-.cp-timeline li { flex:1 0 200px; min-width:0; display:flex; flex-direction:column; gap:4px; padding-right:24px; font-size:var(--enter-text-base); line-height:1.5; }
-.cp-timeline strong { font-weight:600; }
-.cp-timeline small { color:var(--enter-text-muted); }
-.cp-career-line { flex:none; position:relative; height:2px; margin:6px -24px 16px 0; background:var(--enter-primary); }
-.cp-career-line::before { content:''; position:absolute; left:0; top:50%; width:8px; height:8px; border-radius:50%; background:var(--enter-primary); transform:translateY(-50%); }
-.cp-timeline li:last-child .cp-career-line { background:transparent; margin-right:0; }
+.candidate-experience .career-journey { margin:24px 0; }
 .cp-signals { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px 32px; padding:24px 0 8px; border-top:1px solid var(--enter-border); }
 .cp-signals h3 { font-size:var(--enter-text-base); margin:0 0 8px; }
 .cp-signals p { margin:0 0 8px; }
@@ -131,7 +124,22 @@
 .candidate-experience .cv-drop-content h2 { font:500 28px/1.2 var(--enter-font-editorial); margin:0; }
 .candidate-experience .cv-drop-content p { margin:12px 0; }
 .candidate-experience .cv-drop-content>strong { font-size:var(--enter-text-base); }
-.cp-processing-activities { padding-left:20px; margin:16px 0; font-size:var(--enter-text-base); line-height:1.8; }
+.candidate-experience .processing-card { padding:clamp(24px,5vw,56px); scroll-margin-top:88px; }
+.candidate-experience .processing-card h2 { font-size:clamp(30px,4vw,42px); margin:0 0 12px; }
+.cp-processing-file { color:var(--enter-text-muted); font-size:14px; overflow-wrap:anywhere; }
+.cp-resume-updates { margin-top:20px; border-top:1px solid var(--enter-border); padding-top:12px; }
+.cp-resume-updates > summary { color:var(--enter-primary-hover); font-size:14px; padding:10px 0; cursor:pointer; }
+.cp-resume-updates .cp-review-field { font-size:14px; }
+.cp-processing-message { display:flex; align-items:center; min-height:76px; margin:20px 0 8px; font-size:clamp(18px,2.4vw,23px); font-weight:500; color:var(--enter-text); }
+.cp-processing-message span { animation:cp-processing-reveal 350ms ease-out both; }
+.cp-processing-bar { height:6px; overflow:hidden; border-radius:var(--enter-radius-control); background:var(--enter-primary-soft); max-width:560px; }
+.cp-processing-bar span { display:block; width:38%; height:100%; border-radius:inherit; background:var(--enter-primary); animation:cp-processing-sweep 1.8s ease-in-out infinite; }
+.cp-processing-bar.is-paused span { animation-play-state:paused; }
+.cp-processing-status { color:var(--enter-text-muted); font-size:14px; margin:18px 0 0; }
+.processing-card.is-failed { border-color:var(--enter-error); }
+.processing-card.is-failed [role=alert] { color:var(--enter-error); }
+@keyframes cp-processing-sweep { from { transform:translateX(-110%); } to { transform:translateX(370%); } }
+@keyframes cp-processing-reveal { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
 .candidate-experience .processing-actions { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:20px; }
 @media(max-width:800px) {
   .candidate-experience { padding-inline:24px; }
@@ -147,7 +155,6 @@
   .cp-section { padding:24px 16px; }
   .cp-section h2 { font-size:28px; }
   .cp-fields,.cp-signals,.cp-work-edit { grid-template-columns:minmax(0,1fr); }
-  .cp-timeline li { flex-basis:192px; }
   .cp-navigation { gap:6px; }
   .cp-navigation button { padding-inline:12px; }
   .cp-custom-exclusion label { flex-basis:100%; }

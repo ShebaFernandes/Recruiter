@@ -3,7 +3,7 @@ from django.utils.dateparse import parse_datetime
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
 
-from .candidate_experience import proposed_fields
+from .candidate_experience import pending_fields, record_candidate_edits
 from .models import CandidateProfile, Resume
 from .permissions import IsCandidate
 from .serializers import CandidateProfileSerializer
@@ -29,8 +29,8 @@ def review_resume(request, resume_id):
         .filter(pk=resume_id, processing_status="completed", scan_status="clean")
         .first()
     )
-    if not resume or profile.resumes.first().pk != resume.pk:
-        return Response({"detail": "This resume is no longer the latest upload."}, status=409)
+    if not resume:
+        return Response({"detail": "This resume is not available for review."}, status=409)
     if not resume.extracted_data.get("_needs_review"):
         return Response(CandidateProfileSerializer(profile, context={"request": request}).data)
     try:
@@ -42,7 +42,7 @@ def review_resume(request, resume_id):
             {"detail": "Your profile changed. Reload before applying updates."}, status=409
         )
     fields = request.data.get("fields")
-    proposed = proposed_fields(resume.extracted_data)
+    proposed = pending_fields(resume, profile)
     if not isinstance(fields, list) or any(
         not isinstance(field, str) or field not in proposed for field in fields
     ):
@@ -55,8 +55,16 @@ def review_resume(request, resume_id):
     )
     serializer.is_valid(raise_exception=True)
     serializer.save()
-    resume.extracted_data["_needs_review"] = False
+    keep_pending = request.data.get("keep_pending") is True
+    remaining = {key: value for key, value in proposed.items() if key not in fields}
+    resume.extracted_data["_pending_fields"] = remaining if keep_pending else {}
+    resume.extracted_data["_needs_review"] = bool(remaining) if keep_pending else False
+    resume.extracted_data["_candidate_edited_fields"] = sorted(
+        set(resume.extracted_data.get("_candidate_edited_fields", []))
+        | set(fields if keep_pending else proposed)
+    )
     resume.save(update_fields=["extracted_data"])
+    record_candidate_edits(profile, fields if keep_pending else proposed)
     if fields and profile.profile_status == "submitted":
         from .views import _notify_recruiters_of_candidate_update
 

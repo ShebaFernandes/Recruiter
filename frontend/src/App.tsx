@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { api, ApiError, auth } from './api'
 import type { AuthPayload } from './api'
-import type { Candidate, Notification, Project, ProjectDetail, Search, SearchResult, User, WorkExperience } from './types'
+import type { Candidate, Notification, Project, ProjectDetail, Search, SearchResult, User } from './types'
 import { Badge, Button, Card, FormField } from './components/ui'
 import Landing from './components/Landing'
 import RecruiterSearch from './components/RecruiterSearch'
@@ -15,7 +15,7 @@ import ResumeAccess from './components/ResumeAccess'
 import { GithubMark, LinkedInMark } from './components/ProfileMarks'
 import { ProjectWorkspace, WorkspacePanel } from './components/RecruiterWorkspace'
 import CandidateExperience from './components/CandidateExperience'
-import { sortCareerHistory } from './careerHistory'
+import CareerJourney from './components/CareerJourney'
 import './components/auth.css'
 
 type SpeechRecognitionLike = {
@@ -272,47 +272,6 @@ function Shell({ user, logout, children, noticeCount = 0 }: {
 function CandidatePortal({ user, logout, accountDeleted }: { user: User; logout: () => void; accountDeleted: () => void }) {
   return <Shell user={user} logout={logout}><CandidateExperience accountDeleted={accountDeleted} /></Shell>
 }
-function formatMonths(startValue: string | null, endValue: string | null) {
-  const start = new Date(startValue || '')
-  const end = endValue ? new Date(endValue) : new Date()
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return ''
-  const months = Math.max(1, Math.round((end.getTime() - start.getTime()) / 2629800000))
-  return months >= 12 ? `${(months / 12).toFixed(months % 12 ? 1 : 0)} yrs` : `${months} mo`
-}
-
-function monthsBetween(startValue: string | null, endValue: string | null) {
-  const start = new Date(startValue || '')
-  const end = endValue ? new Date(endValue) : new Date()
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) return 1
-  return Math.max(1, Math.round((end.getTime() - start.getTime()) / 2629800000))
-}
-
-function CareerJourney({ items, detailed = false }: { items: WorkExperience[]; detailed?: boolean }) {
-  const sorted = sortCareerHistory(items)
-  if (!sorted.length) return <p className="muted">No employment history has been confirmed yet.</p>
-  return <div className={`career-journey ${detailed ? 'detailed' : 'compact'}`} aria-label="Career journey" role="list">
-    {sorted.map((item, index) => {
-      const previous = sorted[index - 1]
-      const gapMilliseconds = previous?.end_date
-        ? new Date(item.start_date || '').getTime() - new Date(previous.end_date).getTime()
-        : 0
-      const hasGap = Boolean(previous?.end_date) && Number.isFinite(gapMilliseconds) && gapMilliseconds > 60 * 86400000
-      const gapMonths = hasGap ? Math.round(gapMilliseconds / 2629800000) : 0
-      const unknownEnd = !item.end_date && (!item.start_date || /not specified/i.test(item.date_label || ''))
-      const duration = unknownEnd ? '' : formatMonths(item.start_date, item.end_date)
-      return <div key={`${item.company}-${item.start_date}`} className="career-sequence">
-        {hasGap && <div className="career-gap-period" role="listitem" tabIndex={0} style={{ flexGrow: Math.max(1, gapMonths) }} aria-label={`Career gap of approximately ${gapMonths} months. ${item.gap_reason || 'Reason not provided by candidate.'}`}><b>{gapMonths >= 12 ? `${Math.round(gapMonths / 12)} yr gap` : `${gapMonths} mo gap`}</b><span className="career-period-line" /><small>{previous.end_date?.slice(0, 4)}<i>{(item.start_date?.slice(0, 4) || '?')}</i></small><span className="career-detail gap-detail"><b>Career gap</b><small>{gapMonths >= 12 ? `Approximately ${Math.round(gapMonths / 12)} year${Math.round(gapMonths / 12) === 1 ? '' : 's'}` : `Approximately ${gapMonths} months`}</small><span>{item.gap_reason || 'Reason not provided by the candidate.'}</span></span></div>}
-        <div className="career-period" role="listitem" style={{ flexGrow: monthsBetween(item.start_date, item.end_date) }}>
-          <button type="button" className="career-job" aria-label={`${item.role} at ${item.company}, ${item.start_date || 'Start not specified'} to ${item.end_date || (unknownEnd ? 'End not specified' : 'present')}${duration ? `, ${duration}` : ''}`}>
-            <b>{item.company}</b><span className="career-period-line"><i /><i /></span><small><span>{index === 0 || hasGap ? (item.start_date?.slice(0, 4) || '?') : ''}</span><i>{item.end_date?.slice(0, 4) || (unknownEnd ? '?' : 'Now')}</i></small>{detailed && <em>{item.role}</em>}
-            <span className="career-detail"><b>{item.role}</b><small>{item.company}</small><span>{(item.start_date?.slice(0, 7) || 'Start not specified')} — {item.end_date?.slice(0, 7) || (unknownEnd ? 'End not specified' : 'Present')}{duration && ` · ${duration}`}</span>{item.description && <p>{item.description}</p>}</span>
-          </button>
-        </div>
-      </div>
-    })}
-  </div>
-}
-
 function CandidateCard({ result, selected, toggle, open, status }: {
   result: SearchResult; selected: boolean; toggle: () => void; open: () => void; status: (value: string) => void
 }) {

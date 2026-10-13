@@ -63,7 +63,7 @@ async function request<T>(path: string, options: RequestInit = {}, binary = fals
 
 export const api = {
   resumePreview: (id: number) => request<DocumentPreview>(`/candidate/resumes/${id}/preview/`, { cache: 'no-store' }),
-  reviewResume: (id: number, fields: string[], profile_updated_at: string) => request<Candidate>(`/candidate/resumes/${id}/review/`, { method: 'POST', body: JSON.stringify({ fields, profile_updated_at }) }),
+  reviewResume: (id: number, fields: string[], profile_updated_at: string, keep_pending = false) => request<Candidate>(`/candidate/resumes/${id}/review/`, { method: 'POST', body: JSON.stringify({ fields, profile_updated_at, keep_pending }) }),
   resumeDocument: (id: number) => request<Blob>(`/resumes/${id}/download/`, { cache: 'no-store' }, true),
   me: () => request<User>('/auth/me/'),
   signup: (body: Record<string, string>) => request<SignupResponse>('/auth/signup/', { method: 'POST', body: JSON.stringify(body) }),
@@ -74,7 +74,7 @@ export const api = {
   confirmPasswordReset: (token: string, password: string) => request<{ detail: string; role?: 'candidate' | 'recruiter' }>('/auth/password-reset/confirm/', { method: 'POST', body: JSON.stringify({ token, password }) }),
   logout: () => request<void>('/auth/logout/', { method: 'POST' }),
   deleteCandidateAccount: (password: string, confirmation: string) => request<void>('/candidate/account/', { method: 'DELETE', body: JSON.stringify({ password, confirmation }) }),
-  candidateProfile: () => request<Candidate>('/candidate/profile/'),
+  candidateProfile: (signal?: AbortSignal) => request<Candidate>('/candidate/profile/', { signal }),
   updateCandidate: (body: Partial<Candidate>) => request<Candidate>('/candidate/profile/', { method: 'PATCH', body: JSON.stringify(body) }),
   submitCandidate: (consent: boolean) => request<Candidate>('/candidate/profile/submit/', { method: 'POST', body: JSON.stringify({ consent }) }),
   uploadResume: (file: File) => { const body = new FormData(); body.append('file', file); return request<Candidate>('/candidate/resumes/', { method: 'POST', body }) },

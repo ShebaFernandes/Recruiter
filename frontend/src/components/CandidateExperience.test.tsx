@@ -17,13 +17,39 @@ describe('candidate career experience', () => {
     const rows = screen.getAllByRole('listitem')
     expect(rows[0]).toHaveTextContent('Alpha')
     expect(rows[1]).toHaveTextContent('Beta')
-    expect(rows[1]).toHaveTextContent('Overlapping role')
-    expect(rows[2]).toHaveTextContent('Start not specified')
+    fireEvent.click(screen.getByRole('button', { name: /at Beta/ }))
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Overlapping employment')
+    fireEvent.focus(screen.getByRole('button', { name: /at Alpha/ }))
+    fireEvent.click(screen.getByRole('button', { name: /at Alpha/ }))
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Alpha')
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /at Unknown/ }))
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Start not specified')
+    expect(screen.getByRole('tooltip')).not.toHaveTextContent('Present')
   })
   it('provides an editable empty-history fallback', () => {
     render(<CandidateCareerTimeline items={[]} />)
-    expect(screen.getByText(/No career history identified/)).toBeVisible()
+    expect(screen.getByText(/No employment history has been confirmed/)).toBeVisible()
     expect(screen.queryByRole('listitem')).not.toBeInTheDocument()
+  })
+  it('does not show false gaps inside overlapping employment and exposes real gaps', () => {
+    const { rerender } = render(<CandidateCareerTimeline items={[
+      job('Long role', '2015-01-01', '2024-01-01'), job('Nested role', '2016-01-01', '2017-01-01'), job('Later role', '2019-01-01', '2020-01-01'),
+    ]} />)
+    expect(screen.queryByRole('button', { name: /Career gap/ })).not.toBeInTheDocument()
+    rerender(<CandidateCareerTimeline items={[job('First', '2015-01-01', '2017-01-01'), { ...job('Second', '2019-01-01', null), gap_reason: 'Study break' }]} />)
+    fireEvent.click(screen.getByRole('button', { name: /Career gap/ }))
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Study break')
+  })
+  it('preserves year-only labels without claiming precise durations or gaps', () => {
+    render(<CandidateCareerTimeline items={[
+      { ...job('First', '2015-01-01', '2017-01-01'), date_label: '2015–17' }, job('Second', '2017-06-01', '2020-01-01'),
+    ]} />)
+    expect(screen.queryByRole('button', { name: /Career gap/ })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /at First/ }))
+    expect(screen.getByRole('tooltip')).toHaveTextContent('2015–17')
+    expect(screen.getByRole('tooltip')).not.toHaveTextContent('yrs')
   })
   it('displays processing activities without fabricated completed stages', () => {
     render(<CandidateProcessing resume={{ ...resume, processing_status: 'processing' }} uploading={false} retry={vi.fn()} upload={vi.fn()} error="" />)

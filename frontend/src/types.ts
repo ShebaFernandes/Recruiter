@@ -37,7 +37,7 @@ export type ProfileCompletion = {
 export type Candidate = {
   career_preferences?: CareerPreferences
   available_resume?: Resume | null
-  resume_review?: { resume_id: number; fields: Partial<Candidate> } | null
+  resume_review?: { resume_id: number; fields: Partial<Candidate>; original_name?: string } | null
   id: number
   full_name: string
   headline: string

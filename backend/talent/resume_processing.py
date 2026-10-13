@@ -15,6 +15,7 @@ from django.db.models import Q
 from django.utils import timezone
 from django.utils.module_loading import import_string
 
+from .candidate_experience import comparable, pending_fields, profile_values, proposed_fields
 from .models import CandidateProfile, Resume, ResumeProcessingJob, WorkExperience
 from .services import parse_date, parse_resume
 
@@ -214,10 +215,32 @@ def _promote_clean_file(resume):
 
 def _apply_extracted_resume(resume, extracted):
     profile = resume.candidate
-    # A replacement is a proposal, not permission to overwrite candidate corrections.
-    if profile.resumes.exclude(pk=resume.pk).filter(processing_status="completed").exists():
-        extracted["_needs_review"] = True
-        return
+    previous = profile.resumes.filter(
+        version__lt=resume.version, processing_status="completed"
+    ).first()
+    baseline = previous.extracted_data.get("_auto_applied", {}) if previous else {}
+    protected = set()
+    for older in profile.resumes.all():
+        protected.update(older.extracted_data.get("_candidate_edited_fields", []))
+        if older.pk != resume.pk:
+            protected.update(pending_fields(older, profile))
+    saved = profile_values(profile)
+    proposals = proposed_fields(extracted)
+    safe, conflicts = {}, {}
+    latest = profile.resumes.first().pk == resume.pk
+    for field, value in proposals.items():
+        if comparable(field, value) == saved[field]:
+            continue
+        if latest and field not in protected and (
+            previous is None or (field in baseline and saved[field] == baseline[field])
+        ):
+            safe[field] = value
+        else:
+            conflicts[field] = value
+    # Keep raw extraction and pending proposals durable. Missing values never erase data.
+    extracted["_pending_fields"] = conflicts
+    extracted["_needs_review"] = bool(conflicts)
+    extracted["_candidate_edited_fields"] = sorted(protected)
     scalar_fields = [
         "full_name",
         "headline",
@@ -237,16 +260,17 @@ def _apply_extracted_resume(resume, extracted):
         "summary",
     ]
     for field in scalar_fields:
-        value = extracted.get(field)
+        value = safe.get(field)
         if value not in (None, "", []):
             setattr(profile, field, value)
     profile.save()
-    if extracted.get("standout_signal") and not profile.career_preferences.get("standout_signal"):
+    if (latest and extracted.get("standout_signal")
+            and "standout_signal" not in profile.career_preferences):
         profile.career_preferences = {
             **profile.career_preferences, "standout_signal": extracted["standout_signal"],
         }
         profile.save(update_fields=["career_preferences", "profile_updated_at"])
-    if extracted.get("work_experiences"):
+    if safe.get("work_experiences"):
         profile.work_experiences.all().delete()
         WorkExperience.objects.bulk_create(
             [
@@ -259,9 +283,14 @@ def _apply_extracted_resume(resume, extracted):
                     date_label=item.get("date_label", ""),
                     description=item.get("description", ""),
                 )
-                for item in extracted["work_experiences"]
+                for item in comparable("work_experiences", safe["work_experiences"])
             ]
         )
+    current = profile_values(profile)
+    extracted["_auto_applied"] = (
+        current if previous is None and latest else
+        {**baseline, **{field: current[field] for field in safe}}
+    )
 
 
 def _retry_or_fail(job_id, message, scan_failed=False):
@@ -337,9 +366,12 @@ def process_resume_job(job_id, idempotency_key=None):
             locked_job = ResumeProcessingJob.objects.select_for_update().get(pk=job.pk)
             if locked_job.state == ResumeProcessingJob.State.COMPLETED:
                 return "duplicate"
+            # Serialize candidate edits, uploads and review with the worker merge.
+            profile = CandidateProfile.objects.select_for_update().get(pk=resume.candidate_id)
             locked_resume = (
                 Resume.objects.select_for_update().select_related("candidate").get(pk=resume.pk)
             )
+            locked_resume.candidate = profile
             locked_resume.extracted_data = extracted
             _apply_extracted_resume(locked_resume, extracted)
             locked_resume.processing_status = Resume.ProcessingStatus.COMPLETED

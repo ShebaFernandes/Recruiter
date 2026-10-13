@@ -63,23 +63,6 @@
 .recruiter-results-ui .stage-signals span { font-size: var(--enter-text-xs); background: var(--enter-bg); border-color: var(--enter-border); color: var(--enter-text-muted); font-weight: 500; }
 
 /* Dates and company labels stay close to the line. Focus also opens details. */
-.recruiter-results-ui .career-journey { min-height: 54px; padding: 0; }
-.recruiter-results-ui :is(.career-period, .career-gap-period) { min-width: 78px; }
-.recruiter-results-ui .career-job { height: 54px; }
-.recruiter-results-ui .career-journey :is(.career-job, .career-gap-period) > b { font-size: var(--enter-text-xs); top: 0; line-height: 18px; }
-.recruiter-results-ui .career-period-line { top: 23px; height: 3px; }
-.recruiter-results-ui .career-journey :is(.career-job, .career-gap-period) > small { top: 31px; font-size: var(--enter-text-xs); color: var(--muted); }
-.recruiter-results-ui .career-detail { top: 54px; font-size: var(--enter-text-xs) !important; width: 230px; line-height: 1.5; }
-.recruiter-results-ui .career-detail :is(b, small, span, p) { font-size: var(--enter-text-xs); }
-.recruiter-results-ui .career-detail b { color: var(--enter-surface); }
-.recruiter-results-ui .career-period:focus-within, .recruiter-results-ui .career-gap-period:focus { z-index: 25; }
-.recruiter-results-ui .career-sequence:first-child .career-detail { left: 0; right: auto; transform: none; }
-.recruiter-results-ui .career-sequence:last-child .career-detail { left: auto; right: 0; transform: none; }
-.recruiter-results-ui .career-gap-period .gap-detail { top: 54px; }
-.recruiter-results-ui .career-journey.detailed { min-height: 84px; }
-.recruiter-results-ui .career-journey.detailed .career-job { height: 84px; }
-.recruiter-results-ui .career-journey.detailed .career-job > em { top: 51px; font: 500 12px/1.3 var(--enter-font-ui); white-space: normal; width: 95%; }
-.recruiter-results-ui .career-journey.detailed .career-detail { top: 84px; }
 
 /* Right-side filters reflow the cards, never cover them on desktop. */
 .recruiter-results-ui .results-layout.refine-open { grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; }
@@ -184,14 +167,6 @@
   .recruiter-results-ui .candidate-main { padding: 0; }
   .recruiter-results-ui .candidate-facts { margin-left: 0; grid-template-columns: 1fr; }
   .recruiter-results-ui :is(.career-row, .card-skills) { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
-  .recruiter-results-ui .career-journey { display: grid; grid-auto-flow: column; grid-auto-columns: 140px; align-items: start; overflow-x: auto; padding: 4px 3px 8px; }
-  .recruiter-results-ui :is(.career-period, .career-gap-period) { width: 140px; min-width: 140px; }
-  .recruiter-results-ui .career-job { display: block; height: auto; min-height: 54px; }
-  .recruiter-results-ui .career-gap-period { min-height: 54px; }
-  .recruiter-results-ui .career-journey.detailed .career-job { height: auto; min-height: 84px; }
-  .recruiter-results-ui .career-journey .career-detail { position: static; transform: none; width: 100%; margin-top: 54px; box-shadow: none; overflow-wrap: anywhere; }
-  .recruiter-results-ui .career-job:not(:focus) .career-detail, .recruiter-results-ui .career-gap-period:not(:focus) .career-detail { display: none !important; }
-  .recruiter-results-ui .career-journey.detailed .career-detail { margin-top: 84px; }
   .recruiter-results-ui .candidate-actions { display: grid; grid-template-columns: 1fr 1fr; padding: 10px 0 0; gap: 8px; border-left: 0; }
   .recruiter-results-ui .candidate-actions .compare-check { min-height: 32px; margin: 0; }
   .recruiter-results-ui .candidate-actions :is(select, .primary) { min-height: var(--enter-control-standard); }

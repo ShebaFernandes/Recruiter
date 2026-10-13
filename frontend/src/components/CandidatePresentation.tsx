@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { UploadCloud } from 'lucide-react'
 import type { Resume } from '../types'
 
@@ -11,27 +12,44 @@ export function CandidateWelcome() {
 
 
 /** Presentation only: processing, scanning and retry eligibility come from Django. */
-export function CandidateProcessing({ resume, uploading, retry, upload, error }: {
-  resume: Resume; uploading: boolean; retry: () => void; upload: (file?: File) => void; error: string
+const activities = ['Reading your experience', 'Mapping your career journey', 'Identifying your strongest skills', "Understanding what you've built", 'Building your ENTER profile']
+
+export function CandidateProcessing({ resume, uploading, retry, upload, error, refresh }: {
+  resume: Resume; uploading: boolean; retry: () => void; upload: (file?: File) => void; error: string; refresh?: () => void
 }) {
   const failed = resume.processing_status === 'failed'
-  const heading = failed ? 'We couldn’t finish this resume'
-    : resume.processing_status === 'uploaded' ? 'Your resume is uploaded'
-      : resume.processing_status === 'queued' ? 'Your resume is queued'
-        : resume.scan_status === 'scanning' ? 'Checking your resume…' : 'Reading your resume…'
-  return <section className="candidate-upload-card processing-card" aria-live="polite">
-    <div className={`cv-dropzone ${failed ? 'failed' : 'busy'}`}>
-      <div className="cv-mark" aria-hidden="true">CV</div>
-      <div className="cv-drop-content">
-        <h2>{heading}</h2>
-        {failed ? <p>{resume.processing_error || 'Your profile was not changed. Please retry.'}</p> : resume.processing_status === 'processing' && resume.scan_status !== 'scanning' ? <ul className="cp-processing-activities" aria-label="Resume processing activities"><li>Reading your experience</li><li>Mapping your career journey</li><li>Identifying your strongest skills</li><li>Understanding what you've built</li><li>Building your ENTER profile</li></ul> : <p>{resume.scan_status === 'scanning' ? 'Checking your file safely.' : 'Waiting for a resume worker.'}</p>}
-        <strong>{resume.original_name}</strong>
+  const active = ['uploaded', 'queued', 'processing'].includes(resume.processing_status)
+  const [activity, setActivity] = useState(0)
+  useEffect(() => {
+    if (!active || error || typeof window.matchMedia !== 'function') return
+    const motion = window.matchMedia('(prefers-reduced-motion: reduce)')
+    let timer: number | undefined
+    const update = () => {
+      window.clearInterval(timer)
+      if (!motion.matches) timer = window.setInterval(() => setActivity(value => (value + 1) % activities.length), 3000)
+    }
+    update(); motion.addEventListener('change', update)
+    return () => { window.clearInterval(timer); motion.removeEventListener('change', update) }
+  }, [active, error])
+  const stateLabel = resume.processing_status === 'completed' ? 'Your profile is ready to review.'
+    : failed ? 'Processing stopped.'
+      : resume.scan_status === 'scanning' ? 'Scanning — checking your file safely.'
+        : resume.processing_status === 'processing' ? 'Processing — preparing your profile.'
+          : resume.processing_status === 'uploaded' ? 'Uploaded — waiting to be queued.' : 'Queued — waiting for a resume worker.'
+  return <section className={`cp-section processing-card ${failed ? 'is-failed' : ''}`} aria-labelledby="resume-processing-heading" tabIndex={-1}>
+        <h2 id="resume-processing-heading">{failed ? 'We couldn’t finish this resume' : active ? "We're doing the boring part." : 'Your profile is ready'}</h2>
+        <p className="cp-processing-file">{resume.original_name}</p>
+        {active && <>
+          <div className="cp-processing-message" aria-hidden="true"><span key={activity}>{activities[activity]}</span></div>
+          <ul className="sr-only" aria-label="Profile preparation activities, not completed stages">{activities.map(text => <li key={text}>{text}</li>)}</ul>
+          <div className={`cp-processing-bar ${error ? 'is-paused' : ''}`} role="progressbar" aria-label="Resume processing" aria-valuetext={error ? 'Status temporarily unavailable' : stateLabel}><span /></div>
+        </>}
+        <p className="cp-processing-status" role="status">{error ? 'Unable to check the latest status. Your upload is saved; we’ll keep checking.' : stateLabel}</p>
+        {error && active && refresh && <div className="processing-actions"><button onClick={refresh} disabled={uploading}>Check status again</button></div>}
+        {failed && <p role="alert">{error || resume.processing_error || 'Your profile was not changed. Please retry.'}</p>}
         {failed && <div className="processing-actions">
           {resume.can_retry && <button className="primary" onClick={retry} disabled={uploading}>{uploading ? 'Queueing…' : 'Retry processing'}</button>}
           <label className="cv-file-button"><input type="file" aria-label="Upload a replacement resume" accept=".pdf,.docx" onChange={event => upload(event.target.files?.[0])} disabled={uploading} data-testid="resume-input" /><UploadCloud size={18} /><span>Upload a different resume</span></label>
         </div>}
-      </div>
-    </div>
-    {error && <div className="error" role="alert">{error}</div>}
   </section>
 }

@@ -3,7 +3,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
 
-from .candidate_experience import LIST_FIELDS, MOTIVATORS, TEXT_FIELDS, proposed_fields
+from .candidate_experience import LIST_FIELDS, MOTIVATORS, TEXT_FIELDS, pending_fields
 from .models import (
     CandidateProfile,
     CandidateUpdateNotification,
@@ -122,13 +122,12 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
         return ResumeSerializer(resume, context=self.context).data if resume else None
 
     def get_resume_review(self, obj):
-        resume = obj.resumes.first()
-        if (
-            resume
-            and resume.processing_status == "completed"
-            and resume.extracted_data.get("_needs_review")
-        ):
-            return {"resume_id": resume.pk, "fields": proposed_fields(resume.extracted_data)}
+        # An unresolved older upload stays reachable after a newer upload completes.
+        for resume in obj.resumes.filter(processing_status="completed", scan_status="clean"):
+            fields = pending_fields(resume, obj)
+            if fields:
+                return {"resume_id": resume.pk, "fields": fields,
+                        "original_name": resume.original_name}
         return None
 
     def validate_career_preferences(self, value):

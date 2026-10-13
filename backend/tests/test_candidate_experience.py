@@ -77,12 +77,37 @@ def test_not_looking_availability_preserves_privacy(client, candidate_account):
     assert data["visibility"] == "not_looking"
 
 
+@pytest.mark.parametrize("visibility", ["approved_recruiters", "matching_roles", "not_looking"])
+def test_career_settings_without_visibility_preserves_saved_choice(
+    client, candidate_account, visibility
+):
+    profile = CandidateProfile.objects.get()
+    profile.visibility = visibility
+    profile.save(update_fields=["visibility"])
+    response = client.patch(
+        "/api/v1/candidate/profile/",
+        {
+            "notice_period_days": 0,
+            "work_preferences": ["Remote"],
+            "career_preferences": {"contact_preferences": ["Email"]},
+        },
+        format="json",
+    )
+    assert response.status_code == 200
+    assert response.data["visibility"] == visibility
+    profile.refresh_from_db()
+    assert profile.visibility == visibility
+
+
 def test_replacement_review_no_data_loss_and_duplicate_safe(client, candidate_account):
     initial = upload(client).data
+    corrected_history = initial["work_experiences"]
+    corrected_history[0]["role"] = "Candidate corrected role"
     client.patch(
         "/api/v1/candidate/profile/",
         {
             "headline": "Candidate corrected title",
+            "work_experiences": corrected_history,
             "meaningful_work": "My own answer",
             "career_preferences": {"exclusions": ["Travel"]},
         },
@@ -90,7 +115,7 @@ def test_replacement_review_no_data_loss_and_duplicate_safe(client, candidate_ac
     )
     updated = upload(client, resume_docx(role="Staff Engineer")).data
     assert updated["headline"] == "Candidate corrected title"
-    assert updated["work_experiences"] == initial["work_experiences"]
+    assert updated["work_experiences"][0]["role"] == "Candidate corrected role"
     assert updated["resume_review"]["fields"]["headline"] == "Staff Engineer"
     rid = updated["latest_resume"]["id"]
     job = ResumeProcessingJob.objects.get(resume_id=rid)
@@ -124,7 +149,8 @@ def test_replacement_review_no_data_loss_and_duplicate_safe(client, candidate_ac
 
 def test_stale_review_rejected(client, candidate_account):
     upload(client)
-    updated = upload(client).data
+    client.patch("/api/v1/candidate/profile/", {"headline": "First correction"}, format="json")
+    updated = upload(client, resume_docx(role="New resume title")).data
     client.patch("/api/v1/candidate/profile/", {"headline": "Later correction"}, format="json")
     response = client.post(
         f"/api/v1/candidate/resumes/{updated['latest_resume']['id']}/review/",
