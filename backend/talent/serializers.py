@@ -3,6 +3,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
 
+from .candidate_experience import LIST_FIELDS, MOTIVATORS, TEXT_FIELDS, proposed_fields
 from .models import (
     CandidateProfile,
     CandidateUpdateNotification,
@@ -36,6 +37,12 @@ class SignupSerializer(serializers.Serializer):
 
 
 class WorkExperienceSerializer(serializers.ModelSerializer):
+    def validate(self, attrs):
+        if attrs.get("start_date") and attrs.get("end_date"):
+            if attrs["end_date"] < attrs["start_date"]:
+                raise serializers.ValidationError("End date must not be before start date.")
+        return attrs
+
     class Meta:
         model = WorkExperience
         fields = [
@@ -44,6 +51,7 @@ class WorkExperienceSerializer(serializers.ModelSerializer):
             "role",
             "start_date",
             "end_date",
+            "date_label",
             "description",
             "gap_reason",
         ]
@@ -98,6 +106,73 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
     submission_missing_fields = serializers.SerializerMethodField()
     can_submit = serializers.SerializerMethodField()
     discovery_status = serializers.SerializerMethodField()
+    available_resume = serializers.SerializerMethodField()
+    resume_review = serializers.SerializerMethodField()
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get("request")
+        if getattr(getattr(request, "user", None), "id", None) != instance.user_id:
+            for field in ("career_preferences", "resume_review", "available_resume"):
+                data.pop(field, None)
+        return data
+
+    def get_available_resume(self, obj):
+        resume = obj.resumes.filter(processing_status="completed", scan_status="clean").first()
+        return ResumeSerializer(resume, context=self.context).data if resume else None
+
+    def get_resume_review(self, obj):
+        resume = obj.resumes.first()
+        if (
+            resume
+            and resume.processing_status == "completed"
+            and resume.extracted_data.get("_needs_review")
+        ):
+            return {"resume_id": resume.pk, "fields": proposed_fields(resume.extracted_data)}
+        return None
+
+    def validate_career_preferences(self, value):
+        if not isinstance(value, dict) or set(value) - LIST_FIELDS - TEXT_FIELDS:
+            raise serializers.ValidationError("Choose valid career settings.")
+        for key, item in value.items():
+            if key in LIST_FIELDS:
+                if (
+                    not isinstance(item, list)
+                    or len(item) > 100
+                    or any(
+                        not isinstance(text, str) or not text.strip() or len(text) > 240
+                        for text in item
+                    )
+                ):
+                    raise serializers.ValidationError("Use non-empty options up to 240 characters.")
+                value[key] = list(dict.fromkeys(text.strip() for text in item))
+            elif not isinstance(item, str) or len(item) > 1000:
+                raise serializers.ValidationError("Keep career answers within 1,000 characters.")
+        if set(value.get("motivators", [])) - MOTIVATORS:
+            raise serializers.ValidationError("Choose a listed motivation.")
+        if len(value.get("strongest_skills", [])) > 5:
+            raise serializers.ValidationError("Choose up to five strongest skills.")
+        if set(value.get("contact_preferences", [])) - {"Email", "WhatsApp", "Phone"}:
+            raise serializers.ValidationError("Choose Email, WhatsApp or Phone.")
+        if value.get("availability", "") not in {
+            "",
+            "Actively looking",
+            "Open to the right opportunity",
+            "Not looking right now",
+        }:
+            raise serializers.ValidationError("Choose a valid availability.")
+        return value
+
+    def validate(self, attrs):
+        skills = attrs.get("skills", self.instance.skills if self.instance else [])
+        preferences = attrs.get("career_preferences", {})
+        if preferences.get("availability") == "Not looking right now":
+            attrs["visibility"] = "not_looking"
+        if set(preferences.get("strongest_skills", [])) - set(skills):
+            raise serializers.ValidationError(
+                {"career_preferences": "Strongest skills must be in your saved skills."}
+            )
+        return attrs
 
     PROFILE_FIELD_SPECS = [
         {
@@ -215,6 +290,9 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
             "github_url",
             "summary",
             "meaningful_work",
+            "career_preferences",
+            "available_resume",
+            "resume_review",
             "visibility",
             "work_preferences",
             "skills",
@@ -262,6 +340,28 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Choose valid work preferences.")
         return list(dict.fromkeys(value))
 
+    def validate_skills(self, value):
+        if (
+            not isinstance(value, list)
+            or len(value) > 100
+            or any(
+                not isinstance(item, str) or not item.strip() or len(item) > 240 for item in value
+            )
+        ):
+            raise serializers.ValidationError("Use a list of non-empty skill names.")
+        return list(dict.fromkeys(item.strip() for item in value))
+
+    def validate_education(self, value):
+        if (
+            not isinstance(value, list)
+            or len(value) > 50
+            or any(
+                not isinstance(item, str) or not item.strip() or len(item) > 1000 for item in value
+            )
+        ):
+            raise serializers.ValidationError("Use a list of education entries.")
+        return list(dict.fromkeys(item.strip() for item in value))
+
     def _field_missing(self, obj, field):
         if field == "work_experiences":
             return not obj.work_experiences.exists()
@@ -272,9 +372,7 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
 
     def get_missing_fields(self, obj):
         return [
-            spec
-            for spec in self.PROFILE_FIELD_SPECS
-            if self._field_missing(obj, spec["field"])
+            spec for spec in self.PROFILE_FIELD_SPECS if self._field_missing(obj, spec["field"])
         ]
 
     def get_profile_completion(self, obj):
@@ -360,12 +458,28 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
         recruiter = self._recruiter()
         if not recruiter:
             return ""
-        notification = obj.candidateupdatenotification_set.filter(
-            recruiter=recruiter, is_read=False
-        ).order_by("-created_at").first()
+        notification = (
+            obj.candidateupdatenotification_set.filter(recruiter=recruiter, is_read=False)
+            .order_by("-created_at")
+            .first()
+        )
         return notification.message if notification else ""
 
     def update(self, instance, validated_data):
+        if "career_preferences" in validated_data:
+            validated_data["career_preferences"] = {
+                **instance.career_preferences,
+                **validated_data["career_preferences"],
+            }
+        if "skills" in validated_data and "strongest_skills" in instance.career_preferences:
+            preferences = validated_data.setdefault(
+                "career_preferences", dict(instance.career_preferences)
+            )
+            preferences["strongest_skills"] = [
+                skill
+                for skill in preferences.get("strongest_skills", [])
+                if skill in validated_data["skills"]
+            ]
         experiences = validated_data.pop("work_experiences", None)
         instance = super().update(instance, validated_data)
         if experiences is not None:

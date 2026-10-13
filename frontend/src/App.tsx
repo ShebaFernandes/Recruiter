@@ -1,10 +1,9 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  ArrowRight, Bell, BriefcaseBusiness, CalendarDays, Check,
-  Download, CheckCircle2, Code2, Eye, EyeOff, FileText, FolderPlus, GraduationCap,
-  History, IndianRupee, Link, LogOut, Mail, MapPin, MessageCircle, Pencil, Plus,
-  Search as SearchIcon, ShieldCheck, SlidersHorizontal, Sparkles, Target, Trash2,
-  UploadCloud, X, Zap,
+  Bell, BriefcaseBusiness, CalendarDays, Check,
+  CheckCircle2, FolderPlus, GraduationCap,
+  History, IndianRupee, LogOut, Mail, MapPin, MessageCircle, Plus,
+  Search as SearchIcon, ShieldCheck, SlidersHorizontal, X,
 } from 'lucide-react'
 import { api, ApiError, auth } from './api'
 import type { AuthPayload } from './api'
@@ -15,7 +14,8 @@ import RecruiterSearch from './components/RecruiterSearch'
 import ResumeAccess from './components/ResumeAccess'
 import { GithubMark, LinkedInMark } from './components/ProfileMarks'
 import { ProjectWorkspace, WorkspacePanel } from './components/RecruiterWorkspace'
-import { CandidateProcessing, CandidateWelcome } from './components/CandidatePresentation'
+import CandidateExperience from './components/CandidateExperience'
+import { sortCareerHistory } from './careerHistory'
 import './components/auth.css'
 
 type SpeechRecognitionLike = {
@@ -27,19 +27,6 @@ type SpeechRecognitionLike = {
   onend: (() => void) | null
 }
 type SpeechRecognitionConstructor = new () => SpeechRecognitionLike
-
-const emptyProfile: Candidate = {
-  id: 0, full_name: '', headline: '', current_company: '', email: '', phone: '', location: '',
-  total_experience: '0', notice_period_days: null, current_salary_lpa: null,
-  expected_salary_lpa: null, employment_type: 'Full-time', linkedin_url: '', github_url: '',
-  summary: '', meaningful_work: '', visibility: '', work_preferences: [],
-  skills: [], education: [], profile_status: 'draft', email_verified_at: null, submitted_at: null,
-  submission_consent_at: null, submission_consent_version: '', discovery_status: 'draft',
-  profile_updated_at: '', work_experiences: [], latest_resume: null,
-  viewed: false, stage: '', resume_updated: false, update_label: '', missing_fields: [],
-  profile_completion: { percent: 0, remaining: 0, required_missing: 0, recommended_missing: 0 },
-  submission_missing_fields: [], can_submit: false,
-}
 
 const recruiterStages = [
   ['sourced', 'Sourced'],
@@ -283,315 +270,42 @@ function Shell({ user, logout, children, noticeCount = 0 }: {
 }
 
 function CandidatePortal({ user, logout, accountDeleted }: { user: User; logout: () => void; accountDeleted: () => void }) {
-  const [profile, setProfile] = useState<Candidate>(emptyProfile)
-  const [experiences, setExperiences] = useState<WorkExperience[]>([])
-  const [loading, setLoading] = useState(true)
-  const [uploading, setUploading] = useState(false)
-  const [draggingResume, setDraggingResume] = useState(false)
-  const [message, setMessage] = useState('')
-  const [error, setError] = useState('')
-  const [editing, setEditing] = useState<string | null>(null)
-  const [saving, setSaving] = useState(false)
-  const [wizardOpen, setWizardOpen] = useState(false)
-  const [wizardModes, setWizardModes] = useState<string[]>([])
-  const [reviewOpen, setReviewOpen] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
-  const [consentChecked, setConsentChecked] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
-  const [deleting, setDeleting] = useState(false)
-  const [deleteError, setDeleteError] = useState('')
-
-  function applyProfile(next: Candidate) {
-    setProfile(next)
-    setExperiences(next.work_experiences)
-  }
-
-  useEffect(() => {
-    api.candidateProfile()
-      .then(applyProfile)
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false))
-  }, [])
-
-  useEffect(() => {
-    const state = profile.latest_resume?.processing_status
-    if (state !== 'queued' && state !== 'processing' && state !== 'uploaded') return
-    let active = true
-    const poll = async () => {
-      try {
-        const next = await api.candidateProfile()
-        if (!active) return
-        applyProfile(next)
-        if (next.latest_resume?.processing_status === 'completed') {
-          setMessage("We've built your starting profile. Take a look below.")
-        }
-      } catch (cause) {
-        if (active) setError(cause instanceof Error ? cause.message : 'We could not refresh resume processing.')
-      }
-    }
-    const interval = window.setInterval(poll, 1200)
-    void poll()
-    return () => { active = false; window.clearInterval(interval) }
-  }, [profile.latest_resume?.id, profile.latest_resume?.processing_status])
-
-  async function savePatch(patch: Partial<Candidate>, success = 'Saved to your profile.') {
-    setError(''); setSaving(true)
-    try {
-      const next = await api.updateCandidate(patch)
-      applyProfile(next)
-      setMessage(success)
-      return next
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'We could not save that change.')
-      return null
-    } finally { setSaving(false) }
-  }
-
-  async function upload(file?: File) {
-    if (!file) return
-    setUploading(true); setError(''); setMessage('')
-    try {
-      const next = await api.uploadResume(file)
-      applyProfile(next)
-      setMessage('Resume uploaded securely. Security scanning and profile extraction are queued.')
-    }
-    catch (e) { setError(e instanceof Error ? e.message : 'Upload failed.') }
-    finally { setUploading(false) }
-  }
-
-  async function retryResume() {
-    if (!profile.latest_resume) return
-    setUploading(true); setError(''); setMessage('')
-    try {
-      applyProfile(await api.retryResume(profile.latest_resume.id))
-      setMessage('Resume processing has been queued again.')
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'We could not retry resume processing.')
-    } finally { setUploading(false) }
-  }
-
-  function openWizard() {
-    setWizardModes(profile.work_preferences)
-    setWizardOpen(true)
-  }
-
-  async function saveWizardValue(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const field = profile.missing_fields[0]
-    if (!field) return setWizardOpen(false)
-    const value = String(new FormData(event.currentTarget).get('value') || '').trim()
-    let patch: Partial<Candidate>
-    if (field.field === 'work_preferences') patch = { work_preferences: wizardModes }
-    else if (field.field === 'skills') patch = { skills: value.split(',').map(item => item.trim()).filter(Boolean) }
-    else if (field.field === 'education') patch = { education: value.split('\n').map(item => item.trim()).filter(Boolean) }
-    else if (field.field === 'notice_period_days') patch = { notice_period_days: Number(value) }
-    else if (field.field === 'total_experience') patch = { total_experience: value }
-    else if (field.field === 'expected_salary_lpa') patch = { expected_salary_lpa: value }
-    else patch = { [field.field]: value } as Partial<Candidate>
-    const next = await savePatch(patch, 'Great — your profile is taking shape.')
-    if (next && next.missing_fields.length === 0) setWizardOpen(false)
-  }
-
-  async function chooseNotice(days: number) {
-    const next = await savePatch({ notice_period_days: days }, 'Notice period added.')
-    if (next && next.missing_fields.length === 0) setWizardOpen(false)
-  }
-
-  async function chooseVisibility(value: Candidate['visibility']) {
-    const next = await savePatch({ visibility: value }, 'Visibility preference added.')
-    if (next && next.missing_fields.length === 0) setWizardOpen(false)
-  }
-
-  async function toggleWorkPreference(value: string) {
-    const current = profile.work_preferences
-    const next = current.includes(value) ? current.filter(item => item !== value) : [...current, value]
-    await savePatch({ work_preferences: next }, 'Work preferences updated.')
-  }
-
-  function openReview() {
-    setConsentChecked(Boolean(profile.submission_consent_at))
-    setReviewOpen(true)
-    window.setTimeout(() => document.querySelector('.review-submit')?.scrollIntoView({ behavior: 'smooth' }), 0)
-  }
-
-  async function submitProfile() {
-    setSubmitting(true); setError('')
-    try {
-      const next = await api.submitCandidate(consentChecked)
-      applyProfile(next)
-      setReviewOpen(false)
-      setMessage('Your profile has been submitted to Enter.')
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'We could not submit your profile.')
-    } finally { setSubmitting(false) }
-  }
-
-  async function deleteAccount(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setDeleting(true); setDeleteError('')
-    const data = Object.fromEntries(new FormData(event.currentTarget).entries()) as Record<string, string>
-    try {
-      await api.deleteCandidateAccount(data.password, data.confirmation)
-      auth.clear()
-      accountDeleted()
-    } catch (cause) {
-      setDeleteError(cause instanceof Error ? cause.message : 'We could not delete your account.')
-    } finally { setDeleting(false) }
-  }
-
-  const missing = profile.missing_fields[0]
-  const completion = profile.profile_completion
-  const recommendedMissing = profile.missing_fields.filter(item => item.category !== 'required')
-  const visibilityOptions = [
-    ['approved_recruiters', 'Visible to approved recruiters', 'Be discovered by trusted recruiters.'],
-    ['matching_roles', 'Only matching roles', 'Appear only when the role aligns.'],
-    ['not_looking', 'Not looking right now', 'Keep your profile, pause discovery.'],
-  ] as const
-  const workModes = ['Flexible', 'Remote', 'Hybrid', 'On-site']
-
-  if (loading) return <Shell user={user} logout={logout}><main className="candidate-upload-first candidate-ui"><div className="candidate-profile-loading" role="status">Loading your profile…</div></main></Shell>
-
-  const resumeState = profile.latest_resume?.processing_status
-  if (profile.latest_resume && resumeState !== 'completed') return <Shell user={user} logout={logout}>
-    <main className="candidate-upload-first candidate-ui">
-      <CandidateWelcome />
-      <CandidateProcessing resume={profile.latest_resume} uploading={uploading} retry={retryResume} upload={upload} error={error} />
-    </main>
-  </Shell>
-
-  if (!profile.latest_resume) return <Shell user={user} logout={logout}>
-    <main className="candidate-upload-first candidate-ui">
-      <CandidateWelcome />
-      <section className="candidate-upload-card" aria-labelledby="resume-upload-title">
-        <div
-          className={`cv-dropzone ${draggingResume ? 'dragging' : ''} ${uploading ? 'busy' : ''}`}
-          onDragEnter={event => { event.preventDefault(); if (!uploading) setDraggingResume(true) }}
-          onDragOver={event => { event.preventDefault(); if (!uploading) setDraggingResume(true) }}
-          onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDraggingResume(false) }}
-          onDrop={event => { event.preventDefault(); setDraggingResume(false); if (!uploading) void upload(event.dataTransfer.files?.[0]) }}
-        >
-          <div className="cv-mark">CV</div>
-          <div className="cv-drop-content">
-            <h2 id="resume-upload-title">{uploading ? 'Uploading your resume…' : 'Drop your resume'}</h2>
-            <p>{uploading ? 'Your private file is being stored securely before processing begins.' : 'Drag and drop your CV here, or choose it from your device.'}</p>
-            <label className={`cv-file-button ${uploading ? 'busy' : ''}`}><input type="file" aria-label="Choose PDF or DOCX resume" accept=".pdf,.docx" onChange={event => upload(event.target.files?.[0])} disabled={uploading} data-testid="resume-input" /><UploadCloud size={18} /><span>{uploading ? 'Uploading…' : 'Choose PDF or DOCX'}</span></label>
-            <small>PDF or DOCX · Maximum 5 MB</small>
-          </div>
-        </div>
-        <InlineError value={error} />
-        <div className="candidate-upload-points">
-          <div><span>RECRUITERS SEE</span><b>Role, skills, notice, compensation, and proof of work</b></div>
-          <div><span>YOU CONTROL</span><b>Visibility, work mode, and outreach preference</b></div>
-          <div><span>AFTER UPLOAD</span><b>Only missing details are shown for confirmation</b></div>
-        </div>
-      </section>
-    </main>
-  </Shell>
-
-  return <Shell user={user} logout={logout}>
-    <main className="candidate-studio candidate-ui">
-      <section className="studio-hero">
-        <CandidateWelcome />
-        {profile.latest_resume && <div className="completion-card" aria-label="Profile completion"><div className="completion-ring" style={{ '--completion': `${completion.percent * 3.6}deg` } as React.CSSProperties}><span>{completion.percent}%</span></div><div><b>{completion.remaining ? 'Your profile is almost ready' : 'Your profile is ready'}</b><span>{completion.remaining ? `${completion.remaining} ${completion.remaining === 1 ? 'detail' : 'details'} left` : 'Everything important is in place'}</span></div></div>}
-      </section>
-
-      <section className={`resume-launch ${profile.latest_resume ? 'has-resume' : ''}`}>
-        <div className="resume-launch-copy"><div className="resume-icon"><FileText /></div><div><span>{profile.latest_resume ? 'YOUR RESUME' : 'START HERE'}</span><h2>{profile.latest_resume ? "We've built your starting profile" : 'Upload your resume'}</h2><p>{profile.latest_resume ? 'Review what we found and add the details that make your story yours.' : 'PDF or DOCX. We’ll turn it into a profile you can review and edit.'}</p></div></div>
-        <label className={`resume-action ${uploading ? 'busy' : ''}`}><input type="file" aria-label="Upload a newer resume" accept=".pdf,.docx" onChange={event => upload(event.target.files?.[0])} disabled={uploading} data-testid="resume-input" /><UploadCloud size={19} /><span>{uploading ? 'Uploading your resume…' : profile.latest_resume ? 'Upload a newer resume' : 'Choose your resume'}</span></label>
-        {profile.latest_resume && <div className="resume-file"><span><Check size={15} />{profile.latest_resume.original_name}<small>Version {profile.latest_resume.version}</small></span>{profile.latest_resume.url && <a href={profile.latest_resume.url} aria-label="Download resume"><Download size={16} /></a>}</div>}
-      </section>
-
-      <div className="candidate-notices"><InlineError value={error} />{message && <div className="success"><Check size={17} />{message}</div>}</div>
-
-      {!profile.latest_resume && !loading && <section className="before-profile"><div><Zap /><b>A thoughtful starting point</b><span>We extract what your resume actually says.</span></div><div><Pencil /><b>Easy to shape</b><span>Edit each profile section when you’re ready.</span></div><div><ShieldCheck /><b>You choose visibility</b><span>Your resume stays private and follows your preferences.</span></div></section>}
-
-      {profile.latest_resume && profile.missing_fields.length > 0 && <section className="missing-callout"><div className="missing-callout-icon"><Sparkles /></div><div><span>A FEW QUICK DETAILS</span><h2>Your resume gave us a great start.</h2><p>We need {completion.remaining} more {completion.remaining === 1 ? 'detail' : 'details'} to complete your profile.</p><div className="missing-preview">{profile.missing_fields.slice(0, 3).map(item => <span key={item.field}><Target size={13} /><small>{item.category}</small>{item.message}</span>)}</div></div><button className="primary" onClick={openWizard}>Complete my profile <ArrowRight size={16} /></button></section>}
-
-      {wizardOpen && missing && <section className="quick-step" aria-live="polite"><button className="quick-step-close" onClick={() => setWizardOpen(false)} aria-label="Close quick completion"><X /></button><div className="quick-step-count">{missing.category.toUpperCase()} · {completion.remaining} LEFT</div><h2>{missing.prompt}</h2><p>{missing.field === 'meaningful_work' ? 'Tell recruiters about a project, product, system, research project, or piece of work you’re especially proud of.' : missing.message}</p>
-        {missing.field === 'notice_period_days' ? <div className="choice-row">{[0, 15, 30, 60, 90].map(days => <button key={days} onClick={() => chooseNotice(days)}>{days === 0 ? 'Immediate' : days === 90 ? '90+ days' : `${days} days`}</button>)}</div>
-          : missing.field === 'visibility' ? <div className="visibility-grid quick-visibility">{visibilityOptions.map(([value, title, copy]) => <button key={value} onClick={() => chooseVisibility(value)}><span className="visibility-icon">{value === 'not_looking' ? <EyeOff /> : <Eye />}</span><b>{title}</b><small>{copy}</small></button>)}</div>
-            : missing.field === 'work_experiences' ? <button className="primary" onClick={() => { setEditing('experience'); setWizardOpen(false) }}>Add my experience <ArrowRight size={16} /></button>
-            : <form onSubmit={saveWizardValue} className="quick-step-form">
-              {missing.field === 'work_preferences' ? <div className="choice-row multi">{workModes.map(mode => <button type="button" key={mode} className={wizardModes.includes(mode) ? 'selected' : ''} aria-pressed={wizardModes.includes(mode)} onClick={() => setWizardModes(old => old.includes(mode) ? old.filter(item => item !== mode) : [...old, mode])}>{wizardModes.includes(mode) && <Check size={14} />}{mode}</button>)}</div>
-                : missing.field === 'meaningful_work' ? <div className="proud-input"><textarea name="value" aria-label={missing.label} required rows={5} defaultValue={profile.meaningful_work} placeholder="What did you build? What was your contribution? What impact did it have?" /><span>A few thoughtful sentences are plenty.</span></div>
-                  : missing.field === 'education' ? <div className="proud-input"><textarea name="value" aria-label={missing.label} required rows={4} defaultValue={profile.education.join('\n')} placeholder="Degree, institution, and graduation year" /><span>One qualification per line works well.</span></div>
-                  : <input name="value" aria-label={missing.label} required type={['total_experience', 'expected_salary_lpa'].includes(missing.field) ? 'number' : missing.field.includes('url') ? 'url' : 'text'} step={missing.field === 'total_experience' ? '0.1' : undefined} placeholder={missing.field === 'skills' ? 'Python, Django, PostgreSQL' : `Add your ${missing.label}`} />}
-              <button className="primary" disabled={missing.field === 'work_preferences' && wizardModes.length === 0}>Save and continue <ArrowRight size={16} /></button>
-              {missing.category !== 'required' && <button type="button" className="skip-detail" onClick={() => setWizardOpen(false)}>Skip for now</button>}
-            </form>}
-      </section>}
-
-      {profile.latest_resume && !loading && <div className={`profile-board ${saving ? 'saving' : ''}`} aria-busy={saving}>
-        <section className="profile-section about-card"><div className="profile-section-head"><div><span>ABOUT YOU</span><h2>{profile.full_name}</h2></div><button onClick={() => setEditing(editing === 'about' ? null : 'about')}><Pencil size={15} /> Edit</button></div>
-          {editing === 'about' ? <form className="card-edit-grid" onSubmit={async event => { event.preventDefault(); const data = Object.fromEntries(new FormData(event.currentTarget).entries()) as Record<string, string>; const next = await savePatch({ full_name: data.full_name, headline: data.headline, current_company: data.current_company, location: data.location, total_experience: data.total_experience, summary: data.summary }, 'About you updated.'); if (next) setEditing(null) }}><label>Full name<input name="full_name" defaultValue={profile.full_name} required /></label><label>Current role<input name="headline" defaultValue={profile.headline} /></label><label>Company<input name="current_company" defaultValue={profile.current_company} /></label><label>Location<input name="location" defaultValue={profile.location} /></label><label>Experience<input name="total_experience" type="number" step="0.1" defaultValue={profile.total_experience} /></label><label className="wide">Short introduction<textarea name="summary" rows={3} defaultValue={profile.summary} /></label><div className="card-edit-actions"><button type="button" onClick={() => setEditing(null)}>Cancel</button><button className="primary">Save</button></div></form>
-            : <><p className="profile-headline">{profile.headline || 'Add your current role'} {profile.current_company && <span>at {profile.current_company}</span>}</p><div className="profile-fact-chips"><span><MapPin size={14} />{profile.location || 'Add location'}</span><span><BriefcaseBusiness size={14} />{Number(profile.total_experience) ? `${profile.total_experience} years` : 'Add experience'}</span><span>{profile.notice_period_days == null ? 'Add notice period' : profile.notice_period_days === 0 ? 'Available immediately' : `${profile.notice_period_days} days notice`}</span></div>{profile.summary && <p className="profile-summary">{profile.summary}</p>}</>}
-        </section>
-
-        <section className="profile-section skills-card"><div className="profile-section-head"><div><span>SKILLS</span><h2>What you work with</h2></div></div><div className="editable-chips">{profile.skills.map(skill => <button key={skill} title={`Remove ${skill}`} aria-label={`Remove ${skill}`} onClick={() => savePatch({ skills: profile.skills.filter(item => item !== skill) }, `${skill} removed.`)}>{skill}<X size={13} /></button>)}<form onSubmit={async event => { event.preventDefault(); const form = event.currentTarget; const input = form.elements.namedItem('skill') as HTMLInputElement; const skill = input.value.trim(); if (skill && !profile.skills.includes(skill)) { await savePatch({ skills: [...profile.skills, skill] }, `${skill} added.`); form.reset() } }}><input name="skill" aria-label="Add skill" placeholder="Add a skill" /><button aria-label="Save skill"><Plus size={15} /></button></form></div></section>
-
-        <section className="profile-section experience-card"><div className="profile-section-head"><div><span>EXPERIENCE</span><h2>Your career story</h2></div><button onClick={() => setEditing(editing === 'experience' ? null : 'experience')}><Pencil size={15} /> {editing === 'experience' ? 'Done' : 'Edit'}</button></div>
-          {editing === 'experience' ? <div className="experience-editor"><button className="add-row" type="button" onClick={() => setExperiences(old => [...old, { company: '', role: '', start_date: '', end_date: null, description: '', gap_reason: '' }])}><Plus size={15} /> Add experience</button>{experiences.map((item, index) => <div className="experience-edit-row" key={item.id ?? index}><label>Company<input aria-label={`Experience company ${index + 1}`} required value={item.company} onChange={event => setExperiences(old => old.map((value, position) => position === index ? { ...value, company: event.target.value } : value))} /></label><label>Role<input aria-label={`Experience role ${index + 1}`} required value={item.role} onChange={event => setExperiences(old => old.map((value, position) => position === index ? { ...value, role: event.target.value } : value))} /></label><label>Start<input aria-label={`Experience start ${index + 1}`} type="date" required value={item.start_date} onChange={event => setExperiences(old => old.map((value, position) => position === index ? { ...value, start_date: event.target.value } : value))} /></label><label>End<input aria-label={`Experience end ${index + 1}`} type="date" value={item.end_date || ''} onChange={event => setExperiences(old => old.map((value, position) => position === index ? { ...value, end_date: event.target.value || null } : value))} /></label><label className="experience-description">Highlights<input aria-label={`Experience highlights ${index + 1}`} value={item.description} onChange={event => setExperiences(old => old.map((value, position) => position === index ? { ...value, description: event.target.value } : value))} /></label><label className="experience-gap-reason">Reason for the gap before this role<input aria-label={`Gap reason before experience ${index + 1}`} value={item.gap_reason || ''} placeholder="For example: further study or caregiving" onChange={event => setExperiences(old => old.map((value, position) => position === index ? { ...value, gap_reason: event.target.value } : value))} /></label><button type="button" aria-label={`Remove experience ${index + 1}`} onClick={() => setExperiences(old => old.filter((_, position) => position !== index))}><Trash2 size={15} /></button></div>)}<div className="card-edit-actions"><button onClick={() => { setExperiences(profile.work_experiences); setEditing(null) }}>Cancel</button><button className="primary" onClick={async () => { const next = await savePatch({ work_experiences: experiences }, 'Experience updated.'); if (next) setEditing(null) }}>Save experience</button></div></div>
-            : <div className="experience-list">{profile.work_experiences.length ? [...profile.work_experiences].reverse().map(item => <article key={item.id}><div className="experience-mark" /><div><small>{item.start_date.slice(0, 7)} — {item.end_date?.slice(0, 7) || 'Present'}</small><h3>{item.role}</h3><b>{item.company}</b>{item.description && <p>{item.description}</p>}</div></article>) : <button className="empty-section" onClick={() => setEditing('experience')}><Plus /> Add your recent experience</button>}</div>}
-        </section>
-
-        <section className="profile-section education-card"><div className="profile-section-head"><div><span>EDUCATION</span><h2>Learning that shaped you</h2></div><button onClick={() => setEditing(editing === 'education' ? null : 'education')}><Pencil size={15} /> Edit</button></div>{editing === 'education' ? <form onSubmit={async event => { event.preventDefault(); const value = String(new FormData(event.currentTarget).get('education') || ''); const next = await savePatch({ education: value.split('\n').map(item => item.trim()).filter(Boolean) }, 'Education updated.'); if (next) setEditing(null) }}><textarea aria-label="Education" name="education" rows={4} defaultValue={profile.education.join('\n')} placeholder="One qualification per line" /><div className="card-edit-actions"><button type="button" onClick={() => setEditing(null)}>Cancel</button><button className="primary">Save</button></div></form> : profile.education.length ? <div className="education-list">{profile.education.map(item => <span key={item}><GraduationCap />{item}</span>)}</div> : <button className="empty-section" onClick={() => setEditing('education')}><Plus /> Add education</button>}</section>
-
-        <section className="profile-section proud-card"><div className="proud-badge"><Sparkles /></div><span>BEYOND THE RESUME</span><h2>What’s the most meaningful thing you’ve built?</h2><p>Tell recruiters about a project, product, system, research project, or piece of work you’re especially proud of.</p>{editing === 'meaningful' || !profile.meaningful_work ? <form onSubmit={async event => { event.preventDefault(); const value = String(new FormData(event.currentTarget).get('meaningful_work') || ''); const next = await savePatch({ meaningful_work: value }, 'Meaningful work added.'); if (next) setEditing(null) }}><div className="proud-input"><textarea aria-label="Meaningful work" name="meaningful_work" rows={6} defaultValue={profile.meaningful_work} placeholder="What did you build? What was your contribution? What impact did it have?" /><span>A few thoughtful sentences are plenty.</span></div><button className="primary">Save my answer</button></form> : <div className="proud-answer"><p>{profile.meaningful_work}</p><button onClick={() => setEditing('meaningful')}><Pencil size={14} /> Edit answer</button></div>}</section>
-
-        <section className="profile-section preferences-card"><div className="profile-section-head"><div><span>OPPORTUNITY PREFERENCES</span><h2>How recruiters can find you</h2><p>Decide how recruiters can discover and approach you.</p></div></div><h3>Profile visibility</h3><div className="visibility-grid">{visibilityOptions.map(([value, title, copy]) => <button key={value} className={profile.visibility === value ? 'selected' : ''} aria-pressed={profile.visibility === value} onClick={() => savePatch({ visibility: value }, 'Visibility updated.')}><span className="visibility-icon">{value === 'not_looking' ? <EyeOff /> : <Eye />}</span><b>{title}</b><small>{copy}</small>{profile.visibility === value && <Check className="selected-check" />}</button>)}</div><h3>Work preferences</h3><div className="work-mode-row">{workModes.map(mode => <button key={mode} className={profile.work_preferences.includes(mode) ? 'selected' : ''} aria-pressed={profile.work_preferences.includes(mode)} onClick={() => toggleWorkPreference(mode)}>{profile.work_preferences.includes(mode) && <Check size={14} />}{mode}</button>)}</div>{profile.visibility === 'not_looking' && <p className="paused-note"><ShieldCheck size={15} />Your profile is saved, but recruiters won’t see it in search while you’re paused.</p>}</section>
-
-        <section className="profile-section contact-card"><div className="profile-section-head"><div><span>LINKS & CONTACT</span><h2>Make it easy to learn more</h2></div><button onClick={() => setEditing(editing === 'contact' ? null : 'contact')}><Pencil size={15} /> Edit</button></div>{editing === 'contact' ? <form className="card-edit-grid" onSubmit={async event => { event.preventDefault(); const data = Object.fromEntries(new FormData(event.currentTarget).entries()) as Record<string, string>; const next = await savePatch({ email: data.email, phone: data.phone, linkedin_url: data.linkedin_url, github_url: data.github_url, expected_salary_lpa: data.expected_salary_lpa || null }, 'Contact details updated.'); if (next) setEditing(null) }}><label>Email<input name="email" type="email" defaultValue={profile.email} /></label><label>Phone / WhatsApp<input name="phone" defaultValue={profile.phone} /></label><label>LinkedIn<input name="linkedin_url" type="url" defaultValue={profile.linkedin_url} /></label><label>GitHub / portfolio<input name="github_url" type="url" defaultValue={profile.github_url} /></label><label>Expected compensation (LPA)<input name="expected_salary_lpa" type="number" step="0.01" defaultValue={profile.expected_salary_lpa || ''} /></label><div className="card-edit-actions"><button type="button" onClick={() => setEditing(null)}>Cancel</button><button className="primary">Save</button></div></form> : <div className="contact-links"><span><Mail />{profile.email || 'Add email'}</span><span><MessageCircle />{profile.phone || 'Add phone'}</span><span><Link />{profile.linkedin_url ? 'LinkedIn added' : 'Add LinkedIn'}</span><span><Code2 />{profile.github_url ? 'GitHub added' : 'Add GitHub'}</span></div>}</section>
-      </div>}
-
-      {profile.latest_resume && !loading && (profile.profile_status === 'submitted'
-        ? <section className="submission-stage submitted"><div className="submission-mark"><CheckCircle2 /></div><div><span>PROFILE SUBMITTED</span><h2>You’re all set!</h2><p>Your profile has been submitted to Enter. We’ll use your preferences to connect you with relevant opportunities.</p>{profile.submitted_at && <small>Submitted {new Date(profile.submitted_at).toLocaleString()}</small>}{profile.visibility === 'not_looking' && <p className="submission-visibility-note">Your profile remains submitted, but discovery is paused while you’re not looking.</p>}</div><button onClick={() => document.querySelector('.profile-board')?.scrollIntoView({ behavior: 'smooth' })}><Pencil size={15} /> Edit my profile</button></section>
-        : <section className="submission-stage"><div className="submission-mark"><Target /></div><div><span>FINAL STEP</span><h2>Ready for a final look?</h2><p>Review the profile recruiters will see, confirm your preferences, then submit when it feels right.</p></div><button className="primary" onClick={openReview}>Review &amp; submit <ArrowRight size={16} /></button></section>)}
-
-      {reviewOpen && profile.profile_status === 'draft' && <section className="review-submit">
-        <div className="review-submit-head"><div><span>REVIEW &amp; SUBMIT</span><h2>Your professional story, at a glance.</h2><p>Required details keep your profile useful. Recommended details add context but never block submission.</p></div><button aria-label="Close review" onClick={() => setReviewOpen(false)}><X /></button></div>
-        <div className="review-snapshot"><div><FileText /><span><small>Resume</small><b>{profile.latest_resume?.original_name}</b></span></div><div><BriefcaseBusiness /><span><small>Career journey</small><b>{profile.work_experiences.length ? `${profile.work_experiences.length} roles` : 'Not added'}</b></span></div><div><GraduationCap /><span><small>Education</small><b>{profile.education.length ? `${profile.education.length} entries` : 'Not added'}</b></span></div><div><Sparkles /><span><small>Skills</small><b>{profile.skills.length ? profile.skills.slice(0, 3).join(', ') : 'Not added'}</b></span></div></div>
-        <div className="review-requirements"><div><h3>Required before submission</h3>{profile.submission_missing_fields.length ? profile.submission_missing_fields.map(item => <button key={item.field} onClick={() => { setReviewOpen(false); setWizardOpen(true) }}><Target /><span><b>{item.label}</b><small>{item.message}</small></span><ArrowRight /></button>) : <p className="requirement-ready"><CheckCircle2 /> All required details are ready.</p>}</div><div><h3>Recommended, not required</h3>{recommendedMissing.length ? <ul>{recommendedMissing.map(item => <li key={item.field}>{item.label}</li>)}</ul> : <p className="requirement-ready"><CheckCircle2 /> Your supporting details are complete.</p>}</div></div>
-        <label className="submission-consent"><input type="checkbox" checked={consentChecked} onChange={event => setConsentChecked(event.target.checked)} /><span><b>Profile-sharing consent</b>By submitting your profile, you agree that Enter may make your profile available to recruiters according to your visibility preferences. Your profile and resume are not visible to other candidates.<small><a href="/privacy" target="_blank">Privacy Policy</a><span>·</span><a href="/terms" target="_blank">Terms</a></small></span></label>
-        <div className="review-submit-actions"><button onClick={() => setReviewOpen(false)}>Keep editing</button><button className="primary" onClick={submitProfile} disabled={!profile.can_submit || !consentChecked || submitting}>{submitting ? 'Submitting…' : 'Submit my profile'} <ArrowRight size={16} /></button></div>
-      </section>}
-
-      {profile.latest_resume && !loading && <section className="account-controls"><div><span>ACCOUNT &amp; PRIVACY</span><h2>Your profile stays in your control.</h2><p>You can pause discovery at any time. Deleting your account permanently removes your profile, resume files, recruiter signals, and account access.</p></div>{deleteOpen ? <form onSubmit={deleteAccount}><label>Current password<input name="password" type="password" required autoComplete="current-password" /></label><label>Type DELETE to confirm<input name="confirmation" required autoComplete="off" /></label><InlineError value={deleteError} /><div><button type="button" onClick={() => { setDeleteOpen(false); setDeleteError('') }}>Cancel</button><button className="danger-button" disabled={deleting}>{deleting ? 'Deleting…' : 'Permanently delete my account'}</button></div></form> : <button className="delete-account-trigger" onClick={() => setDeleteOpen(true)}><Trash2 size={16} /> Delete my account</button>}</section>}
-    </main>
-  </Shell>
+  return <Shell user={user} logout={logout}><CandidateExperience accountDeleted={accountDeleted} /></Shell>
 }
-
-function formatMonths(startValue: string, endValue: string | null) {
-  const start = new Date(startValue)
+function formatMonths(startValue: string | null, endValue: string | null) {
+  const start = new Date(startValue || '')
   const end = endValue ? new Date(endValue) : new Date()
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return ''
   const months = Math.max(1, Math.round((end.getTime() - start.getTime()) / 2629800000))
   return months >= 12 ? `${(months / 12).toFixed(months % 12 ? 1 : 0)} yrs` : `${months} mo`
 }
 
-function monthsBetween(startValue: string, endValue: string | null) {
-  const start = new Date(startValue)
+function monthsBetween(startValue: string | null, endValue: string | null) {
+  const start = new Date(startValue || '')
   const end = endValue ? new Date(endValue) : new Date()
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) return 1
   return Math.max(1, Math.round((end.getTime() - start.getTime()) / 2629800000))
 }
 
 function CareerJourney({ items, detailed = false }: { items: WorkExperience[]; detailed?: boolean }) {
-  const sorted = [...items].sort((a, b) => a.start_date.localeCompare(b.start_date))
+  const sorted = sortCareerHistory(items)
   if (!sorted.length) return <p className="muted">No employment history has been confirmed yet.</p>
   return <div className={`career-journey ${detailed ? 'detailed' : 'compact'}`} aria-label="Career journey" role="list">
     {sorted.map((item, index) => {
       const previous = sorted[index - 1]
       const gapMilliseconds = previous?.end_date
-        ? new Date(item.start_date).getTime() - new Date(previous.end_date).getTime()
+        ? new Date(item.start_date || '').getTime() - new Date(previous.end_date).getTime()
         : 0
       const hasGap = Boolean(previous?.end_date) && Number.isFinite(gapMilliseconds) && gapMilliseconds > 60 * 86400000
       const gapMonths = hasGap ? Math.round(gapMilliseconds / 2629800000) : 0
-      const duration = formatMonths(item.start_date, item.end_date)
+      const unknownEnd = !item.end_date && (!item.start_date || /not specified/i.test(item.date_label || ''))
+      const duration = unknownEnd ? '' : formatMonths(item.start_date, item.end_date)
       return <div key={`${item.company}-${item.start_date}`} className="career-sequence">
-        {hasGap && <div className="career-gap-period" role="listitem" tabIndex={0} style={{ flexGrow: Math.max(1, gapMonths) }} aria-label={`Career gap of approximately ${gapMonths} months. ${item.gap_reason || 'Reason not provided by candidate.'}`}><b>{gapMonths >= 12 ? `${Math.round(gapMonths / 12)} yr gap` : `${gapMonths} mo gap`}</b><span className="career-period-line" /><small>{previous.end_date?.slice(0, 4)}<i>{item.start_date.slice(0, 4)}</i></small><span className="career-detail gap-detail"><b>Career gap</b><small>{gapMonths >= 12 ? `Approximately ${Math.round(gapMonths / 12)} year${Math.round(gapMonths / 12) === 1 ? '' : 's'}` : `Approximately ${gapMonths} months`}</small><span>{item.gap_reason || 'Reason not provided by the candidate.'}</span></span></div>}
+        {hasGap && <div className="career-gap-period" role="listitem" tabIndex={0} style={{ flexGrow: Math.max(1, gapMonths) }} aria-label={`Career gap of approximately ${gapMonths} months. ${item.gap_reason || 'Reason not provided by candidate.'}`}><b>{gapMonths >= 12 ? `${Math.round(gapMonths / 12)} yr gap` : `${gapMonths} mo gap`}</b><span className="career-period-line" /><small>{previous.end_date?.slice(0, 4)}<i>{(item.start_date?.slice(0, 4) || '?')}</i></small><span className="career-detail gap-detail"><b>Career gap</b><small>{gapMonths >= 12 ? `Approximately ${Math.round(gapMonths / 12)} year${Math.round(gapMonths / 12) === 1 ? '' : 's'}` : `Approximately ${gapMonths} months`}</small><span>{item.gap_reason || 'Reason not provided by the candidate.'}</span></span></div>}
         <div className="career-period" role="listitem" style={{ flexGrow: monthsBetween(item.start_date, item.end_date) }}>
-          <button type="button" className="career-job" aria-label={`${item.role} at ${item.company}, ${item.start_date} to ${item.end_date || 'present'}${duration ? `, ${duration}` : ''}`}>
-            <b>{item.company}</b><span className="career-period-line"><i /><i /></span><small><span>{index === 0 || hasGap ? item.start_date.slice(0, 4) : ''}</span><i>{item.end_date?.slice(0, 4) || 'Now'}</i></small>{detailed && <em>{item.role}</em>}
-            <span className="career-detail"><b>{item.role}</b><small>{item.company}</small><span>{item.start_date.slice(0, 7)} — {item.end_date?.slice(0, 7) || 'Present'}{duration && ` · ${duration}`}</span>{item.description && <p>{item.description}</p>}</span>
+          <button type="button" className="career-job" aria-label={`${item.role} at ${item.company}, ${item.start_date || 'Start not specified'} to ${item.end_date || (unknownEnd ? 'End not specified' : 'present')}${duration ? `, ${duration}` : ''}`}>
+            <b>{item.company}</b><span className="career-period-line"><i /><i /></span><small><span>{index === 0 || hasGap ? (item.start_date?.slice(0, 4) || '?') : ''}</span><i>{item.end_date?.slice(0, 4) || (unknownEnd ? '?' : 'Now')}</i></small>{detailed && <em>{item.role}</em>}
+            <span className="career-detail"><b>{item.role}</b><small>{item.company}</small><span>{(item.start_date?.slice(0, 7) || 'Start not specified')} — {item.end_date?.slice(0, 7) || (unknownEnd ? 'End not specified' : 'Present')}{duration && ` · ${duration}`}</span>{item.description && <p>{item.description}</p>}</span>
           </button>
         </div>
       </div>

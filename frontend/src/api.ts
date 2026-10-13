@@ -1,4 +1,4 @@
-import type { Candidate, Notification, Project, ProjectDetail, Search, SearchResult, User } from './types'
+import type { Candidate, DocumentPreview, Notification, Project, ProjectDetail, Search, SearchResult, User } from './types'
 
 export type AuthPayload = { token?: string; user: User }
 export type SignupResponse = AuthPayload | { detail: string; requires_email_verification: true; local_verification_url?: string }
@@ -62,6 +62,8 @@ async function request<T>(path: string, options: RequestInit = {}, binary = fals
 }
 
 export const api = {
+  resumePreview: (id: number) => request<DocumentPreview>(`/candidate/resumes/${id}/preview/`, { cache: 'no-store' }),
+  reviewResume: (id: number, fields: string[], profile_updated_at: string) => request<Candidate>(`/candidate/resumes/${id}/review/`, { method: 'POST', body: JSON.stringify({ fields, profile_updated_at }) }),
   resumeDocument: (id: number) => request<Blob>(`/resumes/${id}/download/`, { cache: 'no-store' }, true),
   me: () => request<User>('/auth/me/'),
   signup: (body: Record<string, string>) => request<SignupResponse>('/auth/signup/', { method: 'POST', body: JSON.stringify(body) }),

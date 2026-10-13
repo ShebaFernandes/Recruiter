@@ -69,6 +69,8 @@ class CandidateProfile(models.Model):
     github_url = models.URLField(blank=True)
     summary = models.TextField(blank=True)
     meaningful_work = models.TextField(blank=True)
+    # Owner-only career answers; never used as recruiter search constraints.
+    career_preferences = models.JSONField(default=dict, blank=True)
     visibility = models.CharField(
         max_length=30,
         choices=Visibility.choices,
@@ -109,8 +111,9 @@ class WorkExperience(models.Model):
     )
     company = models.CharField(max_length=180)
     role = models.CharField(max_length=180)
-    start_date = models.DateField()
+    start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
+    date_label = models.CharField(max_length=100, blank=True)
     description = models.TextField(blank=True)
     gap_reason = models.CharField(max_length=240, blank=True)
 

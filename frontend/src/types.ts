@@ -3,8 +3,9 @@ export type WorkExperience = {
   id?: number
   company: string
   role: string
-  start_date: string
+  start_date: string | null
   end_date: string | null
+  date_label?: string
   description: string
   gap_reason: string
 }
@@ -34,6 +35,9 @@ export type ProfileCompletion = {
   recommended_missing: number
 }
 export type Candidate = {
+  career_preferences?: CareerPreferences
+  available_resume?: Resume | null
+  resume_review?: { resume_id: number; fields: Partial<Candidate> } | null
   id: number
   full_name: string
   headline: string
@@ -72,6 +76,21 @@ export type Candidate = {
   submission_missing_fields: MissingField[]
   can_submit: boolean
 }
+export type CareerPreferences = {
+  custom_exclusions?: string[]
+  motivators?: string[]
+  exclusions?: string[]
+  availability?: string
+  preferred_locations?: string[]
+  contact_preferences?: string[]
+  strongest_skills?: string[]
+  standout_signal?: string
+  likely_directions?: string[]
+}
+export type DocumentPreview = { blocks: Array<
+  { type: 'paragraph'; runs: { text: string; bold: boolean; italic: boolean }[] } |
+  { type: 'table'; rows: string[][] }
+> }
 export type Search = {
   id: number
   project: number | null

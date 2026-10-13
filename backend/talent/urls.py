@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import candidate_views, views
 
 urlpatterns = [
     path("health/", views.health),
@@ -18,6 +18,8 @@ urlpatterns = [
     path("candidate/profile/", views.candidate_profile),
     path("candidate/profile/submit/", views.submit_candidate_profile),
     path("candidate/resumes/", views.resume_upload),
+    path("candidate/resumes/<int:resume_id>/review/", candidate_views.review_resume),
+    path("candidate/resumes/<int:resume_id>/preview/", candidate_views.preview_docx),
     path(
         "candidate/resumes/<int:resume_id>/retry/",
         views.retry_resume_processing,

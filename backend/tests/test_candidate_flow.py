@@ -44,7 +44,7 @@ def resume_docx(name="Asha Rao", role="Senior Backend Engineer", extra=""):
     return output.getvalue()
 
 
-def resume_pdf():
+def resume_pdf(lines=None):
     writer = PdfWriter()
     page = writer.add_blank_page(width=612, height=792)
     font = DictionaryObject(
@@ -58,7 +58,7 @@ def resume_pdf():
         {NameObject("/Font"): DictionaryObject({NameObject("/F1"): writer._add_object(font)})}
     )
     page[NameObject("/Resources")] = resources
-    lines = [
+    lines = lines or [
         "Name: Priya Nair",
         "Email: priya@example.com",
         "Role: Backend Engineer",
@@ -138,6 +138,7 @@ def test_resume_parser_extracts_company_date_then_role_layout():
             "company": "Enter Recruitment",
             "start_date": "2026-09-01",
             "end_date": None,
+            "date_label": "Sep 2026 - Present",
             "description": (
                 "Developing a production recruitment platform. "
                 "Building resume extraction and candidate search workflows."
@@ -148,6 +149,7 @@ def test_resume_parser_extracts_company_date_then_role_layout():
             "company": "NewSpace Research and Technologies",
             "start_date": "2026-01-01",
             "end_date": "2026-07-01",
+            "date_label": "Jan 2026 - Jul 2026",
             "description": "Built a LangGraph-based product requirements agent.",
         },
     ]
@@ -168,7 +170,7 @@ def test_candidate_signup_upload_extract_edit_and_login_persists(
         assert response.data["full_name"] == "Asha Rao"
         assert response.data["headline"] == "Senior Backend Engineer"
         assert response.data["location"] == "Bengaluru"
-        assert response.data["skills"] == ["Python", "Django", "Kafka", "PostgreSQL"]
+        assert response.data["skills"] == ["Python", "Django", "PostgreSQL", "Kafka"]
         assert response.data["linkedin_url"] == "https://linkedin.com/in/asharao"
         assert response.data["github_url"] == "https://github.com/asharao"
         assert response.data["latest_resume"]["version"] == 1

@@ -3,6 +3,7 @@ import { expect, test, type Download } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 import { spawnSync } from 'node:child_process'
 import path from 'node:path'
+import { issueLocalAccountToken } from './account-token'
 
 test.skip(process.env.RUN_CONNECTION_AUDIT !== '1', 'Run explicitly against an isolated audit database.')
 
@@ -21,6 +22,7 @@ function createRealPdf(destination: string) {
 }
 
 test('candidate created in the UI is discovered and updated in the recruiter UI', async ({ page }, testInfo) => {
+  test.setTimeout(120_000)
   const runId = Date.now()
   const candidateEmail = `connection-candidate-${runId}@example.com`
   const recruiterEmail = `connection-recruiter-${runId}@example.com`
@@ -35,47 +37,36 @@ test('candidate created in the UI is discovered and updated in the recruiter UI'
   await page.getByLabel('Email').fill(candidateEmail)
   await page.getByLabel('Password').fill(password)
   await page.getByRole('button', { name: 'Create account' }).click()
-  await page.getByRole('link', { name: 'Verify this local account' }).click()
+  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible({ timeout: 20_000 })
+  await page.goto(`/?verify-email=${issueLocalAccountToken(candidateEmail, 'verify_email')}`)
   await expect(page.getByRole('heading', { name: 'Drop your resume' })).toBeVisible()
 
   await page.getByTestId('resume-input').setInputFiles(pdfPath)
-  await expect(page.getByRole('heading', { name: "We've built your starting profile" })).toBeVisible()
-  await expect(page.locator('.about-card')).toContainText('Priya Nair')
-  await expect(page.locator('.about-card')).toContainText('Backend Engineer')
-  await expect(page.locator('.skills-card')).toContainText('Python')
-  await expect(page.locator('.skills-card')).toContainText('Django')
-
-  await page.getByRole('button', { name: /Complete my profile/ }).click()
-  const quickStep = page.locator('.quick-step')
-  await quickStep.getByRole('button', { name: '30 days' }).click()
-  await quickStep.getByRole('button', { name: 'Remote', exact: true }).click()
-  await quickStep.getByRole('button', { name: /Save and continue/ }).click()
-  await quickStep.getByRole('button', { name: /Visible to approved recruiters/ }).click()
-  await quickStep.getByRole('button', { name: 'Close quick completion' }).click()
-
-  const experience = page.locator('.experience-card')
-  await experience.getByRole('button', { name: 'Edit' }).click()
-  await experience.getByRole('button', { name: 'Add experience' }).click()
-  await experience.getByLabel('Experience company 1').fill('Audit Systems')
-  await experience.getByLabel('Experience role 1').fill('Backend Engineer')
-  await experience.getByLabel('Experience start 1').fill('2022-01-01')
-  await experience.getByLabel('Experience highlights 1').fill('Built production Django APIs.')
-  await experience.getByRole('button', { name: 'Save experience' }).click()
-
-  const education = page.locator('.education-card')
-  await education.getByRole('button', { name: 'Edit' }).click()
-  await education.getByPlaceholder('One qualification per line').fill('B.Tech Computer Science, Audit University')
-  await education.getByRole('button', { name: 'Save', exact: true }).click()
-
-  const meaningful = page.locator('.proud-card')
-  await meaningful.getByPlaceholder(/What did you build/).fill(meaningfulWork)
-  await meaningful.getByRole('button', { name: 'Save my answer' }).click()
-
-  await page.getByRole('button', { name: /Review & submit/ }).click()
-  await page.locator('.review-submit').getByLabel('Profile-sharing consent').check()
-  await page.locator('.review-submit').getByRole('button', { name: /Submit my profile/ }).click()
-  await expect(page.getByRole('heading', { name: /You’re all set/ })).toBeVisible()
-
+  await expect(page.locator('.cp-identity')).toContainText('Priya Nair', { timeout: 30_000 })
+  await expect(page.locator('.cp-identity')).toContainText('Backend Engineer')
+  await expect(page.locator('.cp-signals')).toContainText('Python')
+  await expect(page.locator('.cp-signals')).toContainText('Django')
+  await page.getByRole('button', { name: 'Not quite — edit' }).click()
+  await page.getByRole('button', { name: 'Add experience', exact: true }).click()
+  await page.getByLabel('Company 1', { exact: true }).fill('Audit Systems')
+  await page.getByLabel('Job title 1', { exact: true }).fill('Backend Engineer')
+  await page.getByLabel('Start date 1', { exact: true }).fill('2022-01-01')
+  await page.getByLabel('Education (one entry per line)').fill('B.Tech Computer Science, Audit University')
+  await page.getByRole('button', { name: 'Save corrections' }).click()
+  await expect(page.locator('.cp-timeline')).toContainText('Audit Systems')
+  await page.getByLabel("What is the most meaningful thing you've built?").fill(meaningfulWork)
+  const answerSaved = page.waitForResponse(r => r.url().endsWith('/candidate/profile/') && r.request().method() === 'PATCH')
+  await page.getByRole('button', { name: 'Save answer' }).click()
+  expect((await answerSaved).status()).toBe(200)
+  await page.getByRole('button', { name: 'Career Settings', exact: true }).click()
+  await page.getByLabel('Notice Period (days)').fill('30')
+  await page.getByLabel('Remote', { exact: true }).check()
+  await page.getByRole('combobox', { name: 'Profile Visibility' }).selectOption('approved_recruiters')
+  await page.getByRole('button', { name: 'Confirm my profile' }).click()
+  await expect(page.getByRole('heading', { name: "Here's how we'll remember you" })).toBeVisible()
+  await page.getByLabel('I agree to share my profile', { exact: false }).check()
+  await page.getByRole('button', { name: "Yes, that's me ✓" }).click()
+  await expect(page.getByRole('heading', { name: "You're in." })).toBeVisible()
   await page.getByRole('button', { name: 'Log out' }).click()
   await page.getByTestId('for-recruiters').click()
   provisionRecruiter(recruiterEmail, password)
@@ -124,8 +115,11 @@ test('candidate created in the UI is discovered and updated in the recruiter UI'
   await page.getByLabel('Email').fill(candidateEmail)
   await page.getByLabel('Password').fill(password)
   await page.getByRole('button', { name: 'Log in', exact: true }).click()
+  await page.getByRole('button', { name: 'Career Settings', exact: true }).click()
   await page.getByTestId('resume-input').setInputFiles(pdfPath)
-  await expect(page.getByText('Version 2')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Review resume changes' })).toBeVisible({ timeout: 30_000 })
+  await page.getByRole('button', { name: 'Keep my saved profile' }).click()
+  await expect(page.getByRole('heading', { name: 'Review resume changes' })).toHaveCount(0)
 
   await page.getByRole('button', { name: 'Log out' }).click()
   await page.getByTestId('for-recruiters').click()

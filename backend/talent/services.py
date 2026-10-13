@@ -2,6 +2,7 @@ import re
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
+from zipfile import BadZipFile, ZipFile
 
 from docx import Document
 from pypdf import PdfReader
@@ -60,13 +61,33 @@ DATE_RANGE_PATTERN = re.compile(
 )
 
 
+def read_docx(file_obj):
+    """Bound decompression before reading an uploaded Office document."""
+    file_obj.seek(0)
+    try:
+        with ZipFile(file_obj) as archive:
+            entries = archive.infolist()
+            if len(entries) > 2048 or sum(entry.file_size for entry in entries) > 40 * 1024 * 1024:
+                raise ValueError("Document is too complex to preview safely.")
+    except BadZipFile as exc:
+        raise ValueError("Unreadable DOCX document.") from exc
+    file_obj.seek(0)
+    return Document(file_obj)
+
+
 def extract_text(file_obj, filename):
     extension = Path(filename).suffix.lower()
     file_obj.seek(0)
     if extension == ".pdf":
         return "\n".join(page.extract_text() or "" for page in PdfReader(file_obj).pages)
     if extension == ".docx":
-        return "\n".join(paragraph.text for paragraph in Document(file_obj).paragraphs)
+        document = read_docx(file_obj)
+        return "\n".join(
+            block.text
+            if hasattr(block, "text")
+            else "\n".join(" | ".join(cell.text for cell in row.cells) for row in block.rows)
+            for block in document.iter_inner_content()
+        )
     return file_obj.read().decode("utf-8", errors="ignore")
 
 
@@ -122,9 +143,10 @@ def _looks_like_role(value):
 
 def _role_and_company(values):
     cleaned = [value.strip(" |•-–—") for value in values if value.strip(" |•-–—")]
+    cleaned = [value for value in cleaned if not DATE_RANGE_PATTERN.fullmatch(value)]
     if not cleaned:
         return "", ""
-    at_match = re.match(r"(?i)^(.+?)\s+(?:at|@)\s+(.+)$", cleaned[0])
+    at_match = re.match(r"(?i)^(.+?)\s+(?:at|@)\s+(.+)$", cleaned[-1])
     if at_match:
         return at_match.group(1).strip(), at_match.group(2).strip()
     if len(cleaned) < 2:
@@ -154,17 +176,17 @@ def _standard_experiences(lines):
             # and the role on the next. Preserve that pairing instead of discarding it.
             next_line = section[index + 1].strip(" |•-–—")
             next_role = next_line.split("|", 1)[0].strip()
-            if next_role and not DATE_RANGE_PATTERN.search(next_line) and _looks_like_role(
+            if (
                 next_role
+                and not DATE_RANGE_PATTERN.search(next_line)
+                and _looks_like_role(next_role)
             ):
                 role, company = next_role, context[0]
                 role_line_index = index + 1
         start_date = _resume_date(date_match.group("start"))
         end_value = date_match.group("end")
         end_date = (
-            None
-            if end_value.lower() in {"present", "current", "now"}
-            else _resume_date(end_value)
+            None if end_value.lower() in {"present", "current", "now"} else _resume_date(end_value)
         )
         if not role or not company or not start_date:
             continue
@@ -176,6 +198,8 @@ def _standard_experiences(lines):
         for candidate in section[description_start:]:
             if DATE_RANGE_PATTERN.search(candidate):
                 break
+            if re.match(r"(?i)^.+?\s+(?:at|@)\s+.+$", candidate) and _looks_like_role(candidate):
+                break
             value = candidate.strip(" |•-–—")
             if value:
                 description_parts.append(value)
@@ -186,6 +210,7 @@ def _standard_experiences(lines):
                 "company": company[:180],
                 "start_date": start_date,
                 "end_date": end_date,
+                "date_label": date_match.group(0),
                 "description": description[:1000],
             }
         )
@@ -193,9 +218,7 @@ def _standard_experiences(lines):
 
 
 def _education_rows(text, lines):
-    rows = [
-        value.strip() for value in re.findall(r"(?im)^\s*Education\s*:\s*(.+)$", text)
-    ]
+    rows = [value.strip() for value in re.findall(r"(?im)^\s*Education\s*:\s*(.+)$", text)]
     degree_words = re.compile(
         r"(?i)\b(b\.?tech|bachelor|master|mba|m\.?tech|degree|diploma|ph\.?d)\b"
     )
@@ -228,7 +251,7 @@ def parse_resume(file_obj, filename):
     skills = [skill for skill in KNOWN_SKILLS if re.search(rf"(?i)\b{re.escape(skill)}\b", text)]
     if skills_line:
         skills = list(
-            dict.fromkeys(skills + [s.strip() for s in skills_line.split(",") if s.strip()])
+            dict.fromkeys([s.strip() for s in skills_line.split(",") if s.strip()] + skills)
         )
     location = next((city for city in LOCATIONS if re.search(rf"(?i)\b{city}\b", text)), "")
     name = _value_after_label(text, "Name") or (lines[0] if lines else "")
@@ -247,6 +270,7 @@ def parse_resume(file_obj, filename):
                 "company": match.group(2).strip()[:180],
                 "start_date": match.group(3),
                 "end_date": None if end_value.lower() in {"present", "current"} else end_value,
+                "date_label": f"{match.group(3)} — {end_value}",
                 "description": (match.group(5) or "").strip(),
             }
         )
@@ -258,9 +282,29 @@ def parse_resume(file_obj, filename):
         }
         if key not in existing:
             experience_rows.append(item)
+    # Preserve explicitly paired undated history without making up employment dates.
+    for line in _section_lines(lines, EXPERIENCE_HEADINGS):
+        if DATE_RANGE_PATTERN.search(line):
+            continue
+        match = re.fullmatch(r"(.+?)\s+(?:at|@)\s+(.+)", line, re.IGNORECASE)
+        if match and _looks_like_role(match.group(1)):
+            role, employer = match.groups()
+            if not any(
+                row["role"] == role and row["company"] == employer for row in experience_rows
+            ):
+                experience_rows.append(
+                    {
+                        "role": role[:180],
+                        "company": employer[:180],
+                        "start_date": None,
+                        "end_date": None,
+                        "date_label": "Dates not specified",
+                        "description": "",
+                    }
+                )
     education_rows = _education_rows(text, lines)
     if experience_rows and (not headline or not company):
-        current = max(experience_rows, key=lambda item: item["start_date"])
+        current = max(experience_rows, key=lambda item: item["start_date"] or "")
         headline = headline or current["role"]
         company = company or current["company"]
     notice_match = re.search(r"(?im)^\s*Notice(?: period)?\s*:\s*(\d+)\s*days?", text)
@@ -283,7 +327,7 @@ def parse_resume(file_obj, filename):
         "email": email_match.group(0) if email_match else "",
         "phone": phone_match.group(0) if phone_match else "",
         "location": location,
-        "total_experience": float(years_match.group(1)) if years_match else 0,
+        "total_experience": float(years_match.group(1)) if years_match else None,
         "linkedin_url": linkedin,
         "github_url": github,
         "work_preferences": work_preferences,
@@ -295,6 +339,7 @@ def parse_resume(file_obj, filename):
         "expected_salary_lpa": float(expected_salary.group(1)) if expected_salary else None,
         "summary": _value_after_label(text, "Summary"),
         "raw_text": text[:15000],
+        "standout_signal": _value_after_label(text, "Achievement")[:1000],
     }
 
 

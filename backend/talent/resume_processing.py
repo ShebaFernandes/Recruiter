@@ -214,6 +214,10 @@ def _promote_clean_file(resume):
 
 def _apply_extracted_resume(resume, extracted):
     profile = resume.candidate
+    # A replacement is a proposal, not permission to overwrite candidate corrections.
+    if profile.resumes.exclude(pk=resume.pk).filter(processing_status="completed").exists():
+        extracted["_needs_review"] = True
+        return
     scalar_fields = [
         "full_name",
         "headline",
@@ -234,9 +238,14 @@ def _apply_extracted_resume(resume, extracted):
     ]
     for field in scalar_fields:
         value = extracted.get(field)
-        if value not in (None, "", [], 0):
+        if value not in (None, "", []):
             setattr(profile, field, value)
     profile.save()
+    if extracted.get("standout_signal") and not profile.career_preferences.get("standout_signal"):
+        profile.career_preferences = {
+            **profile.career_preferences, "standout_signal": extracted["standout_signal"],
+        }
+        profile.save(update_fields=["career_preferences", "profile_updated_at"])
     if extracted.get("work_experiences"):
         profile.work_experiences.all().delete()
         WorkExperience.objects.bulk_create(
@@ -245,8 +254,9 @@ def _apply_extracted_resume(resume, extracted):
                     candidate=profile,
                     company=item["company"],
                     role=item["role"],
-                    start_date=parse_date(item["start_date"]),
+                    start_date=parse_date(item["start_date"]) if item.get("start_date") else None,
                     end_date=parse_date(item["end_date"]) if item.get("end_date") else None,
+                    date_label=item.get("date_label", ""),
                     description=item.get("description", ""),
                 )
                 for item in extracted["work_experiences"]

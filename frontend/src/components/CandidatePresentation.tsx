@@ -3,7 +3,7 @@ import type { Resume } from '../types'
 
 export function CandidateWelcome() {
   return <div className="candidate-welcome">
-    <h1>Let's find work that feels great.</h1>
+    <h1>Let's find work. That feels great.</h1>
     <p>Join Leading Startups Building Their Teams with ENTER</p>
   </div>
 }
@@ -24,7 +24,7 @@ export function CandidateProcessing({ resume, uploading, retry, upload, error }:
       <div className="cv-mark" aria-hidden="true">CV</div>
       <div className="cv-drop-content">
         <h2>{heading}</h2>
-        <p>{failed ? resume.processing_error || 'Resume processing failed safely. Your profile was not changed.' : 'Your file is private while we scan it and build your starting profile.'}</p>
+        {failed ? <p>{resume.processing_error || 'Your profile was not changed. Please retry.'}</p> : resume.processing_status === 'processing' && resume.scan_status !== 'scanning' ? <ul className="cp-processing-activities" aria-label="Resume processing activities"><li>Reading your experience</li><li>Mapping your career journey</li><li>Identifying your strongest skills</li><li>Understanding what you've built</li><li>Building your ENTER profile</li></ul> : <p>{resume.scan_status === 'scanning' ? 'Checking your file safely.' : 'Waiting for a resume worker.'}</p>}
         <strong>{resume.original_name}</strong>
         {failed && <div className="processing-actions">
           {resume.can_retry && <button className="primary" onClick={retry} disabled={uploading}>{uploading ? 'Queueing…' : 'Retry processing'}</button>}
