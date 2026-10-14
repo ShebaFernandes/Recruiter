@@ -24,3 +24,38 @@
 .career-popover strong { font-size:14px; }
 .career-popover p { margin:8px 0 0; white-space:pre-line; }
 @media(max-width:640px) { .career-journey.shared .career-sequence { flex-basis:150px; } }
+
+/* Candidate-only presentation: every saved role retains its own accessible target. */
+.cp-career .career-journey.minimal-milestones { margin:10px 0 8px; padding:4px 6px 6px; min-height:62px; }
+.cp-career .career-journey.shared.minimal-milestones .career-sequence { flex:1 0 72px!important; }
+.cp-career .career-journey.shared.minimal-milestones :is(.career-period,.career-gap-period) { flex-basis:68px!important; min-width:68px; }
+.cp-career .career-journey.shared.minimal-milestones .career-job { height:56px; min-height:56px; border-radius:6px; }
+.cp-career .career-journey.shared.minimal-milestones .career-period-line { top:35px; height:1px; }
+.cp-career .career-journey.shared.minimal-milestones .career-marker-icon { width:10px; height:10px; border-radius:50%; box-shadow:0 0 0 4px var(--enter-surface); transition:box-shadow 140ms ease; }
+.cp-career .career-journey.shared.minimal-milestones .career-job:is(:hover,:focus-visible,.is-active) .career-marker-icon { box-shadow:0 0 0 5px var(--enter-primary-soft); }
+.cp-career .career-journey.shared.minimal-milestones .career-job>small { top:6px; left:0; right:auto; font-size:12px; }
+.cp-career .career-journey.shared.minimal-milestones .career-job>b { display:none; }
+.cp-career .career-journey.shared.minimal-milestones .career-gap-marker .career-period-line { border-top:1px dashed var(--enter-text-muted); }
+.cp-career .career-journey.shared.minimal-milestones .career-gap-marker>small { display:none; }
+.candidate-career-popover { box-sizing:border-box; width:auto; min-width:150px; max-width:min(240px,calc(100vw - 24px)); padding:10px 12px; border:1px solid var(--enter-border); background:var(--enter-surface); color:var(--enter-text); max-height:min(150px,calc(100dvh - 24px)); }
+.candidate-career-popover>strong { margin:0 0 4px; color:var(--enter-primary-hover); font-size:12px; white-space:nowrap; }
+.candidate-career-popover>span { margin:0 0 3px; color:var(--enter-text); font-size:11px; font-weight:600; }
+.candidate-career-popover>small { display:block; color:var(--enter-text-muted); font-size:10px; }
+.candidate-career-popover>span { color:var(--enter-text-muted); font-size:12px; }
+.candidate-career-popover ul { display:grid; gap:7px; padding:0; margin:10px 0 0; list-style:none; }
+.candidate-career-popover li { display:grid; grid-template-columns:82px minmax(0,1fr); gap:8px; align-items:start; font-size:12px; }
+.candidate-career-popover li>span { margin:0; color:var(--enter-text-muted); font-size:11px; }
+.candidate-career-popover li>b { display:block; margin:0; color:var(--enter-text); font-weight:600; }
+.candidate-career-popover li p { margin:0; color:var(--enter-text); font-size:12px; }
+.candidate-career-popover button { border:1px solid var(--enter-border); border-radius:6px; min-height:30px; padding:5px 9px; margin-top:8px; background:var(--enter-primary-soft); color:var(--enter-primary-hover); font:600 12px var(--enter-font-ui); cursor:pointer; }
+.candidate-career-popover button:focus-visible { outline:var(--enter-focus-ring); }
+.cp-career .reverse-milestones .career-sequence { flex-direction:row-reverse; }
+.cp-career .career-present { position:relative; flex:0 0 68px; height:60px; font:400 12px/1.5 var(--enter-font-ui); color:var(--enter-text-muted); }
+.cp-career .career-present>span { position:absolute; top:6px; left:0; }
+.cp-career .career-present>i { position:absolute; top:35px; height:1px; left:0; right:0; background:var(--enter-primary); }
+.cp-career .career-present>i::before { content:''; position:absolute; width:6px; height:6px; top:-2.5px; left:0; background:var(--enter-primary); border-radius:50%; }
+.cp-career .career-present-end { flex-basis:62px; }
+.cp-career .career-present-end>span { left:auto; right:16px; }
+.cp-career .career-present-end>i::before { display:none; }
+.cp-career .career-present-end>i::after { content:''; position:absolute; top:-4px; right:1px; width:8px; height:8px; border-top:1.5px solid var(--enter-primary); border-right:1.5px solid var(--enter-primary); transform:rotate(45deg); }
+@media(prefers-reduced-motion:reduce) { .minimal-milestones * { transition:none!important; } }

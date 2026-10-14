@@ -1,9 +1,17 @@
 import uuid
+from pathlib import Path
 
 from django.contrib.auth.models import User
 from django.contrib.postgres.indexes import GinIndex
 from django.db import models
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 from django.utils import timezone
+
+
+def candidate_photo_path(instance, filename):
+    extension = Path(filename).suffix.lower()
+    return f"candidate-photos/{instance.candidate_id}/{uuid.uuid4().hex}{extension}"
 
 
 class UserRole(models.Model):
@@ -71,6 +79,7 @@ class CandidateProfile(models.Model):
     meaningful_work = models.TextField(blank=True)
     # Owner-only career answers; never used as recruiter search constraints.
     career_preferences = models.JSONField(default=dict, blank=True)
+    build_lead_preference = models.PositiveSmallIntegerField(null=True, blank=True)
     visibility = models.CharField(
         max_length=30,
         choices=Visibility.choices,
@@ -103,6 +112,22 @@ class CandidateProfile(models.Model):
             GinIndex(fields=["skills"], name="candidate_skills_gin"),
             GinIndex(fields=["work_preferences"], name="candidate_workprefs_gin"),
         ]
+
+
+class CandidatePhoto(models.Model):
+    candidate = models.OneToOneField(
+        CandidateProfile, on_delete=models.CASCADE, related_name="photo"
+    )
+    file = models.FileField(upload_to=candidate_photo_path)
+    original_name = models.CharField(max_length=255)
+    content_type = models.CharField(max_length=40)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+@receiver(post_delete, sender=CandidatePhoto)
+def delete_candidate_photo_file(sender, instance, **kwargs):
+    if instance.file:
+        instance.file.storage.delete(instance.file.name)
 
 
 class WorkExperience(models.Model):

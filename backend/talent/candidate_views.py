@@ -1,10 +1,18 @@
+from io import BytesIO
+from pathlib import Path
+
+from django.conf import settings
+from django.core.files.base import ContentFile
 from django.db import transaction
+from django.http import FileResponse
 from django.utils.dateparse import parse_datetime
-from rest_framework.decorators import api_view, permission_classes, throttle_classes
+from PIL import Image, ImageOps, UnidentifiedImageError
+from rest_framework.decorators import api_view, parser_classes, permission_classes, throttle_classes
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
-from .candidate_experience import pending_fields, record_candidate_edits
-from .models import CandidateProfile, Resume
+from .candidate_experience import pending_fields, record_candidate_edits, resume_identity_issue
+from .models import CandidatePhoto, CandidateProfile, Resume
 from .permissions import IsCandidate
 from .serializers import CandidateProfileSerializer
 from .services import read_docx
@@ -19,6 +27,105 @@ class ResumePreviewThrottle(DatabaseRateThrottle):
         return self.rate
 
 
+class CandidatePhotoThrottle(DatabaseRateThrottle):
+    scope = "candidate_photo"
+    rate = "30/min"
+
+    def get_rate(self):
+        return self.rate
+
+
+PHOTO_FORMATS = {
+    "JPEG": (".jpg", "image/jpeg"),
+    "PNG": (".png", "image/png"),
+    "WEBP": (".webp", "image/webp"),
+}
+
+
+def _normalized_photo(uploaded):
+    if uploaded.size > settings.PROFILE_PHOTO_MAX_BYTES:
+        limit = settings.PROFILE_PHOTO_MAX_BYTES // (1024 * 1024)
+        raise ValueError(f"Photo exceeds the {limit} MB limit.")
+    try:
+        uploaded.seek(0)
+        with Image.open(uploaded) as image:
+            image.verify()
+        uploaded.seek(0)
+        with Image.open(uploaded) as image:
+            if image.format not in PHOTO_FORMATS:
+                raise ValueError("Upload a JPG, PNG or WebP image.")
+            image_format = image.format
+            if getattr(image, "is_animated", False):
+                raise ValueError("Animated images are not supported.")
+            if image.width < 64 or image.height < 64:
+                raise ValueError("Choose an image at least 64 × 64 pixels.")
+            if image.width > 12000 or image.height > 12000:
+                raise ValueError("This image is too large to process safely.")
+            image = ImageOps.exif_transpose(image)
+            image.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
+            extension, content_type = PHOTO_FORMATS[image_format]
+            if image_format == "JPEG":
+                image = image.convert("RGB")
+            elif image.mode not in {"RGB", "RGBA"}:
+                image = image.convert("RGBA" if "transparency" in image.info else "RGB")
+            output = BytesIO()
+            options = {"quality": 88} if image_format in {"JPEG", "WEBP"} else {"optimize": True}
+            image.save(output, format=image_format, **options)
+            return ContentFile(output.getvalue()), extension, content_type
+    except (Image.DecompressionBombError, UnidentifiedImageError, OSError) as error:
+        raise ValueError("The uploaded file is not a valid image.") from error
+
+
+@api_view(["GET", "POST", "DELETE"])
+@permission_classes([IsCandidate])
+@parser_classes([MultiPartParser, FormParser])
+@throttle_classes([CandidatePhotoThrottle])
+def candidate_photo(request):
+    profile = CandidateProfile.objects.get(user=request.user)
+    if request.method == "GET":
+        try:
+            photo = profile.photo
+        except CandidatePhoto.DoesNotExist:
+            return Response(status=404)
+        response = FileResponse(
+            photo.file.open("rb"), content_type=photo.content_type,
+            as_attachment=False, filename=Path(photo.original_name).name,
+        )
+        response["Cache-Control"] = "private, no-store"
+        response["X-Content-Type-Options"] = "nosniff"
+        response["Cross-Origin-Resource-Policy"] = "same-site"
+        return response
+    if request.method == "DELETE":
+        try:
+            profile.photo.delete()
+        except CandidatePhoto.DoesNotExist:
+            pass
+        profile._state.fields_cache.pop("photo", None)
+        return Response(CandidateProfileSerializer(profile, context={"request": request}).data)
+
+    uploaded = request.FILES.get("file")
+    if not uploaded:
+        return Response({"detail": "Choose a profile photo."}, status=400)
+    try:
+        content, extension, content_type = _normalized_photo(uploaded)
+    except ValueError as error:
+        return Response({"detail": str(error)}, status=400)
+    with transaction.atomic():
+        profile = CandidateProfile.objects.select_for_update().get(pk=profile.pk)
+        photo, _ = CandidatePhoto.objects.get_or_create(
+            candidate=profile,
+            defaults={"original_name": "", "content_type": content_type},
+        )
+        previous_name = photo.file.name
+        photo.original_name = Path(uploaded.name).name[:255]
+        photo.content_type = content_type
+        photo.file.save(f"profile{extension}", content, save=False)
+        photo.save()
+        if previous_name and previous_name != photo.file.name:
+            transaction.on_commit(lambda: photo.file.storage.delete(previous_name))
+    return Response(CandidateProfileSerializer(profile, context={"request": request}).data)
+
+
 @api_view(["POST"])
 @permission_classes([IsCandidate])
 @transaction.atomic
@@ -31,6 +138,10 @@ def review_resume(request, resume_id):
     )
     if not resume:
         return Response({"detail": "This resume is not available for review."}, status=409)
+    if resume_identity_issue(resume, profile):
+        return Response({"detail": "This resume's identity could not be matched. Upload your own "
+                         "resume with your correct name; no profile changes were applied."},
+                        status=409)
     if not resume.extracted_data.get("_needs_review"):
         return Response(CandidateProfileSerializer(profile, context={"request": request}).data)
     try:

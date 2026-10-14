@@ -1,7 +1,6 @@
 import shiprocket from '../../../../design-references/prepared/trusted-by-review/assets/shiprocket-official.svg'
 import wazirx from '../../../../design-references/prepared/trusted-by-review/assets/wazirx-official.svg'
 import cred from '../../../../design-references/prepared/trusted-by-review/assets/expanded/cred-wordmark.png'
-import mobikwik from '../../../../design-references/prepared/trusted-by-review/assets/expanded/mobikwik.svg'
 import nanonets from '../../../../design-references/prepared/trusted-by-review/assets/expanded/nanonets.svg'
 import coindcx from '../../../../design-references/prepared/trusted-by-review/assets/expanded/coindcx.png'
 import navi from '../../../../design-references/prepared/trusted-by-review/assets/expanded/navi.svg'
@@ -47,8 +46,6 @@ export const previewCompanies: readonly CompanyLogo[] = [
   { id: 'shiprocket', name: 'Shiprocket', category: 'E-commerce logistics', description: 'Shipping and fulfilment tools for e-commerce businesses.', source: 'https://www.shiprocket.in/', logo: shiprocket, height: 31 },
   { id: 'wazirx', name: 'WazirX', category: 'Digital assets', description: 'A cryptocurrency trading platform based in India.', source: 'https://wazirx.com/', logo: wazirx, height: 48 },
   { id: 'cred', name: 'CRED', category: 'Financial services', description: 'Credit card payments and financial services for members.', source: 'https://cred.club/', logo: cred, height: 38, treatment: 'silhouette' },
-  // MobiKwik's published brand manual restricts recoloring. Retain its official blue.
-  { id: 'mobikwik', name: 'MobiKwik', category: 'Digital payments', description: 'Digital payments, credit and financial services.', source: 'https://www.mobikwik.com/blog/press-kit/', logo: mobikwik, height: 31, treatment: 'original' },
   { id: 'nanonets', name: 'Nanonets', category: 'Document automation', description: 'AI tools for extracting and processing business documents.', source: 'https://nanonets.com/', logo: nanonets, height: 40 },
   { id: 'coindcx', name: 'CoinDCX', category: 'Digital assets', description: 'A cryptocurrency investment and trading platform.', source: 'https://coindcx.com/', logo: coindcx, height: 30, treatment: 'silhouette' },
   { id: 'navi', name: 'Navi', category: 'Financial services', description: 'Digital payments, lending and investment services.', source: 'https://navi.com/', logo: navi, height: 30 },

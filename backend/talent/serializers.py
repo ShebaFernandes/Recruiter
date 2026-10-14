@@ -3,8 +3,15 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
 
-from .candidate_experience import LIST_FIELDS, MOTIVATORS, TEXT_FIELDS, pending_fields
+from .candidate_experience import (
+    LIST_FIELDS,
+    MOTIVATORS,
+    TEXT_FIELDS,
+    pending_fields,
+    resume_identity_issue,
+)
 from .models import (
+    CandidatePhoto,
     CandidateProfile,
     CandidateUpdateNotification,
     Project,
@@ -108,14 +115,32 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
     discovery_status = serializers.SerializerMethodField()
     available_resume = serializers.SerializerMethodField()
     resume_review = serializers.SerializerMethodField()
+    resume_identity_warning = serializers.SerializerMethodField()
+    profile_photo_url = serializers.SerializerMethodField()
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
         request = self.context.get("request")
         if getattr(getattr(request, "user", None), "id", None) != instance.user_id:
-            for field in ("career_preferences", "resume_review", "available_resume"):
+            for field in ("career_preferences", "resume_review", "available_resume",
+                          "resume_identity_warning"):
                 data.pop(field, None)
         return data
+
+    def get_resume_identity_warning(self, obj):
+        resume = obj.resumes.filter(processing_status="completed").first()
+        issue = resume_identity_issue(resume, obj) if resume else None
+        return {"resume_id": resume.pk, "code": issue} if issue else None
+
+    def get_profile_photo_url(self, obj):
+        request = self.context.get("request")
+        if getattr(getattr(request, "user", None), "id", None) != obj.user_id:
+            return None
+        try:
+            version = int(obj.photo.updated_at.timestamp())
+        except CandidatePhoto.DoesNotExist:
+            return None
+        return f"/api/v1/candidate/photo/?v={version}"
 
     def get_available_resume(self, obj):
         resume = obj.resumes.filter(processing_status="completed", scan_status="clean").first()
@@ -147,7 +172,11 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
                 value[key] = list(dict.fromkeys(text.strip() for text in item))
             elif not isinstance(item, str) or len(item) > 1000:
                 raise serializers.ValidationError("Keep career answers within 1,000 characters.")
-        if set(value.get("motivators", [])) - MOTIVATORS:
+        saved_preferences = self.instance.career_preferences if self.instance else {}
+        custom_motivators = value.get(
+            "custom_motivators", saved_preferences.get("custom_motivators", [])
+        )
+        if set(value.get("motivators", [])) - MOTIVATORS - set(custom_motivators):
             raise serializers.ValidationError("Choose a listed motivation.")
         if len(value.get("strongest_skills", [])) > 5:
             raise serializers.ValidationError("Choose up to five strongest skills.")
@@ -290,8 +319,11 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
             "summary",
             "meaningful_work",
             "career_preferences",
+            "build_lead_preference",
+            "profile_photo_url",
             "available_resume",
             "resume_review",
+            "resume_identity_warning",
             "visibility",
             "work_preferences",
             "skills",
@@ -316,6 +348,7 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             "id",
+            "profile_photo_url",
             "profile_updated_at",
             "viewed",
             "stage",
@@ -332,6 +365,11 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
             "can_submit",
             "discovery_status",
         ]
+
+    def validate_build_lead_preference(self, value):
+        if value is not None and not 0 <= value <= 100:
+            raise serializers.ValidationError("Choose a Build–Lead value from 0 to 100.")
+        return value
 
     def validate_work_preferences(self, value):
         allowed = {"Flexible", "Remote", "Hybrid", "On-site"}
@@ -423,10 +461,10 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
     def get_latest_resume(self, obj):
         request = self.context.get("request")
         if getattr(getattr(request, "user", None), "recruiter_profile", None):
-            resume = obj.resumes.filter(
+            resume = next((item for item in obj.resumes.filter(
                 processing_status=Resume.ProcessingStatus.COMPLETED,
                 scan_status=Resume.ScanStatus.CLEAN,
-            ).first()
+            ) if not resume_identity_issue(item, obj)), None)
         else:
             resume = obj.resumes.first()
         return ResumeSerializer(resume, context=self.context).data if resume else None

@@ -251,6 +251,7 @@ if not DEBUG and EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend":
             "Production SMTP configuration is missing: " + ", ".join(missing_email_variables)
         )
 RESUME_MAX_BYTES = int(os.getenv("RESUME_MAX_BYTES", str(5 * 1024 * 1024)))
+PROFILE_PHOTO_MAX_BYTES = int(os.getenv("PROFILE_PHOTO_MAX_BYTES", str(4 * 1024 * 1024)))
 EMAIL_VERIFICATION_TOKEN_TTL_SECONDS = int(
     os.getenv("EMAIL_VERIFICATION_TOKEN_TTL_SECONDS", "86400")
 )
@@ -279,6 +280,33 @@ OPENROUTER_API_BASE_URL = os.getenv(
 )
 OPENROUTER_HTTP_REFERER = os.getenv("OPENROUTER_HTTP_REFERER", FRONTEND_URL)
 OPENROUTER_APP_TITLE = os.getenv("OPENROUTER_APP_TITLE", "Enter Talent Platform")
+# Resume interpretation is independent of recruiter search and requires explicit approval.
+RESUME_AI_ENABLED = os.getenv("RESUME_AI_ENABLED", "false").lower() == "true"
+RESUME_AI_EXTERNAL_PROCESSING_APPROVED = (
+    os.getenv("RESUME_AI_EXTERNAL_PROCESSING_APPROVED", "false").lower() == "true"
+)
+RESUME_AI_ALLOW_PAID = os.getenv("RESUME_AI_ALLOW_PAID", "false").lower() == "true"
+RESUME_AI_OPENAI_ZDR_APPROVED = (
+    os.getenv("RESUME_AI_OPENAI_ZDR_APPROVED", "false").lower() == "true"
+)
+RESUME_AI_PROVIDER = os.getenv("RESUME_AI_PROVIDER", "openrouter")
+RESUME_AI_MODEL = os.getenv("RESUME_AI_MODEL", "openrouter/free")
+RESUME_AI_FALLBACK = os.getenv("RESUME_AI_FALLBACK", "rules")
+RESUME_AI_MAX_ATTEMPTS = int(os.getenv("RESUME_AI_MAX_ATTEMPTS", "2"))
+RESUME_AI_TIMEOUT_SECONDS = float(os.getenv("RESUME_AI_TIMEOUT_SECONDS", "60"))
+RESUME_AI_MAX_INPUT_CHARS = 15000
+RESUME_AI_MAX_OUTPUT_TOKENS = 6000
+if (
+    RESUME_AI_FALLBACK not in {"rules", "fail"}
+    or not 1 <= RESUME_AI_MAX_ATTEMPTS <= 2
+    or not 1 <= RESUME_AI_TIMEOUT_SECONDS <= 60
+):
+    raise ImproperlyConfigured("Invalid bounded resume AI configuration.")
+if RESUME_AI_ENABLED and (
+    RESUME_AI_MAX_ATTEMPTS * RESUME_AI_TIMEOUT_SECONDS + RESUME_SCAN_TIMEOUT_SECONDS + 30
+    >= RESUME_PROCESSING_TIMEOUT_SECONDS
+):
+    raise ImproperlyConfigured("Resume worker lease must exceed the bounded AI/scan budget.")
 AI_REQUEST_TIMEOUT_SECONDS = float(
     os.getenv("AI_REQUEST_TIMEOUT_SECONDS", os.getenv("SEARCH_AI_TIMEOUT_SECONDS", "12"))
 )

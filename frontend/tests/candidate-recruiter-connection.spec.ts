@@ -39,7 +39,7 @@ test('candidate created in the UI is discovered and updated in the recruiter UI'
   await page.getByRole('button', { name: 'Create account' }).click()
   await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible({ timeout: 20_000 })
   await page.goto(`/?verify-email=${issueLocalAccountToken(candidateEmail, 'verify_email')}`)
-  await expect(page.getByRole('heading', { name: 'Drop your resume' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Start with your resume.' })).toBeVisible()
 
   await page.getByTestId('resume-input').setInputFiles(pdfPath)
   await expect(page.locator('.cp-identity')).toContainText('Priya Nair', { timeout: 30_000 })
@@ -53,7 +53,7 @@ test('candidate created in the UI is discovered and updated in the recruiter UI'
   await page.getByLabel('Start date 1', { exact: true }).fill('2022-01-01')
   await page.getByLabel('Education (one entry per line)').fill('B.Tech Computer Science, Audit University')
   await page.getByRole('button', { name: 'Save corrections' }).click()
-  await expect(page.locator('.career-journey')).toContainText('Audit Systems')
+  await expect(page.getByRole('button', { name: /Backend Engineer at Audit Systems/ })).toBeVisible()
   await page.getByLabel("What is the most meaningful thing you've built?").fill(meaningfulWork)
   const answerSaved = page.waitForResponse(r => r.url().endsWith('/candidate/profile/') && r.request().method() === 'PATCH')
   await page.getByRole('button', { name: 'Save answer' }).click()
@@ -119,7 +119,7 @@ test('candidate created in the UI is discovered and updated in the recruiter UI'
   await page.getByRole('button', { name: 'Log in', exact: true }).click()
   await page.getByRole('button', { name: 'Career Settings', exact: true }).click()
   await page.getByTestId('resume-input').setInputFiles(pdfPath)
-  await expect(page.getByRole('heading', { name: 'My Profile', exact: true })).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByRole('heading', { name: "Here's how we understand you.", exact: true })).toBeVisible({ timeout: 30_000 })
   await expect(page.getByRole('heading', { name: 'Review resume changes' })).toHaveCount(0)
 
   await page.getByRole('button', { name: 'Log out' }).click()

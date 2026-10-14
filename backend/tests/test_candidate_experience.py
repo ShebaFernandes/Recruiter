@@ -77,6 +77,24 @@ def test_not_looking_availability_preserves_privacy(client, candidate_account):
     assert data["visibility"] == "not_looking"
 
 
+def test_custom_motivations_persist_and_remain_selectable(client, candidate_account):
+    url = "/api/v1/candidate/profile/"
+    response = client.patch(url, {"career_preferences": {
+        "custom_motivators": ["Research time", "Research time"],
+        "motivators": ["Research time", "Harder problems"],
+    }}, format="json")
+    assert response.status_code == 200
+    assert response.data["career_preferences"]["custom_motivators"] == ["Research time"]
+    assert client.patch(url, {"career_preferences": {"motivators": []}},
+                        format="json").status_code == 200
+    assert client.patch(url, {"career_preferences": {"motivators": ["Research time"]}},
+                        format="json").status_code == 200
+    assert client.get(url).data["career_preferences"]["motivators"] == ["Research time"]
+    for invalid in ["invalid", [""], ["x" * 241]]:
+        assert client.patch(url, {"career_preferences": {"custom_motivators": invalid}},
+                            format="json").status_code == 400
+
+
 @pytest.mark.parametrize("visibility", ["approved_recruiters", "matching_roles", "not_looking"])
 def test_career_settings_without_visibility_preserves_saved_choice(
     client, candidate_account, visibility

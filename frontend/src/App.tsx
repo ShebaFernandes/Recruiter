@@ -3,7 +3,7 @@ import {
   Bell, BriefcaseBusiness, CalendarDays, Check,
   CheckCircle2, FolderPlus, GraduationCap,
   History, IndianRupee, LogOut, Mail, MapPin, MessageCircle, Plus,
-  Search as SearchIcon, ShieldCheck, SlidersHorizontal, X,
+  Search as SearchIcon, ShieldCheck, SlidersHorizontal, X, ChevronDown,
 } from 'lucide-react'
 import { api, ApiError, auth } from './api'
 import type { AuthPayload } from './api'
@@ -17,6 +17,8 @@ import { ProjectWorkspace, WorkspacePanel } from './components/RecruiterWorkspac
 import CandidateExperience from './components/CandidateExperience'
 import CareerJourney from './components/CareerJourney'
 import './components/auth.css'
+import EnterBrandText from './components/EnterBrandText'
+import './components/onboarding.css'
 
 type SpeechRecognitionLike = {
   lang: string
@@ -98,24 +100,25 @@ function useDialogFocus(onClose: () => void) {
 }
 
 
-function AuthLayout({ role, back, children }: {
+function AuthLayout({ role, back, children, onboardingMode }: {
+  onboardingMode?: 'signup' | 'login'
   role?: 'candidate' | 'recruiter'
   back?: () => void
   children: React.ReactNode
 }) {
   const candidate = role === 'candidate'
-  return <main className="auth-page auth-editorial">
+  return <main className={`auth-page auth-editorial ${candidate && onboardingMode ? 'candidate-onboarding-auth' : ''}`}>
     <header className="auth-masthead">
       <Brand />
-      {back ? <Button variant="ghost" size="small" onClick={back}>← Back to Enter</Button> : <a href="/">← Back to Enter</a>}
+      {back ? <Button variant="ghost" size="small" onClick={back}>{candidate && onboardingMode ? <EnterBrandText text="← Back to ENTER" /> : '← Back to Enter'}</Button> : <a href="/">← Back to Enter</a>}
     </header>
     <div className="auth-layout">
       <aside className="auth-story">
         <div className="auth-story__copy">
           <span className="auth-context-label">{role ? candidate ? 'FOR CANDIDATES' : 'FOR RECRUITERS' : 'YOUR ENTER ACCOUNT'}</span>
-          <h2>{role ? candidate ? 'Your work. Your story.' : 'Good hiring starts with understanding.' : 'A simple way back to what’s next.'}</h2>
+          <h2>{candidate && onboardingMode ? <EnterBrandText text="Join Leading Startups Building Their Teams with ENTER" /> : role ? candidate ? 'Your work. Your story.' : 'Good hiring starts with understanding.' : 'A simple way back to what’s next.'}</h2>
           <p>{!role ? 'Manage access to your Enter account and pick up where you left off.' : candidate
-            ? 'Turn your resume into a profile you control, then decide how the right recruiters can find you.'
+            ? onboardingMode === 'signup' ? <EnterBrandText text="Your experience deserves to be understood. Create your profile and let ENTER find opportunities that fit." /> : onboardingMode === 'login' ? 'Welcome back. Your next opportunity could be closer than you think.' : 'Turn your resume into a profile you control, then decide how the right recruiters can find you.'
             : 'Describe the work, clarify what matters, and build a shortlist from real candidate evidence.'}</p>
         </div>
       </aside>
@@ -184,7 +187,7 @@ function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
       <Button variant="ghost" fullWidth onClick={() => { setPendingEmail(''); setLocalVerificationUrl(''); setMode('login'); setMessage(''); setError('') }}>Back to login</Button>
     </Card>
   </AuthLayout>
-  return <AuthLayout role={role} back={back}>
+  return <AuthLayout role={role} back={back} onboardingMode={mode === 'forgot' ? undefined : mode}>
     <Card className="auth-card">
       <form className="auth-form" onSubmit={submit}>
         <Badge tone="neutral">{role === 'recruiter' ? 'RECRUITER WORKSPACE' : 'CANDIDATE PROFILE'}</Badge>
@@ -257,20 +260,29 @@ function LegalPlaceholder({ kind }: { kind: 'privacy' | 'terms' }) {
   </article></main>
 }
 
-function Shell({ user, logout, children, noticeCount = 0 }: {
-  user: User; logout: () => void; children: React.ReactNode; noticeCount?: number
+function Shell({ user, logout, children, noticeCount = 0, accountMenu }: {
+  user: User; logout: () => void; children: React.ReactNode; noticeCount?: number; accountMenu?: React.ReactNode
 }) {
   return <div className="app-shell">
     <header><Brand compact /><div className="header-user">
       {user.role === 'recruiter' && <span className="notification-pill"><Bell size={15} /> {noticeCount}</span>}
-      <span>{user.full_name}</span><button onClick={logout} aria-label="Log out"><LogOut size={17} /></button>
+      {accountMenu || <span>{user.full_name}</span>}<button onClick={logout} aria-label="Log out"><LogOut size={17} /></button>
     </div></header>
     {children}
   </div>
 }
 
+function CandidateAccountMenu({ user, accountDeleted }: { user: User; accountDeleted: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  return <div className="candidate-account-menu"><button type="button" className="candidate-account-trigger" aria-expanded={open} aria-controls="candidate-account-popover" onClick={() => setOpen(value => !value)}>{user.full_name}<ChevronDown size={15} aria-hidden="true" /></button>{open && <section id="candidate-account-popover" className="candidate-account-popover" aria-label="Account menu"><strong>Account</strong><p>Manage your ENTER profile and account.</p>{error && <p role="alert" className="error">{error}</p>}{!deleting ? <button type="button" className="cp-danger" onClick={() => setDeleting(true)}>Delete my account</button> : <form onSubmit={async event => { event.preventDefault(); const data = new FormData(event.currentTarget); setBusy(true); setError(''); try { await api.deleteCandidateAccount(String(data.get('password')), String(data.get('confirmation'))); accountDeleted() } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not delete account.') } finally { setBusy(false) } }}><label>Current password<input type="password" name="password" autoComplete="current-password" required /></label><label>Type DELETE to confirm<input name="confirmation" required pattern="DELETE" /></label><div><button disabled={busy} className="cp-danger">Permanently delete my account</button><button type="button" disabled={busy} onClick={() => { setDeleting(false); setError('') }}>Cancel</button></div></form>}</section>}</div>
+}
+
 function CandidatePortal({ user, logout, accountDeleted }: { user: User; logout: () => void; accountDeleted: () => void }) {
-  return <Shell user={user} logout={logout}><CandidateExperience accountDeleted={accountDeleted} /></Shell>
+  const beforeLeave = useRef<(() => Promise<boolean>) | null>(null)
+  return <Shell user={user} accountMenu={<CandidateAccountMenu user={user} accountDeleted={accountDeleted} />} logout={() => { void (async () => { if (!beforeLeave.current || await beforeLeave.current()) logout() })() }}><CandidateExperience beforeLeaveRef={beforeLeave} /></Shell>
 }
 function CandidateCard({ result, selected, toggle, open, status }: {
   result: SearchResult; selected: boolean; toggle: () => void; open: () => void; status: (value: string) => void

@@ -15,8 +15,15 @@ from django.db.models import Q
 from django.utils import timezone
 from django.utils.module_loading import import_string
 
-from .candidate_experience import comparable, pending_fields, profile_values, proposed_fields
+from .candidate_experience import (
+    comparable,
+    pending_fields,
+    profile_values,
+    proposed_fields,
+    resume_identity_issue,
+)
 from .models import CandidateProfile, Resume, ResumeProcessingJob, WorkExperience
+from .resume_understanding import understand_resume
 from .services import parse_date, parse_resume
 
 logger = logging.getLogger(__name__)
@@ -91,7 +98,15 @@ def _sqs_client():
 
 
 def enqueue_resume_job(job_id, delay_seconds=0):
+    with transaction.atomic():
+        ResumeProcessingJob.objects.select_for_update().get(pk=job_id)
+        return _enqueue_locked_job(job_id, delay_seconds)
+
+
+def _enqueue_locked_job(job_id, delay_seconds=0):
     job = ResumeProcessingJob.objects.get(pk=job_id)
+    if job.state != ResumeProcessingJob.State.QUEUED:
+        return "not_queued"
     if settings.RESUME_QUEUE_BACKEND == "database":
         job.enqueued_at = timezone.now()
         job.save(update_fields=["enqueued_at", "updated_at"])
@@ -123,17 +138,13 @@ def dispatch_pending_jobs(limit=100):
             locked_at__lte=stale_before,
         ).values_list("id", flat=True)[:limit]
     )
-    if stale_ids:
-        ResumeProcessingJob.objects.filter(id__in=stale_ids).update(
-            state=ResumeProcessingJob.State.QUEUED,
-            available_at=timezone.now(),
-            locked_at=None,
-            enqueued_at=None,
-        )
-        Resume.objects.filter(processing_job__id__in=stale_ids).update(
-            processing_status=Resume.ProcessingStatus.QUEUED,
-            processing_updated_at=timezone.now(),
-        )
+    for job_id in stale_ids:
+        with transaction.atomic():
+            job = ResumeProcessingJob.objects.select_for_update().filter(
+                pk=job_id, state="processing", locked_at__lte=stale_before,
+            ).first()
+            if job:
+                _retry_or_fail(job.pk, "Resume processing lease expired.", recover_stale=True)
     job_ids = list(
         ResumeProcessingJob.objects.filter(
             state=ResumeProcessingJob.State.QUEUED,
@@ -169,7 +180,15 @@ def _claim_job(job_id, idempotency_key=None):
             return None, "invalid"
         if job.state == ResumeProcessingJob.State.COMPLETED:
             return None, "duplicate"
-        if job.state == ResumeProcessingJob.State.FAILED and job.attempts >= job.max_attempts:
+        if job.attempts >= job.max_attempts:
+            job.state = ResumeProcessingJob.State.FAILED
+            job.locked_at = None
+            job.last_error = "Resume processing attempt limit reached."
+            job.save(update_fields=["state", "locked_at", "last_error", "updated_at"])
+            Resume.objects.filter(pk=job.resume_id).update(
+                processing_status="failed", processing_error=job.last_error,
+                processing_updated_at=timezone.now(),
+            )
             return None, "failed"
         if (
             job.state == ResumeProcessingJob.State.PROCESSING
@@ -215,9 +234,15 @@ def _promote_clean_file(resume):
 
 def _apply_extracted_resume(resume, extracted):
     profile = resume.candidate
-    previous = profile.resumes.filter(
+    issue = resume_identity_issue(resume, profile)
+    if issue:
+        extracted["_identity_issue"] = issue
+        extracted["_blocked_proposals"] = proposed_fields(extracted)
+        extracted["_needs_review"] = False
+        return
+    previous = next((item for item in profile.resumes.filter(
         version__lt=resume.version, processing_status="completed"
-    ).first()
+    ) if not resume_identity_issue(item, profile)), None)
     baseline = previous.extracted_data.get("_auto_applied", {}) if previous else {}
     protected = set()
     for older in profile.resumes.all():
@@ -264,12 +289,20 @@ def _apply_extracted_resume(resume, extracted):
         if value not in (None, "", []):
             setattr(profile, field, value)
     profile.save()
-    if (latest and extracted.get("standout_signal")
-            and "standout_signal" not in profile.career_preferences):
-        profile.career_preferences = {
-            **profile.career_preferences, "standout_signal": extracted["standout_signal"],
-        }
-        profile.save(update_fields=["career_preferences", "profile_updated_at"])
+    signal_baseline = previous.extracted_data.get("_auto_signals", {}) if previous else {}
+    signals = dict(profile.career_preferences)
+    for key in ("standout_signal", "strongest_skills", "likely_directions"):
+        if latest and extracted.get(key) and (
+            key not in signals or (key in signal_baseline and signals[key] == signal_baseline[key])
+        ):
+            value = extracted[key]
+            if key == "strongest_skills":
+                value = [skill for skill in value if skill in profile.skills][:5]
+            signals[key] = value
+            signal_baseline[key] = value
+    profile.career_preferences = signals
+    profile.save(update_fields=["career_preferences", "profile_updated_at"])
+    extracted["_auto_signals"] = signal_baseline
     if safe.get("work_experiences"):
         profile.work_experiences.all().delete()
         WorkExperience.objects.bulk_create(
@@ -293,13 +326,43 @@ def _apply_extracted_resume(resume, extracted):
     )
 
 
-def _retry_or_fail(job_id, message, scan_failed=False):
+def _owns_attempt(current, claimed):
+    return (
+        current.state == ResumeProcessingJob.State.PROCESSING
+        and current.attempts == claimed.attempts
+        and current.locked_at == claimed.locked_at
+        and current.locked_at is not None
+        and current.locked_at > timezone.now() - timedelta(
+            seconds=settings.RESUME_PROCESSING_TIMEOUT_SECONDS
+        )
+    )
+
+
+def _reserve_ai_attempt(claimed):
+    with transaction.atomic():
+        current = ResumeProcessingJob.objects.select_for_update().get(pk=claimed.pk)
+        if not _owns_attempt(current, claimed):
+            return False
+        resume = Resume.objects.select_for_update().get(pk=current.resume_id)
+        used = resume.extracted_data.get("_ai_requests", 0)
+        if used >= settings.RESUME_AI_MAX_ATTEMPTS:
+            return False
+        resume.extracted_data["_ai_requests"] = used + 1
+        resume.save(update_fields=["extracted_data"])
+        return True
+
+
+def _retry_or_fail(job_id, message, scan_failed=False, claimed=None, recover_stale=False):
     with transaction.atomic():
         job = (
             ResumeProcessingJob.objects.select_for_update().select_related("resume").get(pk=job_id)
         )
+        if claimed and not _owns_attempt(job, claimed):
+            return "superseded"
         terminal = job.attempts >= job.max_attempts
         delay = min(settings.RESUME_RETRY_BASE_SECONDS * (2 ** max(job.attempts - 1, 0)), 900)
+        if recover_stale:
+            delay = 0
         job.state = (
             ResumeProcessingJob.State.FAILED if terminal else ResumeProcessingJob.State.QUEUED
         )
@@ -335,7 +398,7 @@ def _retry_or_fail(job_id, message, scan_failed=False):
                 "processing_updated_at",
             ]
         )
-    if not terminal:
+    if not terminal and not recover_stale:
         try:
             enqueue_resume_job(job_id, delay)
         except Exception:
@@ -352,9 +415,13 @@ def process_resume_job(job_id, idempotency_key=None):
         if resume.scan_status != Resume.ScanStatus.CLEAN:
             with resume.file.open("rb") as file_object:
                 get_resume_scanner().scan(file_object)
-            resume.scan_status = Resume.ScanStatus.CLEAN
-            resume.save(update_fields=["scan_status", "processing_updated_at"])
-            _promote_clean_file(resume)
+            with transaction.atomic():
+                current = ResumeProcessingJob.objects.select_for_update().get(pk=job.pk)
+                if not _owns_attempt(current, job):
+                    return "superseded"
+                resume.scan_status = Resume.ScanStatus.CLEAN
+                resume.save(update_fields=["scan_status", "processing_updated_at"])
+                _promote_clean_file(resume)
             # FieldFile retains a closed handle after the scanner/promote pass.
             # Reload it so local and remote storage backends open a fresh stream.
             resume = Resume.objects.select_related("candidate").get(pk=resume.pk)
@@ -362,16 +429,22 @@ def process_resume_job(job_id, idempotency_key=None):
             extracted = parse_resume(file_object, resume.original_name)
         if not extracted.get("raw_text", "").strip():
             raise ValueError("No readable text was found in this resume.")
+        resume.extracted_data = extracted
+        if not resume_identity_issue(resume, resume.candidate):
+            extracted = understand_resume(extracted, lambda: _reserve_ai_attempt(job))
+        else:
+            extracted["_interpretation"] = {"source": "rules", "reason": "identity_check"}
         with transaction.atomic():
             locked_job = ResumeProcessingJob.objects.select_for_update().get(pk=job.pk)
-            if locked_job.state == ResumeProcessingJob.State.COMPLETED:
-                return "duplicate"
+            if not _owns_attempt(locked_job, job):
+                return "superseded"
             # Serialize candidate edits, uploads and review with the worker merge.
             profile = CandidateProfile.objects.select_for_update().get(pk=resume.candidate_id)
             locked_resume = (
                 Resume.objects.select_for_update().select_related("candidate").get(pk=resume.pk)
             )
             locked_resume.candidate = profile
+            extracted["_ai_requests"] = locked_resume.extracted_data.get("_ai_requests", 0)
             locked_resume.extracted_data = extracted
             _apply_extracted_resume(locked_resume, extracted)
             locked_resume.processing_status = Resume.ProcessingStatus.COMPLETED
@@ -399,7 +472,7 @@ def process_resume_job(job_id, idempotency_key=None):
                     "updated_at",
                 ]
             )
-        if resume.version > 1:
+        if resume.version > 1 and not extracted.get("_identity_issue"):
             # Imported lazily to avoid coupling the worker module to API startup.
             from .views import _notify_recruiters_of_candidate_update
 
@@ -411,6 +484,8 @@ def process_resume_job(job_id, idempotency_key=None):
     except ResumeInfectedError as exc:
         with transaction.atomic():
             failed_job = ResumeProcessingJob.objects.select_for_update().get(pk=job.pk)
+            if not _owns_attempt(failed_job, job):
+                return "superseded"
             failed_job.state = ResumeProcessingJob.State.FAILED
             failed_job.attempts = failed_job.max_attempts
             failed_job.locked_at = None
@@ -427,10 +502,12 @@ def process_resume_job(job_id, idempotency_key=None):
         return "infected"
     except ResumeScanError:
         logger.warning("Resume job %s could not reach the configured scanner", job.pk)
-        return _retry_or_fail(job.pk, "Security scanning could not be completed.", scan_failed=True)
+        return _retry_or_fail(job.pk, "Security scanning could not be completed.",
+                              scan_failed=True, claimed=job)
     except Exception:
-        logger.exception("Resume job %s failed without logging resume content", job.pk)
-        return _retry_or_fail(job.pk, "Resume processing could not be completed.")
+        # Never log parser/provider exception strings or tracebacks containing document data.
+        logger.warning("Resume processing failed job_id=%s category=processing_error", job.pk)
+        return _retry_or_fail(job.pk, "Resume processing could not be completed.", claimed=job)
 
 
 def next_database_job_id():

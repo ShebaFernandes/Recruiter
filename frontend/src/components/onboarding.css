@@ -1,0 +1,67 @@
+/* Five onboarding screens only; profile and recruiter layouts retain their styles. */
+.enter-inline-brand { display:inline-block; position:relative; width:3em; height:1em; vertical-align:-.13em; }
+.enter-inline-brand>img { display:block; width:100%; height:100%; object-fit:cover; }
+.onboarding-art { display:block; width:100%; max-width:360px; animation:onboarding-arrive 480ms ease-out both; }
+@keyframes onboarding-arrive { from { opacity:0; transform:translateY(9px); } to { opacity:1; transform:none; } }
+.candidate-onboarding-auth.auth-editorial .auth-layout { width:min(960px,100%); grid-template-columns:minmax(0,1fr) minmax(300px,370px); align-items:center; gap:48px; margin-top:clamp(32px,8vh,90px); }
+.candidate-onboarding-auth.auth-editorial .auth-story { padding:0; animation:onboarding-arrive 400ms ease-out both; }
+.candidate-onboarding-auth.auth-editorial .auth-story h2 { font-size:clamp(30px,3.2vw,46px); line-height:1.12; margin:16px 0; }
+.candidate-onboarding-auth.auth-editorial .auth-story p { display:block; font-size:14px; line-height:1.65; }
+.candidate-onboarding-auth.auth-editorial .auth-card { padding:26px 24px; }
+.candidate-onboarding-auth.auth-editorial .auth-card h1 { font-size:22px; line-height:1.2; }
+.candidate-onboarding-auth.auth-editorial .auth-card p { font-size:12px; }
+.candidate-onboarding-auth.auth-editorial .auth-fields { gap:14px; margin:20px 0 10px; }
+.candidate-onboarding-auth.auth-editorial .ui-form-field__input { min-height:40px; height:40px; font-size:13px; transition:border-color 160ms,box-shadow 160ms; }
+.candidate-onboarding-auth.auth-editorial .ui-button { min-height:38px; font-size:12px; transition:background 160ms,box-shadow 160ms; }
+.candidate-onboarding-auth .auth-content { animation:onboarding-form-fade 400ms 100ms ease-out both; }
+@keyframes onboarding-form-fade { from { opacity:0; } to { opacity:1; } }
+.candidate-onboarding-auth .onboarding-art { animation-delay:180ms; }
+.onboarding-door-path { stroke-dasharray:1; stroke-dashoffset:1; animation:onboarding-line 650ms 250ms ease-out forwards; }
+@keyframes onboarding-line { to { stroke-dashoffset:0; } }
+.onboarding-upload { display:grid; grid-template-columns:minmax(0,1fr) minmax(260px,1fr); align-items:center; gap:28px; padding:40px 0; animation:onboarding-arrive 400ms ease-out both; }
+.onboarding-upload-copy h2 { font-family:var(--enter-font-editorial); font-size:clamp(28px,3vw,40px); line-height:1.15; margin:0 0 12px; }
+.onboarding-upload-copy p { font-size:14px; line-height:1.6; color:var(--enter-text-muted); }
+.onboarding-upload .cp-upload { text-align:center; padding:32px 20px; border:1px dashed #baa8ed; border-radius:12px; background:#fff; transition:background 180ms,border-color 180ms,box-shadow 180ms; }
+.onboarding-upload .cp-upload.dragging { background:#f4efff; border-color:var(--enter-primary); box-shadow:0 0 0 4px #7047ff18; }
+.onboarding-upload .cp-upload h3 { font-size:14px; margin:14px 0; }
+.onboarding-file-icon { width:34px; height:34px; color:var(--enter-primary); transition:transform 180ms; }
+.onboarding-upload .cp-upload:hover .onboarding-file-icon { transform:translateY(-3px); }
+.onboarding-upload .cp-file { align-items:center; position:relative; cursor:pointer; }
+.onboarding-choose { border:1px solid var(--enter-primary); border-radius:7px; padding:9px 18px; color:var(--enter-primary); font-size:13px; }
+.onboarding-upload .cp-file input { position:absolute; width:1px; height:1px; opacity:0; }
+.onboarding-upload .cp-file:focus-within .onboarding-choose { outline:2px solid var(--enter-primary); outline-offset:3px; }
+.onboarding-upload .cp-file small { display:block; margin-top:12px; font-size:11px; color:var(--enter-text-muted); }
+.candidate-experience .processing-card { display:grid; grid-template-columns:minmax(0,1fr); max-width:680px; align-items:center; border:0; background:transparent; padding:40px 0; }
+.candidate-experience .cp-success { grid-template-columns:minmax(0,1fr); max-width:760px; min-height:0; padding:48px 0; }
+.processing-card .onboarding-art { justify-self:center; }
+.candidate-experience .processing-card h2 { font-family:var(--enter-font-editorial); font-size:clamp(30px,4vw,48px); max-width:15ch; line-height:1.12; }
+.onboarding-processing-copy { min-width:0; animation:onboarding-arrive 400ms ease-out both; }
+.cp-processing-file { overflow-wrap:anywhere; }
+.candidate-experience .cp-success h2 { font-family:var(--enter-font-editorial); }
+.candidate-experience .cp-success-support { animation-delay:1600ms; animation-duration:400ms; }
+.candidate-experience .cp-success-check path { animation-delay:400ms; }
+.candidate-experience .cp-success-path { animation-delay:850ms; animation-duration:750ms; }
+.candidate-experience .cp-success-plane { offset-path:path('M38 115C145 27 207 161 308 91c66-46 119 31 187-8 33-19 52-46 73-74'); offset-position:0 0; offset-anchor:0 0; offset-rotate:auto; transform-box:view-box; transform:none; animation:onboarding-plane 750ms 850ms ease-in-out forwards; }
+@keyframes onboarding-plane { from { offset-distance:0%; opacity:0; } 10% { opacity:1; } to { offset-distance:100%; opacity:1; } }
+.candidate-experience .cp-success-static .cp-success-plane { offset-distance:100%; transform:none; }
+@media(max-width:1050px) {
+  .candidate-onboarding-auth.auth-editorial .auth-layout { grid-template-columns:minmax(0,1fr) minmax(280px,1fr); gap:32px; }
+  .candidate-onboarding-auth .auth-layout>.onboarding-art { grid-column:1; grid-row:2; max-width:220px; margin-top:-100px; }
+  .onboarding-upload { grid-template-columns:1fr 1fr; gap:20px; }
+  .onboarding-upload>.onboarding-art { display:none; }
+}
+@media(max-width:600px) {
+  .candidate-onboarding-auth.auth-editorial { padding:0 20px 24px; }
+  .candidate-onboarding-auth.auth-editorial .auth-layout { display:grid; grid-template-columns:1fr; margin-top:24px; gap:22px; }
+  .candidate-onboarding-auth.auth-editorial .auth-story h2 { font-size:29px; }
+  .candidate-onboarding-auth.auth-editorial .auth-story p { max-width:none; font-size:13px; }
+  .candidate-onboarding-auth .auth-layout>.onboarding-art { grid-row:3; max-width:170px; margin:0 auto; }
+  .onboarding-upload { grid-template-columns:1fr; padding:24px 0; }
+  .candidate-experience .processing-card { grid-template-columns:1fr; gap:10px; padding:24px 0; }
+  .processing-card .onboarding-art { max-width:220px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .candidate-onboarding-auth *, .onboarding-upload *, .onboarding-upload, .onboarding-processing-copy, .onboarding-art { animation:none!important; transition:none!important; transform:none!important; opacity:1!important; }
+  .onboarding-door-path { stroke-dashoffset:0; }
+  .candidate-experience .cp-success-plane { animation:none; offset-distance:100%; transform:none; opacity:1; }
+}

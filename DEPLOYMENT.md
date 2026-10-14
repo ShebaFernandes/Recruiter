@@ -1,5 +1,100 @@
 # Deploying Enter Talent Platform
 
+## Optional hybrid resume understanding (disabled by default)
+
+This is separate from recruiter search. No AI calls are made unless both
+`RESUME_AI_ENABLED=true` and `RESUME_AI_EXTERNAL_PROCESSING_APPROVED=true` are set.
+Do not enable either on a real-data worker until external processing has been
+explicitly authorized and provider/account privacy settings reviewed. For the
+first approved synthetic test use an isolated database/storage and one queued
+fictional document, not the development database containing real candidates.
+
+```dotenv
+RESUME_AI_ENABLED=false
+RESUME_AI_EXTERNAL_PROCESSING_APPROVED=false
+RESUME_AI_PROVIDER=openrouter
+RESUME_AI_MODEL=openrouter/free
+RESUME_AI_ALLOW_PAID=false
+RESUME_AI_OPENAI_ZDR_APPROVED=false
+RESUME_AI_FALLBACK=rules
+RESUME_AI_MAX_ATTEMPTS=2
+RESUME_AI_TIMEOUT_SECONDS=60
+```
+
+The existing server-only `OPENROUTER_API_KEY` is reused. Do not change
+`AI_PROVIDER` or `OPENROUTER_SEARCH_MODEL` to configure resume interpretation.
+No frontend environment variables or public document URLs are needed.
+Restart Django and the resume worker after configuration changes.
+
+Pipeline: private upload → scan → existing pypdf/python-docx parser → optional
+structured interpretation → shape/evidence/date validation → identity check and
+provenance-aware merge → PostgreSQL → My Profile. Names/contact details are locally
+parsed and redacted from model input. Work history still identifies people: this
+is data minimization, **not anonymization**. Raw text, evidence and provenance stay
+in private resume metadata, not recruiter/candidate API responses or logs.
+
+AI facts require verbatim contiguous evidence; employment quotes must keep employer,
+role and date expressions nearby. Unsupported output falls back as a whole, never
+partially applies unchecked facts. Dates preserve their original precision in
+`date_label`; normalized month/year dates use the first day for graph placement,
+not a claim of exact start day. Experience uses the union of known intervals, so
+concurrent roles do not double-count. Incomplete history yields unknown experience.
+Strongest skills are ranked by supported use in employment details (maximum five).
+Likely directions are conservative local suggestions from supported roles, not
+confirmed preferences. Salary, notice and future work setup are never inferred
+by AI; the local parser accepts only explicit preference labels.
+
+OpenRouter requests require `json_schema`, `require_parameters=true`,
+`data_collection=deny`, `zdr=true`, `allow_fallbacks=false`, no model fallback list,
+and zero maximum prompt/completion/request prices while paid access is disabled.
+Only `openrouter/free` or a `:free` model is accepted in that mode. Availability of
+a free endpoint satisfying all these requirements is **not guaranteed**. If none
+is available, use rules; never relax privacy or select a paid model automatically.
+See [free routing](https://openrouter.ai/openrouter/free),
+[provider controls](https://openrouter.ai/docs/guides/routing/provider-selection),
+and [ZDR](https://openrouter.ai/docs/guides/features/zdr). No live inference request
+was made during implementation; compatibility is documented, not account-tested.
+
+At most two model requests are reserved durably per resume across worker retries.
+Only malformed output is retried immediately; rate limits, outages and timeouts
+fall back without a retry storm. Output is capped at 6,000 tokens; input over the
+15,000-character interpretation limit uses rules rather than silently sending a
+truncated document. Failed/expired attempt owners cannot update or fail a newer
+attempt. Lease recovery respects the job attempt cap. SQS busy/superseded receipts
+are not acknowledged prematurely. Socket timeouts are not a hard CPU limit on
+local PDF parsing; container/process supervision is still needed in production.
+
+Inspect `Resume.extracted_data['_interpretation']` locally for `source=ai` with
+provider/model, or `source=rules` with the fallback reason. `_ai_requests` is the
+durable attempt count. Do not print raw text/evidence or credentials to verify it.
+Warnings record only an error category. `RESUME_AI_FALLBACK=fail` opts out of rule
+fallback; the existing bounded job failure/retry UI then applies.
+
+Same-person replacement updates only fields still matching their automatic
+baseline. Manual edits, explicit clears and Beyond the CV remain protected.
+Legacy uploads without a baseline stay pending in the compact Resume updates
+control; they are not assumed safe or silently backfilled. Different/unknown
+replacement names block the entire merge and prompt the candidate to upload the
+correct document. The owner can preview that original file; recruiters cannot
+download identity-blocked files. Names are a conservative warning heuristic, not
+identity verification; initials, name changes and parser mistakes may require a
+corrected document/profile name. No existing profiles are silently repaired.
+
+For a later, separately approved paid OpenAI rollout, use `RESUME_AI_PROVIDER=openai`,
+an explicitly selected structured-output-capable `RESUME_AI_MODEL`, a server-only
+`OPENAI_API_KEY`, and `RESUME_AI_ALLOW_PAID=true`. Configure approved OpenAI ZDR first,
+then set `RESUME_AI_OPENAI_ZDR_APPROVED=true` and the external-processing approval
+flag. Requests use Responses with `store=false`; that flag alone is **not** ZDR.
+Review [OpenAI data controls](https://developers.openai.com/api/docs/guides/your-data)
+and current model pricing before approving paid requests. No pipeline rebuild is needed.
+
+Limitations: evidence checks prove text support, not the truth of a CV or perfect
+employer association. Complex columns, scanned/image-only documents (no OCR),
+ambiguous promotions and truncated documents can still need candidate correction.
+Free models have variable availability, quality and rate limits; benchmark with
+consented synthetic fixtures before any public rollout. AI remains optional and
+the application must not be described as fully AI-powered while using rules.
+
 ## Proposed AWS staging architecture
 
 Use Route 53 and ACM for `app.example.com`. Serve the versioned React build from a private S3 origin through CloudFront and route CloudFront's `/api/*` behavior to an ALB in front of Django. Forward all API methods, the auth/CSRF cookies, `X-CSRFToken`, `Content-Type`, and required query strings; disable caching for authenticated API responses. This same-origin design permits a strict `connect-src 'self'` CSP and avoids cross-site auth cookies. Run separate Django **web** and **resume-worker** ECS/Fargate services in private subnets. Use RDS PostgreSQL Multi-AZ as budget permits, a private S3 resume bucket with Block Public Access, SQS with a dead-letter queue, SES/SMTP for account email, Secrets Manager or SSM Parameter Store for secrets, and CloudWatch for logs, metrics, and alarms.

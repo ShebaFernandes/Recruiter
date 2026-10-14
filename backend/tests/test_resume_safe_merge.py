@@ -1,10 +1,14 @@
+from io import BytesIO
+
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
+from docx import Document
 from talent.models import CandidateProfile, ResumeProcessingJob
 from talent.resume_processing import process_resume_job
 
 from .test_candidate_experience import upload
 from .test_candidate_flow import resume_docx, resume_pdf
+from .test_resume_promotions import promotion_lines
 
 pytestmark = pytest.mark.django_db
 
@@ -124,3 +128,50 @@ def test_pending_conflicts_do_not_block_submission(client, candidate_account):
     assert response.status_code == 200, response.data
     assert response.data["resume_review"] is not None
     assert response.data["headline"] == "My corrected title"
+
+
+def test_candidate_can_accept_only_complete_pending_career_history(
+    client, candidate_account,
+):
+    initial = upload(client).data
+    initial["work_experiences"][0]["role"] = "Candidate corrected role"
+    patch(client, {
+        "work_experiences": initial["work_experiences"],
+        "meaningful_work": "My saved Beyond the CV answer",
+    })
+    document = Document()
+    lines = promotion_lines()
+    lines[0] = "Name: Asha Rao"
+    for line in lines:
+        document.add_paragraph(line)
+    content = SimpleUploadedFile(
+        "complete-career.docx", _document_bytes(document),
+        content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
+    accepted = client.post("/api/v1/candidate/resumes/", {"file": content}, format="multipart")
+    assert accepted.status_code == 202, accepted.data
+    job = ResumeProcessingJob.objects.get(resume_id=accepted.data["latest_resume"]["id"])
+    assert process_resume_job(job.pk, str(job.idempotency_key)) == "completed"
+    pending = client.get("/api/v1/candidate/profile/").data
+    proposed = pending["resume_review"]["fields"]["work_experiences"]
+    assert len(proposed) == 7
+    response = client.post(
+        f"/api/v1/candidate/resumes/{pending['resume_review']['resume_id']}/review/",
+        {
+            "fields": ["work_experiences"],
+            "keep_pending": True,
+            "profile_updated_at": pending["profile_updated_at"],
+        },
+        format="json",
+    )
+    assert response.status_code == 200, response.data
+    assert len(response.data["work_experiences"]) == 7
+    assert len({row["id"] for row in response.data["work_experiences"]}) == 7
+    assert response.data["meaningful_work"] == "My saved Beyond the CV answer"
+    assert response.data["resume_review"] is None
+
+
+def _document_bytes(document):
+    content = BytesIO()
+    document.save(content)
+    return content.getvalue()

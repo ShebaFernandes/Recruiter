@@ -616,6 +616,8 @@ def retry_resume_processing(request, resume_id):
 
 @api_view(["GET"])
 def resume_download(request, resume_id):
+    from .candidate_experience import resume_identity_issue
+
     try:
         resume = Resume.objects.select_related("candidate__user").get(pk=resume_id)
     except Resume.DoesNotExist:
@@ -627,6 +629,8 @@ def resume_download(request, resume_id):
     ):
         # Match the unknown-ID response so this endpoint cannot be used to
         # enumerate private resume records.
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    if not is_owner and resume_identity_issue(resume, resume.candidate):
         return Response(status=status.HTTP_404_NOT_FOUND)
     if (
         resume.scan_status != Resume.ScanStatus.CLEAN

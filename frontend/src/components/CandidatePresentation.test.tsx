@@ -11,8 +11,8 @@ const props = () => ({ resume, uploading: false, retry: vi.fn(), upload: vi.fn()
 describe('candidate presentation', () => {
   it('uses the approved exact welcome copy', () => {
     render(<CandidateWelcome />)
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent("Let's find work. That feels great.")
-    expect(screen.getByText('Join Leading Startups Building Their Teams with ENTER')).toBeVisible()
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent("Let's find work that feels great.")
+    expect(screen.getByRole('paragraph')).toHaveTextContent('Join Leading Startups Building Their Teams with ENTER')
   })
   it.each([
     ['uploaded', 'quarantined', 'Uploaded — waiting to be queued.'],

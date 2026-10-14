@@ -30,7 +30,7 @@ class Command(BaseCommand):
                     # A message can arrive just before its PostgreSQL retry time.
                     # Leaving it unacknowledged lets SQS redeliver it after the
                     # visibility timeout without losing the durable job.
-                    if outcome != "delayed":
+                    if outcome not in {"delayed", "busy", "superseded"}:
                         acknowledge_sqs_message(message)
                     processed += 1
             else:

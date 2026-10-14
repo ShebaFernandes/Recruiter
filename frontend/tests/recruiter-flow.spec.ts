@@ -1,12 +1,27 @@
 import { provisionRecruiter } from './recruiter-admin'
 import { expect, test, type APIRequestContext } from '@playwright/test'
-import fs from 'node:fs'
 import path from 'node:path'
+import { spawnSync } from 'node:child_process'
 import { issueLocalAccountToken } from './account-token'
 import { expectEnterCard, expectEnterField, expectEnterPage, expectEnterPrimary } from './design-contract'
 
 const API = process.env.PLAYWRIGHT_API_URL || 'http://127.0.0.1:8010/api/v1'
 const password = 'strong-pass-123'
+
+function resumeFor(name: string) {
+  // Each test person's replacement must retain that person's identity.
+  const result = spawnSync(path.resolve('../.venv/bin/python'), ['-c', `
+from docx import Document
+from io import BytesIO
+import sys
+document = Document(${JSON.stringify(path.resolve('../backend/tests/fixtures/asha-rao-resume.docx'))})
+for paragraph in document.paragraphs:
+    paragraph.text = paragraph.text.replace('Asha Rao', ${JSON.stringify(name)})
+output = BytesIO(); document.save(output); sys.stdout.buffer.write(output.getvalue())
+`])
+  expect(result.status).toBe(0)
+  return result.stdout
+}
 
 async function waitForResumeProcessing(request: APIRequestContext, headers: Record<string, string>, version: number) {
   await expect.poll(async () => {
@@ -40,7 +55,7 @@ async function seedCandidate(request: APIRequestContext, index: number, runId: n
   expect(verified.ok()).toBeTruthy()
   const auth = await verified.json()
   const headers = { Authorization: `Token ${auth.token}` }
-  const fixture = fs.readFileSync(path.resolve('../backend/tests/fixtures/asha-rao-resume.docx'))
+  const fixture = resumeFor(name)
   const upload = await request.post(`${API}/candidate/resumes/`, {
     headers,
     multipart: { file: { name: 'asha-rao-resume.docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', buffer: fixture } },
@@ -367,7 +382,7 @@ test('recruiter completes clarification, filters, compares, reviews and persists
     await expect(stage).toHaveClass(value === 'non_relevant' || value === 'rejected' ? /stage-closed/ : /stage-active/)
   }
 
-  const fixture = fs.readFileSync(path.resolve('../backend/tests/fixtures/asha-rao-resume.docx'))
+  const fixture = resumeFor(anikaName)
   const update = await request.post(`${API}/candidate/resumes/`, {
     headers: { Authorization: `Token ${candidates[0].token}` },
     multipart: { file: { name: 'asha-rao-updated.docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', buffer: fixture } },

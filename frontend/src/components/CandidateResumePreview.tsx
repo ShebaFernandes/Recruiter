@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../api'
 import type { DocumentPreview, Resume } from '../types'
+import { Download, Maximize2, Minimize2, X, FileText } from 'lucide-react'
 
 export default function CandidateResumePreview({ resume }: { resume: Resume | null }) {
   const [open, setOpen] = useState(false)
@@ -52,9 +53,10 @@ export default function CandidateResumePreview({ resume }: { resume: Resume | nu
   }, [expanded])
   if (!resume?.url || resume.scan_status !== 'clean' || resume.processing_status !== 'completed') return null
   return <section className="cp-resume">
+    <div className="cp-resume-heading"><h3>Resume</h3><p>View your latest uploaded resume.</p></div>
     <button ref={trigger} type="button" aria-expanded={open} aria-controls="candidate-resume-preview" onClick={() => { setOpen(!open); setExpanded(false); setBusy(!open); setError(''); setUrl(''); setDocument(null) }}>{open ? 'Hide Resume' : 'View Resume'}</button>
     {open && <div id="candidate-resume-preview" ref={panel} className={`cp-resume-panel ${expanded ? 'expanded' : ''}`} role={expanded ? 'dialog' : 'region'} aria-modal={expanded || undefined} aria-label="Uploaded resume">
-      <div className="cp-resume-toolbar"><strong>{resume.original_name}</strong><div className="cp-resume-controls"><button onClick={() => setExpanded(!expanded)}>{expanded ? 'Minimize resume' : 'Maximize resume'}</button><button onClick={() => { setOpen(false); setExpanded(false); trigger.current?.focus() }}>Collapse resume</button><a href={resume.url} target="_blank" rel="noopener noreferrer">Download original</a></div></div>
+      <div className="cp-resume-toolbar"><div className="cp-document-name"><FileText size={18} aria-hidden="true" /><strong title={resume.original_name}>{resume.original_name}</strong></div><div className="cp-resume-controls"><button aria-label={expanded ? 'Minimize resume' : 'Maximize resume'} title={expanded ? 'Minimize resume' : 'Maximize resume'} onClick={() => setExpanded(!expanded)}>{expanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}</button><a href={resume.url} target="_blank" rel="noopener noreferrer"><Download size={16} aria-hidden="true" />Download original</a><button aria-label="Collapse resume" title="Close preview" onClick={() => { setOpen(false); setExpanded(false); trigger.current?.focus() }}><X size={16} /></button></div></div>
       {busy && <p role="status">Opening your resume…</p>}
       {error && <p role="alert">{error} Use Download original, or close and reopen to retry.</p>}
       {url && <><p className="cp-muted">If your browser cannot display the PDF, use Download original.</p><iframe title="Original PDF resume" src={url} /></>}

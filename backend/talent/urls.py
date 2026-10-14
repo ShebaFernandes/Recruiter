@@ -17,6 +17,7 @@ urlpatterns = [
     path("candidate/account/", views.delete_candidate_account),
     path("candidate/profile/", views.candidate_profile),
     path("candidate/profile/submit/", views.submit_candidate_profile),
+    path("candidate/photo/", candidate_views.candidate_photo),
     path("candidate/resumes/", views.resume_upload),
     path("candidate/resumes/<int:resume_id>/review/", candidate_views.review_resume),
     path("candidate/resumes/<int:resume_id>/preview/", candidate_views.preview_docx),

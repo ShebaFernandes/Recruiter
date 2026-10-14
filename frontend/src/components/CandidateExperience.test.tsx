@@ -2,6 +2,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import CandidateCareerTimeline from './CandidateCareerTimeline'
+import CareerJourney from './CareerJourney'
 import CandidateResumePreview from './CandidateResumePreview'
 import { CandidateProcessing } from './CandidatePresentation'
 import { api } from '../api'
@@ -12,25 +13,59 @@ const resume: Resume = { id: 9, original_name: 'original.docx', version: 1, uplo
 const job = (company: string, start_date: string | null, end_date: string | null): WorkExperience => ({ company, role: 'Engineer', start_date, end_date, description: '', gap_reason: '' })
 
 describe('candidate career experience', () => {
+  it('keeps candidate history chronological, ends with Present, and preserves same-year promotions', () => {
+    const items = [job('Early company', '2010-01-01', '2020-01-01'),
+      { ...job('Recent company', '2021-01-01', '2021-06-01'), role: 'Engineer' },
+      { ...job('Recent company', '2021-06-01', null), role: 'Lead', date_label: 'Jun 2021 — Present' }]
+    const { container, rerender } = render(<CandidateCareerTimeline items={items} />)
+    const roles = () => [...container.querySelectorAll('.career-period>.career-job')]
+    expect(roles()).toHaveLength(3)
+    expect(roles()[0]).toHaveAttribute('aria-label', expect.stringContaining('Engineer at Early company'))
+    expect(container.querySelector('.career-present')).toHaveTextContent('Present')
+    expect(roles().filter(role => role.querySelector('small')?.textContent === '2021')).toHaveLength(1)
+    fireEvent.focus(roles()[2])
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Recent company')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Lead')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Jun 2021 — Present')
+    rerender(<CareerJourney items={items} />)
+    expect(roles()[0]).toHaveAttribute('aria-label', expect.stringContaining('Early company'))
+    expect(container.querySelector('.career-present')).toBeNull()
+  })
+  it('keeps recruiter labels while showing candidate facts only in the interactive popover', () => {
+    const items = [job('Saved Employer', '2020-01-01', '2022-01-01')]
+    const { container, rerender } = render(<CareerJourney items={items} detailed />)
+    expect(container.querySelector('.career-job>b')).toHaveTextContent('Saved Employer')
+    expect(container.querySelector('.career-job>em')).toHaveTextContent('Engineer')
+    rerender(<CandidateCareerTimeline items={items} />)
+    expect(container.querySelector('.career-job')).toHaveTextContent('2020')
+    expect(container.querySelector('.career-job>b')).toBeNull()
+    fireEvent.focus(screen.getByRole('button', { name: /Engineer at Saved Employer/ }))
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Saved Employer')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('2020-01 — 2022-01')
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+  })
   it('orders dated jobs and handles overlaps and unknown dates without made-up history', () => {
     render(<CandidateCareerTimeline items={[job('Unknown', null, null), job('Beta', '2021-01-01', null), job('Alpha', '2020-01-01', '2022-01-01')]} />)
-    const rows = screen.getAllByRole('listitem')
-    expect(rows[0]).toHaveTextContent('Alpha')
-    expect(rows[1]).toHaveTextContent('Beta')
+    expect(screen.getByRole('button', { name: /at Alpha/ })).toBeVisible()
+    expect(screen.getByRole('button', { name: /at Beta/ })).toBeVisible()
     fireEvent.click(screen.getByRole('button', { name: /at Beta/ }))
-    expect(screen.getByRole('tooltip')).toHaveTextContent('Overlapping employment')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Beta')
+    expect(screen.getByRole('tooltip')).not.toHaveTextContent('Overlapping employment')
     fireEvent.focus(screen.getByRole('button', { name: /at Alpha/ }))
     fireEvent.click(screen.getByRole('button', { name: /at Alpha/ }))
     expect(screen.getByRole('tooltip')).toHaveTextContent('Alpha')
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /at Unknown/ }))
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Unknown')
     expect(screen.getByRole('tooltip')).toHaveTextContent('Start not specified')
     expect(screen.getByRole('tooltip')).not.toHaveTextContent('Present')
   })
   it('provides an editable empty-history fallback', () => {
     render(<CandidateCareerTimeline items={[]} />)
-    expect(screen.getByText(/No employment history has been confirmed/)).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Your career journey' })).toBeVisible()
+    expect(screen.getByText(/couldn't confidently identify employment history/)).toBeVisible()
     expect(screen.queryByRole('listitem')).not.toBeInTheDocument()
   })
   it('does not show false gaps inside overlapping employment and exposes real gaps', () => {
@@ -40,7 +75,8 @@ describe('candidate career experience', () => {
     expect(screen.queryByRole('button', { name: /Career gap/ })).not.toBeInTheDocument()
     rerender(<CandidateCareerTimeline items={[job('First', '2015-01-01', '2017-01-01'), { ...job('Second', '2019-01-01', null), gap_reason: 'Study break' }]} />)
     fireEvent.click(screen.getByRole('button', { name: /Career gap/ }))
-    expect(screen.getByRole('tooltip')).toHaveTextContent('Study break')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Career gap')
+    expect(screen.getByRole('tooltip')).not.toHaveTextContent('Study break')
   })
   it('preserves year-only labels without claiming precise durations or gaps', () => {
     render(<CandidateCareerTimeline items={[
@@ -48,6 +84,7 @@ describe('candidate career experience', () => {
     ]} />)
     expect(screen.queryByRole('button', { name: /Career gap/ })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /at First/ }))
+    expect(screen.getByRole('tooltip')).toHaveTextContent('First')
     expect(screen.getByRole('tooltip')).toHaveTextContent('2015–17')
     expect(screen.getByRole('tooltip')).not.toHaveTextContent('yrs')
   })

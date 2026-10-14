@@ -157,7 +157,7 @@ def _looks_like_role(value):
     return bool(
         re.search(
             r"(?i)\b(engineer|developer|manager|designer|analyst|consultant|architect|"
-            r"lead|specialist|intern|director|officer|scientist|administrator|associate)\b",
+            r"lead|specialist|intern|director|officer|scientist|administrator|associate|advisor)\b",
             value,
         )
     )
@@ -226,7 +226,22 @@ def _standard_experiences(lines):
                 role, company = _role_and_company(prefix.split("|"))
                 role = _concise_role(role)
             elif prefix and _concise_role(prefix):
-                role, company = _concise_role(prefix), employer
+                role = _concise_role(prefix)
+                company = employer
+                # Some PDF exporters put an undated employer on one line and the
+                # role plus date range on the next. Keep that explicit adjacency;
+                # never infer an employer from a description farther away.
+                if index > 0:
+                    previous = section[index - 1].strip(" |•-–—")
+                    if (
+                        previous
+                        and len(previous) <= 180
+                        and not DATE_RANGE_PATTERN.search(previous)
+                        and not _looks_like_role(previous)
+                        and not previous.endswith((".", "!", ":"))
+                    ):
+                        company = previous
+                        employer = previous
             elif prefix:
                 # Employer-level tenure can contain several dated promotions. Remember
                 # its employer, but do not count the umbrella tenure as another job.
@@ -414,7 +429,11 @@ def parse_resume(file_obj, filename):
         ("On-site", r"\b(?:on[ -]?site|office-based)\b"),
     ]
     for preference, pattern in preference_patterns:
-        if re.search(pattern, text, re.IGNORECASE):
+        preference_text = (
+            _value_after_label(text, "Work preferences")
+            or _value_after_label(text, "Preferred work setup")
+        )
+        if re.search(pattern, preference_text, re.IGNORECASE):
             work_preferences.append(preference)
     return {
         "full_name": name[:180],
@@ -435,6 +454,7 @@ def parse_resume(file_obj, filename):
         "expected_salary_lpa": float(expected_salary.group(1)) if expected_salary else None,
         "summary": _value_after_label(text, "Summary"),
         "raw_text": text[:15000],
+        "_text_truncated": len(text) > 15000,
         "standout_signal": standout[:1000],
     }
 

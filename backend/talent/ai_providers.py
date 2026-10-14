@@ -70,6 +70,8 @@ def _post_json(url, body, headers, timeout):
         if isinstance(exc.reason, (TimeoutError, socket.timeout)):
             raise AIProviderTimeout() from exc
         raise AIProviderUnavailable() from exc
+    except OSError as exc:
+        raise AIProviderUnavailable() from exc
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise AIProviderMalformedResponse() from exc
     if not isinstance(payload, dict):
@@ -103,10 +105,12 @@ class StructuredAIProvider(ABC):
 class OpenAIResponsesProvider(StructuredAIProvider):
     name = "openai"
 
-    def __init__(self):
+    def __init__(self, *, model=None, timeout=None, request_options=None):
         self.api_key = settings.OPENAI_API_KEY
-        self.model = settings.OPENAI_SEARCH_MODEL
+        self.model = model or settings.OPENAI_SEARCH_MODEL
         self.base_url = settings.OPENAI_API_BASE_URL.rstrip("/")
+        self.timeout = timeout or settings.AI_REQUEST_TIMEOUT_SECONDS
+        self.request_options = request_options or {}
 
     def generate(self, instructions, input_payload, schema, schema_name):
         if not self.api_key:
@@ -125,19 +129,29 @@ class OpenAIResponsesProvider(StructuredAIProvider):
                         "schema": schema,
                     }
                 },
+                **self.request_options,
             },
             {
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json",
             },
-            settings.AI_REQUEST_TIMEOUT_SECONDS,
+            self.timeout,
         )
         if payload.get("error"):
             raise AIProviderUnavailable()
+        if payload.get("status") in {"incomplete", "failed", "cancelled"}:
+            raise AIProviderMalformedResponse()
         output_text = payload.get("output_text")
         if not isinstance(output_text, str):
-            for item in payload.get("output", []):
+            output = payload.get("output", [])
+            if not isinstance(output, list):
+                raise AIProviderMalformedResponse()
+            for item in output:
+                if not isinstance(item, dict) or not isinstance(item.get("content", []), list):
+                    raise AIProviderMalformedResponse()
                 for content in item.get("content", []):
+                    if not isinstance(content, dict):
+                        raise AIProviderMalformedResponse()
                     if content.get("type") == "output_text":
                         output_text = content.get("text")
                         break
@@ -154,10 +168,12 @@ class OpenAIResponsesProvider(StructuredAIProvider):
 class OpenRouterChatProvider(StructuredAIProvider):
     name = "openrouter"
 
-    def __init__(self):
+    def __init__(self, *, model=None, timeout=None, request_options=None):
         self.api_key = settings.OPENROUTER_API_KEY
-        self.model = settings.OPENROUTER_SEARCH_MODEL
+        self.model = model or settings.OPENROUTER_SEARCH_MODEL
         self.base_url = settings.OPENROUTER_API_BASE_URL.rstrip("/")
+        self.timeout = timeout or settings.AI_REQUEST_TIMEOUT_SECONDS
+        self.request_options = request_options or {}
 
     def generate(self, instructions, input_payload, schema, schema_name):
         if not self.api_key:
@@ -191,9 +207,10 @@ class OpenRouterChatProvider(StructuredAIProvider):
                 },
                 "provider": {"require_parameters": True},
                 "stream": False,
+                **self.request_options,
             },
             headers,
-            settings.AI_REQUEST_TIMEOUT_SECONDS,
+            self.timeout,
         )
         if payload.get("error"):
             error_payload = payload["error"]

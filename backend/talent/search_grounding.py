@@ -9,11 +9,7 @@ import math
 import re
 from copy import deepcopy
 
-
-
 from .services import LOCATIONS, _search_role, next_search_question
-
-
 
 CRITERIA_DEFAULTS = {
     "role": "",

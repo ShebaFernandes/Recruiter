@@ -1,12 +1,12 @@
 import logging
 import math
 from dataclasses import dataclass
+
 from django.conf import settings
+
 from .ai_providers import AIProviderError, AIProviderMalformedResponse, get_ai_provider
 from .search_grounding import CRITERIA_DEFAULTS, ground_criteria
 from .services import apply_search_answer, next_search_question, parse_search_query
-
-
 
 logger = logging.getLogger(__name__)
 

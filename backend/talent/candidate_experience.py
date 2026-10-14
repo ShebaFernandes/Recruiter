@@ -1,6 +1,8 @@
 """Candidate-owned preferences and evidence-bound resume review helpers."""
 
 import json
+import re
+import unicodedata
 from decimal import Decimal
 
 MOTIVATORS = {
@@ -15,6 +17,7 @@ MOTIVATORS = {
     "Founder",
 }
 LIST_FIELDS = {
+    "custom_motivators",
     "custom_exclusions",
     "motivators",
     "exclusions",
@@ -86,6 +89,8 @@ def profile_values(profile):
 
 def pending_fields(resume, profile):
     data = resume.extracted_data
+    if resume_identity_issue(resume, profile):
+        return {}
     if not data.get("_needs_review"):
         return {}
     # Existing uploads remain reviewable, but unchanged fields are not conflicts.
@@ -93,6 +98,30 @@ def pending_fields(resume, profile):
     saved = profile_values(profile)
     return {key: value for key, value in proposals.items()
             if key in RESUME_FIELDS and comparable(key, value) != saved[key]}
+
+
+def name_tokens(value):
+    value = unicodedata.normalize("NFKC", value).casefold()
+    return set(re.findall(r"[^\W\d_]+", value)) - {"mr", "mrs", "ms", "dr"}
+
+
+def resume_identity_issue(resume, profile):
+    """Conservative replacement guard, also applied to previously processed uploads.
+
+    Names are not identity proof. Unknown or substantially different names require a
+    corrected document, not a one-click permission to combine different people's data.
+    """
+    if resume.extracted_data.get("_identity_issue"):
+        return resume.extracted_data["_identity_issue"]
+    if resume.version <= 1:
+        return None
+    incoming = name_tokens(resume.extracted_data.get("full_name", ""))
+    saved = name_tokens(profile.full_name)
+    if not incoming or not saved:
+        return "identity_unverified"
+    if incoming != saved:
+        return "identity_mismatch"
+    return None
 
 
 def record_candidate_edits(profile, fields):
