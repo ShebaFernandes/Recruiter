@@ -22,9 +22,10 @@ from .candidate_experience import (
     proposed_fields,
     resume_identity_issue,
 )
-from .models import CandidateProfile, Resume, ResumeProcessingJob, WorkExperience
+from .models import CandidateProfile, FileCleanupJob, Resume, ResumeProcessingJob, WorkExperience
 from .resume_understanding import understand_resume
 from .services import parse_date, parse_resume
+from .storage_cleanup import schedule_cleanup
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +70,7 @@ class ClamAVResumeScanner:
             file_object.seek(0)
         if " FOUND" in response:
             raise ResumeInfectedError("The uploaded file did not pass the security scan.")
-        if not response.rstrip("\0\n").endswith("OK"):
+        if response.rstrip("\0\n") != "stream: OK":
             raise ResumeScanError("The malware scanner returned an invalid result.")
         return "clean"
 
@@ -228,8 +229,7 @@ def _promote_clean_file(resume):
             storage.save(target, File(source))
     resume.file.name = target
     resume.save(update_fields=["file", "processing_updated_at"])
-    if storage.exists(old_name):
-        storage.delete(old_name)
+    schedule_cleanup(old_name)
 
 
 def _apply_extracted_resume(resume, extracted):
@@ -406,8 +406,8 @@ def _retry_or_fail(job_id, message, scan_failed=False, claimed=None, recover_sta
     return "failed" if terminal else "retry"
 
 
-def process_resume_job(job_id, idempotency_key=None):
-    job, outcome = _claim_job(job_id, idempotency_key)
+def process_resume_job(job_id, idempotency_key=None, claimed=None):
+    job, outcome = (claimed, "claimed") if claimed else _claim_job(job_id, idempotency_key)
     if not job:
         return outcome
     resume = Resume.objects.select_related("candidate").get(pk=job.resume_id)
@@ -415,6 +415,12 @@ def process_resume_job(job_id, idempotency_key=None):
         if resume.scan_status != Resume.ScanStatus.CLEAN:
             with resume.file.open("rb") as file_object:
                 get_resume_scanner().scan(file_object)
+            # Journal the future clean key outside the merge transaction. A rollback or
+            # killed child after S3 copy must not strand a private object indefinitely.
+            FileCleanupJob.objects.get_or_create(
+                name=f"resumes/{resume.candidate_id}/{resume.pk}/{Path(resume.original_name).name}",
+                defaults={"available_at": timezone.now() + timedelta(days=1)},
+            )
             with transaction.atomic():
                 current = ResumeProcessingJob.objects.select_for_update().get(pk=job.pk)
                 if not _owns_attempt(current, job):

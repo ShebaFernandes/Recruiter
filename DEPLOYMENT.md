@@ -1,5 +1,17 @@
 # Deploying Enter Talent Platform
 
+## Initial low-cost launch: current runbook
+
+Use [deploy/README.md](deploy/README.md) and **compose.production.yaml** for the
+approved single-EC2 architecture. Do not deploy the development compose file.
+The runbook includes the no-AI mode, legal approval gate, private storage,
+subprocess worker, backup/restore and staging acceptance checklist.
+
+The managed ECS/ALB/RDS guidance further below is an alternative for later scale,
+not a requirement for the initial launch. Its historical AI-provider requirement
+is superseded: production now supports `AI_PROVIDER=disabled` without any key.
+No resources have been provisioned by preparing these files.
+
 ## Optional hybrid resume understanding (disabled by default)
 
 This is separate from recruiter search. No AI calls are made unless both

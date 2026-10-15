@@ -46,7 +46,7 @@ export function CandidateProcessing({ resume, uploading, retry, upload, error, r
           <ul className="sr-only" aria-label="Profile preparation activities, not completed stages">{activities.map(text => <li key={text}>{text}</li>)}</ul>
           <div className={`cp-processing-bar ${error ? 'is-paused' : ''}`} role="progressbar" aria-label="Resume processing" aria-valuetext={error ? 'Status temporarily unavailable' : stateLabel}><span /></div>
         </>}
-        <p className="cp-processing-status" role="status">{error ? 'Unable to check the latest status. Your upload is saved; we’ll keep checking.' : stateLabel}</p>
+        <p className="cp-processing-status" role="status">{error === 'worker_delayed' ? 'Processing is temporarily delayed. Your upload is saved; we’ll keep checking automatically.' : error ? 'Unable to check the latest status. Your upload is saved; we’ll keep checking.' : stateLabel}</p>
         {error && active && refresh && <div className="processing-actions"><button onClick={refresh} disabled={uploading}>Check status again</button></div>}
         {failed && <p role="alert">{error || resume.processing_error || 'Your profile was not changed. Please retry.'}</p>}
         {failed && <div className="processing-actions">

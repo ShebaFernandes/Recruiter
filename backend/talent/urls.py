@@ -19,6 +19,7 @@ urlpatterns = [
     path("candidate/profile/submit/", views.submit_candidate_profile),
     path("candidate/photo/", candidate_views.candidate_photo),
     path("candidate/resumes/", views.resume_upload),
+    path("candidate/resume-status/", candidate_views.processing_status),
     path("candidate/resumes/<int:resume_id>/review/", candidate_views.review_resume),
     path("candidate/resumes/<int:resume_id>/preview/", candidate_views.preview_docx),
     path(

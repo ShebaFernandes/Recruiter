@@ -127,7 +127,9 @@ class CandidatePhoto(models.Model):
 @receiver(post_delete, sender=CandidatePhoto)
 def delete_candidate_photo_file(sender, instance, **kwargs):
     if instance.file:
-        instance.file.storage.delete(instance.file.name)
+        from .storage_cleanup import schedule_cleanup
+
+        schedule_cleanup(instance.file.name)
 
 
 class WorkExperience(models.Model):
@@ -219,6 +221,28 @@ class ResumeProcessingJob(models.Model):
 
     class Meta:
         indexes = [models.Index(fields=["state", "available_at"])]
+
+
+@receiver(post_delete, sender=Resume)
+def delete_resume_file(sender, instance, **kwargs):
+    if instance.file:
+        from .storage_cleanup import schedule_cleanup
+
+        schedule_cleanup(instance.file.name)
+
+
+class FileCleanupJob(models.Model):
+    # No FK: deletion must survive deletion of the candidate and every resume record.
+    name = models.CharField(max_length=1024, unique=True)
+    attempts = models.PositiveIntegerField(default=0)
+    available_at = models.DateTimeField(default=timezone.now, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class WorkerHeartbeat(models.Model):
+    worker_id = models.CharField(max_length=120, primary_key=True)
+    seen_at = models.DateTimeField(default=timezone.now, db_index=True)
+    state = models.CharField(max_length=30, default="starting")
 
 
 class RateLimitBucket(models.Model):

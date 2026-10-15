@@ -1,4 +1,4 @@
-import type { Candidate, DocumentPreview, Notification, Project, ProjectDetail, Search, SearchResult, User } from './types'
+import type { Candidate, DocumentPreview, Notification, Project, ProjectDetail, Resume, Search, SearchResult, User } from './types'
 
 export type AuthPayload = { token?: string; user: User }
 export type SignupResponse = AuthPayload | { detail: string; requires_email_verification: true; local_verification_url?: string }
@@ -75,6 +75,7 @@ export const api = {
   logout: () => request<void>('/auth/logout/', { method: 'POST' }),
   deleteCandidateAccount: (password: string, confirmation: string) => request<void>('/candidate/account/', { method: 'DELETE', body: JSON.stringify({ password, confirmation }) }),
   candidateProfile: (signal?: AbortSignal) => request<Candidate>('/candidate/profile/', { signal }),
+  resumeStatus: (signal?: AbortSignal) => request<{ resume: Pick<Resume, 'id' | 'processing_status' | 'scan_status' | 'processing_error' | 'can_retry'> | null; worker_available: boolean }>('/candidate/resume-status/', { signal, cache: 'no-store' }),
   updateCandidate: (body: Partial<Candidate>) => request<Candidate>('/candidate/profile/', { method: 'PATCH', body: JSON.stringify(body) }),
   uploadCandidatePhoto: (file: File) => { const body = new FormData(); body.append('file', file); return request<Candidate>('/candidate/photo/', { method: 'POST', body }) },
   candidatePhoto: () => request<Blob>('/candidate/photo/', { cache: 'no-store' }, true),

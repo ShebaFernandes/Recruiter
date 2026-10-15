@@ -91,6 +91,8 @@ async function seedCandidate(request: APIRequestContext, index: number, runId: n
 }
 
 test('recruiter completes clarification, filters, compares, reviews and persists signals', async ({ page, request }, testInfo) => {
+  // Four real uploads plus supervised child startup precede the browser workflow.
+  test.setTimeout(120_000)
   const runId = Date.now()
   const candidates = []
   for (let index = 0; index < 4; index += 1) candidates.push(await seedCandidate(request, index, runId))

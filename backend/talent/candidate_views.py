@@ -16,7 +16,9 @@ from .models import CandidatePhoto, CandidateProfile, Resume
 from .permissions import IsCandidate
 from .serializers import CandidateProfileSerializer
 from .services import read_docx
+from .storage_cleanup import schedule_cleanup, store_private_upload
 from .throttling import DatabaseRateThrottle
+from .worker_runtime import worker_available
 
 
 class ResumePreviewThrottle(DatabaseRateThrottle):
@@ -42,16 +44,37 @@ PHOTO_FORMATS = {
 }
 
 
+@api_view(["GET"])
+@permission_classes([IsCandidate])
+def processing_status(request):
+    # Do not load raw extraction, work history, old resume versions or private URLs.
+    resume = Resume.objects.filter(candidate__user=request.user).only(
+        "id", "processing_status", "scan_status", "processing_error"
+    ).first()
+    data = None if not resume else {
+        "id": resume.pk,
+        "processing_status": resume.processing_status,
+        "scan_status": resume.scan_status,
+        "processing_error": resume.processing_error,
+        "can_retry": resume.processing_status == "failed" and resume.scan_status != "infected",
+    }
+    response = Response({"resume": data, "worker_available": worker_available()})
+    response["Cache-Control"] = "private, no-store"
+    return response
+
+
 def _normalized_photo(uploaded):
     if uploaded.size > settings.PROFILE_PHOTO_MAX_BYTES:
         limit = settings.PROFILE_PHOTO_MAX_BYTES // (1024 * 1024)
         raise ValueError(f"Photo exceeds the {limit} MB limit.")
     try:
         uploaded.seek(0)
-        with Image.open(uploaded) as image:
+        with Image.open(uploaded, formats=list(PHOTO_FORMATS)) as image:
+            if image.width * image.height > 20_000_000:
+                raise ValueError("This image is too large to process safely.")
             image.verify()
         uploaded.seek(0)
-        with Image.open(uploaded) as image:
+        with Image.open(uploaded, formats=list(PHOTO_FORMATS)) as image:
             if image.format not in PHOTO_FORMATS:
                 raise ValueError("Upload a JPG, PNG or WebP image.")
             image_format = image.format
@@ -110,6 +133,9 @@ def candidate_photo(request):
         content, extension, content_type = _normalized_photo(uploaded)
     except ValueError as error:
         return Response({"detail": str(error)}, status=400)
+    stored_name = store_private_upload(
+        content, f"candidate-photos/{profile.pk}", f"profile{extension}",
+    )
     with transaction.atomic():
         profile = CandidateProfile.objects.select_for_update().get(pk=profile.pk)
         photo, _ = CandidatePhoto.objects.get_or_create(
@@ -119,10 +145,10 @@ def candidate_photo(request):
         previous_name = photo.file.name
         photo.original_name = Path(uploaded.name).name[:255]
         photo.content_type = content_type
-        photo.file.save(f"profile{extension}", content, save=False)
+        photo.file.name = stored_name
         photo.save()
         if previous_name and previous_name != photo.file.name:
-            transaction.on_commit(lambda: photo.file.storage.delete(previous_name))
+            schedule_cleanup(previous_name)
     return Response(CandidateProfileSerializer(profile, context={"request": request}).data)
 
 

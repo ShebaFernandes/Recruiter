@@ -7,6 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 from PIL import Image
 from rest_framework.test import APIClient
+from talent.storage_cleanup import drain_cleanup
 
 from .recruiter_helpers import provision_recruiter
 
@@ -63,11 +64,13 @@ def test_candidate_photo_is_normalized_private_replaceable_and_removable(
         photo.refresh_from_db()
         assert photo.content_type == "image/webp"
         assert photo.file.name != first_name
+        drain_cleanup()
         assert not first_path.exists()
 
         removed = client.delete("/api/v1/candidate/photo/")
         assert removed.status_code == 200
         assert removed.data["profile_photo_url"] is None
+        drain_cleanup()
         assert not Path(photo.file.path).exists()
         assert client.get("/api/v1/candidate/photo/").status_code == 404
 

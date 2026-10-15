@@ -1,0 +1,9 @@
+[Unit]
+Description=ENTER encrypted off-host PostgreSQL backup
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/enter/ops.env
+ExecStart=/bin/bash ${ENTER_REPO_DIR}/deploy/backup.sh

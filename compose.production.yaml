@@ -1,0 +1,158 @@
+# Standalone production stack. Never combine with compose.yaml.
+# Requires pre-created AWS resources; creates none itself.
+x-app: &app
+  image: enter-backend:${ENTER_RELEASE:?Set a reviewed release tag}
+  platform: ${ENTER_PLATFORM:-linux/amd64}
+  build:
+    context: .
+    dockerfile: backend/Dockerfile.production
+  env_file: ${ENTER_ENV_FILE:-.env.production}
+  environment: &app-env
+    APP_ENV: ${APP_ENV:-staging}
+    DEBUG: "false"
+    TESTING: "false"
+    AI_PROVIDER: disabled
+    OPENAI_API_KEY: ""
+    OPENROUTER_API_KEY: ""
+    AI_ALLOW_DETERMINISTIC_FALLBACK: "false"
+    RESUME_AI_ENABLED: "false"
+    RESUME_AI_EXTERNAL_PROCESSING_APPROVED: "false"
+    RESUME_AI_ALLOW_PAID: "false"
+    RESUME_QUEUE_BACKEND: sqs
+    RESUME_SCANNER_BACKEND: clamav
+    CLAMAV_HOST: scanner
+    RATE_LIMIT_TRUST_X_FORWARDED_FOR: "true"
+    SECURE_SSL_REDIRECT: "true"
+    AUTH_COOKIE_SECURE: "true"
+    EMAIL_BACKEND: django.core.mail.backends.smtp.EmailBackend
+    EMAIL_USE_TLS: "true"
+    EMAIL_USE_SSL: "false"
+    EXPOSE_LOCAL_EMAIL_LINKS: "false"
+  restart: unless-stopped
+  init: true
+  read_only: true
+  tmpfs:
+    - /tmp:size=128m,mode=1777
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  logging: &logs
+    driver: local
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  db:
+    # PGDG PostgreSQL 17 on vendor-patched Ubuntu; see the image review in deploy/README.md.
+    image: enter-postgres:${ENTER_RELEASE}
+    platform: ${ENTER_PLATFORM:-linux/amd64}
+    build:
+      context: ./deploy/postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: enter
+      POSTGRES_USER: enter
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a new production password}
+    # No published database port. Place this path on encrypted EBS.
+    volumes:
+      - ${ENTER_DATA_DIR:?Set an absolute persistent EBS path}/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U enter -d enter"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    mem_limit: 1g
+    logging: *logs
+
+  migrate:
+    <<: *app
+    restart: "no"
+    command: [python, manage.py, migrate, --noinput]
+    profiles: [release]
+    depends_on:
+      db:
+        condition: service_healthy
+    mem_limit: 512m
+
+  backend:
+    <<: *app
+    command: [gunicorn, "config.wsgi:application", --bind, "0.0.0.0:8000", --workers, "2", --timeout, "60", --max-requests, "1000", --max-requests-jitter, "100"]
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, python, -c, "import os,urllib.request; r=urllib.request.Request('http://127.0.0.1:8000/api/v1/health/ready/',headers={'Host':os.environ['ALLOWED_HOSTS'].split(',')[0],'X-Forwarded-Proto':'https'}); urllib.request.urlopen(r,timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    mem_limit: 1g
+    cpus: 1
+
+  scanner:
+    # Supported Ubuntu packages; do not revert to the affected upstream Alpine image.
+    image: enter-scanner:${ENTER_RELEASE}
+    platform: ${ENTER_PLATFORM:-linux/amd64}
+    build:
+      context: ./deploy/scanner
+    restart: unless-stopped
+    volumes:
+      - ${ENTER_DATA_DIR}/clamav:/var/lib/clamav
+    healthcheck:
+      test: [CMD, clamdscan, "--ping=3"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 5m
+    mem_limit: 3g
+    cpus: 1
+    logging: *logs
+
+  worker:
+    <<: *app
+    command: [python, manage.py, run_resume_worker]
+    stop_grace_period: 270s
+    depends_on:
+      db:
+        condition: service_healthy
+      scanner:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, python, manage.py, check_resume_operations, --local-worker]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    mem_limit: 1g
+    cpus: 1
+    pids_limit: 64
+
+  frontend:
+    image: enter-frontend:${ENTER_RELEASE}
+    platform: ${ENTER_PLATFORM:-linux/amd64}
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_URL: /api/v1
+    restart: unless-stopped
+    mem_limit: 128m
+    logging: *logs
+
+  edge:
+    # Standard Caddy modules rebuilt with the patched Go toolchain and x/net.
+    image: enter-edge:${ENTER_RELEASE}
+    platform: ${ENTER_PLATFORM:-linux/amd64}
+    build:
+      context: ./deploy/edge
+    restart: unless-stopped
+    environment:
+      ENTER_DOMAIN: ${ENTER_DOMAIN:?Set the public domain}
+      ACME_EMAIL: ${ACME_EMAIL:?Set a real certificate contact email}
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${ENTER_DATA_DIR}/caddy-data:/data
+      - ${ENTER_DATA_DIR}/caddy-config:/config
+    depends_on: [backend, frontend]
+    mem_limit: 128m
+    logging: *logs

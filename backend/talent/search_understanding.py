@@ -274,6 +274,11 @@ def _ground_interpretation(result, query, criteria, question, answer, history):
 
 
 def _interpret(query, criteria=None, question="", answer="", history=None):
+    if settings.AI_PROVIDER == "disabled":
+        raise SearchUnderstandingUnavailable(
+            "AI search is not enabled. Existing searches and projects remain available.",
+            code="search_ai_disabled",
+        )
     if settings.AI_PROVIDER == "deterministic":
         result = _deterministic_interpretation(query, criteria, question, answer)
         return _ground_interpretation(result, query, criteria, question, answer, history)

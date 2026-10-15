@@ -1,0 +1,8 @@
+[Unit]
+Description=Check ENTER worker queue and scanner
+After=docker.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/enter/ops.env
+ExecStart=/bin/bash ${ENTER_REPO_DIR}/deploy/monitor.sh

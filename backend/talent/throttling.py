@@ -99,3 +99,10 @@ class ResumeUploadRateThrottle(DatabaseRateThrottle):
 
 class RecruiterSearchRateThrottle(DatabaseRateThrottle):
     scope = "recruiter_search"
+
+
+class AccountDeletionRateThrottle(DatabaseRateThrottle):
+    scope = "account_deletion"
+
+    def get_rate(self):
+        return "5/hour"

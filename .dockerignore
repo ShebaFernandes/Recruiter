@@ -1,4 +1,12 @@
 .git
+design-references/*
+!design-references/prepared
+design-references/prepared/*
+!design-references/prepared/trusted-by-review
+design-references/prepared/trusted-by-review/*
+!design-references/prepared/trusted-by-review/assets
+deploy
+.env.production
 .venv
 .env
 frontend/node_modules
@@ -10,3 +18,8 @@ backend/media
 backend/staticfiles
 **/__pycache__
 *.pyc
+backups/
+*.dump
+*.sql
+*.mov
+*.mp4

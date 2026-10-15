@@ -1,3 +1,4 @@
+import socket
 import time
 
 from django.conf import settings
@@ -7,9 +8,10 @@ from talent.resume_processing import (
     acknowledge_sqs_message,
     dispatch_pending_jobs,
     next_database_job_id,
-    process_resume_job,
     receive_sqs_message,
 )
+from talent.storage_cleanup import drain_cleanup
+from talent.worker_runtime import heartbeat, run_bounded_job
 
 
 class Command(BaseCommand):
@@ -21,12 +23,16 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         processed = 0
+        worker_id = socket.gethostname()
         while True:
+            heartbeat(worker_id)
+            drain_cleanup(limit=5)
             if settings.RESUME_QUEUE_BACKEND == "sqs":
                 dispatch_pending_jobs()
                 message = receive_sqs_message()
                 if message:
-                    outcome = process_resume_job(message.job_id, message.idempotency_key)
+                    heartbeat(worker_id, "processing")
+                    outcome = run_bounded_job(message.job_id, message.idempotency_key)
                     # A message can arrive just before its PostgreSQL retry time.
                     # Leaving it unacknowledged lets SQS redeliver it after the
                     # visibility timeout without losing the durable job.
@@ -36,12 +42,14 @@ class Command(BaseCommand):
             else:
                 job_id = next_database_job_id()
                 if job_id:
-                    process_resume_job(job_id)
+                    heartbeat(worker_id, "processing")
+                    run_bounded_job(job_id)
                     processed += 1
                 elif not options["once"]:
                     time.sleep(settings.RESUME_WORKER_POLL_SECONDS)
 
             if options["once"] or (options["max_jobs"] and processed >= options["max_jobs"]):
+                heartbeat(worker_id, "stopped")
                 break
 
         self.stdout.write(self.style.SUCCESS(f"Processed {processed} resume job(s)."))

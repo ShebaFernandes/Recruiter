@@ -53,7 +53,6 @@ d.save(${JSON.stringify(docx)})
     await page.keyboard.press('Escape')
     await expect(page.getByRole('tooltip')).toHaveCount(0)
   }
-  await page.getByRole('button', { name: 'Career Settings', exact: true }).click()
   await expect(page.getByRole('combobox', { name: 'Profile Visibility' })).toHaveCount(0)
   await page.getByLabel('Remote', { exact: true }).check()
   await page.getByLabel('Notice Period (days)').fill('30')

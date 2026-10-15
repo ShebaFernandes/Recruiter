@@ -320,5 +320,8 @@ def test_candidate_account_deletion_removes_profile_relations_and_resume_files(t
         assert not CandidateStatus.objects.filter(candidate_id=profile_id).exists()
         assert not CandidateUpdateNotification.objects.filter(candidate_id=profile_id).exists()
         assert not Token.objects.filter(key=verified["token"]).exists()
+        from talent.storage_cleanup import drain_cleanup
+
+        drain_cleanup()
         assert all(not storage.exists(name) for storage, name in stored_files)
         assert client.get("/api/v1/candidate/profile/").status_code == 401

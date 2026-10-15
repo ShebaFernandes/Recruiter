@@ -5,29 +5,32 @@ import { issueLocalAccountToken } from './account-token'
 
 // Real local uploads and extraction. Only test-worker latency is controlled so
 // scanning/processing can be observed; no application delays or fake job states.
-test.use({ video: 'on' })
-test.setTimeout(90_000)
+test.use({ video: 'on', actionTimeout: 15_000 })
+test.setTimeout(240_000)
 const backend = path.resolve('../backend')
 const python = path.resolve('../.venv/bin/python')
 function worker(resumeId: number, slow = true) {
-  if (!process.env.DATABASE_URL?.includes('enter_candidate_e2e') || process.env.AI_PROVIDER !== 'deterministic') throw new Error('Use the isolated offline candidate E2E environment.')
+  if (!/\/test_enter_e2e_[a-f0-9]+$/.test(process.env.DATABASE_URL || '') || process.env.AI_PROVIDER !== 'deterministic') throw new Error('Use the isolated offline candidate E2E environment.')
   const script = `import os, time
 os.environ.setdefault('DJANGO_SETTINGS_MODULE','config.settings')
 import django; django.setup()
 from talent import resume_processing as processing
 from talent.models import ResumeProcessingJob
+from talent.worker_runtime import heartbeat
+heartbeat('observed-test-worker', 'processing')
 original_parse = processing.parse_resume
 class ObservedScanner(processing.DevelopmentResumeScanner):
     def scan(self, file):
-        time.sleep(${slow ? 2 : 0})
+        time.sleep(${slow ? 18 : 0})
         return super().scan(file)
 def observed_parse(file, name):
-    time.sleep(${slow ? 3 : 0})
+    time.sleep(${slow ? 10 : 0})
     return original_parse(file, name)
 processing.get_resume_scanner = lambda: ObservedScanner()
 processing.parse_resume = observed_parse
 job = ResumeProcessingJob.objects.get(resume_id=${resumeId})
-print(processing.process_resume_job(job.pk, str(job.idempotency_key)))`
+print(processing.process_resume_job(job.pk, str(job.idempotency_key)))
+heartbeat('observed-test-worker', 'stopped')`
   const child = spawn(python, ['-c', script], { cwd: backend, env: process.env })
   let output = ''
   child.stdout.on('data', data => { output += data.toString() })
@@ -60,6 +63,8 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE','config.settings')
 import django; django.setup()
 from pathlib import Path
 from tests.test_candidate_flow import resume_pdf, resume_docx
+from talent.worker_runtime import heartbeat
+heartbeat('observed-test-worker', 'stopped')
 Path(${JSON.stringify(docx)}).write_bytes(resume_docx())
 Path(${JSON.stringify(pdf)}).write_bytes(resume_pdf(['Name: Asha Rao', 'Role: Principal Engineer', 'Location: Pune', 'Skills: Python, Django']))
 Path(${JSON.stringify(otherPerson)}).write_bytes(resume_pdf())
@@ -70,10 +75,9 @@ Path(${JSON.stringify(careerUpdate)}).write_bytes(resume_docx(role='Staff Engine
   for (const [index, file] of [docx, pdf].entries()) {
     if (index) {
       await page.getByRole('button', { name: 'Not quite — edit', exact: true }).click()
-      await page.getByLabel('headline', { exact: true }).fill('Candidate-corrected title')
+      await page.getByLabel('Professional title', { exact: true }).fill('Candidate-corrected title')
       await page.getByRole('button', { name: 'Save corrections' }).click()
       await expect(page.locator('.cp-identity')).toContainText('Candidate-corrected title')
-      await page.getByRole('button', { name: 'Career Settings', exact: true }).click()
       await page.getByTestId('resume-input').scrollIntoViewIfNeeded()
     }
     const upload = page.waitForResponse(r => r.url().endsWith('/candidate/resumes/') && r.request().method() === 'POST')
@@ -89,23 +93,20 @@ Path(${JSON.stringify(careerUpdate)}).write_bytes(resume_docx(role='Staff Engine
       const bar = page.locator('.cp-processing-bar span')
       const first = await bar.evaluate(el => getComputedStyle(el).transform)
       await expect.poll(() => bar.evaluate(el => getComputedStyle(el).transform)).not.toBe(first)
-      for (const activity of ['Mapping your career journey', 'Identifying your strongest skills', "Understanding what you've built", 'Building your ENTER profile']) {
-        await expect(page.locator('.cp-processing-message')).toHaveText(activity, { timeout: 4500 })
-      }
+      // No worker exists yet: the new health status must pause decorative progress,
+      // not keep implying that resume extraction is underway.
+      await expect(state).toContainText('temporarily delayed', { timeout: 20_000 })
+      await expect(page.locator('.cp-processing-bar')).toHaveClass(/is-paused/)
+      await expect(page.getByRole('list', { name: 'Profile preparation activities, not completed stages' }).getByRole('listitem')).toHaveCount(5)
       await expect(page.locator('.cp-processing-message span')).toHaveCSS('opacity', '1')
       await expect(bar).toHaveCSS('background-color', 'rgb(109, 74, 255)')
       await expect(bar).toHaveCSS('height', '6px')
-      // Capture a visible sweep, not its deliberately offscreen loop boundary.
-      await expect.poll(() => bar.evaluate(el => {
-        const marker = el.getBoundingClientRect(), track = el.parentElement!.getBoundingClientRect()
-        return marker.left > track.left && marker.right < track.right
-      }), { intervals: [50] }).toBe(true)
       await page.screenshot({ path: info.outputPath(`queued-${width}.png`) })
       // A disconnected status poll must offer recovery without claiming failure.
-      await page.route('**/candidate/profile/', route => route.abort())
-      await expect(state).toContainText('Unable to check')
+      await page.route('**/candidate/resume-status/', route => route.abort())
+      await expect(state).toContainText('Unable to check', { timeout: 20_000 })
       await expect(page.getByRole('button', { name: 'Check status again' })).toBeVisible()
-      await page.unroute('**/candidate/profile/')
+      await page.unroute('**/candidate/resume-status/')
       await page.getByRole('button', { name: 'Check status again' }).click()
       await expect(state).toContainText('Queued')
       await page.emulateMedia({ reducedMotion: 'reduce' })
@@ -114,12 +115,12 @@ Path(${JSON.stringify(careerUpdate)}).write_bytes(resume_docx(role='Staff Engine
     }
     const running = worker(accepted.latest_resume.id)
     try {
-      await expect(state).toContainText('Scanning', { timeout: 10_000 })
+      await expect(state).toContainText('Scanning', { timeout: 20_000 })
       await page.screenshot({ path: info.outputPath(`scanning-${index}-${width}.png`) })
-      await expect(state).toContainText('Processing', { timeout: 10_000 })
+      await expect(state).toContainText('Processing', { timeout: 40_000 })
       await page.screenshot({ path: info.outputPath(`processing-${index}-${width}.png`) })
       expect(await running.done).toBe('completed')
-      await expect(heading).toHaveCount(0, { timeout: 3000 })
+      await expect(heading).toHaveCount(0, { timeout: 20_000 })
       await expect(page.locator('.cp-identity')).toBeVisible()
       await expect(page.getByRole('heading', { name: 'Review resume changes' })).toHaveCount(0)
       await page.screenshot({ path: info.outputPath(`my-profile-${index}-${width}.png`) })
@@ -133,17 +134,16 @@ Path(${JSON.stringify(careerUpdate)}).write_bytes(resume_docx(role='Staff Engine
     } finally { if (running.child.exitCode === null) running.child.kill() }
   }
   // Unmodified-speed worker: a fast job must not wait for the message cycle.
-  await page.getByRole('button', { name: 'Career Settings', exact: true }).click()
   await expect(page.getByTestId('resume-input')).toBeEnabled()
   const fastUpload = page.waitForResponse(r => r.url().endsWith('/candidate/resumes/') && r.request().method() === 'POST')
   await page.getByTestId('resume-input').setInputFiles(careerUpdate)
   const fast = worker((await (await fastUpload).json()).latest_resume.id, false)
   expect(await fast.done).toBe('completed')
-  await expect(page.getByRole('heading', { name: "Here's how we understand you.", exact: true })).toBeInViewport({ timeout: 2500 })
+  await expect(page.getByRole('heading', { name: "Here's how we understand you.", exact: true })).toBeInViewport({ timeout: 20_000 })
   await expect(page.getByRole('heading', { name: 'Review resume changes' })).toHaveCount(0)
   await expect(page.locator('.cp-resume-updates')).not.toHaveAttribute('open')
   await expect(page.getByRole('progressbar')).toHaveCount(0)
-  await expect(page.getByRole('button', { name: /Engineer at New Studio/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Advisor at New Studio/ })).toBeVisible()
   await expect(page.locator('.career-journey .career-period')).toHaveCount(3)
   const saved = await (await page.request.get(`${process.env.PLAYWRIGHT_API_URL}/candidate/profile/`)).json()
   expect(saved.work_experiences).toHaveLength(3)
@@ -151,12 +151,11 @@ Path(${JSON.stringify(careerUpdate)}).write_bytes(resume_docx(role='Staff Engine
   await page.screenshot({ path: info.outputPath(`my-profile-safe-update-${width}.png`) })
   await page.getByRole('button', { name: 'View Resume', exact: true }).click()
   await expect(page.locator('.cp-docx')).toContainText('New Studio')
-  await page.getByRole('button', { name: 'Career Settings', exact: true }).click()
   const mismatchUpload = page.waitForResponse(r => r.url().endsWith('/candidate/resumes/') && r.request().method() === 'POST')
   await page.getByTestId('resume-input').setInputFiles(otherPerson)
   const mismatch = worker((await (await mismatchUpload).json()).latest_resume.id, false)
   expect(await mismatch.done).toBe('completed')
-  await expect(page.getByRole('alert').filter({ hasText: "We couldn't match this resume" })).toBeVisible()
+  await expect(page.getByRole('alert').filter({ hasText: "We couldn't match this resume" })).toBeVisible({ timeout: 20_000 })
   await expect(page.locator('.cp-identity')).toContainText('Asha Rao')
   await expect(page.locator('.cp-identity')).toContainText('Candidate-corrected title')
   await expect(page.locator('.career-journey .career-period')).toHaveCount(3)

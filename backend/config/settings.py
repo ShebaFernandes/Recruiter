@@ -1,8 +1,10 @@
 import os
 import sys
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import dj_database_url
+from botocore.config import Config
 from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -73,6 +75,7 @@ DATABASES = {
     "default": dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=60,
+        conn_health_checks=True,
     )
 }
 
@@ -82,10 +85,15 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
+
+
+
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Kolkata"
 USE_I18N = True
 USE_TZ = True
+
+
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STORAGES = {
@@ -115,7 +123,11 @@ RATE_LIMIT_TRUST_X_FORWARDED_FOR = (
 if os.getenv("AWS_STORAGE_BUCKET_NAME"):
     STORAGES["default"] = {
         "BACKEND": "storages.backends.s3.S3Storage",
-        "OPTIONS": {"default_acl": "private", "querystring_auth": True},
+        "OPTIONS": {
+            "default_acl": None,
+            "querystring_auth": True,
+            "object_parameters": {"ServerSideEncryption": "AES256"},
+        },
     }
     AWS_STORAGE_BUCKET_NAME = os.environ["AWS_STORAGE_BUCKET_NAME"]
     AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME", "auto")
@@ -126,6 +138,10 @@ if os.getenv("AWS_STORAGE_BUCKET_NAME"):
     AWS_QUERYSTRING_AUTH = True
     AWS_QUERYSTRING_EXPIRE = 300
     AWS_S3_FILE_OVERWRITE = False
+    AWS_S3_CLIENT_CONFIG = Config(
+        connect_timeout=3, read_timeout=15,
+        retries={"max_attempts": 2, "mode": "standard"},
+    )
 
 if not DEBUG and not os.getenv("AWS_STORAGE_BUCKET_NAME"):
     raise ImproperlyConfigured(
@@ -163,6 +179,15 @@ if not DEBUG:
     public_origins = [*CORS_ALLOWED_ORIGINS, *CSRF_TRUSTED_ORIGINS, FRONTEND_URL]
     if any(not origin.startswith("https://") for origin in public_origins):
         raise ImproperlyConfigured("Production frontend, CORS, and CSRF origins must use HTTPS.")
+    if any("*" in host or host.startswith(".") for host in ALLOWED_HOSTS):
+        raise ImproperlyConfigured("Production ALLOWED_HOSTS must contain exact host names.")
+    for origin in public_origins:
+        parsed = urlsplit(origin)
+        if (not parsed.hostname or parsed.username or parsed.password or "*" in origin
+                or parsed.path not in {"", "/"} or parsed.query or parsed.fragment):
+            raise ImproperlyConfigured("Production origins must be exact HTTPS origins.")
+    if DATABASES["default"]["ENGINE"] != "django.db.backends.postgresql":
+        raise ImproperlyConfigured("Production requires PostgreSQL.")
 
 RESUME_QUEUE_BACKEND = os.getenv("RESUME_QUEUE_BACKEND", "database")
 RESUME_SQS_QUEUE_URL = os.getenv("RESUME_SQS_QUEUE_URL", "")
@@ -183,6 +208,12 @@ RESUME_SCANNER_BACKEND = os.getenv("RESUME_SCANNER_BACKEND", "development")
 RESUME_SCAN_TIMEOUT_SECONDS = int(os.getenv("RESUME_SCAN_TIMEOUT_SECONDS", "30"))
 CLAMAV_HOST = os.getenv("CLAMAV_HOST", "127.0.0.1")
 CLAMAV_PORT = int(os.getenv("CLAMAV_PORT", "3310"))
+RESUME_PROCESS_HARD_TIMEOUT_SECONDS = int(os.getenv("RESUME_PROCESS_HARD_TIMEOUT_SECONDS", "240"))
+RESUME_PROCESS_MEMORY_MB = int(os.getenv("RESUME_PROCESS_MEMORY_MB", "768"))
+RESUME_WORKER_HEALTH_SECONDS = RESUME_PROCESS_HARD_TIMEOUT_SECONDS + 60
+RESUME_QUEUE_ALERT_SECONDS = int(os.getenv("RESUME_QUEUE_ALERT_SECONDS", "600"))
+DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024
 
 if not DEBUG:
     if RESUME_QUEUE_BACKEND != "sqs" or not RESUME_SQS_QUEUE_URL:
@@ -198,14 +229,20 @@ if not DEBUG:
         raise ImproperlyConfigured(
             "SQS visibility timeout must exceed the resume processing timeout."
         )
-    if RESUME_SCANNER_BACKEND == "development":
+    if RESUME_SCANNER_BACKEND != "clamav":
         raise ImproperlyConfigured(
             "Production resume processing requires a real malware scanner backend."
         )
+    if not 10 <= RESUME_PROCESS_HARD_TIMEOUT_SECONDS < RESUME_PROCESSING_TIMEOUT_SECONDS:
+        raise ImproperlyConfigured("Worker hard timeout must be shorter than its lease.")
+    if not 256 <= RESUME_PROCESS_MEMORY_MB <= 2048:
+        raise ImproperlyConfigured("Worker memory limit must be between 256 and 2048 MB.")
 
 SECURE_SSL_REDIRECT = (
     os.getenv("SECURE_SSL_REDIRECT", "false" if DEBUG else "true").lower() == "true"
 )
+if not DEBUG and not SECURE_SSL_REDIRECT:
+    raise ImproperlyConfigured("Production must enforce HTTPS.")
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -268,7 +305,7 @@ SUBMISSION_CONSENT_VERSION = os.getenv(
 
 AI_PROVIDER = os.getenv(
     "AI_PROVIDER",
-    "deterministic" if TESTING else ("openrouter" if DEBUG else "openai"),
+    "deterministic" if TESTING else "disabled",
 ).lower()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_SEARCH_MODEL = os.getenv("OPENAI_SEARCH_MODEL", "gpt-4o-mini")
@@ -319,18 +356,24 @@ AI_ALLOW_DETERMINISTIC_FALLBACK = (
 )
 
 if not DEBUG:
-    if AI_PROVIDER not in {"openai", "openrouter"}:
-        raise ImproperlyConfigured("Production AI_PROVIDER must be openai or openrouter.")
+    if AI_PROVIDER not in {"disabled", "openai", "openrouter"}:
+        raise ImproperlyConfigured("Production AI_PROVIDER must be disabled, openai or openrouter.")
     provider_key = OPENAI_API_KEY if AI_PROVIDER == "openai" else OPENROUTER_API_KEY
-    if not provider_key:
+    if AI_PROVIDER != "disabled" and not provider_key:
         raise ImproperlyConfigured(
             f"Production AI_PROVIDER={AI_PROVIDER} requires its server-side API key."
         )
+
     if AI_ALLOW_DETERMINISTIC_FALLBACK:
         raise ImproperlyConfigured(
             "Production AI search must fail clearly instead of silently using "
             "deterministic fallback."
         )
+
+# This is a release gate, not legal text. Approval must refer to the actual published documents.
+LEGAL_CONTENT_APPROVED = os.getenv("LEGAL_CONTENT_APPROVED", "false").lower() == "true"
+if APP_ENV == "production" and not LEGAL_CONTENT_APPROVED:
+    raise ImproperlyConfigured("Approve published privacy, terms and consent before public launch.")
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ["talent.authentication.ExpiringTokenAuthentication"],

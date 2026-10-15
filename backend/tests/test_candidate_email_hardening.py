@@ -193,7 +193,8 @@ def load_settings(overrides):
            "EMAIL_BACKEND": "django.core.mail.backends.smtp.EmailBackend",
            "EMAIL_HOST": "smtp.example.test", "EMAIL_HOST_USER": "placeholder",
            "EMAIL_HOST_PASSWORD": "placeholder", "DEFAULT_FROM_EMAIL": "test@example.test",
-           "EMAIL_USE_TLS": "true", "OPENAI_API_KEY": "placeholder"}
+           "EMAIL_USE_TLS": "true", "AI_PROVIDER": "disabled",
+           "LEGAL_CONTENT_APPROVED": "true"}
     env.update(overrides)
     return subprocess.run(
         [sys.executable, "-c", "from config import settings; "
@@ -204,6 +205,14 @@ def load_settings(overrides):
 
 
 @pytest.mark.parametrize("overrides,expected", [
+    ({"LEGAL_CONTENT_APPROVED": "false"}, "Approve published privacy"),
+    ({"ALLOWED_HOSTS": "*"}, "exact host names"),
+    ({"CORS_ALLOWED_ORIGINS": "https://*.example.com"}, "exact HTTPS origins"),
+    ({"SECURE_SSL_REDIRECT": "false"}, "must enforce HTTPS"),
+    ({"AI_PROVIDER": "openai", "OPENAI_API_KEY": ""}, "server-side API key"),
+    ({"AI_ALLOW_DETERMINISTIC_FALLBACK": "true"}, "silently using"),
+    ({"RESUME_SCANNER_BACKEND": "development"}, "real malware scanner"),
+    ({"RESUME_PROCESS_HARD_TIMEOUT_SECONDS": "400"}, "shorter than its lease"),
     ({"APP_ENV": "staging", "DEBUG": "true"}, "must disable DEBUG and TESTING"),
     ({"TESTING": "true"}, "must disable DEBUG and TESTING"),
     ({"EXPOSE_LOCAL_EMAIL_LINKS": "true"}, "shortcuts are forbidden"),

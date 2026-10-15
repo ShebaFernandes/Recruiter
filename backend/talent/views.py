@@ -65,7 +65,9 @@ from .serializers import (
     SignupSerializer,
 )
 from .services import calculate_match
+from .storage_cleanup import store_private_upload
 from .throttling import (
+    AccountDeletionRateThrottle,
     LoginRateThrottle,
     PasswordResetConfirmRateThrottle,
     PasswordResetRateThrottle,
@@ -449,12 +451,16 @@ def submit_candidate_profile(request):
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
-    if request.data.get("consent") is not True and not profile.submission_consent_at:
+    current_consent = (
+        profile.submission_consent_at
+        and profile.submission_consent_version == settings.SUBMISSION_CONSENT_VERSION
+    )
+    if request.data.get("consent") is not True and not current_consent:
         return Response(
             {"detail": "Confirm profile-sharing consent before submitting."},
             status=status.HTTP_400_BAD_REQUEST,
         )
-    if profile.profile_status != CandidateProfile.ProfileStatus.SUBMITTED:
+    if profile.profile_status != CandidateProfile.ProfileStatus.SUBMITTED or not current_consent:
         now = timezone.now()
         profile.profile_status = CandidateProfile.ProfileStatus.SUBMITTED
         profile.submitted_at = now
@@ -474,6 +480,7 @@ def submit_candidate_profile(request):
 
 @api_view(["DELETE"])
 @permission_classes([IsCandidate])
+@throttle_classes([AccountDeletionRateThrottle])
 def delete_candidate_account(request):
     if request.data.get("confirmation") != "DELETE":
         return Response(
@@ -484,16 +491,10 @@ def delete_candidate_account(request):
         return Response(
             {"detail": "Your password is incorrect."}, status=status.HTTP_400_BAD_REQUEST
         )
-    resumes = list(request.user.candidate_profile.resumes.all())
-    try:
-        for resume in resumes:
-            resume.file.delete(save=False)
-    except Exception:
-        return Response(
-            {"detail": "We could not remove your stored resume. Your account was not deleted."},
-            status=status.HTTP_503_SERVICE_UNAVAILABLE,
-        )
     with transaction.atomic():
+        # Cascading delete signals write the storage cleanup outbox in this transaction.
+        # Access is revoked immediately; storage outages cannot leave a half-deleted account.
+        CandidateProfile.objects.select_for_update().get(user=request.user)
         request.user.delete()
     response = Response(status=status.HTTP_204_NO_CONTENT)
     response.delete_cookie(
@@ -534,13 +535,14 @@ def resume_upload(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
     profile = request.user.candidate_profile
+    stored_name = store_private_upload(uploaded, "quarantine", uploaded.name)
     with transaction.atomic():
         profile = CandidateProfile.objects.select_for_update().get(pk=profile.pk)
         latest_resume = profile.resumes.order_by("-version", "-uploaded_at").first()
         version = latest_resume.version + 1 if latest_resume else 1
         resume = Resume.objects.create(
             candidate=profile,
-            file=uploaded,
+            file=stored_name,
             original_name=Path(uploaded.name).name[:255],
             version=version,
             processing_status=Resume.ProcessingStatus.UPLOADED,

@@ -101,7 +101,17 @@ def extract_text(file_obj, filename):
     extension = Path(filename).suffix.lower()
     file_obj.seek(0)
     if extension == ".pdf":
-        return "\n".join(page.extract_text() or "" for page in PdfReader(file_obj).pages)
+        reader = PdfReader(file_obj)
+        if len(reader.pages) > 100:
+            raise ValueError("Resume exceeds the safe page limit.")
+        parts, characters = [], 0
+        for page in reader.pages:
+            text = page.extract_text() or ""
+            characters += len(text)
+            if characters > 500_000:
+                raise ValueError("Resume exceeds the safe text limit.")
+            parts.append(text)
+        return "\n".join(parts)
     if extension == ".docx":
         document = read_docx(file_obj)
         return "\n".join(

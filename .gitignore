@@ -1,5 +1,8 @@
 .DS_Store
 .env
+.env.production
+*.dump
+backups/
 .venv/
 __pycache__/
 *.py[cod]
