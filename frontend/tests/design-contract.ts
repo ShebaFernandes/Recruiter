@@ -26,19 +26,20 @@ export async function expectEnterPrimary(button: Locator, colors = enterColors) 
 }
 
 export async function expectEnterField(field: Locator, colors = enterColors) {
-  await expect(field).toHaveCSS('background-color', colors.surface)
+  await expect(field).toHaveCSS('background-color', 'rgba(255, 255, 255, 0.98)')
   await expect(field).toHaveCSS('border-radius', '6px')
   await expect(field).toHaveCSS('font-family', /DM Sans/)
   await field.focus()
   // All form controls have either the shared focus halo or the keyboard outline.
   await expect.poll(() => field.evaluate((el, primary) => {
     const s = getComputedStyle(el)
-    return s.outlineStyle === 'solid' && s.outlineColor === primary || s.boxShadow.includes(primary.slice(4, -1))
+    return s.outlineStyle === 'solid' && s.outlineColor === primary || s.boxShadow === 'rgba(22, 59, 101, 0.16) 0px 0px 0px 3px'
   }, colors.primary)).toBe(true)
 }
 
-export async function expectEnterCard(card: Locator, colors = enterColors) {
-  await expect(card).toHaveCSS('background-color', colors.surface)
-  await expect(card).toHaveCSS('border-color', colors.border)
-  await expect(card).toHaveCSS('border-radius', '10px')
+export async function expectEnterCard(card: Locator, kind: 'auth' | 'result' = 'result') {
+  // Approved near-solid ivory hierarchy; dense results are more opaque than auth.
+  await expect(card).toHaveCSS('background-color', kind === 'auth' ? 'rgba(250, 248, 244, 0.94)' : 'rgba(250, 248, 244, 0.96)')
+  await expect(card).toHaveCSS('border-color', kind === 'auth' ? 'rgba(255, 255, 255, 0.38)' : 'rgba(255, 255, 255, 0.42)')
+  await expect(card).toHaveCSS('border-radius', kind === 'auth' ? '16px' : '10px')
 }

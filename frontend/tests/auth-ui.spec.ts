@@ -9,8 +9,10 @@ async function screenshot(page: Page, info: TestInfo, name: string, width: numbe
   await page.screenshot({ path: info.outputPath(`${name}-${width}.png`), fullPage: true, animations: 'disabled' })
 }
 
-for (const width of [1440, 1024, 390]) {
+for (const width of [1440, 1024, 768, 390]) {
   test(`authentication screens remain clear and usable at ${width}px`, async ({ page }, info) => {
+    // This case visits both roles and captures eight auth states, including video assets.
+    test.setTimeout(60_000)
     await page.setViewportSize({ width, height: 900 })
     await page.goto('/')
     for (const role of ['recruiters', 'candidates']) {
@@ -21,7 +23,7 @@ for (const width of [1440, 1024, 390]) {
       await expect(page.locator('.candidate-laptop')).toHaveCount(0)
       if (role === 'candidates') await expect(page.locator('.onboarding-art')).toHaveCount(0)
       await expectEnterPage(page, page.locator('.auth-editorial'), colors)
-      await expectEnterCard(page.locator('.auth-card'), colors)
+      await expectEnterCard(page.locator('.auth-card'), 'auth')
       await expectEnterPrimary(page.getByRole('button', { name: role === 'recruiters' ? 'Log in' : 'Create account', exact: true }), colors)
       await expectEnterField(page.getByLabel('Email'), colors)
       await expect(page.getByText(role === 'recruiters' ? 'RECRUITER WORKSPACE' : 'CANDIDATE PROFILE', { exact: true })).toBeVisible()

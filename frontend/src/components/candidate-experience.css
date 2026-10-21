@@ -454,7 +454,7 @@
   .candidate-experience .candidate-upload-card { padding:16px; }
   .candidate-experience .cv-dropzone { flex-direction:column; gap:16px; padding:16px; }
   .cp-beyond { margin-top:16px; padding-top:14px; }
-  .cp-beyond button,.cp-beyond .cp-chips button,.cp-beyond .cp-add-choice,.candidate-experience .cp-continue { min-height:34px; }
+  .cp-beyond button,.candidate-experience .cp-beyond .cp-chips button,.cp-beyond .cp-add-choice,.candidate-experience .cp-continue { min-height:34px; }
   .candidate-experience .cp-beyond textarea { font-size:13px; }
   .cp-footer { margin-top:36px; }
   .cp-footer-row { align-items:flex-start; flex-direction:column; }
@@ -487,7 +487,7 @@
 }
 @media(pointer:coarse) {
   .cp-photo-actions :is(label,button) { min-height:40px; padding-inline:8px; }
-  .cp-beyond button,.cp-beyond .cp-chips button,.cp-beyond .cp-add-choice,.candidate-experience .cp-continue { min-height:34px; }
+  .cp-beyond button,.candidate-experience .cp-beyond .cp-chips button,.cp-beyond .cp-add-choice,.candidate-experience .cp-continue { min-height:34px; }
 }
 @media (max-width:640px), (pointer:coarse) {
   .candidate-experience .cp-settings-editor :is(input:not([type=hidden]):not([type=checkbox]),select) { min-height:44px; }

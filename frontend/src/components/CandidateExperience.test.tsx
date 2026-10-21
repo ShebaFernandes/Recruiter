@@ -103,7 +103,8 @@ describe('candidate career experience', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Maximize resume' }))
     expect(screen.getByRole('dialog')).toBeVisible()
     const minimize = screen.getByRole('button', { name: 'Minimize resume' })
-    const documentContent = container.querySelector<HTMLElement>('.cp-docx')!
+    const documentContent = screen.getByRole('dialog').querySelector<HTMLElement>('.cp-docx')!
+    expect(container.querySelector('[role="dialog"]')).toBeNull()
     expect(minimize).toHaveFocus()
     fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
     expect(documentContent).toHaveFocus()
@@ -111,6 +112,7 @@ describe('candidate career experience', () => {
     expect(minimize).toHaveFocus()
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Maximize resume' })).toHaveFocus()
     fireEvent.click(screen.getByRole('button', { name: 'Collapse resume' }))
     expect(screen.queryByText('<script>private original text</script>')).not.toBeInTheDocument()
   })

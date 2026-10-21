@@ -95,7 +95,7 @@ async function saved(page: Page, action: () => Promise<unknown>) {
   expect((await response).status()).toBe(200)
 }
 
-test('compact Beyond the CV selection animation, persistence and reduced motion', async ({ page }, info) => {
+test('compact Beyond the CV inline choices, persistence and reduced motion', async ({ page }, info) => {
   test.setTimeout(120_000)
   await page.setViewportSize({ width: 1440, height: 1000 })
   await signup(page, 'compact-beyond')
@@ -109,49 +109,30 @@ test('compact Beyond the CV selection animation, persistence and reduced motion'
   await expect(beyond.locator('.cp-question-number')).toHaveCount(0)
   await expect(chip).toHaveCSS('font-size', '11px')
   expect((await chip.boundingBox())!.height).toBeGreaterThanOrEqual(27)
-  expect((await chip.boundingBox())!.height).toBeLessThanOrEqual(30)
+  // Approved compact chips retain a 32px desktop interaction target.
+  expect((await chip.boundingBox())!.height).toBe(32)
   await expect(beyond.locator('textarea')).toHaveCSS('font-style', 'normal')
   await saved(page, () => beyond.locator('textarea').fill('Built a reliable recovery platform.'))
   await expect(beyond.getByRole('button', { name: 'Save answer' })).toHaveCount(0)
   await expect(beyond.locator('textarea')).toHaveCSS('border-top-width', '0px')
-  // Observe rendered animation frames and its real completion event, not just a CSS rule.
-  await chip.evaluate(element => {
-    const trace = { shadows: [] as string[], elapsed: 0 }
-    Object.assign(element, { glowTrace: trace })
-    element.addEventListener('animationstart', () => {
-      const sample = () => {
-        trace.shadows.push(getComputedStyle(element).boxShadow)
-        if (!trace.elapsed) requestAnimationFrame(sample)
-      }
-      requestAnimationFrame(sample)
-    }, { once: true })
-    element.addEventListener('animationend', event => { trace.elapsed = (event as AnimationEvent).elapsedTime }, { once: true })
-  })
   await saved(page, () => chip.click())
   await expect(chip).toHaveAttribute('aria-pressed', 'true')
-  await expect.poll(() => chip.evaluate(element => (element as HTMLElement & { glowTrace: { elapsed: number } }).glowTrace.elapsed)).toBeCloseTo(0.32)
-  const shadows = await chip.evaluate(element => (element as HTMLElement & { glowTrace: { shadows: string[] } }).glowTrace.shadows)
-  expect(new Set(shadows).size).toBeGreaterThan(2)
-  await expect(chip).not.toHaveClass(/cp-chip-glow/)
+  await expect(chip).toHaveCSS('background-color', 'rgb(11, 115, 120)')
+  await expect(chip).toHaveCSS('color', 'rgb(255, 255, 255)')
   await saved(page, () => chip.click())
   await expect(chip).toHaveAttribute('aria-pressed', 'false')
   await chip.focus()
   await saved(page, () => page.keyboard.press('Space'))
-  // Inspect a real browser-rendered animation midpoint; resume it after the screenshot.
-  await chip.evaluate(element => {
-    const animation = element.getAnimations().find(a => a instanceof CSSAnimation && a.animationName === 'cp-selection-glow')
-    if (!animation) throw new Error('Selection glow did not replay')
-    animation.pause(); animation.currentTime = 140
-  })
-  await motivations.screenshot({ path: info.outputPath('selection-glow.png') })
-  await chip.evaluate(element => element.getAnimations().forEach(animation => animation.play()))
+  await expect(chip).toHaveAttribute('aria-pressed', 'true')
+  await motivations.screenshot({ path: info.outputPath('selected-choices.png') })
   await saved(page, () => motivations.getByRole('button', { name: 'More ownership', exact: true }).click())
   await motivations.getByRole('button', { name: '+ Add my own', exact: true }).click()
   await page.getByLabel('Your own motivation').fill('Research time')
-  await saved(page, () => motivations.getByRole('button', { name: 'Add option', exact: true }).click())
+  await expect(motivations.getByRole('button', { name: 'Add option', exact: true })).toHaveCount(0)
+  await saved(page, () => page.getByLabel('Your own motivation').press('Enter'))
   await exclusions.getByRole('button', { name: '+ Add my own', exact: true }).click()
   await page.getByLabel('Your own exclusion').fill('Frequent travel')
-  await saved(page, () => exclusions.getByRole('button', { name: 'Add option', exact: true }).click())
+  await saved(page, () => page.getByLabel('Your own exclusion').press('Enter'))
   await page.reload()
   await page.getByRole('button', { name: "That's me ✓" }).click()
   await expect(beyond.locator('textarea')).toHaveValue('Built a reliable recovery platform.')
@@ -449,7 +430,7 @@ test('real candidate resume, timeline, preferences, replacement, preview and acc
   await page.locator('.cp-question').filter({ has: page.getByRole('heading', { name: 'What should we NEVER call you for?' }) }).getByRole('button', { name: '+ Add my own', exact: true }).click()
   await page.getByLabel('Your own exclusion').fill('Frequent travel')
   await layouts(page, info, 'custom-option')
-  await saved(page, () => page.getByRole('button', { name: 'Add option' }).click())
+  await saved(page, () => page.getByLabel('Your own exclusion').press('Enter'))
   await saved(page, () => page.getByRole('button', { name: 'Frequent travel' }).click())
   await page.reload()
   await page.getByRole('button', { name: "That's me ✓", exact: true }).click()
@@ -458,7 +439,7 @@ test('real candidate resume, timeline, preferences, replacement, preview and acc
   await layouts(page, info, 'profile-selected')
   await page.getByRole('button', { name: 'Help Center', exact: true }).click()
   await layouts(page, info, 'help')
-  await expect(page.getByRole('button', { name: 'Add preferred work setup', exact: true })).toHaveCount(1)
+  await expect(page.getByRole('button', { name: 'Add preferred work mode', exact: true })).toHaveCount(1)
   await expect(page.locator('.cp-settings-panel')).toHaveCSS('position', 'static')
   await expect(page.locator('.cp-settings-panel')).toHaveCSS('overflow-y', 'visible')
   await expect(page.getByRole('link', { name: 'ENTER Recruitment on LinkedIn' })).toHaveAttribute('href', 'https://www.linkedin.com/company/enterrecruitment/posts/?feedView=all')
