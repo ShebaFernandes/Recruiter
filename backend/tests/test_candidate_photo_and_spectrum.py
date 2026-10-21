@@ -28,6 +28,53 @@ def image_file(name="profile.jpg", image_format="JPEG", size=(180, 140), private
     )
 
 
+@pytest.mark.parametrize("image_format", ["JPEG", "PNG", "WEBP"])
+def test_photo_thumbnail_preserves_orientation_and_strips_exif(image_format):
+    from talent.candidate_views import _normalized_photo
+
+    source = Image.new("RGB", (1600, 800), "red")
+    source.paste("blue", (800, 0, 1600, 800))
+    exif = Image.Exif()
+    exif[274] = 6  # Rotate 90 degrees clockwise.
+    exif[270] = "PRIVATE CAMERA NOTE"
+    buffer = BytesIO()
+    source.save(buffer, image_format, exif=exif)
+    upload = SimpleUploadedFile("photo", buffer.getvalue())
+    content, _, _ = _normalized_photo(upload)
+    normalized_bytes = content.read()
+    with Image.open(BytesIO(normalized_bytes)) as result:
+        result.load()
+        assert result.format == image_format
+        assert result.size == (600, 1200)
+        top = result.convert("RGB").getpixel((300, 100))
+        bottom = result.convert("RGB").getpixel((300, 1100))
+        assert top[0] > top[2] and bottom[2] > bottom[0]
+        assert not result.getexif()
+    assert b"PRIVATE CAMERA NOTE" not in normalized_bytes
+
+
+@pytest.mark.parametrize("image_format", ["TIFF", "GIF", "PPM"])
+def test_photo_rejects_unsupported_formats_even_with_jpeg_filename(image_format):
+    from talent.candidate_views import _normalized_photo
+
+    buffer = BytesIO()
+    Image.new("RGB", (100, 100)).save(buffer, image_format)
+    with pytest.raises(ValueError, match="not a valid image"):
+        _normalized_photo(SimpleUploadedFile("fake.jpg", buffer.getvalue()))
+
+
+def test_photo_rejects_truncated_and_decompression_bomb_inputs(monkeypatch):
+    from talent.candidate_views import _normalized_photo
+
+    valid = image_file(size=(180, 140))
+    with pytest.raises(ValueError):
+        _normalized_photo(SimpleUploadedFile("truncated.jpg", valid.read()[:100]))
+    # Exercise the real decoder guard without allocating a huge malicious image.
+    monkeypatch.setattr(Image, "MAX_IMAGE_PIXELS", 100)
+    with pytest.raises(ValueError, match="not a valid image"):
+        _normalized_photo(image_file())
+
+
 @pytest.mark.django_db(transaction=True)
 def test_candidate_photo_is_normalized_private_replaceable_and_removable(
     client, candidate_account, tmp_path
