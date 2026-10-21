@@ -39,7 +39,7 @@ test('candidate created in the UI is discovered and updated in the recruiter UI'
   await page.getByRole('button', { name: 'Create account' }).click()
   await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible({ timeout: 20_000 })
   await page.goto(`/?verify-email=${issueLocalAccountToken(candidateEmail, 'verify_email')}`)
-  await expect(page.getByRole('heading', { name: 'Start with your resume.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Start with your resume' })).toBeVisible()
 
   await page.getByTestId('resume-input').setInputFiles(pdfPath)
   await expect(page.locator('.cp-identity')).toContainText('Priya Nair', { timeout: 30_000 })

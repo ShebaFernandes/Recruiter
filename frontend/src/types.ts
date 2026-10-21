@@ -80,6 +80,7 @@ export type Candidate = {
   can_submit: boolean
 }
 export type CareerPreferences = {
+  portfolio_url?: string
   custom_motivators?: string[]
   custom_exclusions?: string[]
   motivators?: string[]

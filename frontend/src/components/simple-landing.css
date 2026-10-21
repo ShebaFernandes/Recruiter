@@ -1,0 +1,7 @@
+/* af8e849 foreground, with the current background supplied independently. */
+.simple-landing { background:transparent; }
+.simple-landing .ce-company-preview { background:transparent; border-top-color:transparent; }
+.simple-landing .ce-company-logo img { opacity:.55; }
+.simple-landing .ce-nanonets-lockup { color:rgba(80,80,80,.65); }
+.simple-landing .ce-masthead .ce-logo,
+.simple-landing .ce-intro h1 { animation:none; }

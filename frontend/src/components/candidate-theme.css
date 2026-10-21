@@ -1,0 +1,123 @@
+/* Shared identity refinements. All palettes, including body-portalled dialogs,
+   inherit design-tokens.css. Page styles retain their existing composition. */
+.app-shell:has(> .candidate-experience) {
+  background: var(--enter-bg);
+  color: var(--enter-text);
+}
+.career-edition, .ce-company-popover {
+  --enter-bg: var(--enter-surface);
+  --paper: var(--enter-surface);
+  --color-canvas: var(--enter-surface);
+}
+body:has(.career-edition, .candidate-theme, .candidate-experience),
+.auth-page { background: var(--enter-bg); }
+
+/* Small active details share teal; primary actions remain navy. */
+:is(.candidate-experience, .recruiter-page, .workspace-ui) input[type=checkbox] {
+  accent-color: var(--enter-highlight);
+}
+.cp-spectrum input[type=range]::-webkit-slider-thumb {
+  background: var(--enter-highlight); box-shadow: none;
+}
+.cp-spectrum input[type=range]::-moz-range-thumb {
+  background: var(--enter-highlight); box-shadow: none;
+}
+.workspace-ui .workspace-list > button.active {
+  background: var(--enter-selected); box-shadow: inset 2px 0 var(--enter-highlight);
+  color: var(--enter-selected-text);
+}
+.recruiter-page .recruiter-rail > button.active {
+  background: var(--enter-selected); color: var(--enter-selected-text);
+}
+.cp-chips button[aria-pressed=true], .cp-choice:has(input:checked),
+.cp-locations li[aria-selected=true] {
+  background: var(--enter-selected); border-color: var(--enter-highlight); color: var(--enter-selected-text);
+}
+.cp-location-chips > span { background: var(--enter-selected); color: var(--enter-selected-text); }
+.candidate-experience .cp-choice:has(input:checked),
+.candidate-experience .cp-locations li[aria-selected=true],
+.candidate-experience .cp-location-chips > span {
+  background:var(--enter-highlight); border-color:var(--enter-highlight); color:var(--enter-surface);
+}
+.candidate-experience .cp-location-chips > span button { color:inherit; }
+/* Profile accents share teal; Career Settings keeps neutral white surfaces. */
+.candidate-experience :is(.cp-professional-read, .cp-highlight) {
+  background:var(--enter-highlight-wash);
+}
+.candidate-experience :is(.cp-professional-read, .cp-highlight) h3 {
+  color:var(--enter-selected-text);
+}
+.candidate-experience :is(.cp-skill-chips, .cp-highlight-topics) span {
+  background:var(--enter-highlight);
+  border-color:var(--enter-highlight);
+  color:var(--enter-on-primary);
+}
+.candidate-experience .cp-standout { background:var(--enter-blue-wash); }
+.candidate-experience .cp-beyond-next { background:var(--enter-highlight-wash); color:var(--enter-selected-text); }
+/* Career Settings uses the same accents without recoloring primary actions. */
+.candidate-experience .cp-spectrum input[type=range]::-webkit-slider-thumb { background:var(--enter-highlight); }
+.candidate-experience .cp-spectrum input[type=range]::-moz-range-thumb { background:var(--enter-highlight); }
+.candidate-experience .cp-read-heading { display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
+.cp-read-heading .cp-read-wordmark { width:40px; height:13px; }
+.cp-read-heading .cp-read-sparkle { width:15px; height:15px; margin-right:3px; color:var(--enter-primary); }
+.candidate-experience .cp-setting-resume { display:block; }
+.candidate-experience .cp-setting-resume .cp-replace-control { width:100%; flex-direction:column; align-items:flex-start; gap:4px; background:var(--enter-surface); color:var(--enter-text); }
+.candidate-experience .cp-setting-resume .cp-replace-control small { font-size:10px; font-weight:400; color:var(--enter-text-muted); }
+.candidate-experience :is(.cp-profile-confirm,.cp-final-confirm,.cp-brief) button.primary { background:var(--enter-charcoal); border-color:var(--enter-charcoal); color:var(--enter-on-primary); }
+.candidate-experience :is(.cp-profile-confirm,.cp-final-confirm,.cp-brief) button.primary:hover { background:color-mix(in srgb,var(--enter-charcoal) 85%,black); border-color:var(--enter-charcoal); }
+.candidate-experience .cp-profile-confirm button.primary { min-width:145px; }
+.candidate-experience .cp-beyond .cp-chips button[aria-pressed=true] { background:var(--enter-highlight); border-color:var(--enter-highlight); color:var(--enter-on-primary); }
+.candidate-experience .cp-settings-panel .cp-setting-row > span:first-child,
+.candidate-experience .cp-settings-panel .cp-setting-edit {
+  color:var(--enter-primary);
+}
+.candidate-experience .cp-settings-panel button.cp-setting-row:hover,
+.candidate-experience .cp-settings-panel button.cp-setting-row[aria-expanded=true] {
+  background:var(--enter-surface);
+  border-color:var(--enter-border);
+}
+.candidate-experience .cp-settings-panel .cp-settings-inline-editor {
+  background:var(--enter-surface);
+  border-color:var(--enter-border);
+}
+.candidate-experience .cp-settings-panel .cp-settings-editor select {
+  background-color:var(--enter-surface);
+  border-color:var(--enter-border-strong);
+  background-image:linear-gradient(45deg,transparent 50%,var(--enter-primary) 50%),linear-gradient(135deg,var(--enter-primary) 50%,transparent 50%);
+}
+.candidate-experience .cp-settings-panel .cp-settings-editor select:hover:not(:disabled) {
+  background-color:var(--enter-surface);
+  border-color:var(--enter-primary);
+}
+.candidate-experience .cp-settings-panel .cp-settings-inline-editor :is(input,select,textarea):focus {
+  border-color:var(--enter-primary);
+  outline:2px solid var(--enter-primary);
+  outline-offset:-2px;
+  box-shadow:none;
+}
+.candidate-experience .cp-settings-panel .cp-setting-row:focus-visible {
+  outline:2px solid var(--enter-primary);
+  outline-offset:-2px;
+  box-shadow:none;
+}
+.candidate-experience .cp-settings-inline-editor .cp-settings-choices { padding:0; margin:0; }
+.cp-settings-choices legend { margin-bottom:8px; font-weight:600; }
+.cp-settings-choices > div { display:flex; flex-wrap:wrap; gap:6px; }
+.candidate-experience .cp-settings-choices .cp-choice { position:relative; min-height:24px; padding:3px 8px; font-size:11px; font-weight:550; line-height:1.35; }
+.candidate-experience .cp-settings-choices .cp-choice input { position:absolute; inset:0; width:100%; height:100%; min-height:0; margin:0; padding:0; opacity:0; cursor:pointer; }
+.cp-settings-choices .cp-choice span { pointer-events:none; }
+.candidate-experience .cp-settings-panel button.cp-setting-row[data-setting="availability"],
+.candidate-experience .cp-settings-panel #settings-editor-availability,
+.candidate-experience .cp-setting-resume .cp-replace-control {
+  background:var(--enter-highlight-wash);
+}
+.candidate-experience .cp-settings-panel button.cp-setting-row[data-setting="availability"] { padding-inline:8px; }
+/* Compact options: no outlined pills or separated double focus rings. */
+.candidate-experience .cp-settings-choices .cp-choice { border-color:transparent; margin:0; }
+.candidate-experience .cp-settings-choices .cp-choice:focus-within { outline:none; outline-offset:0; box-shadow:0 0 0 2px color-mix(in srgb,var(--enter-highlight) 40%,transparent),0 0 8px color-mix(in srgb,var(--enter-highlight) 18%,transparent); }
+.candidate-experience .cp-settings-panel .cp-settings-choices .cp-choice input:focus { outline:none; box-shadow:none; }
+.recruiter-results-ui .results-toolbar-actions .filter-button.active,
+.recruiter-results-ui .candidate-actions .stage-active,
+.workspace-ui .project-candidates .stage-active {
+  background: var(--enter-selected); color: var(--enter-selected-text); border-color: var(--enter-highlight);
+}

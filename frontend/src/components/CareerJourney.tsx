@@ -2,6 +2,8 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { WorkExperience } from '../types'
 import { sortCareerHistory } from '../careerHistory'
+import { CandidateMilestoneIcon } from './CandidateMilestoneIcon'
+import { candidateMilestoneDate } from './candidateMilestoneDate'
 import './career-journey.css'
 
 const month = 2629800000
@@ -20,7 +22,7 @@ const companyLabel = (name: string) => shortCompany(name)
   .trim() || shortCompany(name)
 
 /** Shared by recruiter cards/drawers and the candidate's own profile. No data fetching. */
-export default function CareerJourney({ items, detailed = false, showCompanyLabels = true, compactMarkers = false, profilePresentation = false, minimal = false, reverse = false, presentAtEnd = false }: { items: WorkExperience[]; detailed?: boolean; showCompanyLabels?: boolean; compactMarkers?: boolean; profilePresentation?: boolean; minimal?: boolean; reverse?: boolean; presentAtEnd?: boolean }) {
+export default function CareerJourney({ items, detailed = false, showCompanyLabels = true, compactMarkers = false, profilePresentation = false, minimal = false, reverse = false, presentAtEnd = false, candidateMilestones = false }: { items: WorkExperience[]; detailed?: boolean; showCompanyLabels?: boolean; compactMarkers?: boolean; profilePresentation?: boolean; minimal?: boolean; reverse?: boolean; presentAtEnd?: boolean; candidateMilestones?: boolean }) {
   const sorted = sortCareerHistory(items)
   const displayed = reverse ? [...sorted.filter(item => item.start_date)].reverse().concat(sorted.filter(item => !item.start_date)) : sorted
   const id = useId()
@@ -81,8 +83,8 @@ export default function CareerJourney({ items, detailed = false, showCompanyLabe
               onMouseEnter={e => { if (e.buttons === 0) show(e.currentTarget, data) }} onMouseLeave={leave}
               onFocus={e => show(e.currentTarget, data)} onBlur={close}
               onClick={e => { if (pinned.current === key) close(); else { pinned.current = key; show(e.currentTarget, data) } }}>
-              {displayCompanyLabel && <b>{minimal ? companyLabel(item.company) : item.company}</b>}<span className="career-period-line">{compactMarkers ? <span className="career-marker-icon" aria-hidden="true">{minimal ? null : '▦'}</span> : <><i /><i /></>}</span>
-              <small><span>{(reverse || minimal) && item.start_date && displayed[displayIndex - 1]?.start_date?.slice(0, 4) === item.start_date.slice(0, 4) ? '' : item.start_date?.slice(0, 4) || '?'}</span>{!compactMarkers && <i>{item.end_date?.slice(0, 4) || (ongoing(item) ? 'Now' : '?')}</i>}</small>
+              {displayCompanyLabel && <b>{minimal ? companyLabel(item.company) : item.company}</b>}<span className="career-period-line"><span className="career-marker-icon" aria-hidden="true"><CandidateMilestoneIcon /></span>{!compactMarkers && <><i /><i /></>}</span>
+              <small><span>{candidateMilestones ? candidateMilestoneDate(item) : (reverse || minimal) && item.start_date && displayed[displayIndex - 1]?.start_date?.slice(0, 4) === item.start_date.slice(0, 4) ? '' : item.start_date?.slice(0, 4) || '?'}</span>{!compactMarkers && <i>{item.end_date?.slice(0, 4) || (ongoing(item) ? 'Now' : '?')}</i>}</small>
               {detailed && <em>{item.role}</em>}
               {profilePresentation && <span className="career-role-summary"><span className="career-initial" aria-hidden="true">{item.company.trim().charAt(0).toLocaleUpperCase() || '·'}</span><strong>{item.company || 'Employer not specified'}</strong><span>{item.role || 'Role not specified'}</span><span className="career-role-dates">{period}</span></span>}
             </button>
@@ -91,6 +93,6 @@ export default function CareerJourney({ items, detailed = false, showCompanyLabe
       })}
       {presentAtEnd && sorted.some(ongoing) && <div className="career-present career-present-end" role="presentation"><span>Present</span><i aria-hidden="true" /></div>}
     </div>
-    {active && createPortal(<div id={id} className={`career-popover ${minimal ? 'candidate-career-popover' : ''}`} role="tooltip" onMouseEnter={() => clearTimeout(hideTimer.current)} onMouseLeave={leave} style={{ left: active.x, ...(active.above ? { bottom: active.y } : { top: active.y }) }}>{minimal ? <><strong>{active.company || active.title}</strong>{active.company && <span>{active.title}</span>}<small>{active.period}</small></> : <><strong>{active.company || active.title}</strong>{active.company && <b>{active.title}</b>}<span>{active.period}</span>{active.note && <span>{active.note}</span>}{active.detail && <p>{active.detail}</p>}</>}</div>, document.body)}
+    {active && createPortal(<div id={id} className={`career-popover ${minimal ? 'candidate-career-popover' : ''}`} role="tooltip" onMouseEnter={() => clearTimeout(hideTimer.current)} onMouseLeave={leave} style={{ left: active.x, ...(active.above ? { bottom: active.y } : { top: active.y }) }}>{minimal ? <><strong>{active.company || active.title}</strong>{active.company && <span>{active.title}</span>}<small>{active.period}</small>{candidateMilestones && <>{active.note && <p>{active.note}</p>}{active.detail && <p>{active.detail}</p>}</>}</> : <><strong>{active.company || active.title}</strong>{active.company && <b>{active.title}</b>}<span>{active.period}</span>{active.note && <span>{active.note}</span>}{active.detail && <p>{active.detail}</p>}</>}</div>, document.body)}
   </>
 }

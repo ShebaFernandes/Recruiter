@@ -1,0 +1,26 @@
+.enter-intro { position:sticky; top:0; height:100dvh; z-index:2; opacity:var(--intro-scene,1); outline:none; overflow:hidden; background:#081B36;  }
+.enter-intro-room { position:absolute; inset:0; background:radial-gradient(ellipse at 47% 37%, #285a91 0%, #12335c 38%, #081b36 78%); }
+.enter-intro-floor { position:absolute; inset:calc(50% + min(30svh,260px)) 0 0; background:linear-gradient(#06162c80,#10284f); box-shadow:0 -1px 0 #779bc51a; }
+.enter-intro-camera { position:absolute; inset:0; display:grid; place-items:center; perspective:1100px; perspective-origin:50% 50%; }
+.enter-intro-bloom { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.enter-intro-frame { transform:translateZ(var(--intro-depth,0px)); will-change:transform; }
+.enter-intro-frame { position:relative; width:clamp(160px,21vw,270px); height:min(60svh,520px); min-height:260px; padding:12px 12px 0; border:7px solid #315d97; border-bottom:0; background:transparent; transform-style:preserve-3d; box-shadow:inset 3px 3px 3px #071328, inset -2px 0 2px #80a5d2, 3px 2px 0 #0a1b32, -2px -2px 0 #6b8fc180, 28px 20px 35px #020a1b85; }
+.enter-intro-light { position:absolute; inset:12px 12px 0; background:#fff; opacity:var(--intro-light,0); transform:translateZ(-1px); box-shadow:0 0 24px rgb(255 255 255 / 45%),0 0 60px rgb(247 249 252 / 22%); }
+.enter-intro-leaf { position:relative; height:100%; padding:9% 11%; display:grid; grid-template-rows:1.15fr 1fr 1fr 1fr; gap:6%; transform-origin:right center; transform:rotateY(var(--intro-rotation,0deg)); transform-style:preserve-3d; background:linear-gradient(115deg,#416dad,#28538d 65%,#1c3d70); border:2px solid #5077ab; box-shadow:inset 2px 2px 1px #a1bce044,inset -3px -2px 3px #061a3d; will-change:transform; }
+.enter-intro-leaf::after { content:''; position:absolute; top:-2px; bottom:-2px; right:-7px; width:7px; background:#10284f; transform:rotateY(90deg); transform-origin:left; }
+.enter-intro-panel { border:5px solid; border-color:#204476 #547ab1 #6488b9 #23487d; background:linear-gradient(145deg,#315d96,#2d548d); box-shadow:inset 2px 3px 5px #10264f80,0 1px 1px #9db9db26; }
+.enter-intro-handle { position:absolute; left:4%; top:53%; width:20px; height:20px; border:1px solid #9bb8d2; border-radius:50%; background:radial-gradient(circle at 30% 25%,#d1dfef,#6386b6 35%,#16315c 80%); box-shadow:2px 3px 4px #04142a; transform:translateZ(5px); }
+.enter-intro-handle::before { content:''; position:absolute; inset:4px; border:1px solid #d6e5f055; border-radius:50%; }
+.enter-intro-handle::after { content:''; position:absolute; width:2px; height:9px; left:8px; top:4px; border-radius:2px; background:#10284f; box-shadow:1px 0 0 #c7d9ed99; }
+.enter-intro-wash { position:absolute; inset:0; pointer-events:none; background:#fff; opacity:var(--intro-wash,0);  }
+.enter-intro .enter-intro-skip { position:absolute; right:max(24px,env(safe-area-inset-right)); bottom:max(24px,env(safe-area-inset-bottom)); min-height:44px; padding:10px 17px; border:1px solid #ffffff55; border-radius:24px; background:#081b36; color:#fff; font:500 13px var(--enter-font-ui); cursor:pointer; }
+.enter-intro-skip:focus-visible { outline:2px solid #fff; outline-offset:4px; }
+@media(max-width:600px) { .enter-intro-frame { width:44vw; height:52svh; } }
+@media(max-width:600px) { .enter-intro-floor { top:calc(50% + max(26svh,130px)); } }
+.enter-intro-shell.is-active { position:relative; background:#fff; }
+.enter-intro-track { position:relative; height:100svh; }
+.enter-intro-shell.is-active .enter-intro-content { position:fixed; inset:0; overflow:hidden; pointer-events:none; opacity:var(--intro-reveal,0); }
+.enter-intro-shell.is-active .ce-intro h1 { animation:none; opacity:0; }
+.enter-intro-shell.is-active .ce-mountain-scene :is(.ce-landscape-layer, .ce-curve-node) { animation-play-state:paused; }
+.enter-intro-instruction { position:absolute; bottom:9%; left:50%; transform:translateX(-50%); margin:0; color:#eaf2fa; font:400 14px var(--enter-font-ui); letter-spacing:.08em; white-space:nowrap; opacity:var(--intro-hint,1); pointer-events:none; }
+@media(prefers-reduced-motion:reduce) { .enter-intro-track { display:none; } }

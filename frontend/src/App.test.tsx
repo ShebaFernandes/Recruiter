@@ -11,6 +11,19 @@ afterEach(() => {
 })
 
 describe('Enter Talent landing', () => {
+  it('restores simple header entry without cinematic additions', async () => {
+    render(<App />)
+    await screen.findByTestId('for-recruiters')
+    const nav = screen.getByRole('navigation', { name: 'Main navigation' })
+    for (const name of ['For recruiters', 'For candidates']) {
+      expect(screen.getAllByRole('button', { name })).toHaveLength(1)
+      expect(within(nav).getByRole('button', { name })).toBeVisible()
+    }
+    expect(document.querySelectorAll('.ce-intro button')).toHaveLength(0)
+    expect(document.querySelector('.ce-preview-interface')).toBeNull()
+    expect(document.querySelector('.enter-intro-shell')).toBeNull()
+    expect(screen.queryByRole('button', { name: /Skip intro/ })).not.toBeInTheDocument()
+  })
   it('opens the workspace directly for a valid recruiter session', async () => {
     vi.spyOn(api, 'me').mockResolvedValue({ id: 9, role: 'recruiter', email: 'test@example.com', full_name: 'Approved Recruiter' })
     vi.spyOn(api, 'searches').mockResolvedValue([])
@@ -26,7 +39,7 @@ describe('Enter Talent landing', () => {
     vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
     render(<App />)
     const entry = await screen.findByTestId('for-recruiters')
-    expect(screen.queryByText('Log in')).not.toBeInTheDocument()
+    expect(screen.getByText('Log in')).toBeVisible()
     fireEvent.click(entry)
     expect(screen.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
     expect(screen.queryByLabelText('Company')).not.toBeInTheDocument()
@@ -57,6 +70,7 @@ describe('Enter Talent landing', () => {
     const heading = await screen.findByRole('heading', { name: 'The best teams are built by ENTER.' })
     expect(heading.querySelector('image')).toHaveAttribute('href', '/enter-wordmark.svg')
     const nav = screen.getByRole('navigation', { name: 'Main navigation' })
+    expect(within(nav).getByRole('button', { name: 'For candidates' })).toBeVisible()
     expect(within(nav).getByRole('button', { name: 'For candidates' }).querySelector('svg')).toBeNull()
     fireEvent.click(within(nav).getByRole('button', { name: 'For candidates' }))
     expect(screen.getByRole('heading', { name: 'Create your account' })).toBeVisible()

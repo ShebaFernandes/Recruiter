@@ -1,0 +1,54 @@
+.candidate-experience .cp-success.cp-confirmation { display:block; width:100%; max-width:680px; min-height:0; margin:0 auto; padding:40px 16px 56px; text-align:center; overflow:visible; }
+.candidate-experience .cp-confirmation .cp-confirmation-eyebrow { max-width:none; margin:0 0 20px; font-size:11px; font-weight:600; letter-spacing:.1em; color:var(--enter-text-muted); }
+.candidate-experience .cp-confirmation h2 { justify-content:center; font-family:var(--enter-font-editorial); font-size:clamp(56px,7vw,92px); line-height:1.05; color:var(--enter-primary); }
+.candidate-experience .cp-confirmation h2:focus-visible { outline:2px solid var(--enter-primary); outline-offset:6px; border-radius:4px; }
+.candidate-experience .cp-confirmation .cp-success-check { width:36px; height:36px; }
+.candidate-experience .cp-confirmation .cp-success-check circle { fill:none; }
+.candidate-experience .cp-confirmation .cp-success-underline { width:clamp(150px,28vw,270px); margin:14px auto 26px; height:5px; transform-origin:center; }
+.candidate-experience .cp-confirmation h3 { margin:0 0 16px; font-size:clamp(23px,3vw,34px); font-weight:600; line-height:1.2; }
+.candidate-experience .cp-confirmation p { margin:0; font-size:14px; line-height:1.65; }
+.candidate-experience .cp-confirmation .cp-confirmation-message { max-width:55ch; margin:0 auto; }
+.cp-confirmation-content { animation:confirmation-entrance 350ms 200ms ease-out both; }
+@keyframes confirmation-entrance { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+.cp-confirmation-next { margin:30px 0 24px; padding:24px; border:1px solid var(--enter-border); border-radius:12px; text-align:left; background:var(--enter-surface); }
+.cp-confirmation-next h4 { margin:0 0 22px; font-size:17px; font-weight:600; }
+.cp-confirmation-next ul { display:grid; gap:22px; list-style:none; padding:0; margin:0; }
+.cp-confirmation-next li { display:grid; grid-template-columns:32px minmax(0,1fr); gap:16px; align-items:start; }
+.cp-confirmation-next li>svg { width:28px; height:28px; stroke-width:1.6; color:var(--enter-primary); }
+.cp-confirmation-next h5 { margin:0 0 4px; font-size:14px; font-weight:600; line-height:1.4; }
+.candidate-experience .cp-confirmation-next p { font-size:13px; max-width:none; }
+.candidate-experience .cp-confirmation-profile { display:flex; align-items:center; justify-content:center; gap:14px; width:100%; min-height:48px; padding:12px 20px; border:1px solid var(--enter-charcoal); border-radius:8px; background:var(--enter-charcoal); color:var(--enter-on-primary); font-size:15px; font-weight:600; }
+.candidate-experience button.cp-confirmation-profile:hover:not(:disabled),
+.candidate-experience button.cp-confirmation-profile:focus,
+.candidate-experience button.cp-confirmation-profile:active { background:var(--enter-charcoal); border-color:var(--enter-charcoal); color:var(--enter-on-primary); }
+.cp-confirmation-profile svg { width:20px; height:20px; }
+@media(max-width:600px) {
+  .candidate-experience .cp-success.cp-confirmation { padding:24px 0 32px; }
+  .candidate-experience .cp-confirmation .cp-success-check { width:28px; height:28px; }
+  .cp-confirmation-next { margin-top:24px; padding:20px 16px; }
+  .cp-confirmation-next li { gap:12px; grid-template-columns:28px minmax(0,1fr); }
+}
+@media(prefers-reduced-motion:reduce) {
+  .cp-confirmation-content { animation:none; opacity:1; transform:none; }
+}
+
+/* Ticket treatment stays local to the submitted-profile screen. */
+.candidate-experience .cp-success.cp-confirmation { max-width:520px; padding:32px 16px 48px; }
+.cp-confirmation .enter-ticket { padding:28px 28px 24px; }
+.candidate-experience .cp-confirmation .cp-confirmation-eyebrow { margin-bottom:18px; font-size:10px; }
+.cp-ticket-check { display:grid; place-items:center; width:64px; height:64px; margin:0 auto 16px; border-radius:50%; background:var(--enter-selected); color:var(--enter-highlight); }
+.cp-ticket-check svg { width:36px; height:36px; stroke-width:1.75; }
+.candidate-experience .cp-confirmation h2 { font-size:42px; letter-spacing:-.035em; animation:none; opacity:1; transform:none; }
+.candidate-experience .cp-confirmation h3 { margin:12px 0 10px; font-size:20px; }
+.candidate-experience .cp-confirmation .cp-confirmation-message { font-size:13px; }
+.cp-confirmation-next { margin:24px 0 20px; padding:22px 0; border:0; border-block:1px dashed var(--enter-border); border-radius:0; background:transparent; }
+.cp-confirmation-next h4 { font-size:15px; margin-bottom:18px; }
+.cp-confirmation-next ul { gap:18px; }
+.cp-confirmation-next li { grid-template-columns:24px minmax(0,1fr); gap:12px; }
+.cp-confirmation-next li>svg { width:22px; height:22px; color:var(--enter-highlight); }
+.cp-confirmation-next h5 { font-size:13px; }
+.candidate-experience .cp-confirmation-next p { font-size:12px; }
+@media(max-width:600px) {
+  .candidate-experience .cp-success.cp-confirmation { padding:20px 6px 32px; }
+  .cp-confirmation .enter-ticket { padding:24px 22px; }
+}

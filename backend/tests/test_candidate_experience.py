@@ -29,6 +29,26 @@ def upload(client, content=None, name="resume.docx"):
     )
 
 
+def test_separate_portfolio_and_multiple_work_modes(client, candidate_account):
+    url = "/api/v1/candidate/profile/"
+    payload = {
+        "github_url": "https://github.com/example",
+        "career_preferences": {"portfolio_url": "https://example.com/portfolio"},
+        "work_preferences": ["Hybrid", "Remote"],
+    }
+    assert client.patch(url, payload, format="json").status_code == 200
+    data = client.get(url).data
+    assert data["github_url"] == payload["github_url"]
+    assert data["career_preferences"]["portfolio_url"] == "https://example.com/portfolio"
+    assert data["work_preferences"] == ["Hybrid", "Remote"]
+    for invalid in ["not a URL", "javascript:alert(1)"]:
+        assert client.patch(url, {"career_preferences": {"portfolio_url": invalid}},
+                            format="json").status_code == 400
+    assert client.patch(url, {"career_preferences": {"portfolio_url": ""}},
+                        format="json").status_code == 200
+    assert client.get(url).data["github_url"] == payload["github_url"]
+
+
 def test_career_answers_merge_persist_and_validate(client, candidate_account):
     first = {
         "motivators": ["Exceptional team", "Founder"],

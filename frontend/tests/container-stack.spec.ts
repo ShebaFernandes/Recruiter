@@ -23,7 +23,7 @@ test('strict container stack: email verification through candidate submission', 
   const mail = await (await page.request.get(`/test-mail/api/v1/message/${message.ID}`)).json()
   const token = mail.Text.match(/[?&]verify-email=([^\s]+)/)[1]
   await page.goto(`/?verify-email=${token}`)
-  await expect(page.getByRole('heading', { name: 'Start with your resume.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Start with your resume' })).toBeVisible()
   const docx = execFileSync(path.resolve('../.venv/bin/python'), ['-c',
     'import sys;from scripts.container_stack_smoke import documents;sys.stdout.buffer.write(documents(sys.argv[1])[1])', email],
   { cwd: path.resolve('..'), env: process.env })

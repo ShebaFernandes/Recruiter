@@ -10,6 +10,7 @@ import type { AuthPayload } from './api'
 import type { Candidate, Notification, Project, ProjectDetail, Search, SearchResult, User } from './types'
 import { Badge, Button, Card, FormField } from './components/ui'
 import Landing from './components/Landing'
+import PlatformBackground from './components/PlatformBackground'
 import RecruiterSearch from './components/RecruiterSearch'
 import ResumeAccess from './components/ResumeAccess'
 import { GithubMark, LinkedInMark } from './components/ProfileMarks'
@@ -107,7 +108,7 @@ function AuthLayout({ role, back, children, onboardingMode }: {
   children: React.ReactNode
 }) {
   const candidate = role === 'candidate'
-  return <main className={`auth-page auth-editorial ${candidate && onboardingMode ? 'candidate-onboarding-auth' : ''}`}>
+  return <main className={`auth-page auth-editorial ${candidate ? 'candidate-theme' : ''} ${candidate && onboardingMode ? 'candidate-onboarding-auth' : ''}`}>
     <header className="auth-masthead">
       <Brand />
       {back ? <Button variant="ghost" size="small" onClick={back}>{candidate && onboardingMode ? <EnterBrandText text="← Back to ENTER" /> : '← Back to Enter'}</Button> : <a href="/">← Back to Enter</a>}
@@ -412,7 +413,7 @@ const recruiterFilterLabels: Record<keyof typeof emptyRecruiterFilters, string> 
   role: 'Role', skills: 'Skills', location: 'Location', min_experience: 'Min. years',
   max_experience: 'Max. years', notice_period_days: 'Max. notice (days)',
   min_salary_lpa: 'Min. LPA', max_salary_lpa: 'Max. LPA',
-  work_preferences: 'Work setup', employment_type: 'Employment', stage: 'Stage',
+  work_preferences: 'Work mode', employment_type: 'Employment', stage: 'Stage',
 }
 
 function RecruiterPortal({ user, logout }: { user: User; logout: () => void }) {
@@ -637,12 +638,12 @@ export default function App() {
   if (path === '/privacy') return <LegalPlaceholder kind="privacy" />
   if (path === '/terms') return <LegalPlaceholder kind="terms" />
   const verificationToken = query.get('verify-email')
-  if (verificationToken) return <EmailVerificationScreen token={verificationToken} onDone={payload => setUser(payload.user)} />
+  if (verificationToken) return <PlatformBackground>{<EmailVerificationScreen token={verificationToken} onDone={payload => setUser(payload.user)} />}</PlatformBackground>
   const resetToken = query.get('reset-password')
-  if (resetToken) return <PasswordResetScreen token={resetToken} done={role => { setAuthMode('login'); if (role === 'recruiter') navigate('/recruiter'); else setChoice('candidate'); setUser(null) }} />
-  if (user === undefined) return <main className="auth-page"><div className="candidate-profile-loading" role="status">Opening Enter…</div></main>
-  if (accountRemoved) return <main className="auth-page"><section className="auth-card auth-state-card"><Brand /><div className="auth-state-icon"><CheckCircle2 /></div><h1>Your account has been deleted</h1><p>Your profile is no longer accessible. Private file cleanup has been scheduled securely.</p><button className="primary" onClick={() => { setAccountRemoved(false); setChoice(null) }}>Return to Enter</button></section></main>
+  if (resetToken) return <PlatformBackground>{<PasswordResetScreen token={resetToken} done={role => { setAuthMode('login'); if (role === 'recruiter') navigate('/recruiter'); else setChoice('candidate'); setUser(null) }} />}</PlatformBackground>
+  if (user === undefined) return <PlatformBackground>{<main className="auth-page"><div className="candidate-profile-loading" role="status">Opening Enter…</div></main>}</PlatformBackground>
+  if (accountRemoved) return <PlatformBackground>{<main className="auth-page"><section className="auth-card auth-state-card"><Brand /><div className="auth-state-icon"><CheckCircle2 /></div><h1>Your account has been deleted</h1><p>Your profile is no longer accessible. Private file cleanup has been scheduled securely.</p><button className="primary" onClick={() => { setAccountRemoved(false); setChoice(null) }}>Return to Enter</button></section></main>}</PlatformBackground>
   if (!screen) return <Landing choose={(role, mode = 'signup') => { if (role === 'recruiter') navigate('/recruiter'); else { setAuthMode(mode); setChoice(role) } }} />
-  if (!user) return <AuthScreen role={screen} initialMode={authMode} back={() => navigate('/')} onDone={payload => setUser(payload.user)} />
-  return user.role === 'candidate' ? <CandidatePortal user={user} logout={logout} accountDeleted={() => { setUser(null); setChoice(null); setAccountRemoved(true) }} /> : <RecruiterPortal user={user} logout={logout} />
+  if (!user) return <PlatformBackground>{<AuthScreen role={screen} initialMode={authMode} back={() => navigate('/')} onDone={payload => setUser(payload.user)} />}</PlatformBackground>
+  return <PlatformBackground>{user.role === 'candidate' ? <CandidatePortal user={user} logout={logout} accountDeleted={() => { setUser(null); setChoice(null); setAccountRemoved(true) }} /> : <RecruiterPortal user={user} logout={logout} />}</PlatformBackground>
 }

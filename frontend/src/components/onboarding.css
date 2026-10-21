@@ -18,16 +18,18 @@
 .candidate-onboarding-auth .onboarding-art { animation-delay:180ms; }
 .onboarding-door-path { stroke-dasharray:1; stroke-dashoffset:1; animation:onboarding-line 650ms 250ms ease-out forwards; }
 @keyframes onboarding-line { to { stroke-dashoffset:0; } }
-.onboarding-upload { display:grid; grid-template-columns:minmax(0,1fr) minmax(260px,1fr); align-items:center; gap:28px; padding:40px 0; animation:onboarding-arrive 400ms ease-out both; }
+.onboarding-upload { display:grid; grid-template-columns:minmax(0,1fr) minmax(260px,1fr); align-items:center; gap:24px; padding:24px 0; animation:onboarding-arrive 400ms ease-out both; }
 .onboarding-upload-copy h2 { font-family:var(--enter-font-editorial); font-size:clamp(28px,3vw,40px); line-height:1.15; margin:0 0 12px; }
-.onboarding-upload-copy p { font-size:14px; line-height:1.6; color:var(--enter-text-muted); }
-.onboarding-upload .cp-upload { text-align:center; padding:32px 20px; border:1px dashed #baa8ed; border-radius:12px; background:#fff; transition:background 180ms,border-color 180ms,box-shadow 180ms; }
-.onboarding-upload .cp-upload.dragging { background:#f4efff; border-color:var(--enter-primary); box-shadow:0 0 0 4px #7047ff18; }
+.onboarding-upload-copy p { margin:0; max-width:38ch; font-size:14px; line-height:1.6; color:var(--enter-text-muted); }
+.onboarding-upload .cp-upload { margin:0; text-align:center; padding:24px 20px; border:1px dashed color-mix(in srgb,var(--enter-primary) 25%,var(--enter-border)); border-radius:12px; background:var(--enter-surface); transition:background 180ms,border-color 180ms,box-shadow 180ms; }
+.onboarding-upload .cp-upload.dragging { background:var(--enter-primary-soft); border-color:var(--enter-primary); box-shadow:var(--enter-focus-halo); }
 .onboarding-upload .cp-upload h3 { font-size:14px; margin:14px 0; }
 .onboarding-file-icon { width:34px; height:34px; color:var(--enter-primary); transition:transform 180ms; }
 .onboarding-upload .cp-upload:hover .onboarding-file-icon { transform:translateY(-3px); }
 .onboarding-upload .cp-file { align-items:center; position:relative; cursor:pointer; }
-.onboarding-choose { border:1px solid var(--enter-primary); border-radius:7px; padding:9px 18px; color:var(--enter-primary); font-size:13px; }
+.onboarding-choose { display:inline-flex; align-items:center; justify-content:center; min-height:44px; border:1px solid var(--enter-primary); border-radius:7px; padding:9px 20px; background:var(--enter-primary); color:var(--enter-on-primary); font-size:13px; }
+.onboarding-upload .cp-file:hover .onboarding-choose { background:var(--enter-primary-hover); }
+.onboarding-upload .cp-file:has(input:disabled) { cursor:wait; opacity:.7; }
 .onboarding-upload .cp-file input { position:absolute; width:1px; height:1px; opacity:0; }
 .onboarding-upload .cp-file:focus-within .onboarding-choose { outline:2px solid var(--enter-primary); outline-offset:3px; }
 .onboarding-upload .cp-file small { display:block; margin-top:12px; font-size:11px; color:var(--enter-text-muted); }

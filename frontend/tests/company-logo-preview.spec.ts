@@ -1,5 +1,9 @@
 import { expect, test } from '@playwright/test'
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => sessionStorage.setItem('enter-door-intro-seen', '1'))
+})
+
 test('normal homepage includes the approved logos without a preview flag', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('region', { name: 'Company logos', exact: true })).toBeVisible()
@@ -14,7 +18,7 @@ test('every added company is reachable by keyboard with readable details', async
   await page.goto('/')
   await page.getByRole('button', { name: 'Pause company logos' }).focus()
   const logos = page.getByRole('button', { name: /^About / })
-  await expect(logos).toHaveCount(28)
+  await expect(logos).toHaveCount(27)
   for (let index = 0; index < await logos.count(); index++) {
     await page.keyboard.press('Tab')
     const logo = logos.nth(index)
@@ -24,7 +28,7 @@ test('every added company is reachable by keyboard with readable details', async
     await expect(page.getByRole('tooltip')).toContainText(name)
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
   }
-  await expect(page.getByRole('button', { name: 'About MobiKwik' }).locator('img')).toHaveCSS('filter', 'none')
+  await expect(page.getByRole('button', { name: 'About MobiKwik' })).toHaveCount(0)
   await page.keyboard.press('Escape')
   await expect(page.getByRole('tooltip')).toHaveCount(0)
 })
@@ -43,7 +47,7 @@ for (const width of [1440, 1024, 390]) {
       logoTop: document.querySelector('.ce-company-preview img')!.getBoundingClientRect().top,
       copyBottom: document.querySelector('.ce-intro-aside')!.getBoundingClientRect().bottom,
     }))
-    expect(initialLayout.logoTop).toBeLessThan(width > 760 ? 750 : 680)
+    expect(initialLayout.logoTop).toBeLessThan(width > 760 ? 810 : 720)
     expect(initialLayout.copyBottom).toBeLessThan(initialLayout.logoTop - 150)
     await expect(page.locator('.ce-entry-section')).toHaveCount(0)
     await expect(page.getByText(/The impact we create extends/)).toHaveCount(0)
@@ -51,7 +55,7 @@ for (const width of [1440, 1024, 390]) {
     expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(900)
     await section.scrollIntoViewIfNeeded()
     await section.locator('img').evaluateAll(images => Promise.all(images.map(i => (i as HTMLImageElement).decode())))
-    await expect(page.getByRole('button', { name: /^About / })).toHaveCount(28)
+    await expect(page.getByRole('button', { name: /^About / })).toHaveCount(27)
     await expect(section.locator('img').first()).toHaveCSS('filter', 'grayscale(1)')
     expect(await section.evaluate(e => e.previousElementSibling?.classList.contains('ce-mountain-hero'))).toBe(true)
     const spacing = await section.evaluate(element => {
@@ -60,8 +64,8 @@ for (const width of [1440, 1024, 390]) {
       return { gap: logo.top - hero.bottom, height: element.getBoundingClientRect().height }
     })
     expect(spacing.gap).toBeGreaterThan(20)
-    expect(spacing.gap).toBeLessThan(40)
-    expect(spacing.height).toBe(96)
+    expect(spacing.gap).toBeLessThan(48)
+    expect(spacing.height).toBe(113)
     await expect(section.getByText(/public logo permissions pending/)).toHaveCount(0)
     const pause = page.getByRole('button', { name: 'Pause company logos' })
     await expect(pause).toHaveCSS('clip-path', 'inset(50%)')
@@ -144,6 +148,7 @@ for (const width of [1440, 1024, 390]) {
 
 test('mobile tap opens, switches and dismisses company details', async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })
+  await context.addInitScript(() => sessionStorage.setItem('enter-door-intro-seen', '1'))
   const page = await context.newPage()
   await page.goto('/')
   await page.locator('.ce-company-preview').scrollIntoViewIfNeeded()

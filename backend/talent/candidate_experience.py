@@ -26,7 +26,7 @@ LIST_FIELDS = {
     "strongest_skills",
     "likely_directions",
 }
-TEXT_FIELDS = {"availability", "standout_signal"}
+TEXT_FIELDS = {"availability", "standout_signal", "portfolio_url"}
 RESUME_FIELDS = {
     "full_name",
     "headline",

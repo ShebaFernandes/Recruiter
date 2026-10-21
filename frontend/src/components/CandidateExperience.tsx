@@ -5,9 +5,14 @@ import type { Candidate, CareerPreferences, WorkExperience } from '../types'
 import { CandidateProcessing } from './CandidatePresentation'
 import CandidateCareerTimeline from './CandidateCareerTimeline'
 import CandidateResumePreview from './CandidateResumePreview'
-import EnterBrandText from './EnterBrandText'
+import CandidateConfirmation from './CandidateConfirmation'
+import './candidate-upload.css'
+import PreferredLocations from './PreferredLocations'
+import SettingsAutosave from './SettingsAutosave'
+import { compensationDisplay } from './compensationDisplay'
+import type { SettingsAutosaveHandle } from './SettingsAutosave'
 import { professionalTitle } from '../candidateIdentity'
-import { UserRound, GraduationCap, BriefcaseBusiness, MapPin, Camera, Trash2, Clock3, BadgeIndianRupee, House, Phone, Link2, FileText, Target, Globe2, Pencil } from 'lucide-react'
+import { UserRound, GraduationCap, BriefcaseBusiness, MapPin, Camera, Trash2, Clock3, BadgeIndianRupee, House, Phone, Link2, FileText, Target, Globe2, Pencil, UploadCloud, LockKeyhole, Sparkles } from 'lucide-react'
 import './candidate-experience.css'
 
 const motivators = ['Exceptional team', 'Harder problems', 'More ownership', 'Compensation', 'Founding team', 'Leadership', 'Product', 'Global exposure', 'Founder']
@@ -16,6 +21,21 @@ const noticePeriods = [0, 15, 30, 45, 60, 90]
 const employmentTypes = ['Full-time', 'Part-time', 'Contract', 'Internship']
 const workSetups = ['Hybrid', 'On-site', 'Remote']
 const contactMethods = ['Email', 'WhatsApp', 'Phone']
+const jobStatuses = [
+  { value: 'Actively looking', label: 'Actively Looking' },
+  { value: 'Open to the right opportunity', label: 'Open to Opportunities' },
+  { value: 'Not looking right now', label: 'Not Looking' },
+]
+function SettingsChoices({ title, name, value, options }: { title: string; name: string; value: string; options: { value: string; label: string }[] }) {
+  const [selected, setSelected] = useState(value)
+  const choices = value && !options.some(option => option.value === value) ? [...options, { value, label: value }] : options
+  return <fieldset className="cp-settings-choices" aria-label={title}><div>{choices.map(option => <label className="cp-choice" key={option.value}><input type="radio" name={name} value={option.value} checked={selected === option.value} onChange={() => setSelected(option.value)} /><span>{option.label}</span></label>)}</div></fieldset>
+}
+function WorkModeChoices({ values }: { values: string[] }) {
+  const [selected, setSelected] = useState(values)
+  const choices = [...new Set([...workSetups, ...values])]
+  return <fieldset className="cp-settings-choices"><legend>Work mode</legend><div>{choices.map(value => <label className="cp-choice" key={value}><input type="checkbox" name="setup" value={value} checked={selected.includes(value)} onChange={() => setSelected(current => current.includes(value) ? current.filter(item => item !== value) : [...current, value])} /><span>{value}</span></label>)}</div></fieldset>
+}
 function LinkedInIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 8.3A1.85 1.85 0 1 0 5.2 4.6a1.85 1.85 0 0 0 0 3.7ZM3.6 9.8h3.2V20H3.6V9.8ZM9 9.8h3.1v1.5h.05c.44-.82 1.5-1.7 3.1-1.7 3.3 0 3.9 2.18 3.9 5V20H16v-4.75c0-1.13-.02-2.58-1.58-2.58-1.58 0-1.82 1.23-1.82 2.5V20H9V9.8Z" /></svg>
 }
@@ -76,24 +96,44 @@ function BuildLeadSpectrum({ value, save }: { value: number | null; save: (value
     const timer = window.setTimeout(() => { void saveRef.current(draft).then(ok => { if (ok) setDirty(false) }) }, 500)
     return () => window.clearTimeout(timer)
   }, [draft, dirty])
-  const positions = ['Mostly hands-on', 'Hands-on + technical leadership', '50/50', 'Mostly team leadership', 'People leadership']
+  const positions = ['Mostly hands-on', 'Hands-on + technical leadership', '50:50', 'Mostly team leadership', 'People leadership']
   const description = positions[Math.round(draft / 25)]
   return <section className="cp-spectrum" aria-labelledby="build-lead-heading">
-    <div><h3 id="build-lead-heading">Build ↔ Lead Spectrum</h3><p>{value === null && !dirty ? 'Choose how you want your next role to feel.' : description}</p></div>
-    <div className="cp-spectrum-control"><input type="range" min="0" max="100" step="25" value={draft} aria-label="Build and Lead preference" aria-valuetext={description} onChange={event => { setDraft(Number(event.target.value)); setDirty(true) }} /><div className="cp-spectrum-labels" aria-hidden="true">{positions.map(position => <span key={position}>{position}</span>)}</div></div>
+    <div><h3 id="build-lead-heading">Build <span className="cp-spectrum-heading-arrow">↔</span> Lead Spectrum</h3></div>
+    <div className="cp-spectrum-control"><div className="cp-spectrum-track"><div className="cp-spectrum-markers" aria-hidden="true">{positions.map(position => <span key={position} />)}</div><input type="range" min="0" max="100" step="25" value={draft} aria-label="Build and Lead preference" aria-valuetext={description} onChange={event => { setDraft(Number(event.target.value)); setDirty(true) }} /></div><div className="cp-spectrum-labels" aria-hidden="true">{positions.map(position => <span key={position}>{position}</span>)}</div></div>
   </section>
 }
 
 function Chips({ options, selected, onChange, disabled = false }: { options: string[]; selected: string[]; onChange: (value: string[]) => Promise<boolean>; disabled?: boolean }) {
-  const [glowing, setGlowing] = useState<string | null>(null)
   const [optimistic, setOptimistic] = useState<string[] | null>(null)
-  return <div className="cp-chips">{[...new Set(options)].map(option => <button type="button" key={option} disabled={disabled} className={glowing === option ? 'cp-chip-glow' : undefined} onAnimationEnd={() => setGlowing(null)} aria-pressed={(optimistic ?? selected).includes(option)} onClick={async () => { const removing = selected.includes(option); const next = removing ? selected.filter(value => value !== option) : [...selected, option]; setGlowing(removing ? null : option); setOptimistic(next); await onChange(next); setOptimistic(null) }}>{option}</button>)}</div>
+  return <div className="cp-chips">{[...new Set(options)].map(option => <button type="button" key={option} disabled={disabled} aria-pressed={(optimistic ?? selected).includes(option)} onClick={async () => { const removing = selected.includes(option); const next = removing ? selected.filter(value => value !== option) : [...selected, option]; setOptimistic(next); await onChange(next); setOptimistic(null) }}>{option}</button>)}</div>
 }
 
 function CustomChoice({ label, disabled, add }: { label: string; disabled: boolean; add: (value: string) => Promise<boolean> }) {
   const [open, setOpen] = useState(false)
   const [value, setValue] = useState('')
-  return open ? <form className="cp-actions cp-custom-exclusion" onSubmit={async event => { event.preventDefault(); if (value.trim() && await add(value.trim())) { setValue(''); setOpen(false) } }}><label>{label}<input autoFocus maxLength={240} value={value} onChange={event => setValue(event.target.value)} required /></label><button disabled={disabled}>Add option</button><button type="button" onClick={() => setOpen(false)}>Cancel</button></form> : <button className="cp-add-choice" type="button" onClick={() => setOpen(true)}>+ Add my own</button>
+  const saving = useRef(false)
+  const trigger = useRef<HTMLButtonElement>(null)
+  const restoreFocus = useRef(false)
+  useEffect(() => {
+    if (!open && restoreFocus.current) { trigger.current?.focus(); restoreFocus.current = false }
+  }, [open])
+  async function commit(fromKeyboard = false) {
+    if (saving.current || disabled) return
+    if (!value.trim()) { restoreFocus.current = fromKeyboard; setOpen(false); return }
+    saving.current = true
+    try {
+      if (await add(value.trim())) {
+        restoreFocus.current = fromKeyboard
+        setValue(''); setOpen(false)
+      }
+    } finally { saving.current = false }
+  }
+  return open ? <input className="cp-custom-choice-input" autoFocus aria-label={label} placeholder="Type your own…" title="Press Enter or leave this field to save. Escape cancels." maxLength={240} value={value} readOnly={disabled} onChange={event => setValue(event.target.value)} onBlur={() => void commit()} onKeyDown={event => {
+    if (event.nativeEvent.isComposing) return
+    if (event.key === 'Enter') { event.preventDefault(); void commit(true) }
+    if (event.key === 'Escape') { event.preventDefault(); restoreFocus.current = true; setValue(''); setOpen(false) }
+  }} /> : <button ref={trigger} className="cp-add-choice" type="button" disabled={disabled} onClick={() => setOpen(true)}>+ Add my own</button>
 }
 
 function ProfileEditor({ profile, save, cancel, busy }: { profile: Candidate; save: (patch: Partial<Candidate>) => Promise<boolean>; cancel: () => void; busy: boolean }) {
@@ -186,10 +226,26 @@ export default function CandidateExperience({ beforeLeaveRef }: { accountDeleted
   }
   const [editingSettings, setEditingSettings] = useState(false)
   const [editingSettingsField, setEditingSettingsField] = useState('availability')
+  const [settingsSaved, setSettingsSaved] = useState(0)
+  useEffect(() => {
+    if (!settingsSaved) return
+    const timer = setTimeout(() => setSettingsSaved(0), 2500)
+    return () => clearTimeout(timer)
+  }, [settingsSaved])
+  const settingsDirty = useRef(false)
+  const settingsForm = useRef<HTMLFormElement>(null)
+  const settingsFlight = useRef(false)
+  const settingsAutosave = useRef<SettingsAutosaveHandle>(null)
+  function focusControl(selector: string) {
+    window.requestAnimationFrame(() => {
+      const control = mainRef.current?.querySelector<HTMLElement>(selector)
+      control?.scrollIntoView({ block: 'center', behavior: 'instant' })
+      control?.focus({ preventScroll: true })
+    })
+  }
   const [showBeyond, setShowBeyond] = useState(false)
   const [review, setReview] = useState(false)
   const [success, setSuccess] = useState(false)
-  const [successAnimationComplete, setSuccessAnimationComplete] = useState(false)
   const [footerPanel, setFooterPanel] = useState<'support' | null>(null)
   const [dragging, setDragging] = useState(false)
   const [pollError, setPollError] = useState('')
@@ -253,18 +309,28 @@ export default function CandidateExperience({ beforeLeaveRef }: { accountDeleted
   }
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
-      if (answerDraft.current !== null) { event.preventDefault(); event.returnValue = '' }
+      if (answerDraft.current !== null || settingsDirty.current) { event.preventDefault(); event.returnValue = '' }
     }
     window.addEventListener('beforeunload', warn)
     return () => { window.removeEventListener('beforeunload', warn); clearTimeout(answerTimer.current) }
   }, [])
   useEffect(() => {
-    if (beforeLeaveRef) beforeLeaveRef.current = flushAnswer
+    if (beforeLeaveRef) beforeLeaveRef.current = async () => {
+      if (settingsAutosave.current && !await settingsAutosave.current.flush()) { focusControl('.cp-settings-inline-editor input:not([type=hidden]), .cp-settings-inline-editor select'); return false }
+      return flushAnswer()
+    }
     return () => { if (beforeLeaveRef) beforeLeaveRef.current = null }
   })
   useEffect(() => {
     const input = answerInput.current
-    if (input) { input.style.height = 'auto'; input.style.height = `${Math.max(62, input.scrollHeight)}px` }
+    if (!input) return
+    const resize = () => {
+      input.style.height = 'auto'
+      input.style.height = `${Math.max(parseFloat(getComputedStyle(input).minHeight), input.scrollHeight + 2)}px`
+    }
+    resize()
+    window.addEventListener('resize', resize)
+    return () => window.removeEventListener('resize', resize)
   }, [meaningfulDraft, profile?.meaningful_work, showBeyond])
   useEffect(() => {
     let active = true
@@ -343,6 +409,7 @@ export default function CandidateExperience({ beforeLeaveRef }: { accountDeleted
   const prefs = (patch: CareerPreferences) => save({ career_preferences: patch })
   async function upload(file?: File) {
     if (!file) return
+    if (settingsAutosave.current && !await settingsAutosave.current.flush()) { focusControl('.cp-settings-inline-editor input:not([type=hidden]), .cp-settings-inline-editor select'); return }
     if (!/\.(pdf|docx)$/i.test(file.name) || file.size > 5 * 1024 * 1024) { setError('Choose a PDF or DOCX, up to 5 MB.'); return }
     const accepted = await run(async () => { const data = await api.uploadResume(file); focusUpload.current = true; return data }, '')
     if (accepted) { setReview(false); setSuccess(false); setEditing(false); setShowBeyond(false); setPollError('') }
@@ -362,81 +429,112 @@ export default function CandidateExperience({ beforeLeaveRef }: { accountDeleted
   const identityDetails = [college, Number(p.total_experience) > 0 ? `${p.total_experience} years experience` : '', p.location].filter(Boolean)
   const professionalRead = enterRead(p, skills)
   const highlightTopics = skills.slice(0, 4)
-  const settingsMissing = (p.submission_missing_fields || []).filter(item => ['notice_period_days', 'work_preferences'].includes(item.field))
-  const profileMissing = p.submission_missing_fields || []
-  const openSettings = (field?: string) => {
+  const profileMissing = (p.submission_missing_fields || []).map(item => ({ ...item, label: item.field === 'work_preferences' ? 'preferred work mode' : item.label.replace(/work setup/gi, 'work mode') }))
+  const openSettings = async (field?: string) => {
+    if (editingSettings && field !== editingSettingsField && settingsAutosave.current && !await settingsAutosave.current.flush()) {
+      focusControl('.cp-settings-inline-editor input:not([type=hidden]), .cp-settings-inline-editor select'); return false
+    }
     setEditingSettingsField(field || 'availability')
     setEditingSettings(true)
+    setError('')
+    focusControl('.cp-settings-inline-editor input:not([type=hidden]), .cp-settings-inline-editor select')
+    return true
   }
-  const uploadControl = <label className="cp-file"><span className="onboarding-choose">{busy ? 'Uploading…' : 'Choose file'}</span><input aria-label="Choose PDF or DOCX resume" data-testid="resume-input" type="file" accept=".pdf,.docx" disabled={busy || processing} onChange={e => { void upload(e.target.files?.[0]); e.target.value = '' }} /><small>PDF or DOCX · Maximum 5 MB</small></label>
-  const replaceControl = <label className="cp-replace-control">Update<input aria-label="Update Resume" data-testid="resume-input" type="file" accept=".pdf,.docx" disabled={busy || processing} onChange={e => { void upload(e.target.files?.[0]); e.target.value = '' }} /></label>
+  const settingsAction = (field: string) => { void openSettings(field) }
+  async function navigateMissing(field: string) {
+    const settingsFields: Record<string, string> = { availability: 'availability', notice_period_days: 'notice_period_days', current_salary_lpa: 'current', expected_salary_lpa: 'current', work_preferences: 'work_preferences', preferred_locations: 'work_preferences', employment_type: 'work_preferences', email: 'email', phone: 'email', contact_preferences: 'email', linkedin_url: 'linkedin', github_url: 'linkedin' }
+    if (settingsFields[field]) {
+      if (await openSettings(settingsFields[field])) {
+        const controls: Record<string, string> = { notice_period_days: 'notice', current_salary_lpa: 'current', expected_salary_lpa: 'expected', work_preferences: 'setup', employment_type: 'employment', contact_preferences: 'contact', linkedin_url: 'linkedin', github_url: 'github' }
+        focusControl(field === 'preferred_locations' ? '.cp-locations [role=combobox]' : `.cp-settings-inline-editor [name="${controls[field] || field}"]`)
+      }
+      return
+    }
+    if (field === 'visibility') { setReview(true); focusControl('#profile-visibility-select'); return }
+    if (field === 'resume') { focusControl('input[type=file]'); return }
+    if (field === 'meaningful_work') { setShowBeyond(true); focusControl('#beyond-cv textarea'); return }
+    setEditing(true)
+    focusControl(`.cp-editor [name="${field}"]`)
+  }
+  const uploadControl = <label className="cp-file"><span className="onboarding-choose">{busy ? 'Uploading…' : 'Choose your resume ↗'}</span><input aria-label="Choose PDF or DOCX resume" data-testid="resume-input" type="file" accept=".pdf,.docx" disabled={busy || processing} onChange={e => { void upload(e.target.files?.[0]); e.target.value = '' }} /><small>PDF or DOCX · Max 5 MB</small></label>
+  const resumeUpdated = resume?.uploaded_at && !Number.isNaN(Date.parse(resume.uploaded_at)) ? new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(resume.uploaded_at)) : null
+  const replaceControl = <label className="cp-replace-control"><UploadCloud aria-hidden="true" /><span>Update your resume</span><small>{resumeUpdated ? `Last uploaded ${resumeUpdated}` : 'No upload date available'}</small><input aria-label="Update Resume" data-testid="resume-input" type="file" accept=".pdf,.docx" disabled={busy || processing} onChange={e => { void upload(e.target.files?.[0]); e.target.value = '' }} /></label>
   const processingView = p.latest_resume && (processing || status === 'failed') ? <CandidateProcessing key={p.latest_resume.id} resume={p.latest_resume} uploading={busy} retry={() => void run(() => api.retryResume(p.latest_resume!.id), '')} upload={file => void upload(file)} error={pollError} refresh={() => void refreshProcessing()} /> : null
-  async function saveSettings(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const data = new FormData(event.currentTarget), get = (key: string) => String(data.get(key) || '').trim()
+  async function saveSettings(data: FormData) {
+    const get = (key: string) => String(data.get(key) || '').trim()
     const number = (key: string) => get(key) === '' ? null : get(key)
     let values: Partial<Candidate> = {}
     if (editingSettingsField === 'availability') values = { career_preferences: { availability: get('availability') } }
     if (editingSettingsField === 'notice_period_days') values = { notice_period_days: number('notice') === null ? null : Number(get('notice')) }
     if (editingSettingsField === 'current') values = { current_salary_lpa: number('current'), expected_salary_lpa: number('expected') }
-    if (editingSettingsField === 'work_preferences') values = { work_preferences: get('setup') ? [get('setup')] : [], employment_type: get('employment'), career_preferences: { preferred_locations: list(get('locations')) } }
+    if (editingSettingsField === 'work_preferences') values = { work_preferences: data.getAll('setup').map(String), employment_type: get('employment'), career_preferences: { preferred_locations: data.getAll('locations').map(String) } }
     if (editingSettingsField === 'email') values = { email: get('email'), phone: get('phone'), career_preferences: { contact_preferences: get('contact') ? [get('contact')] : [] } }
-    if (editingSettingsField === 'linkedin') values = { linkedin_url: get('linkedin'), github_url: get('github') }
-    const didSave = await save(values)
-    if (didSave) setEditingSettings(false)
+    if (editingSettingsField === 'linkedin') values = { linkedin_url: get('linkedin'), github_url: get('github'), career_preferences: { portfolio_url: get('portfolio') } }
+    return run(() => api.updateCandidate(values), '', true)
   }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (settingsAutosave.current && !await settingsAutosave.current.flush()) { focusControl('.cp-settings-inline-editor input:not([type=hidden]), .cp-settings-inline-editor select'); return }
     if (busyRef.current) return
     if (!await flushAnswer()) return
-    if (await run(() => api.submitCandidate(true), '')) { setSuccessAnimationComplete(false); setSuccess(true); setReview(false); setMeaningfulDraft(null) }
+    if (await run(() => api.submitCandidate(true), '')) { setSuccess(true); setReview(false); setMeaningfulDraft(null) }
   }
-  const settingsEditor = (field: string) => editingSettings && editingSettingsField === field ? <form key={`${p.profile_updated_at}:${editingSettingsField}`} onSubmit={saveSettings} className="cp-settings-editor cp-settings-inline-editor"><fieldset disabled={busy}><div className="cp-fields">
-    {editingSettingsField === 'availability' && <label>Availability<select name="availability" defaultValue={preferences.availability || ''}><option value="">Not specified</option>{['Actively looking', 'Open to the right opportunity', 'Not looking right now'].map(value => <option key={value}>{value}</option>)}</select></label>}
+  const settingsEditor = (field: string) => editingSettings && editingSettingsField === field ? <SettingsAutosave ref={settingsAutosave} formRef={settingsForm} dirty={settingsDirty} flight={settingsFlight} save={saveSettings} onSaved={() => setSettingsSaved(Date.now())} closeOnSave={field === 'availability' || field === 'notice_period_days'} close={() => {
+    const restoreFocus = settingsForm.current?.contains(document.activeElement)
+    setEditingSettings(false)
+    if (restoreFocus) mainRef.current?.querySelector<HTMLButtonElement>(`[data-setting="${field}"]`)?.focus({ preventScroll: true })
+  }} field={field} key={field} errorText={error}><fieldset><div className="cp-fields">
+    {editingSettingsField === 'availability' && <SettingsChoices title="Job Search Status" name="availability" value={preferences.availability || ''} options={jobStatuses} />}
     {editingSettingsField === 'notice_period_days' && <label>Notice period<select name="notice" defaultValue={p.notice_period_days ?? ''}><option value="">Select notice period</option>{p.notice_period_days !== null && !noticePeriods.includes(p.notice_period_days) && <option value={p.notice_period_days}>{p.notice_period_days} days</option>}{noticePeriods.map(value => <option key={value} value={value}>{value === 0 ? 'Immediately available' : `${value} days`}</option>)}</select></label>}
-    {editingSettingsField === 'current' && <><label>Current CTC (₹ LPA)<input name="current" type="number" min={0} step="0.01" defaultValue={p.current_salary_lpa ?? ''} /></label><label>Expected CTC (₹ LPA)<input name="expected" type="number" min={0} step="0.01" defaultValue={p.expected_salary_lpa ?? ''} /></label></>}
-    {editingSettingsField === 'work_preferences' && <><label>Preferred locations<input name="locations" defaultValue={(preferences.preferred_locations || []).join(', ')} placeholder="Separate locations with commas" /></label><label>Employment type<select name="employment" defaultValue={p.employment_type}><option value="">Select employment type</option>{p.employment_type && !employmentTypes.includes(p.employment_type) && <option value={p.employment_type}>{p.employment_type}</option>}{employmentTypes.map(value => <option key={value}>{value}</option>)}</select></label><label>Work setup<select name="setup" defaultValue={p.work_preferences[0] || ''}><option value="">Select work setup</option>{p.work_preferences[0] && !workSetups.includes(p.work_preferences[0]) && <option value={p.work_preferences[0]}>{p.work_preferences[0]}</option>}{workSetups.map(value => <option key={value}>{value}</option>)}</select></label></>}
+    {editingSettingsField === 'current' && <><label>Current CTC (₹ LPA)<input className="cp-compensation-input" name="current" type="number" min={0} step="0.01" defaultValue={compensationDisplay(p.current_salary_lpa)} /></label><label>Expected CTC (₹ LPA)<input className="cp-compensation-input" name="expected" type="number" min={0} step="0.01" defaultValue={compensationDisplay(p.expected_salary_lpa)} /></label></>}
+    {editingSettingsField === 'work_preferences' && <><PreferredLocations initial={preferences.preferred_locations || []} changed={() => settingsAutosave.current?.changed(true)} /><label>Employment type<select name="employment" defaultValue={p.employment_type}><option value="">Select employment type</option>{p.employment_type && !employmentTypes.includes(p.employment_type) && <option value={p.employment_type}>{p.employment_type}</option>}{employmentTypes.map(value => <option key={value}>{value}</option>)}</select></label><WorkModeChoices values={p.work_preferences} /></>}
     {editingSettingsField === 'email' && <><label>Email<input type="email" name="email" defaultValue={p.email} /></label><label>Phone<input type="tel" name="phone" defaultValue={p.phone} /></label><label>Contact preference<select name="contact" defaultValue={preferences.contact_preferences?.[0] || ''}><option value="">Select contact preference</option>{contactMethods.map(value => <option key={value}>{value}</option>)}</select></label></>}
-    {editingSettingsField === 'linkedin' && <><label>LinkedIn<input type="url" name="linkedin" defaultValue={p.linkedin_url} /></label><label>GitHub / portfolio<input type="url" name="github" defaultValue={p.github_url} /></label></>}
+    {editingSettingsField === 'linkedin' && <><label>LinkedIn<input type="url" name="linkedin" defaultValue={p.linkedin_url} /></label><label>GitHub<input type="url" name="github" defaultValue={p.github_url} /></label><label>Portfolio<input type="url" name="portfolio" defaultValue={preferences.portfolio_url || ''} /></label></>}
   </div>
-  <div className="cp-actions"><button className="primary">Update</button><button type="button" onClick={() => setEditingSettings(false)}>Cancel</button></div></fieldset></form> : null
+  </fieldset></SettingsAutosave> : null
   const settingsPanel = <aside id="career-settings-panel" className="cp-settings-panel" aria-label="Career Settings panel"><section className="cp-section cp-settings">
-    {settingsMissing.length > 0 && <div className="cp-settings-warning" role="status"><strong>Complete your career preferences</strong>{settingsMissing.map(item => <p key={item.field}>{item.message} <button type="button" onClick={() => openSettings(item.field)}>Add {item.label}</button></p>)}</div>}
     <div className="cp-settings-summary">
-      <button type="button" className="cp-setting-row" onClick={() => openSettings('availability')}><span><Target aria-hidden="true" /></span><div><strong>Availability</strong><p>{preferences.availability || 'Not specified yet'}</p></div><span className="cp-setting-edit"><Pencil aria-hidden="true" />Edit</span></button>
+      {!editingSettings && settingsSaved > 0 && <p role="status" className="cp-autosave-status sr-only">Saved</p>}
+      <button type="button" className="cp-setting-row" data-setting="availability" disabled={busy} aria-expanded={editingSettings && editingSettingsField === 'availability'} aria-controls="settings-editor-availability" onClick={() => settingsAction('availability')}><span><Target aria-hidden="true" /></span><div><strong>Job Search Status</strong><p>{jobStatuses.find(option => option.value === preferences.availability)?.label || preferences.availability || 'Select your status'}</p></div></button>
       {settingsEditor('availability')}
       <div className="cp-setting-row cp-spectrum-row"><span><UserRound aria-hidden="true" /></span><BuildLeadSpectrum value={p.build_lead_preference} save={value => save({ build_lead_preference: value })} /></div>
-      <button type="button" className="cp-setting-row" onClick={() => openSettings('notice_period_days')}><span><Clock3 aria-hidden="true" /></span><div><strong>Notice period</strong><p>{p.notice_period_days === null ? 'Not specified yet' : `${p.notice_period_days} days`}</p></div><span className="cp-setting-edit"><Pencil aria-hidden="true" />Edit</span></button>
+      <button type="button" className="cp-setting-row" data-setting="notice_period_days" disabled={busy} aria-expanded={editingSettings && editingSettingsField === 'notice_period_days'} aria-controls="settings-editor-notice_period_days" onClick={() => settingsAction('notice_period_days')}><span><Clock3 aria-hidden="true" /></span><div><strong>Notice period</strong><p>{p.notice_period_days === null ? 'Not specified yet' : `${p.notice_period_days} days`}</p></div><span className="cp-setting-edit"><Pencil aria-hidden="true" />Edit</span></button>
       {settingsEditor('notice_period_days')}
-      <button type="button" className="cp-setting-row" onClick={() => openSettings('current')}><span><BadgeIndianRupee aria-hidden="true" /></span><div><strong>Compensation</strong><p>Current: {p.current_salary_lpa ? `₹${p.current_salary_lpa} LPA` : 'Not specified'} · Expected: {p.expected_salary_lpa ? `₹${p.expected_salary_lpa} LPA` : 'Not specified'}</p></div><span className="cp-setting-edit"><Pencil aria-hidden="true" />Edit</span></button>
+      <button type="button" className="cp-setting-row" data-setting="current" disabled={busy} aria-expanded={editingSettings && editingSettingsField === 'current'} aria-controls="settings-editor-current" onClick={() => settingsAction('current')}><span><BadgeIndianRupee aria-hidden="true" /></span><div><strong>Compensation</strong><p>Current: {compensationDisplay(p.current_salary_lpa) !== '' ? `₹${compensationDisplay(p.current_salary_lpa)} LPA` : 'Not specified'} · Expected: {compensationDisplay(p.expected_salary_lpa) !== '' ? `₹${compensationDisplay(p.expected_salary_lpa)} LPA` : 'Not specified'}</p></div><span className="cp-setting-edit"><Pencil aria-hidden="true" />Edit</span></button>
       {settingsEditor('current')}
-      <button type="button" className="cp-setting-row" onClick={() => openSettings('work_preferences')}><span><House aria-hidden="true" /></span><div><strong>Work preferences</strong><p>{[p.work_preferences.join(' / '), preferences.preferred_locations?.join(', '), p.employment_type].filter(Boolean).join(' · ') || 'Not specified yet'}</p></div><span className="cp-setting-edit"><Pencil aria-hidden="true" />Edit</span></button>
+      <button type="button" className="cp-setting-row" data-setting="work_preferences" disabled={busy} aria-expanded={editingSettings && editingSettingsField === 'work_preferences'} aria-controls="settings-editor-work_preferences" onClick={() => settingsAction('work_preferences')}><span><House aria-hidden="true" /></span><div><strong>Work preferences</strong><p>{[p.work_preferences.join(' / '), preferences.preferred_locations?.join(', '), p.employment_type].filter(Boolean).join(' · ') || 'Not specified yet'}</p></div><span className="cp-setting-edit"><Pencil aria-hidden="true" />Edit</span></button>
       {settingsEditor('work_preferences')}
-      <button type="button" className="cp-setting-row" onClick={() => openSettings('email')}><span><Phone aria-hidden="true" /></span><div><strong>How should we reach you?</strong><p>{preferences.contact_preferences?.join(' / ') || p.email || p.phone || 'Not specified yet'}</p></div><span className="cp-setting-edit"><Pencil aria-hidden="true" />Edit</span></button>
+      <button type="button" className="cp-setting-row" data-setting="email" disabled={busy} aria-expanded={editingSettings && editingSettingsField === 'email'} aria-controls="settings-editor-email" onClick={() => settingsAction('email')}><span><Phone aria-hidden="true" /></span><div><strong>How should we reach you?</strong><p>{preferences.contact_preferences?.join(' / ') || p.email || p.phone || 'Not specified yet'}</p></div><span className="cp-setting-edit"><Pencil aria-hidden="true" />Edit</span></button>
       {settingsEditor('email')}
-      <button type="button" className="cp-setting-row" onClick={() => openSettings('linkedin')}><span><Link2 aria-hidden="true" /></span><div><strong>Professional links</strong><p>{[p.linkedin_url, p.github_url].filter(Boolean).join(' · ') || 'Not specified yet'}</p></div><span className="cp-setting-edit"><Pencil aria-hidden="true" />Edit</span></button>
+      <button type="button" className="cp-setting-row" data-setting="linkedin" disabled={busy} aria-expanded={editingSettings && editingSettingsField === 'linkedin'} aria-controls="settings-editor-linkedin" onClick={() => settingsAction('linkedin')}><span><Link2 aria-hidden="true" /></span><div><strong>Professional links</strong><p>{[p.linkedin_url, p.github_url, preferences.portfolio_url].filter(Boolean).join(' · ') || 'Not specified yet'}</p></div><span className="cp-setting-edit"><Pencil aria-hidden="true" />Edit</span></button>
       {settingsEditor('linkedin')}
-      <div className="cp-setting-row cp-setting-resume"><span><FileText aria-hidden="true" /></span><div><strong>Resume</strong><p>{resume?.original_name || 'No completed resume'}</p></div>{replaceControl}</div>
+      <div className="cp-setting-row cp-setting-resume">{replaceControl}</div>
     </div>
     </section></aside>
   return <main className="candidate-experience" ref={mainRef}>
-    <header className="cp-welcome"><h1>Let's find work that feels great.</h1></header>
-    {error && <p role="alert" className="error">{error}</p>}<p aria-live="polite" aria-atomic="true" className="cp-sr-only">{message}</p>
-    {success ? <div className="cp-profile-workspace with-preferences"><section className={`cp-success ${successAnimationComplete ? 'cp-success-static' : ''}`}><div className="cp-success-copy"><h2>You're in.<svg className="cp-success-check" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15" /><path pathLength="1" d="m10.5 18 5 5 10-11" /></svg></h2><div className="cp-success-underline" aria-hidden="true" /><div className="cp-success-support" onAnimationEnd={event => { if (event.currentTarget === event.target) setSuccessAnimationComplete(true) }}><h3>We'll take it from here.</h3><p><EnterBrandText text="When ENTER finds something genuinely relevant, we'll reach out according to your preferences." /></p></div></div></section>{settingsPanel}</div> : <>
+    {!success && p.latest_resume && <header className="cp-welcome"><h1>Let's find work that feels great.</h1></header>}
+    {error && !editingSettings && <p role="alert" className="error">{error}</p>}<p aria-live="polite" aria-atomic="true" className="cp-sr-only">{message}</p>
+    {success ? <CandidateConfirmation onViewProfile={() => { setSuccess(false); focusControl('.cp-profile') }} /> : <>
     {processingView}
-    <div className={`cp-profile-workspace ${resume ? 'with-preferences' : ''}`}><div className="cp-profile-main">{(!p.latest_resume ? <section className="onboarding-upload"><div className="onboarding-upload-copy"><h2>Start with your resume.</h2><p>We'll do the reading. You tell us if we got it right.</p></div><div className={`cp-section cp-upload ${dragging ? 'dragging' : ''}`} onDragOver={e => { e.preventDefault(); setDragging(true) }} onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false) }} onDrop={e => { e.preventDefault(); setDragging(false); if (!busy) void upload(e.dataTransfer.files[0]) }}><FileText aria-hidden="true" className="onboarding-file-icon" /><h3>Drop your resume here</h3>{uploadControl}</div></section> : (processing || !resume) && processingView ? null : <>
-      <section className="cp-section cp-profile" tabIndex={-1}><h2>Here's how we understand you.</h2>
+    {p.latest_resume && !((processing || !resume) && processingView) && !editing && <h2 className="cp-profile-heading">Here's how we understand you.</h2>}
+    <div className={`cp-profile-workspace ${resume ? 'with-preferences' : ''}`}><div className="cp-profile-main">{(!p.latest_resume ? <section className="onboarding-upload upload-chapter">
+      <div className="onboarding-upload-copy"><h1>ENTER what’s next?</h1><p>Somewhere, there’s something worth building.</p></div>
+      <section className="upload-chapter-panel" aria-labelledby="upload-panel-title"><header><FileText aria-hidden="true" /><div><h2 id="upload-panel-title">Start with your resume</h2><p>Your experience deserves to be understood.</p></div></header>
+        <div className={`cp-section cp-upload ${dragging ? 'dragging' : ''}`} onDragOver={e => { e.preventDefault(); setDragging(true) }} onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false) }} onDrop={e => { e.preventDefault(); setDragging(false); if (!busy) void upload(e.dataTransfer.files[0]) }}><UploadCloud aria-hidden="true" className="onboarding-file-icon" /><h3>Drop your resume here</h3>{uploadControl}</div>
+        <p className="upload-privacy"><LockKeyhole aria-hidden="true" />Private upload · Review your profile before submitting</p>
+      </section>
+    </section> : (processing || !resume) && processingView ? null : <>
+      <section className="cp-section cp-profile" tabIndex={-1}>
         {p.resume_identity_warning && <div role="alert" className="cp-resume-updates"><strong>We couldn't match this resume to your profile.</strong><p>Your saved information is unchanged. Check the uploaded document and replace it with your own resume showing your correct name. We won't combine two people's career histories.</p><button onClick={() => document.querySelector<HTMLInputElement>('#career-settings-panel input[type="file"]')?.click()}>Choose the correct resume</button></div>}
         {editing ? <ProfileEditor profile={p} busy={busy} save={save} cancel={() => setEditing(false)} /> : <>
-          <div className="cp-identity-card"><CandidatePhoto key={p.profile_photo_url || 'initials'} profile={p} busy={busy} upload={file => void uploadPhoto(file)} remove={() => void run(api.removeCandidatePhoto, '')} /><div className="cp-identity-column"><div className="cp-identity"><h3>{displayName(p.full_name)}</h3><p className="cp-professional-title">{title || 'Add your professional title'}</p>{identityDetails.length > 0 && <div className="cp-identity-meta">{college && <span><GraduationCap aria-hidden="true" />{college}</span>}{Number(p.total_experience) > 0 && <span><BriefcaseBusiness aria-hidden="true" />{p.total_experience} years experience</span>}{p.location && <span><MapPin aria-hidden="true" />{p.location}</span>}</div>}</div><div className="cp-professional-read"><h3>ENTER's read on you</h3><p>{professionalRead}</p></div></div><aside className="cp-highlight"><h3>What stood out to us</h3><p>{preferences.standout_signal || 'Add an evidence-backed achievement using “Not quite — edit”.'}</p>{preferences.standout_signal && highlightTopics.length > 0 && <div className="cp-highlight-topics">{highlightTopics.map(topic => <span key={topic}>{topic}</span>)}</div>}</aside></div>
+          <div className="cp-identity-card"><CandidatePhoto key={p.profile_photo_url || 'initials'} profile={p} busy={busy} upload={file => void uploadPhoto(file)} remove={() => void run(api.removeCandidatePhoto, '')} /><div className="cp-identity-column"><div className="cp-identity"><h3>{displayName(p.full_name)}</h3><p className="cp-professional-title">{title || 'Add your professional title'}</p>{identityDetails.length > 0 && <div className="cp-identity-meta">{college && <span><GraduationCap aria-hidden="true" />{college}</span>}{Number(p.total_experience) > 0 && <span><BriefcaseBusiness aria-hidden="true" />{p.total_experience} years experience</span>}{p.location && <span><MapPin aria-hidden="true" />{p.location}</span>}</div>}</div><div className="cp-professional-read"><h3 className="cp-read-heading" aria-label="ENTER's read on you"><Sparkles className="cp-read-sparkle" aria-hidden="true" /><svg className="cp-read-wordmark" viewBox="145 145 1110 310" aria-hidden="true" focusable="false"><image href="/enter-wordmark.svg" width="1400" height="600" /></svg><span>'s read on you</span></h3><p>{professionalRead}</p></div></div><aside className="cp-highlight"><h3>What stood out to us</h3><p>{preferences.standout_signal || 'Add an evidence-backed achievement using “Not quite — edit”.'}</p>{preferences.standout_signal && highlightTopics.length > 0 && <div className="cp-highlight-topics">{highlightTopics.map(topic => <span key={topic}>{topic}</span>)}</div>}</aside></div>
           <div className="cp-career-surface"><CandidateCareerTimeline items={p.work_experiences} edit={() => setEditing(true)} />
           <div className="cp-skills"><h3>Strongest in</h3><p>Core skills and technologies from your saved profile.</p>{skills.length > 0 ? <div className="cp-skill-chips">{skills.map(skill => <span key={skill}>{skill}</span>)}</div> : <p>Choose the skills that best represent you.</p>}</div></div>
-          {preferences.likely_directions?.length ? <div className="cp-likely"><h3>Likely direction</h3><p>{preferences.likely_directions.slice(0, 3).join(' · ')}</p></div> : null}
         </>}
         <div className="cp-resume-row"><CandidateResumePreview key={resume?.id} resume={resume} />
         {p.resume_review && <ResumeReview key={`${p.resume_review.resume_id}:${p.profile_updated_at}`} profile={p} busy={busy} apply={fields => void run(() => api.reviewResume(p.resume_review!.resume_id, fields, p.profile_updated_at, fields.length > 0), fields.length ? 'Profile updated.' : 'Profile kept unchanged.')} />}
         </div>
-        {!editing && <><div className="cp-actions cp-profile-confirm"><button className="primary" disabled={busy} aria-expanded={showBeyond} aria-controls="beyond-cv" onClick={() => { const opening = !showBeyond; setShowBeyond(opening); if (opening) window.requestAnimationFrame(() => { document.getElementById('beyond-cv')?.focus(); document.getElementById('beyond-cv')?.scrollIntoView({ block: 'start' }) }) }}>That's me ✓</button><button onClick={() => void leave(() => setEditing(true))}>Not quite — edit</button></div>{profileMissing.length > 0 && <section className="cp-profile-required" role="status" aria-label="Required profile details"><strong>Complete your profile</strong><p>Add the required details before final confirmation.</p>{profileMissing.map(item => <button key={item.field} type="button" onClick={() => { if (item.field === 'visibility') { setReview(true) } else if (['notice_period_days', 'work_preferences'].includes(item.field)) openSettings(item.field); else setEditing(true) }}>Add {item.label}</button>)}</section>}</>}
+        {!editing && <><div className="cp-actions cp-profile-confirm"><button className="primary" disabled={busy} aria-expanded={showBeyond} aria-controls="beyond-cv" onClick={() => { const opening = !showBeyond; setShowBeyond(opening); if (opening) window.requestAnimationFrame(() => { document.getElementById('beyond-cv')?.focus(); document.getElementById('beyond-cv')?.scrollIntoView({ block: 'start' }) }) }}>That's me ✓</button><button onClick={() => void leave(() => setEditing(true))}>Not quite — edit</button></div>{profileMissing.length > 0 && !review && <section className="cp-profile-required" role="status" aria-label="Required profile details"><strong>Complete your profile</strong><p>Add the required details before final confirmation.</p>{profileMissing.map(item => <button key={item.field} type="button" onClick={() => navigateMissing(item.field)}>Add {item.label}</button>)}</section>}</>}
       </section>
       {!showBeyond && <div className="cp-beyond-next"><div><strong>Next: Beyond the CV</strong><p>Confirm your profile above to tell us what drives you.</p></div></div>}
       {showBeyond && <section className="cp-beyond" id="beyond-cv" tabIndex={-1}><h2>BEYOND THE CV</h2>
@@ -449,24 +547,12 @@ export default function CandidateExperience({ beforeLeaveRef }: { accountDeleted
       {!editing && <div className="cp-final-confirm"><button type="button" className="primary" disabled={busy || processing} onClick={() => { setReview(true) }}>Confirm my profile</button></div>}
     </>)}</div>
     {resume && settingsPanel}</div>
-    {review && <section className="cp-section cp-brief"><h2>Here's how we'll remember you</h2><h3>{p.full_name}</h3><p>{title}{p.location && ` · ${p.location}`}</p><p>{skills.join(' · ')}</p>{preferences.standout_signal && <p>{preferences.standout_signal}</p>}<p>{preferences.availability || 'Availability not specified'} · {p.work_preferences.join(' / ') || 'Work setup to confirm'}</p>{preferences.motivators?.length ? <p>Drawn to {preferences.motivators.join(', ')}</p> : null}{preferences.exclusions?.length ? <p>Not interested in {preferences.exclusions.join(', ')}</p> : null}
-      {p.submission_missing_fields.length > 0 && <div role="status"><p>Before confirming, complete:</p><ul>{p.submission_missing_fields.map(field => <li key={field.field}>{field.label}</li>)}</ul><div className="cp-actions">{p.submission_missing_fields.map(field => <button key={field.field} type="button" onClick={() => {
-        if (field.field === 'visibility') {
-          document.getElementById('profile-visibility-select')?.focus({ preventScroll: true })
-          return
-        }
-        if (['notice_period_days', 'work_preferences'].includes(field.field)) {
-          setReview(false)
-          openSettings(field.field)
-          return
-        }
-        setReview(false)
-        setEditing(true)
-      }}>{field.field === 'visibility' ? 'Choose profile visibility below' : `Add ${field.label}`}</button>)}</div></div>}
+    {review && <section className="cp-section cp-brief"><h2>Here's how we'll remember you</h2><h3>{p.full_name}</h3><p>{title}{p.location && ` · ${p.location}`}</p><p>{skills.join(' · ')}</p>{preferences.standout_signal && <p>{preferences.standout_signal}</p>}<p>{preferences.availability || 'Availability not specified'} · {p.work_preferences.join(' / ') || 'Work mode to confirm'}</p>{preferences.motivators?.length ? <p>Drawn to {preferences.motivators.join(', ')}</p> : null}{preferences.exclusions?.length ? <p>Not interested in {preferences.exclusions.join(', ')}</p> : null}
+      {p.submission_missing_fields.length > 0 && <div role="status"><p>Before confirming, complete:</p><ul>{profileMissing.map(field => <li key={field.field}>{field.label}</li>)}</ul><div className="cp-actions">{profileMissing.map(field => <button key={field.field} type="button" onClick={() => navigateMissing(field.field)}>{field.field === 'visibility' ? 'Choose profile visibility below' : `Add ${field.label}`}</button>)}</div></div>}
       {!p.visibility && <label>Who may discover your profile?<select id="profile-visibility-select" aria-label="First-time profile visibility" value="" disabled={busy} onChange={e => { if (e.target.value) void save({ visibility: e.target.value as Candidate['visibility'] }) }}><option value="">Choose before giving consent</option><option value="approved_recruiters">Approved ENTER recruiters</option><option value="matching_roles">Only matching roles</option><option value="not_looking">Not looking right now — hidden</option></select></label>}
       <form onSubmit={submit}><label className="cp-check"><input type="checkbox" required />I agree to share my profile with authorized ENTER recruiters according to my visibility preferences.</label><div className="cp-actions"><a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a><a href="/terms" target="_blank" rel="noopener noreferrer">Terms</a><button className="primary" disabled={busy || !p.can_submit || processing}>Yes, that's me ✓</button><button type="button" onClick={() => setReview(false)}>Keep editing</button></div></form>
     </section>}
     </>}
-    {!success && <footer className="cp-footer" aria-label="Candidate help links"><div className="cp-footer-row"><img src="/enter-wordmark.svg" alt="ENTER" /><div className="cp-footer-links"><button aria-expanded={footerPanel === 'support'} onClick={() => void leave(() => setFooterPanel(value => value === 'support' ? null : 'support'))}>Help Center</button></div><div className="cp-connect"><strong>Connect with us</strong><div><a className="cp-footer-icon" href="https://www.linkedin.com/company/enterrecruitment/posts/?feedView=all" target="_blank" rel="noopener noreferrer" aria-label="ENTER Recruitment on LinkedIn"><LinkedInIcon /></a><a className="cp-footer-icon" href="https://www.enterrecruitment.com/" target="_blank" rel="noopener noreferrer" aria-label="ENTER Recruitment website"><Globe2 aria-hidden="true" /></a></div></div></div>{footerPanel === 'support' && <section className="cp-footer-panel"><h2>Help Center</h2><p>For help with your profile, contact your ENTER representative.</p><div className="cp-faqs"><h3>Frequently asked questions</h3><details><summary>How do I update my Career Journey?</summary><p>Use “Not quite — edit” to correct saved profile details, or review Resume updates after replacing a resume.</p></details><details><summary>When will my resume be ready?</summary><p>ENTER shows the processing state while your uploaded document is being read. Your profile opens automatically when processing is complete.</p></details><details><summary>How do I change what opportunities I receive?</summary><p>Use the career preferences beside your profile to update availability, notice period, compensation, work setup, locations, and contact preferences.</p></details><details><summary>Can I delete my profile?</summary><p>Open your name in the top-right account menu to access account deletion.</p></details></div></section>}</footer>}
+    {!success && <footer className="cp-footer" aria-label="Candidate help links"><div className="cp-footer-row"><img src="/enter-wordmark.svg" alt="ENTER" /><div className="cp-footer-links"><button aria-expanded={footerPanel === 'support'} onClick={() => void leave(() => setFooterPanel(value => value === 'support' ? null : 'support'))}>Help Center</button></div><div className="cp-connect"><strong>Connect with us</strong><div><a className="cp-footer-icon" href="https://www.linkedin.com/company/enterrecruitment/posts/?feedView=all" target="_blank" rel="noopener noreferrer" aria-label="ENTER Recruitment on LinkedIn"><LinkedInIcon /></a><a className="cp-footer-icon" href="https://www.enterrecruitment.com/" target="_blank" rel="noopener noreferrer" aria-label="ENTER Recruitment website"><Globe2 aria-hidden="true" /></a></div></div></div>{footerPanel === 'support' && <section className="cp-footer-panel"><h2>Help Center</h2><p>For help with your profile, contact your ENTER representative.</p><div className="cp-faqs"><h3>Frequently asked questions</h3><details><summary>How do I update my Career Journey?</summary><p>Use “Not quite — edit” to correct saved profile details, or review Resume updates after replacing a resume.</p></details><details><summary>When will my resume be ready?</summary><p>ENTER shows the processing state while your uploaded document is being read. Your profile opens automatically when processing is complete.</p></details><details><summary>How do I change what opportunities I receive?</summary><p>Use the career preferences beside your profile to update availability, notice period, compensation, work mode, locations, and contact preferences.</p></details><details><summary>Can I delete my profile?</summary><p>Open your name in the top-right account menu to access account deletion.</p></details></div></section>}</footer>}
   </main>
 }

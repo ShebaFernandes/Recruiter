@@ -1,20 +1,35 @@
-import MountainHero from './MountainHero'
+import { ArrowRight } from 'lucide-react'
+import LandingBackground from './LandingBackground'
 import CompanyLogoMarquee from './company-preview/CompanyLogoPreview'
 import './landing.css'
+import './simple-landing.css'
 
 export default function Landing({ choose }: {
   choose: (role: 'recruiter' | 'candidate', mode?: 'signup' | 'login') => void
 }) {
-  return <main className="career-edition">
+  return <LandingBackground><main className="career-edition simple-landing">
     <a className="ce-skip" href="#enter-home">Skip to content</a>
     <div className="ce-mountain-hero">
-    <MountainHero />
     <header className="ce-masthead">
       <a className="ce-logo" href="#enter-home" aria-label="Enter home"><img src="/enter-wordmark.svg" alt="enter" width={1400} height={600} /></a>
       <span className="ce-masthead-note">People. Work. Possibility.</span>
       <nav aria-label="Main navigation">
         <button className="ce-audience-link" data-testid="for-recruiters" onClick={() => choose('recruiter')}>For recruiters</button>
         <button className="ce-audience-link" data-testid="for-candidates" onClick={() => choose('candidate')}>For candidates</button>
+        <details className="ce-login" onBlur={event => {
+          if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false
+        }} onKeyDown={event => {
+          if (event.key === 'Escape') {
+            event.currentTarget.open = false
+            event.currentTarget.querySelector('summary')?.focus()
+          }
+        }}>
+          <summary>Log in</summary>
+          <div className="ce-login-options">
+            <button onClick={() => choose('recruiter', 'login')}>Recruiter log in <ArrowRight size={14} aria-hidden="true" /></button>
+            <button onClick={() => choose('candidate', 'login')}>Candidate log in <ArrowRight size={14} aria-hidden="true" /></button>
+          </div>
+        </details>
       </nav>
     </header>
 
@@ -31,5 +46,5 @@ export default function Landing({ choose }: {
 
     <CompanyLogoMarquee />
 
-  </main>
+  </main></LandingBackground>
 }

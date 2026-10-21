@@ -1,6 +1,9 @@
 import { expect, test } from '@playwright/test'
 
 // Exercise the real App now that the authentication stylesheet is available.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => sessionStorage.setItem('enter-door-intro-seen', '1'))
+})
 
 for (const width of [1440, 1024, 390]) {
 test(`landing motion at ${width}px preserves layout without lower scroll sections`, async ({ page }, testInfo) => {
@@ -26,12 +29,15 @@ test(`landing motion at ${width}px preserves layout without lower scroll section
   await expect(page.locator('.ce-entry-section, .ce-brand-statement, .ce-footer')).toHaveCount(0)
   expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(960)
 
-  const link = page.getByRole('navigation').getByRole('button', { name: 'For recruiters' })
+  const link = page.getByTestId('for-recruiters')
   await link.focus()
   await link.press('Tab')
-  const candidateLink = page.getByRole('navigation').getByRole('button', { name: 'For candidates' })
+  const candidateLink = page.getByTestId('for-candidates')
   await expect(candidateLink).toBeFocused()
-  await expect.poll(() => candidateLink.evaluate(element => getComputedStyle(element, '::after').transform)).toBe('matrix(1, 0, 0, 1, 0, 0)')
+  await expect(candidateLink).toHaveCSS('outline-style', 'solid')
+  await expect(page.getByRole('navigation').getByTestId('for-recruiters')).toHaveCount(1)
+  await expect(page.getByRole('navigation').getByTestId('for-candidates')).toHaveCount(1)
+  await expect(page.locator('.ce-intro button')).toHaveCount(0)
   await expect(page.locator('.ce-login')).toHaveCount(0)
   await page.screenshot({ path: testInfo.outputPath(`landing-${width}.png`), fullPage: true, animations: 'disabled' })
 })

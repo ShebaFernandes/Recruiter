@@ -1,0 +1,73 @@
+/* Surface-only hierarchy. Never fade content or filter the landscape video. */
+.platform-surface {
+  --glass-auth:rgba(250,248,244,.94);
+  --glass-card:rgba(250,248,244,.94);
+  --glass-highlight:rgba(229,246,243,.93);
+  --glass-dense:rgba(250,248,244,.96);
+  --glass-dialog:rgba(250,248,244,.98);
+  --glass-border:rgba(255,255,255,.42);
+  --glass-shadow:0 6px 24px rgba(15,35,55,.045);
+}
+.platform-surface .auth-editorial .auth-story__copy { background:transparent; }
+.platform-surface .candidate-onboarding-auth.auth-editorial .auth-story { align-self:start; padding-top:12px; }
+.platform-surface :is(.brand img,.enter-inline-brand img,.cp-read-wordmark,.cp-footer img) { filter:grayscale(1); }
+.platform-surface .auth-editorial .auth-story p { color:var(--enter-text); text-shadow:0 1px 3px rgba(250,248,244,.65); }
+.platform-surface .auth-page .auth-card {
+  background:var(--glass-auth); backdrop-filter:blur(5px) saturate(110%); -webkit-backdrop-filter:blur(5px) saturate(110%);
+  border-color:rgba(255,255,255,.38); box-shadow:0 12px 40px rgba(22,38,55,.07); border-radius:16px;
+}
+.platform-surface .candidate-experience :is(.cp-identity-card,.cp-career-surface,.cp-resume-row,.cp-settings,.cp-section:not(.cp-profile)),
+.platform-surface .recruiter-page :is(.project-section,.project-panel,.enter-message) {
+  background:var(--glass-card); backdrop-filter:blur(5px) saturate(110%); -webkit-backdrop-filter:blur(5px) saturate(110%);
+  border-color:var(--glass-border); box-shadow:var(--glass-shadow); border-radius:14px;
+}
+.platform-surface .candidate-experience :is(.cp-professional-read,.cp-highlight,.cp-beyond-next),
+.platform-surface .candidate-experience .cp-settings-panel button.cp-setting-row[data-setting="availability"],
+.platform-surface .candidate-experience .cp-settings-panel #settings-editor-availability,
+.platform-surface .candidate-experience .cp-setting-resume .cp-replace-control {
+  background:var(--glass-highlight); border-color:rgba(18,117,115,.08);
+}
+/* Inset border avoids changing inner-panel dimensions or text wrapping. */
+.platform-surface .candidate-experience :is(.cp-professional-read,.cp-highlight) { box-shadow:inset 0 0 0 1px rgba(18,117,115,.08); }
+.platform-surface .candidate-experience .cp-settings-panel .cp-settings-inline-editor { background:transparent; }
+.platform-surface .candidate-experience .cp-settings-panel button.cp-setting-row:not([data-setting="availability"]):is(:hover,[aria-expanded=true]) { background:rgba(250,248,244,.24); }
+.platform-surface :is(.cp-beyond,.cp-footer) { background:var(--glass-card); backdrop-filter:blur(5px) saturate(110%); -webkit-backdrop-filter:blur(5px) saturate(110%); }
+.platform-surface .recruiter-page :is(.candidate-card,.results-toolbar,.filter-panel,.workspace-sidepanel,.chat-composer,.search-composer),
+.platform-surface .candidate-experience :is(.cp-brief,.processing-card) {
+  background:var(--glass-dense); backdrop-filter:blur(5px) saturate(110%); -webkit-backdrop-filter:blur(5px) saturate(110%);
+  border-color:var(--glass-border); box-shadow:var(--glass-shadow);
+}
+.platform-surface :is(.profile-drawer,.compare-modal,.non-relevant-modal,.cp-account-popover,.notifications-popover) {
+  background:var(--glass-dialog); border-color:var(--glass-border);
+}
+/* A readable fallback on engines without backdrop-filter support. */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))) {
+  .platform-surface { --glass-auth:rgba(250,248,244,.96); --glass-card:rgba(250,248,244,.96); }
+}
+.platform-surface .candidate-experience .cp-footer { background:transparent; backdrop-filter:none; -webkit-backdrop-filter:none; border:0; padding-top:16px; }
+.platform-surface .cp-footer-row { padding:14px 18px; border:1px solid var(--glass-border); border-radius:14px; background:var(--glass-auth); backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px); }
+.candidate-experience .cp-setting-resume .cp-replace-control { display:grid!important; grid-template-columns:20px minmax(0,1fr); gap:3px 9px; }
+.cp-setting-resume .cp-replace-control>svg { grid-row:1 / 3; width:18px; height:18px; color:var(--enter-highlight); align-self:center; }
+.cp-setting-resume .cp-replace-control>small { grid-column:2; }
+
+/* Keep the status selector and location picker compact and clearly grouped. */
+.candidate-experience .cp-setting-row[data-setting=availability] { grid-template-columns:24px minmax(0,1fr); border-radius:10px 10px 0 0; padding:12px; }
+.candidate-experience .cp-setting-row[data-setting=availability] strong { font-size:14px; }
+.candidate-experience .cp-setting-row[data-setting=availability] p { font-size:12px; font-weight:400; margin-top:3px; }
+.candidate-experience #settings-editor-availability { padding:4px 12px 10px; }
+.candidate-experience .cp-career-heading p,
+.candidate-experience .cp-skills>p { font-size:11px; font-weight:400; line-height:1.45; color:var(--enter-text-muted); }
+.candidate-experience .cp-location-chips>span { font-size:11px; padding:2px 7px; }
+.candidate-experience .cp-locations li[aria-selected=true] { background:var(--enter-selected); color:var(--enter-selected-text); }
+
+/* A single aligned column avoids uneven wrapping of the three status labels. */
+.candidate-experience #settings-editor-availability .cp-settings-choices > div { display:grid; grid-template-columns:minmax(0,1fr); gap:6px; }
+.candidate-experience #settings-editor-availability .cp-choice { justify-content:center; min-height:30px; padding:5px 10px; border:1px solid var(--enter-border); background:rgba(255,255,255,.98); color:var(--enter-text); font-size:11px; line-height:18px; text-align:center; }
+.candidate-experience #settings-editor-availability .cp-choice:has(input:checked) { background:var(--enter-highlight); border-color:var(--enter-highlight); color:var(--enter-on-primary); }
+.candidate-experience #settings-editor-availability .cp-choice:focus-within { box-shadow:none; }
+.candidate-experience #settings-editor-availability .cp-choice:has(input:focus-visible) { outline:2px solid var(--enter-highlight); outline-offset:2px; }
+.candidate-experience #settings-editor-availability .cp-autosave-status:empty { display:none; }
+
+/* Stronger surfaces separate content from scenery without fading the content. */
+.platform-surface .candidate-experience .cp-section.cp-settings { background:rgba(250,248,244,.96); }
+.platform-surface :is(.candidate-experience,.auth-page,.recruiter-page) :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=hidden]):not([type=file]),select,textarea) { background-color:rgba(255,255,255,.98); }

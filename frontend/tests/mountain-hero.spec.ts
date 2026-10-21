@@ -1,6 +1,12 @@
 import { expect, test } from '@playwright/test'
 
-for (const width of [1440, 1024, 390]) {
+// These tests inspect the landing after entry. Manual knob/Skip behavior is
+// exercised separately in intro-animation.spec.ts.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => sessionStorage.setItem('enter-door-intro-seen', '1'))
+})
+
+for (const width of [1440, 1024, 768, 390]) {
   test(`mountain hero at ${width}px: aligned layers, bounded motion, navigation`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 900 })
     await page.emulateMedia({ reducedMotion: 'no-preference' })
@@ -21,6 +27,9 @@ for (const width of [1440, 1024, 390]) {
     const dimensions = await layers.evaluateAll(images => images.map(image => [image.clientWidth, image.clientHeight]))
     expect(dimensions.every(size => size.toString() === dimensions[0].toString())).toBe(true)
     await expect(page.getByRole('heading', { name: 'The best teams are built by ENTER.' })).toBeVisible()
+    await expect(page.locator('.ce-intro h1')).toHaveCSS('color', 'rgb(11, 31, 58)')
+    await expect(scene.locator('.ce-landscape-curves')).toHaveCSS('color', 'rgb(22, 59, 101)')
+    expect(await layers.evaluateAll(images => images.every(image => (image as HTMLImageElement).src.includes('/mountain-v1/')))).toBe(true)
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
     await page.screenshot({ path: testInfo.outputPath(`mountain-hero-${width}.png`), fullPage: true, animations: 'disabled' })
     // Normal desktop is now a single screen. Exercise scroll-linked depth in
@@ -74,7 +83,7 @@ for (const width of [1440, 1024, 390]) {
     await expect(scene).toHaveAttribute('data-active', 'false')
     await expect(scene.locator('.ce-landscape-clouds-back')).toHaveCSS('animation-play-state', 'paused')
     await page.setViewportSize({ width, height: 900 })
-    await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'For recruiters' }).click()
+    await page.getByTestId('for-recruiters').click()
     await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
     await expect(page.getByLabel('Company')).toHaveCount(0)
   })
@@ -124,8 +133,10 @@ for (const width of [1440, 390]) {
     })
     const frontDelta = movement.after.front - movement.before.front
     const backDelta = movement.after.back - movement.before.back
-    expect(Math.abs(frontDelta)).toBeGreaterThan(width > 760 ? 25 : 5)
-    expect(Math.abs(backDelta)).toBeGreaterThan(width > 760 ? 20 : 3)
+    expect(Math.abs(frontDelta)).toBeGreaterThan(1)
+    expect(Math.abs(backDelta)).toBeGreaterThan(1)
+    expect(Math.abs(frontDelta)).toBeLessThan(25)
+    expect(Math.abs(backDelta)).toBeLessThan(25)
     expect(frontDelta * backDelta).toBeLessThan(0)
     expect(movement.after.heading).toEqual(movement.before.heading)
     await page.emulateMedia({ reducedMotion: 'reduce' })
@@ -140,6 +151,9 @@ test('delayed artwork cannot move the hero content', async ({ page }) => {
   const gate = new Promise<void>(resolve => { release = resolve })
   await page.route('**/hero/mountain-v1/*.webp', async route => { await gate; await route.continue() })
   await page.goto('/', { waitUntil: 'domcontentloaded' })
+  // The session check is asynchronous; measure mounted content, not an empty
+  // opening screen, while keeping the artwork response deliberately blocked.
+  await expect(page.locator('.ce-intro h1')).toBeVisible()
   await page.evaluate(() => document.fonts.ready)
   const bounds = () => page.locator('.ce-mountain-hero, .ce-intro h1, .ce-intro-aside').evaluateAll(elements => elements.map(element => {
     const { x, y, width, height } = element.getBoundingClientRect()

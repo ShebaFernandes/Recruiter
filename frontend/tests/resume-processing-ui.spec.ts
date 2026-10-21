@@ -54,7 +54,7 @@ for (const width of [1440, 390]) test(`accepted uploads and replacements visibly
   await page.getByRole('button', { name: 'Create account', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible({ timeout: 20_000 })
   await page.goto(`/?verify-email=${issueLocalAccountToken(email, 'verify_email')}`)
-  await expect(page.getByRole('heading', { name: 'Start with your resume.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Start with your resume' })).toBeVisible()
   const docx = info.outputPath('fictional.docx'), pdf = info.outputPath('fictional.pdf')
   const careerUpdate = info.outputPath('career-update.docx')
   const otherPerson = info.outputPath('other-person.pdf')

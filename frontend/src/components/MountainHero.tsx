@@ -30,7 +30,7 @@ export default function MountainHero() {
     }
     const update = () => {
       frame = 0
-      if (!visible || document.hidden || reducedMotion.matches || mobile.matches) return
+      if (!visible || document.hidden || reducedMotion.matches || mobile.matches || hero.closest('.enter-intro-shell.is-active')) return
       const { top, height } = hero.getBoundingClientRect()
       const progress = Math.min(1, Math.max(0, -top / height))
       // Reveal depth early in the scroll, then settle without a hard stop.

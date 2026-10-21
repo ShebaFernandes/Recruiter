@@ -1,16 +1,26 @@
 /* Enter's shared visual contract. Page styles own composition, not palettes.
    Compact controls preserve recruiter density; standard controls suit forms. */
 :root {
-  --enter-bg: #FAF9F6;
+  --enter-bg: #F7F9FC;
   --enter-surface: #FFFFFF;
-  --enter-text: #19152B;
-  --enter-text-muted: #6E697B;
-  --enter-primary: #6D4AFF;
-  --enter-primary-hover: #5737D9;
-  --enter-primary-soft: #F0ECFF;
-  --enter-border: #E6E2EB;
-  --enter-success: #21634E;
-  --enter-success-soft: #EFF7F2;
+  --enter-text: #303842;
+  --enter-text-muted: #626971;
+  --enter-primary: #303842;
+  --enter-primary-hover: #242B33;
+  --enter-primary-soft: #F7F9FC;
+  --enter-border: #D6DFEA;
+  --enter-border-strong: #A7B7CA;
+  --enter-selected: #DDF2F0;
+  --enter-selected-text: #07565B;
+  --enter-highlight-soft: #DDF2F0;
+  --enter-highlight-wash: #F0FAF8;
+  --enter-blue-wash: #EAF2FA;
+  --enter-charcoal: #303842;
+  --enter-highlight: #0B7378;
+  --enter-atmosphere: #DCDCF0;
+  --enter-lavender: #B7B6D9;
+  --enter-success: #0B7378;
+  --enter-success-soft: #DDF2F0;
   --enter-warning: #805719;
   --enter-warning-soft: #FFF5DF;
   --enter-error: #A13629;
@@ -39,9 +49,10 @@
   --enter-radius-pill: 999px;
   --enter-focus-ring: 2px solid var(--enter-primary);
   --enter-focus-offset: 3px;
-  --enter-focus-halo: 0 0 0 3px rgb(109 74 255 / 12%);
-  --enter-shadow-card: 0 2px 8px rgb(25 21 43 / 3%);
-  --enter-shadow-popover: 0 12px 32px rgb(25 21 43 / 12%);
+  --enter-focus-halo: 0 0 0 3px rgb(22 59 101 / 16%);
+  --enter-shadow-card: 0 2px 8px rgb(11 31 58 / 3%);
+  --enter-shadow-popover: 0 12px 32px rgb(11 31 58 / 12%);
+  --enter-accent-rgb: 22 59 101;
   --enter-transition: 180ms ease;
   --enter-ease-out: cubic-bezier(.2,.75,.25,1);
 

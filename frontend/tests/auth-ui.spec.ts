@@ -1,7 +1,7 @@
 import { provisionRecruiter } from './recruiter-admin'
 import { expect, test, type Page, type TestInfo } from '@playwright/test'
 import { issueLocalAccountToken } from './account-token'
-import { expectEnterCard, expectEnterField, expectEnterPage, expectEnterPrimary } from './design-contract'
+import { candidateColors, enterColors, expectEnterCard, expectEnterField, expectEnterPage, expectEnterPrimary } from './design-contract'
 
 async function screenshot(page: Page, info: TestInfo, name: string, width: number) {
   await page.evaluate(() => document.fonts.ready)
@@ -14,18 +14,19 @@ for (const width of [1440, 1024, 390]) {
     await page.setViewportSize({ width, height: 900 })
     await page.goto('/')
     for (const role of ['recruiters', 'candidates']) {
+      const colors = role === 'candidates' ? candidateColors : enterColors
       await page.getByTestId(`for-${role}`).click()
       await expect(page.getByRole('heading', { name: role === 'recruiters' ? 'Welcome back' : 'Create your account' })).toBeVisible()
       await expect(page.getByLabel('Full name')).toHaveCount(role === 'recruiters' ? 0 : 1)
       await expect(page.locator('.candidate-laptop')).toHaveCount(0)
       if (role === 'candidates') await expect(page.locator('.onboarding-art')).toHaveCount(0)
-      await expectEnterPage(page, page.locator('.auth-editorial'))
-      await expectEnterCard(page.locator('.auth-card'))
-      await expectEnterPrimary(page.getByRole('button', { name: role === 'recruiters' ? 'Log in' : 'Create account', exact: true }))
-      await expectEnterField(page.getByLabel('Email'))
+      await expectEnterPage(page, page.locator('.auth-editorial'), colors)
+      await expectEnterCard(page.locator('.auth-card'), colors)
+      await expectEnterPrimary(page.getByRole('button', { name: role === 'recruiters' ? 'Log in' : 'Create account', exact: true }), colors)
+      await expectEnterField(page.getByLabel('Email'), colors)
       await expect(page.getByText(role === 'recruiters' ? 'RECRUITER WORKSPACE' : 'CANDIDATE PROFILE', { exact: true })).toBeVisible()
       await page.getByLabel('Email').focus()
-      await expect(page.getByLabel('Email')).toHaveCSS('border-color', 'rgb(109, 74, 255)')
+      await expect(page.getByLabel('Email')).toHaveCSS('border-color', colors.primary)
       await screenshot(page, info, `${role}-entry`, width)
       if (role === 'candidates') await page.getByRole('button', { name: /Already have an account/ }).click()
       await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
@@ -73,14 +74,14 @@ test('candidate verification, resend, login and password reset use the existing 
   await page.getByRole('button', { name: 'Resend verification email' }).click()
   expect((await resend).ok()).toBeTruthy()
   await page.goto(`/?verify-email=${issueLocalAccountToken(email, 'verify_email')}`)
-  await expect(page.getByRole('heading', { name: 'Start with your resume.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Start with your resume' })).toBeVisible()
   await page.getByRole('button', { name: 'Log out' }).click()
   await page.getByTestId('for-candidates').click()
   await page.getByRole('button', { name: /Already have an account/ }).click()
   await page.getByLabel('Email').fill(email)
   await page.getByLabel('Password', { exact: true }).fill(password)
   await page.getByRole('button', { name: 'Log in', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Start with your resume.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Start with your resume' })).toBeVisible()
   await page.getByRole('button', { name: 'Log out' }).click()
   await page.getByTestId('for-candidates').click()
   await page.getByRole('button', { name: /Already have an account/ }).click()
@@ -100,7 +101,7 @@ test('candidate verification, resend, login and password reset use the existing 
   await page.getByLabel('Email').fill(email)
   await page.getByLabel('Password', { exact: true }).fill('Auth-ui-updated-456!')
   await page.getByRole('button', { name: 'Log in', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Start with your resume.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Start with your resume' })).toBeVisible()
 })
 
 test('administrator-provisioned recruiter login keeps its workspace destination', async ({ page }) => {

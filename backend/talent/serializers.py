@@ -172,6 +172,10 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
                 value[key] = list(dict.fromkeys(text.strip() for text in item))
             elif not isinstance(item, str) or len(item) > 1000:
                 raise serializers.ValidationError("Keep career answers within 1,000 characters.")
+            if key == "portfolio_url":
+                value[key] = serializers.URLField(allow_blank=True, max_length=1000).run_validation(
+                    item.strip()
+                )
         saved_preferences = self.instance.career_preferences if self.instance else {}
         custom_motivators = value.get(
             "custom_motivators", saved_preferences.get("custom_motivators", [])

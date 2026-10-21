@@ -22,7 +22,7 @@ describe('candidate career experience', () => {
     expect(roles()).toHaveLength(3)
     expect(roles()[0]).toHaveAttribute('aria-label', expect.stringContaining('Engineer at Early company'))
     expect(container.querySelector('.career-present')).toHaveTextContent('Present')
-    expect(roles().filter(role => role.querySelector('small')?.textContent === '2021')).toHaveLength(1)
+    expect(roles().map(role => role.querySelector('small')?.textContent)).toEqual(['2010', '2021', '2021'])
     fireEvent.focus(roles()[2])
     expect(screen.getByRole('tooltip')).toHaveTextContent('Recent company')
     expect(screen.getByRole('tooltip')).toHaveTextContent('Lead')
@@ -51,7 +51,7 @@ describe('candidate career experience', () => {
     expect(screen.getByRole('button', { name: /at Beta/ })).toBeVisible()
     fireEvent.click(screen.getByRole('button', { name: /at Beta/ }))
     expect(screen.getByRole('tooltip')).toHaveTextContent('Beta')
-    expect(screen.getByRole('tooltip')).not.toHaveTextContent('Overlapping employment')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Overlapping employment')
     fireEvent.focus(screen.getByRole('button', { name: /at Alpha/ }))
     fireEvent.click(screen.getByRole('button', { name: /at Alpha/ }))
     expect(screen.getByRole('tooltip')).toHaveTextContent('Alpha')
@@ -76,7 +76,7 @@ describe('candidate career experience', () => {
     rerender(<CandidateCareerTimeline items={[job('First', '2015-01-01', '2017-01-01'), { ...job('Second', '2019-01-01', null), gap_reason: 'Study break' }]} />)
     fireEvent.click(screen.getByRole('button', { name: /Career gap/ }))
     expect(screen.getByRole('tooltip')).toHaveTextContent('Career gap')
-    expect(screen.getByRole('tooltip')).not.toHaveTextContent('Study break')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Study break')
   })
   it('preserves year-only labels without claiming precise durations or gaps', () => {
     render(<CandidateCareerTimeline items={[
