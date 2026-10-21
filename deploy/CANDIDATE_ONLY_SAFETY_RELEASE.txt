@@ -1,0 +1,119 @@
+LOCAL PREPARATION ONLY — NOT APPROVED FOR AWS INSTALLATION OR PUBLIC LAUNCH
+
+Controls
+APP_ENV=production + CANDIDATE_ONLY=true disables recruiter permission checks,
+including password login, existing tokens/cookies and recruiter resume downloads.
+Middleware denies recruiter paths and recruiter API families with 404. Candidate
+login/profile/preview remain available. The flag is ignored outside production.
+Build frontend with VITE_CANDIDATE_ONLY=true: remove recruiter navigation/login
+choice without layout/copy changes and deny /recruiter and descendants in nginx.
+Use both backend and frontend controls; navigation alone is NOT security.
+
+CANDIDATE_REGISTRATION_PAUSED=true denies signup POST (503, Retry-After 3600).
+RESUME_UPLOADS_PAUSED=true denies new resume/retry POST. Existing auth, verification,
+reset, saved profile, polling and queued/running jobs remain untouched. These are
+environment-based controls requiring backend recreation to change; they are not
+instant live toggles. Worker code does not read them. Do not recreate worker for
+an emergency intake toggle. Proxy-level temporary POST denial can pause intake
+without a backend restart; it requires separately reviewed Caddy configuration.
+
+Backup installation proposal (requires separate approval)
+1. Preserve current ops.env, service units and config. Verify exact account,
+   instance, region, private encrypted bucket and existing role upload/read rights.
+2. Install deploy/backup_safe.py and wrappers, NOT the old live-container restore.
+   Host needs python3+boto3, aws CLI with IfNoneMatch/ChecksumSHA256, Docker, flock.
+   Create /var/lib/enter-ops mode0700 and configure launch-controls.env.example
+   operational variables in existing /etc/enter/ops.env (never copy example secrets).
+3. Run backup.sh manually once before timers. It uses consistent pg_dump,
+   unique UUID keys, conditional upload If-None-Match *, AES256 and SHA256 readback.
+   It restore-tests EVERY backup with exact existing PostgreSQL image, network none,
+   no ports/live mounts, 0.5 CPU, 768MiB memory, 384MiB tmpfs. No image pull.
+   pg_amcheck validates restored structure. Success removes only unique scratch
+   resources; failure retains mode0700 files/container for operator investigation.
+   Do not blindly run rm/prune. Never restore a backup onto live data for code rollback.
+4. Explicit safe limits: database <50MiB, available RAM >3GiB, free disk >5GiB.
+   These conservative staging-proven limits must be reassessed with measured growth;
+   do not silently raise them. Concurrent writes are reported, not prohibited:
+   pg_dump is a consistent snapshot and is not the latest state after it finishes.
+5. Install enter-backup.service/timer (hourly) and enter-backup-daily.service/timer
+   (02:15 UTC daily); enable only after approval. Shared flock prevents overlaps.
+   Both update a private atomic success marker only after restore verification.
+6. Proposed backup-retention.proposed.json: hourly prefix expires after7 days;
+   daily prefix expires after30 days. This is destructive lifecycle expiration,
+   NOT applied by scripts. Read and merge existing bucket rules before approved
+   application; never overwrite unrelated rules. Old postgres/YYYY keys are outside
+   these prefixes and remain untouched. Set retention days by reviewed JSON change.
+   Keep bucket versioning status in review: noncurrent versions require separate rules.
+7. Monthly independent recovery drill should choose an older retained object,
+   verify archived checksum and restore offline, record duration and usable schema.
+   Current restore-test.sh makes/verifies a fresh backup; it does NOT independently
+   test a historical snapshot or application reconciliation. Historical drill remains
+   an operator procedure requiring a reviewed scratch-only script and selected key.
+   Proposed RPO <=1 hour / RTO <=4 hours are goals, not measured guarantees.
+
+Monitoring proposal (not installed)
+Install existing enter-monitor.service/timer at five minutes only after configuring
+operator-only SNS destination and confirming delivery. monitor.sh checks backup
+service failures, success marker age >2h, disk >=80%, HTTPS readiness, DB readiness,
+worker availability, overdue/failed DB jobs and deferred-cleanup age, and ClamAV.
+Requires approved SNS publish permission; never broadens IAM itself. Poll failures
+may alert every5min; configure acknowledgement/deduplication before a wider rollout.
+Add an independent external HTTPS/host heartbeat monitor: on-host checks cannot
+alert when EC2 is down. Configure SQS visible/inflight/oldest-age + DLQ metrics,
+EC2 status checks, disk critical90%, and missing-data alarms after approval.
+Cost thresholds proposed:50/80/100 percent of owner-approved monthly budget,
+plus forecast/credit deadline reminders. Alerting is NOT an AWS spending cap.
+
+S3 resume recovery/deletion proposal
+Keep private object access, encrypted storage and non-overwriting keys. Database
+backups alone cannot recover deleted objects. Approve either versioned recovery
+with bounded noncurrent retention or a separate encrypted recovery copy. Do not
+turn on Object Lock. Versioning must be accompanied by deletion of ALL versions,
+delete markers and recovery copies for approved erasure, and tests for retries
+when S3 is unavailable. No live resume object is read/copied/deleted by this release.
+Candidate access revocation and cleanup outbox exist; test on disposable identity.
+Backups may retain erased data until expiry; restrict use, document this exception,
+and replay an erasure ledger after disaster restoration to prevent resurrection.
+
+Costs — planning allowances, not verified account quote
+Existing single-host pilot: $100–150/month estimate, no new host in this proposal.
+Backup retention stores ~168 hourly+30 daily dumps; at103KB/dump ~20MB, at50MB/dump
+~9.9GB. Estimate retained bytes * current Sydney S3 rate plus PUT/GET and any versions.
+Restore computation uses existing EC2, not a new paid service; it consumes capacity.
+Allow $1–5/month for small backup storage/requests and $5–15/month for modest
+monitoring/alerts, subject to chosen metrics, checks, logs, email and current pricing.
+Confirm AWS Calculator/Console before approval. Billing/credit balance unverified.
+No Free-plan upgrade authorized. Free-plan expiry and credit expiry differ; do not
+promise continuity until the owner's current plan deadline/credits are confirmed.
+
+Release/deployment plan — commands deliberately gated, NOT executed
+1. Approve legal wording, disposable submission/deletion tests, production hostname,
+   data separation plan, backup retention, operator recipients and costs.
+2. Commit reviewed files only after approval; record SHA. Build exact-SHA frontend
+   with --platform linux/amd64 --build-arg VITE_CANDIDATE_ONLY=true and backend image;
+   label revision, scan exact image digests, export archives/checksums. No SHA exists yet.
+3. Test nginx recruiter404, backend denied recruiter token/login/shared downloads,
+   candidate upload/login, switches, worker drain, restore+alerts in isolated rehearsal.
+4. Keep existing staging restrictions OFF pending explicit staging approval. Then
+   test release in restricted staging with approved synthetic account, not personal CV.
+5. Production approval must dedicate current stack/data to production and move
+   development to isolated synthetic local data, OR approve separately costed isolation.
+   Never use same database/bucket/queue as ongoing staging under another hostname.
+6. Record per-service image digests/container IDs/config rollback. Fresh verified backup;
+   queue idle; disk sufficient. Preserve all data and old images. Review env with
+   APP_ENV=production,CANDIDATE_ONLY=true,intake pauses=true,LEGAL_CONTENT_APPROVED=true
+   ONLY once approved policies are actually published. AI remains disabled.
+7. Update backend+worker with matching scanned image using compose up -d --no-deps
+   --no-build --pull never backend worker, after safe worker drain. Then frontend only.
+   Use explicit per-service image override file: do not let one shared ENTER_RELEASE
+   inadvertently select a different database/scanner/Caddy image. No stack teardown.
+8. Separately approve domain/TLS/public ingress; verify controls while intake paused.
+   Enable candidate intake only after all acceptance gates and final public approval.
+
+Rollback/emergency
+Immediately pause signup/upload (keep candidate login and queued work). Record jobs;
+do not stop worker mid-job. Restore prior scanned application images only. Old images
+may lack candidate-only controls: KEEP restrictive edge rules and/or public ingress
+closed during rollback; never expose recruiter APIs by reverting security code.
+Do not restore older DB or delete S3 objects. Preserve config backups securely.
+Re-enable intake only after incident approval. No migrations are intended.

@@ -1,0 +1,61 @@
+UNPUBLISHED WORKING DRAFT — NOT LEGAL ADVICE OR APPROVED POLICY
+
+Placeholders identified: frontend/src/App.tsx LegalPlaceholder renders /privacy
+and /terms; backend/config/settings.py LEGAL_CONTENT_APPROVED is a release gate,
+not approval. Existing submission consent version candidate-profile-sharing-v1.
+Do not publish this draft automatically or set approval true merely to boot production.
+
+Factual privacy wording for owner/counsel review
+ENTER collects account/contact information, resumes, profile and career preferences,
+and your edits and submission choices to operate its recruitment platform. Uploaded
+documents are stored privately and scanned for malware before asynchronous parsing.
+The current resume parser is rule-based; external AI resume processing is disabled.
+You can review and correct extracted information before submitting your profile.
+Submission records a consent timestamp and version. Draft/paused profiles are not
+intended for recruiter discovery. Candidate-only launch disables recruiter access;
+any future recruiter rollout must be consistent with the consent you were shown.
+Do not promise that submitting guarantees employment, introductions or accuracy.
+
+Hosting currently uses AWS Sydney EC2, PostgreSQL on EC2, private S3 storage,
+SQS processing queues and ClamAV scanning. Email uses a configured SMTP provider;
+its legal entity, processing locations, terms and retention must be confirmed.
+List actual subprocessors, transfers, backup locations and support access. Do not
+describe all data as Australia-only until email/support/telemetry flows are verified.
+Authentication uses secure cookies/tokens. Describe necessary authentication storage
+and any actual analytics separately; do not invent advertising/analytics use.
+
+You may request/delete your account through the authenticated account interface.
+Deletion requires password confirmation; account access is revoked and file cleanup
+is queued. Storage outages may delay cleanup and require operator follow-up. Recovery
+copies may persist under a defined, access-restricted backup retention policy until
+expiry. State the approved timing, erasure exceptions and complaint route; do not
+promise instant removal from backups or unlimited retention.
+
+Proposed consent text for review (not a UI change)
+"I confirm that I have reviewed my profile and agree to its processing under the
+Privacy Notice. I understand when and with whom my submitted profile may be shared,
+as described in my visibility preferences and the notice."
+Decision: whether recruiter sharing is separately opt-in now or deferred until launch.
+Retain the exact notice/consent version and avoid silently expanding sharing later.
+
+Terms draft outline
+Identify contracting entity and eligibility/age; require truthful information and
+rights to upload documents; prohibit malware, impersonation and unauthorized access;
+explain service scope and no guaranteed placement; preserve user's document rights;
+grant only the license needed to store/process/display under chosen visibility;
+describe corrections, suspension, account termination, complaints and support;
+have counsel approve liability, governing law and dispute resolution for target markets.
+
+Unresolved decisions / publication checklist
+- Legal entity/address, controller contact, support mailbox, privacy grievance contact.
+- Countries served, minimum age, lawful bases and applicable jurisdiction requirements.
+- Exact recruiter-sharing purposes/recipients, withdrawal/pausing effects and lawful access.
+- Active account, dormant account, unsuccessful upload/quarantine, operational log,
+  support ticket and backup retention; deletion deadlines and legal-hold exceptions.
+- Confirm SMTP provider, subprocessors, cross-border transfers and security commitments.
+- Candidate access/correction/export/deletion request procedure, identity checks and SLA.
+- Security incident contact, escalation, notification obligations and restore erasure ledger.
+- Approve 7-day hourly/30-day daily backup proposal and S3 version/copy expiry separately.
+- Publish final accessible notices at /privacy and /terms, version and effective date,
+  approve exact consent wording, then enable LEGAL_CONTENT_APPROVED.
+- Test consent refusal/acceptance and deletion on an explicitly approved disposable user.

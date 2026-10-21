@@ -373,7 +373,9 @@ if not DEBUG:
 
 # Disabled by default: existing staging behavior is unchanged.
 CANDIDATE_ONLY = APP_ENV == "production" and os.getenv("CANDIDATE_ONLY", "false").lower() == "true"
-CANDIDATE_REGISTRATION_PAUSED = os.getenv("CANDIDATE_REGISTRATION_PAUSED", "false").lower() == "true"
+CANDIDATE_REGISTRATION_PAUSED = (
+    os.getenv("CANDIDATE_REGISTRATION_PAUSED", "false").lower() == "true"
+)
 RESUME_UPLOADS_PAUSED = os.getenv("RESUME_UPLOADS_PAUSED", "false").lower() == "true"
 
 # This is a release gate, not legal text. Approval must refer to the actual published documents.
