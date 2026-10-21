@@ -1,0 +1,68 @@
+CANDIDATE-ONLY ROLLBACK — REVIEWED PROCEDURE, NOT EXECUTED
+
+Never assume old images recognize CANDIDATE_ONLY or intake-pause environment flags.
+Reverting to 1270de1/95e7b17 removes backend recruiter controls. Frontend navigation
+and nginx recruiter-page denial do NOT protect Caddy's direct /api routing.
+
+REQUIRED PRECONDITIONS (recheck before any future approved rollback)
+- Exact account/instance/project and per-service current + rollback image digests.
+- Existing Caddy is the ONLY publicly published service; Docker host bindings for
+  backend/frontend/db/worker must be empty. If any bypass listener exists, STOP:
+  obtain approval for independent ingress blocking before touching application images.
+- No new database migrations in this release. Database and S3 remain forward-current.
+- Preserve all image tags, configuration backups, data mounts and existing secrets.
+- User separately authorizes the outage and edge stop/start below. Nothing here is
+  an instruction to execute during local preparation.
+
+EMERGENCY INTAKE PAUSE ON THE NEW SAFETY RELEASE
+Set CANDIDATE_REGISTRATION_PAUSED=true and RESUME_UPLOADS_PAUSED=true in the reviewed
+backend environment file; keep APP_ENV=production and CANDIDATE_ONLY=true.
+The release uses environment settings, NOT live feature flags. After explicit approval:
+  cd /opt/enter/Recruiter
+  docker compose --project-name recruiter --env-file .env.production \
+    -f compose.production.yaml -f /secure/approved-pinned-images.yaml \
+    up -d --no-deps --no-build --pull never backend
+Only backend recreation is needed for intake flags. Do not restart worker; queued
+and running jobs continue. Existing candidate tokens/login remain usable afterwards.
+Verify signup and new upload/retry return503; candidate login/profile/polling remain
+available. Requests accepted before the gate became active may complete normally.
+
+FAIL-CLOSED ROLLBACK TO IMAGES WITHOUT CANDIDATE-ONLY CONTROLS
+1. After outage approval, BEFORE changing backend images:
+     docker stop --time 30 recruiter-edge-1
+   This is an explicit temporary HTTPS outage, not an invisible safety switch.
+   No Caddy configuration, DNS or security group change is required. Its volumes stay.
+2. From an independent external network verify BOTH HTTP and HTTPS cannot reach
+   the application. Verify no other published backend/API listener exists. If traffic
+   still reaches the app, STOP rollout and escalate; do not assume the edge stop sufficed.
+3. Wait for worker jobs/in-flight messages to drain; if uncertain do not stop worker.
+   Keep database, scanner and persistent storage running and unchanged.
+4. With public edge STILL STOPPED, activate explicitly pinned prior application images:
+     docker compose --project-name recruiter --env-file .env.production \
+       -f compose.production.yaml -f /secure/approved-rollback-images.yaml \
+       up -d --no-deps --no-build --pull never backend worker frontend
+   The override must contain ONLY these three services and verified sha256 image refs.
+   Never run full-stack up/down; never recreate db, scanner, volumes or S3 objects.
+5. Internal health checks can diagnose recovery, but DO NOT restart the edge while
+   old images lack controls. Keep public traffic blocked. Do not manually set a label
+   or flag on an old image and consider it candidate-safe.
+6. Build/test/scan a corrected candidate-only image set, or obtain separate approval
+   for independently tested edge API restrictions. Only after new direct-API, existing
+   recruiter-session, shared-resume, login and intake-pause tests pass may public edge
+   be restarted, with explicit approval:
+     docker start recruiter-edge-1
+   Recheck externally with anonymous/candidate/recruiter test identities. Registration
+   and uploads remain paused until explicit reopen approval.
+
+ROLLBACK TO A PREVIOUS VERIFIED CANDIDATE-SAFE IMAGE SET
+Keep intake paused, retain candidate-only production settings and pinned image IDs.
+Verify that exact rollback images were tested for these gates; labels alone are not proof.
+Follow the same outage-first procedure unless independently tested edge restrictions
+already remain in place. Prefer temporary outage over exposing unfinished recruiter APIs.
+
+NEVER restore an older PostgreSQL backup for application rollback; never remove S3
+resumes or volumes. Recovery of database corruption is a separate, explicitly approved
+incident procedure requiring current-data reconciliation and deletion-ledger replay.
+
+Current status: procedure prepared only. Edge outage/restart and external isolation
+have NOT been rehearsed in AWS. This remains a production approval/rehearsal gate.

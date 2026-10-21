@@ -1,5 +1,13 @@
 LOCAL PREPARATION ONLY — NOT APPROVED FOR AWS INSTALLATION OR PUBLIC LAUNCH
 
+Hardening addendum: backup validation now uses explicit exceptions, not Python
+assertions. Normal and optimized-Python offline orchestration tests cover success
+and injected failures. Target account/instance/region/bucket/database/storage are
+pinned to the reviewed existing environment; another target requires code review.
+Read CANDIDATE_SAFE_ROLLBACK.txt for the mandatory outage-first legacy rollback.
+No old image may be publicly activated merely because its environment contains
+CANDIDATE_ONLY=true. No AWS outage or rollback rehearsal has been performed.
+
 Controls
 APP_ENV=production + CANDIDATE_ONLY=true disables recruiter permission checks,
 including password login, existing tokens/cookies and recruiter resume downloads.

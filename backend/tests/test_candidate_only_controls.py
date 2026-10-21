@@ -8,19 +8,24 @@ pytestmark = pytest.mark.django_db
 @pytest.mark.django_db(transaction=True)
 def test_queued_job_completes_while_intake_paused(client, candidate_account):
     from django.core.files.uploadedfile import SimpleUploadedFile
-
     from talent.models import ResumeProcessingJob
     from talent.worker_runtime import run_bounded_job
+
     from tests.test_candidate_flow import resume_pdf
 
-    response = client.post('/api/v1/candidate/resumes/', {
-        'file': SimpleUploadedFile('synthetic.pdf', resume_pdf()),
-    }, format='multipart')
-    job = ResumeProcessingJob.objects.get(resume_id=response.data['latest_resume']['id'])
-    with override_settings(CANDIDATE_ONLY=True, CANDIDATE_REGISTRATION_PAUSED=True,
-                           RESUME_UPLOADS_PAUSED=True):
-        assert run_bounded_job(job.pk) == 'completed'
-        assert run_bounded_job(job.pk) == 'duplicate'
+    response = client.post(
+        "/api/v1/candidate/resumes/",
+        {
+            "file": SimpleUploadedFile("synthetic.pdf", resume_pdf()),
+        },
+        format="multipart",
+    )
+    job = ResumeProcessingJob.objects.get(resume_id=response.data["latest_resume"]["id"])
+    with override_settings(
+        CANDIDATE_ONLY=True, CANDIDATE_REGISTRATION_PAUSED=True, RESUME_UPLOADS_PAUSED=True
+    ):
+        assert run_bounded_job(job.pk) == "completed"
+        assert run_bounded_job(job.pk) == "duplicate"
 
 
 @pytest.mark.parametrize(
