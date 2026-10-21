@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework.permissions import BasePermission
 
 from .models import CandidateProfile, RecruiterProfile, UserRole
@@ -5,9 +6,13 @@ from .models import CandidateProfile, RecruiterProfile, UserRole
 
 def is_verified_candidate(user):
     return bool(
-        user and user.is_authenticated and user.is_active
+        user
+        and user.is_authenticated
+        and user.is_active
         and CandidateProfile.objects.filter(
-            user_id=user.pk, user__is_active=True, email_verified_at__isnull=False,
+            user_id=user.pk,
+            user__is_active=True,
+            email_verified_at__isnull=False,
         ).exists()
     )
 
@@ -15,7 +20,8 @@ def is_verified_candidate(user):
 def is_approved_recruiter(user):
     # Read current state: revocation must block existing sessions too.
     return bool(
-        user
+        not settings.CANDIDATE_ONLY
+        and user
         and user.is_authenticated
         and user.is_active
         and RecruiterProfile.objects.filter(

@@ -1,0 +1,9 @@
+[Unit]
+Description=ENTER verified daily PostgreSQL backup
+After=docker.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/enter/ops.env
+Environment=ENTER_BACKUP_CLASS=daily
+ExecStart=/bin/bash ${ENTER_REPO_DIR}/deploy/backup.sh

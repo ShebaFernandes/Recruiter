@@ -1,0 +1,6 @@
+{
+  "Rules": [
+    {"ID":"enter-hourly-7-days","Status":"Enabled","Filter":{"Prefix":"postgres/hourly/"},"Expiration":{"Days":7}},
+    {"ID":"enter-daily-30-days","Status":"Enabled","Filter":{"Prefix":"postgres/daily/"},"Expiration":{"Days":30}}
+  ]
+}

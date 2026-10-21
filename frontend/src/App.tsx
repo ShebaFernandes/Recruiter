@@ -635,6 +635,7 @@ export default function App() {
   }, [])
   async function logout() { try { await api.logout() } catch { /* local logout still applies */ } auth.clear(); setUser(null); navigate('/') }
   const query = new URLSearchParams(window.location.search)
+  if (import.meta.env.VITE_CANDIDATE_ONLY === 'true' && (path.startsWith('/recruiter') || screen === 'recruiter')) return <PlatformBackground><main className="auth-page"><section className="auth-card"><h1>This platform is not available</h1><button onClick={() => { setUser(null); navigate('/') }}>Return to Enter</button></section></main></PlatformBackground>
   if (path === '/privacy') return <LegalPlaceholder kind="privacy" />
   if (path === '/terms') return <LegalPlaceholder kind="terms" />
   const verificationToken = query.get('verify-email')

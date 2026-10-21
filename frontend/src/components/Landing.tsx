@@ -14,7 +14,7 @@ export default function Landing({ choose }: {
       <a className="ce-logo" href="#enter-home" aria-label="Enter home"><img src="/enter-wordmark.svg" alt="enter" width={1400} height={600} /></a>
       <span className="ce-masthead-note">People. Work. Possibility.</span>
       <nav aria-label="Main navigation">
-        <button className="ce-audience-link" data-testid="for-recruiters" onClick={() => choose('recruiter')}>For recruiters</button>
+        {import.meta.env.VITE_CANDIDATE_ONLY !== 'true' && <button className="ce-audience-link" data-testid="for-recruiters" onClick={() => choose('recruiter')}>For recruiters</button>}
         <button className="ce-audience-link" data-testid="for-candidates" onClick={() => choose('candidate')}>For candidates</button>
         <details className="ce-login" onBlur={event => {
           if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false
@@ -26,7 +26,7 @@ export default function Landing({ choose }: {
         }}>
           <summary>Log in</summary>
           <div className="ce-login-options">
-            <button onClick={() => choose('recruiter', 'login')}>Recruiter log in <ArrowRight size={14} aria-hidden="true" /></button>
+            {import.meta.env.VITE_CANDIDATE_ONLY !== 'true' && <button onClick={() => choose('recruiter', 'login')}>Recruiter log in <ArrowRight size={14} aria-hidden="true" /></button>}
             <button onClick={() => choose('candidate', 'login')}>Candidate log in <ArrowRight size={14} aria-hidden="true" /></button>
           </div>
         </details>
