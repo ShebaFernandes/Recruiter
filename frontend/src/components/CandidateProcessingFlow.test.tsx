@@ -16,6 +16,18 @@ async function mount() { await act(async () => { render(<CandidateExperience acc
 async function upload() { await act(async () => { fireEvent.change(screen.getByTestId('resume-input'), { target: { files: [file] } }) }) }
 
 describe('actual candidate processing integration', () => {
+  it('hides the saved layout during transfer and restores it if upload fails', async () => {
+    vi.mocked(api.candidateProfile).mockResolvedValue(completed)
+    let rejectUpload: (reason: Error) => void = () => undefined
+    vi.spyOn(api, 'uploadResume').mockImplementation(() => new Promise((_, reject) => { rejectUpload = reject }))
+    await mount()
+    await act(async () => { fireEvent.change(screen.getByTestId('resume-input'), { target: { files: [file] } }) })
+    expect(screen.getByText('Uploading — transferring your file securely.')).toBeVisible()
+    expect(screen.queryByRole('complementary', { name: 'Career Settings panel' })).not.toBeInTheDocument()
+    await act(async () => { rejectUpload(new Error('Upload unavailable')) })
+    expect(screen.getByRole('complementary', { name: 'Career Settings panel' })).toBeVisible()
+    expect(screen.getByRole('alert')).toHaveTextContent('Upload unavailable')
+  })
   it('recovers only this candidate’s tab-local unsaved answer and removes it after retry', async () => {
     sessionStorage.setItem('enter:candidate:1:answer-draft', 'Recover my unsaved answer')
     sessionStorage.setItem('enter:candidate:2:answer-draft', 'Another account private answer')
@@ -102,10 +114,13 @@ describe('actual candidate processing integration', () => {
     await mount(); await upload()
     expect(screen.getByRole('heading', { name: "We're doing the boring part." })).toBeVisible()
     expect(screen.getByRole('region', { name: "We're doing the boring part." })).toHaveFocus()
+    expect(screen.queryByRole('complementary', { name: 'Career Settings panel' })).not.toBeInTheDocument()
+    expect(document.querySelector('.cp-profile-workspace')).not.toBeInTheDocument()
     vi.mocked(api.candidateProfile).mockResolvedValue(completed)
     await act(() => vi.advanceTimersByTimeAsync(3000))
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: "Here's how we understand you." })).toBeVisible()
+    expect(screen.getByRole('complementary', { name: 'Career Settings panel' })).toBeVisible()
   })
   it('handles an already-completed upload response without a minimum loading delay', async () => {
     vi.spyOn(api, 'uploadResume').mockResolvedValue(completed)
@@ -120,6 +135,7 @@ describe('actual candidate processing integration', () => {
     await upload()
     expect(screen.queryByRole('button', { name: 'Career Settings' })).not.toBeInTheDocument()
     expect(screen.getByRole('progressbar')).toBeVisible()
+    expect(screen.queryByRole('complementary', { name: 'Career Settings panel' })).not.toBeInTheDocument()
     vi.mocked(api.candidateProfile).mockResolvedValue({ ...completed, latest_resume: { ...completed.latest_resume!, id: 2 }, resume_review: { resume_id: 2, fields: { headline: 'New title' } } })
     await act(() => vi.advanceTimersByTimeAsync(3000))
     expect(screen.queryByRole('heading', { name: 'Review resume changes' })).not.toBeInTheDocument()

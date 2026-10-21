@@ -7,7 +7,7 @@ import navi from '../../../../design-references/prepared/trusted-by-review/asset
 import mpl from '../../../../design-references/prepared/trusted-by-review/assets/expanded/mpl.webp'
 import dream11 from '../../../../design-references/prepared/trusted-by-review/assets/expanded/dream11.svg'
 import truefoundry from '../../../../design-references/prepared/trusted-by-review/assets/expanded/truefoundry.svg'
-import kindred from '../../../../design-references/prepared/trusted-by-review/assets/expanded/kindred-group.png'
+import kindred from '../../../../design-references/prepared/trusted-by-review/assets/expanded/kindred-transparent.svg'
 import practo from '../../../../design-references/prepared/trusted-by-review/assets/expanded/practo.svg'
 import arintra from '../../../../design-references/prepared/trusted-by-review/assets/expanded/arintra.svg'
 import orangeHealth from '../../../../design-references/prepared/trusted-by-review/assets/expanded/orange-health.svg'

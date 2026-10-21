@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { api } from '../api'
-import type { Candidate, CareerPreferences, WorkExperience } from '../types'
+import type { Candidate, CareerPreferences, WorkExperience, Resume } from '../types'
 import { CandidateProcessing } from './CandidatePresentation'
 import CandidateCareerTimeline from './CandidateCareerTimeline'
 import CandidateResumePreview from './CandidateResumePreview'
@@ -216,6 +216,7 @@ export default function CandidateExperience({ beforeLeaveRef }: { accountDeleted
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
+  const [uploadingName, setUploadingName] = useState('')
   const busyRef = useRef(false)
   const [editing, setEditingState] = useState(false)
   function setEditing(value: boolean) {
@@ -349,6 +350,7 @@ export default function CandidateExperience({ beforeLeaveRef }: { accountDeleted
   }, [])
   const status = profile?.latest_resume?.processing_status
   const processing = status === 'uploaded' || status === 'queued' || status === 'processing'
+  const focusedProcessing = processing || Boolean(uploadingName)
   const resumeId = profile?.latest_resume?.id
   useEffect(() => {
     if (processing || wasProcessing.current || focusUpload.current) {
@@ -411,7 +413,10 @@ export default function CandidateExperience({ beforeLeaveRef }: { accountDeleted
     if (!file) return
     if (settingsAutosave.current && !await settingsAutosave.current.flush()) { focusControl('.cp-settings-inline-editor input:not([type=hidden]), .cp-settings-inline-editor select'); return }
     if (!/\.(pdf|docx)$/i.test(file.name) || file.size > 5 * 1024 * 1024) { setError('Choose a PDF or DOCX, up to 5 MB.'); return }
-    const accepted = await run(async () => { const data = await api.uploadResume(file); focusUpload.current = true; return data }, '')
+    setUploadingName(file.name)
+    let accepted
+    try { accepted = await run(async () => { const data = await api.uploadResume(file); focusUpload.current = true; return data }, '') }
+    finally { setUploadingName('') }
     if (accepted) { setReview(false); setSuccess(false); setEditing(false); setShowBeyond(false); setPollError('') }
   }
   async function uploadPhoto(file: File) {
@@ -459,7 +464,9 @@ export default function CandidateExperience({ beforeLeaveRef }: { accountDeleted
   const uploadControl = <label className="cp-file"><span className="onboarding-choose">{busy ? 'Uploading…' : 'Choose your resume ↗'}</span><input aria-label="Choose PDF or DOCX resume" data-testid="resume-input" type="file" accept=".pdf,.docx" disabled={busy || processing} onChange={e => { void upload(e.target.files?.[0]); e.target.value = '' }} /><small>PDF or DOCX · Max 5 MB</small></label>
   const resumeUpdated = resume?.uploaded_at && !Number.isNaN(Date.parse(resume.uploaded_at)) ? new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(resume.uploaded_at)) : null
   const replaceControl = <label className="cp-replace-control"><UploadCloud aria-hidden="true" /><span>Update your resume</span><small>{resumeUpdated ? `Last uploaded ${resumeUpdated}` : 'No upload date available'}</small><input aria-label="Update Resume" data-testid="resume-input" type="file" accept=".pdf,.docx" disabled={busy || processing} onChange={e => { void upload(e.target.files?.[0]); e.target.value = '' }} /></label>
-  const processingView = p.latest_resume && (processing || status === 'failed') ? <CandidateProcessing key={p.latest_resume.id} resume={p.latest_resume} uploading={busy} retry={() => void run(() => api.retryResume(p.latest_resume!.id), '')} upload={file => void upload(file)} error={pollError} refresh={() => void refreshProcessing()} /> : null
+  // Transient presentation metadata only; never persisted or used by the job poller.
+  const displayResume: Resume | null = uploadingName ? { id: -1, original_name: uploadingName, version: 0, uploaded_at: '', processing_status: 'uploaded', scan_status: 'quarantined', processing_error: '', can_retry: false, url: null } : p.latest_resume
+  const processingView = displayResume && (focusedProcessing || status === 'failed') ? <CandidateProcessing key={displayResume.id} resume={displayResume} transferring={Boolean(uploadingName)} uploading={busy} retry={() => void run(() => api.retryResume(p.latest_resume!.id), '')} upload={file => void upload(file)} error={uploadingName ? '' : pollError} refresh={() => void refreshProcessing()} /> : null
   async function saveSettings(data: FormData) {
     const get = (key: string) => String(data.get(key) || '').trim()
     const number = (key: string) => get(key) === '' ? null : get(key)
@@ -511,13 +518,13 @@ export default function CandidateExperience({ beforeLeaveRef }: { accountDeleted
       <div className="cp-setting-row cp-setting-resume">{replaceControl}</div>
     </div>
     </section></aside>
-  return <main className="candidate-experience" ref={mainRef}>
-    {!success && p.latest_resume && <header className="cp-welcome"><h1>Let's find work that feels great.</h1></header>}
+  return <main className={`candidate-experience ${focusedProcessing ? 'is-processing' : ''}`} ref={mainRef}>
+    {!success && !focusedProcessing && p.latest_resume && <header className="cp-welcome"><h1>Let's find work that feels great.</h1></header>}
     {error && !editingSettings && <p role="alert" className="error">{error}</p>}<p aria-live="polite" aria-atomic="true" className="cp-sr-only">{message}</p>
     {success ? <CandidateConfirmation onViewProfile={() => { setSuccess(false); focusControl('.cp-profile') }} /> : <>
     {processingView}
-    {p.latest_resume && !((processing || !resume) && processingView) && !editing && <h2 className="cp-profile-heading">Here's how we understand you.</h2>}
-    <div className={`cp-profile-workspace ${resume ? 'with-preferences' : ''}`}><div className="cp-profile-main">{(!p.latest_resume ? <section className="onboarding-upload upload-chapter">
+    {p.latest_resume && !focusedProcessing && !(!resume && processingView) && !editing && <h2 className="cp-profile-heading">Here's how we understand you.</h2>}
+    {!focusedProcessing && <div className={`cp-profile-workspace ${resume ? 'with-preferences' : ''}`}><div className="cp-profile-main">{(!p.latest_resume ? <section className="onboarding-upload upload-chapter">
       <div className="onboarding-upload-copy"><h1>ENTER what’s next?</h1><p>Somewhere, there’s something worth building.</p></div>
       <section className="upload-chapter-panel" aria-labelledby="upload-panel-title"><header><FileText aria-hidden="true" /><div><h2 id="upload-panel-title">Start with your resume</h2><p>Your experience deserves to be understood.</p></div></header>
         <div className={`cp-section cp-upload ${dragging ? 'dragging' : ''}`} onDragOver={e => { e.preventDefault(); setDragging(true) }} onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false) }} onDrop={e => { e.preventDefault(); setDragging(false); if (!busy) void upload(e.dataTransfer.files[0]) }}><UploadCloud aria-hidden="true" className="onboarding-file-icon" /><h3>Drop your resume here</h3>{uploadControl}</div>
@@ -546,13 +553,13 @@ export default function CandidateExperience({ beforeLeaveRef }: { accountDeleted
       </section>}
       {!editing && <div className="cp-final-confirm"><button type="button" className="primary" disabled={busy || processing} onClick={() => { setReview(true) }}>Confirm my profile</button></div>}
     </>)}</div>
-    {resume && settingsPanel}</div>
-    {review && <section className="cp-section cp-brief"><h2>Here's how we'll remember you</h2><h3>{p.full_name}</h3><p>{title}{p.location && ` · ${p.location}`}</p><p>{skills.join(' · ')}</p>{preferences.standout_signal && <p>{preferences.standout_signal}</p>}<p>{preferences.availability || 'Availability not specified'} · {p.work_preferences.join(' / ') || 'Work mode to confirm'}</p>{preferences.motivators?.length ? <p>Drawn to {preferences.motivators.join(', ')}</p> : null}{preferences.exclusions?.length ? <p>Not interested in {preferences.exclusions.join(', ')}</p> : null}
+    {resume && settingsPanel}</div>}
+    {review && !focusedProcessing && <section className="cp-section cp-brief"><h2>Here's how we'll remember you</h2><h3>{p.full_name}</h3><p>{title}{p.location && ` · ${p.location}`}</p><p>{skills.join(' · ')}</p>{preferences.standout_signal && <p>{preferences.standout_signal}</p>}<p>{preferences.availability || 'Availability not specified'} · {p.work_preferences.join(' / ') || 'Work mode to confirm'}</p>{preferences.motivators?.length ? <p>Drawn to {preferences.motivators.join(', ')}</p> : null}{preferences.exclusions?.length ? <p>Not interested in {preferences.exclusions.join(', ')}</p> : null}
       {p.submission_missing_fields.length > 0 && <div role="status"><p>Before confirming, complete:</p><ul>{profileMissing.map(field => <li key={field.field}>{field.label}</li>)}</ul><div className="cp-actions">{profileMissing.map(field => <button key={field.field} type="button" onClick={() => navigateMissing(field.field)}>{field.field === 'visibility' ? 'Choose profile visibility below' : `Add ${field.label}`}</button>)}</div></div>}
       {!p.visibility && <label>Who may discover your profile?<select id="profile-visibility-select" aria-label="First-time profile visibility" value="" disabled={busy} onChange={e => { if (e.target.value) void save({ visibility: e.target.value as Candidate['visibility'] }) }}><option value="">Choose before giving consent</option><option value="approved_recruiters">Approved ENTER recruiters</option><option value="matching_roles">Only matching roles</option><option value="not_looking">Not looking right now — hidden</option></select></label>}
       <form onSubmit={submit}><label className="cp-check"><input type="checkbox" required />I agree to share my profile with authorized ENTER recruiters according to my visibility preferences.</label><div className="cp-actions"><a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a><a href="/terms" target="_blank" rel="noopener noreferrer">Terms</a><button className="primary" disabled={busy || !p.can_submit || processing}>Yes, that's me ✓</button><button type="button" onClick={() => setReview(false)}>Keep editing</button></div></form>
     </section>}
     </>}
-    {!success && <footer className="cp-footer" aria-label="Candidate help links"><div className="cp-footer-row"><img src="/enter-wordmark.svg" alt="ENTER" /><div className="cp-footer-links"><button aria-expanded={footerPanel === 'support'} onClick={() => void leave(() => setFooterPanel(value => value === 'support' ? null : 'support'))}>Help Center</button></div><div className="cp-connect"><strong>Connect with us</strong><div><a className="cp-footer-icon" href="https://www.linkedin.com/company/enterrecruitment/posts/?feedView=all" target="_blank" rel="noopener noreferrer" aria-label="ENTER Recruitment on LinkedIn"><LinkedInIcon /></a><a className="cp-footer-icon" href="https://www.enterrecruitment.com/" target="_blank" rel="noopener noreferrer" aria-label="ENTER Recruitment website"><Globe2 aria-hidden="true" /></a></div></div></div>{footerPanel === 'support' && <section className="cp-footer-panel"><h2>Help Center</h2><p>For help with your profile, contact your ENTER representative.</p><div className="cp-faqs"><h3>Frequently asked questions</h3><details><summary>How do I update my Career Journey?</summary><p>Use “Not quite — edit” to correct saved profile details, or review Resume updates after replacing a resume.</p></details><details><summary>When will my resume be ready?</summary><p>ENTER shows the processing state while your uploaded document is being read. Your profile opens automatically when processing is complete.</p></details><details><summary>How do I change what opportunities I receive?</summary><p>Use the career preferences beside your profile to update availability, notice period, compensation, work mode, locations, and contact preferences.</p></details><details><summary>Can I delete my profile?</summary><p>Open your name in the top-right account menu to access account deletion.</p></details></div></section>}</footer>}
+    {!success && !focusedProcessing && <footer className="cp-footer" aria-label="Candidate help links"><div className="cp-footer-row"><img src="/enter-wordmark.svg" alt="ENTER" /><div className="cp-footer-links"><button aria-expanded={footerPanel === 'support'} onClick={() => void leave(() => setFooterPanel(value => value === 'support' ? null : 'support'))}>Help Center</button></div><div className="cp-connect"><strong>Connect with us</strong><div><a className="cp-footer-icon" href="https://www.linkedin.com/company/enterrecruitment/posts/?feedView=all" target="_blank" rel="noopener noreferrer" aria-label="ENTER Recruitment on LinkedIn"><LinkedInIcon /></a><a className="cp-footer-icon" href="https://www.enterrecruitment.com/" target="_blank" rel="noopener noreferrer" aria-label="ENTER Recruitment website"><Globe2 aria-hidden="true" /></a></div></div></div>{footerPanel === 'support' && <section className="cp-footer-panel"><h2>Help Center</h2><p>For help with your profile, contact your ENTER representative.</p><div className="cp-faqs"><h3>Frequently asked questions</h3><details><summary>How do I update my Career Journey?</summary><p>Use “Not quite — edit” to correct saved profile details, or review Resume updates after replacing a resume.</p></details><details><summary>When will my resume be ready?</summary><p>ENTER shows the processing state while your uploaded document is being read. Your profile opens automatically when processing is complete.</p></details><details><summary>How do I change what opportunities I receive?</summary><p>Use the career preferences beside your profile to update availability, notice period, compensation, work mode, locations, and contact preferences.</p></details><details><summary>Can I delete my profile?</summary><p>Open your name in the top-right account menu to access account deletion.</p></details></div></section>}</footer>}
   </main>
 }

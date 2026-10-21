@@ -15,8 +15,8 @@ export function CandidateWelcome() {
 /** Presentation only: processing, scanning and retry eligibility come from Django. */
 const activities = ['Reading your experience', 'Mapping your career journey', 'Identifying your strongest skills', "Understanding what you've built", 'Building your ENTER profile']
 
-export function CandidateProcessing({ resume, uploading, retry, upload, error, refresh }: {
-  resume: Resume; uploading: boolean; retry: () => void; upload: (file?: File) => void; error: string; refresh?: () => void
+export function CandidateProcessing({ resume, uploading, retry, upload, error, refresh, transferring = false }: {
+  resume: Resume; uploading: boolean; retry: () => void; upload: (file?: File) => void; error: string; refresh?: () => void; transferring?: boolean
 }) {
   const failed = resume.processing_status === 'failed'
   const active = ['uploaded', 'queued', 'processing'].includes(resume.processing_status)
@@ -32,7 +32,7 @@ export function CandidateProcessing({ resume, uploading, retry, upload, error, r
     update(); motion.addEventListener('change', update)
     return () => { window.clearInterval(timer); motion.removeEventListener('change', update) }
   }, [active, error])
-  const stateLabel = resume.processing_status === 'completed' ? 'Your profile is ready to review.'
+  const stateLabel = transferring ? 'Uploading — transferring your file securely.' : resume.processing_status === 'completed' ? 'Your profile is ready to review.'
     : failed ? 'Processing stopped.'
       : resume.scan_status === 'scanning' ? 'Scanning — checking your file safely.'
         : resume.processing_status === 'processing' ? 'Processing — preparing your profile.'
