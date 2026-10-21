@@ -17,7 +17,8 @@ test(`landing motion at ${width}px preserves layout without lower scroll section
     return [node.offsetTop, node.offsetLeft, node.offsetWidth, node.offsetHeight]
   })
   const before = await layout()
-  await expect(page.locator('.ce-intro h1')).toHaveCSS('animation-name', 'ce-headline-reveal')
+  // Approved minimal layout keeps the headline static; only the scenery moves.
+  await expect(page.locator('.ce-intro h1')).toHaveCSS('animation-name', 'none')
   await page.locator('.ce-intro h1').evaluate(async element => {
     await Promise.all(element.getAnimations({ subtree: true }).map(animation => animation.finished))
   })
@@ -38,7 +39,9 @@ test(`landing motion at ${width}px preserves layout without lower scroll section
   await expect(page.getByRole('navigation').getByTestId('for-recruiters')).toHaveCount(1)
   await expect(page.getByRole('navigation').getByTestId('for-candidates')).toHaveCount(1)
   await expect(page.locator('.ce-intro button')).toHaveCount(0)
-  await expect(page.locator('.ce-login')).toHaveCount(0)
+  // The approved simple navigation retains its existing text-only login link.
+  await expect(page.getByRole('navigation').locator('.ce-login summary')).toHaveText('Log in')
+  await expect(page.getByRole('navigation').locator('.ce-login summary')).toBeVisible()
   await page.screenshot({ path: testInfo.outputPath(`landing-${width}.png`), fullPage: true, animations: 'disabled' })
 })
 }
