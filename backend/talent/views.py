@@ -122,6 +122,16 @@ def health(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def readiness(request):
+    if settings.LEGAL_CONTENT_APPROVED:
+        from . import legal
+
+        try:
+            legal.documents()
+        except Exception:
+            return Response(
+                {"status": "not_ready", "legal_documents": "unavailable"},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
     with connection.cursor() as cursor:
         cursor.execute("SELECT 1")
         cursor.fetchone()
@@ -147,6 +157,11 @@ def csrf_token(request):
 @permission_classes([AllowAny])
 @throttle_classes([SignupRateThrottle])
 def signup(request):
+    from . import legal
+
+    accepted = {}
+    if legal.enabled():
+        accepted = {p: legal.validate_acceptance(request.data, p) for p in ["age", "terms"]}
     if request.data.get("role") == UserRole.Role.RECRUITER:
         return Response(
             {"detail": "Recruiter accounts are created by ENTER administrators."}, status=403
@@ -165,6 +180,8 @@ def signup(request):
         CandidateProfile.objects.create(
             user=user, full_name=data["full_name"], email=data["email"]
         )
+        for purpose, doc in accepted.items():
+            legal.record(user, purpose, doc)
     try:
         verification_url = send_verification_email(user)
     except Exception:
@@ -394,12 +411,17 @@ def _notify_recruiters_of_candidate_update(profile, change_type, resume=None, me
 @permission_classes([IsCandidate])
 @transaction.atomic
 def candidate_profile(request):
+    from . import legal
     # Keep the profile and resume status in the same snapshot as a worker finishes.
     profile = CandidateProfile.objects.select_for_update().get(user=request.user)
     if request.method == "PATCH":
+        from copy import deepcopy
+
         from .candidate_experience import profile_values, record_candidate_edits
 
         before = profile_values(profile)
+        before_preferences = deepcopy(profile.career_preferences)
+        before_build_lead = profile.build_lead_preference
         previous_strongest = profile.career_preferences.get("strongest_skills")
         was_submitted = profile.profile_status == CandidateProfile.ProfileStatus.SUBMITTED
         previous_experience_count = profile.work_experiences.count()
@@ -409,12 +431,16 @@ def candidate_profile(request):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         after = profile_values(profile)
+        if (before != after or before_preferences != profile.career_preferences
+                or before_build_lead != profile.build_lead_preference):
+            legal.activity(profile)
         edited_fields = {field for field in before if before[field] != after[field]}
         if previous_strongest != profile.career_preferences.get("strongest_skills"):
             edited_fields.add("skills")
         record_candidate_edits(profile, edited_fields)
         if (
             was_submitted
+            and not legal.enabled()
             and profile.profile_status == CandidateProfile.ProfileStatus.SUBMITTED
             and serializer.validated_data
         ):
@@ -439,7 +465,14 @@ def candidate_profile(request):
 
 @api_view(["POST"])
 @permission_classes([IsCandidate])
+@transaction.atomic
 def submit_candidate_profile(request):
+    from . import legal
+
+    accepted = None
+    if legal.enabled():
+        legal.require_terms(request.user)
+        accepted = legal.validate_acceptance(request.data, "submission")
     profile = request.user.candidate_profile
     serializer = CandidateProfileSerializer(profile, context={"request": request})
     missing = serializer.data["submission_missing_fields"]
@@ -455,7 +488,7 @@ def submit_candidate_profile(request):
         profile.submission_consent_at
         and profile.submission_consent_version == settings.SUBMISSION_CONSENT_VERSION
     )
-    if request.data.get("consent") is not True and not current_consent:
+    if not accepted and request.data.get("consent") is not True and not current_consent:
         return Response(
             {"detail": "Confirm profile-sharing consent before submitting."},
             status=status.HTTP_400_BAD_REQUEST,
@@ -475,6 +508,13 @@ def submit_candidate_profile(request):
                 "profile_updated_at",
             ]
         )
+    if accepted:
+        legal.record(request.user, "submission", accepted)
+        # Do not relabel a new submission instruction as legacy sharing consent.
+        profile.submission_consent_at = None
+        profile.submission_consent_version = ""
+        profile.save(update_fields=["submission_consent_at", "submission_consent_version"])
+    legal.activity(profile)
     return Response(CandidateProfileSerializer(profile, context={"request": request}).data)
 
 
@@ -482,6 +522,7 @@ def submit_candidate_profile(request):
 @permission_classes([IsCandidate])
 @throttle_classes([AccountDeletionRateThrottle])
 def delete_candidate_account(request):
+    from . import legal
     if request.data.get("confirmation") != "DELETE":
         return Response(
             {"detail": "Type DELETE to confirm permanent account deletion."},
@@ -495,7 +536,11 @@ def delete_candidate_account(request):
         # Cascading delete signals write the storage cleanup outbox in this transaction.
         # Access is revoked immediately; storage outages cannot leave a half-deleted account.
         CandidateProfile.objects.select_for_update().get(user=request.user)
+        deletion = legal.request_deletion(request.user) if legal.enabled() else None
         request.user.delete()
+        if deletion:
+            deletion.account_deleted_at = timezone.now()
+            deletion.save(update_fields=["account_deleted_at"])
     response = Response(status=status.HTTP_204_NO_CONTENT)
     response.delete_cookie(
         settings.AUTH_COOKIE_NAME,
@@ -511,6 +556,9 @@ def delete_candidate_account(request):
 @parser_classes([MultiPartParser, FormParser])
 @throttle_classes([ResumeUploadRateThrottle])
 def resume_upload(request):
+    from . import legal
+
+    legal.require_terms(request.user)
     uploaded = request.FILES.get("file")
     if not uploaded:
         return Response({"detail": "Choose a resume file."}, status=status.HTTP_400_BAD_REQUEST)
@@ -552,6 +600,7 @@ def resume_upload(request):
             resume=resume,
             max_attempts=settings.RESUME_JOB_MAX_ATTEMPTS,
         )
+        legal.activity(profile)
 
         def dispatch():
             try:
@@ -829,6 +878,8 @@ def _filtered_candidates(criteria, params, recruiter=None):
         submission_consent_at__isnull=False,
     ).exclude(
         Q(visibility="") | Q(visibility=CandidateProfile.Visibility.NOT_LOOKING)
+    ).exclude(
+        user__legalacceptance__purpose__in=["terms", "submission"]
     )
     explicit_location = str(params.get("location") or "").strip()
     location = explicit_location or str(criteria.get("location") or "").strip()
@@ -968,6 +1019,12 @@ def _recruiter_can_access_candidate(recruiter, candidate):
     """Apply candidate-controlled discovery rules to direct recruiter access."""
     if not is_approved_recruiter(recruiter.user):
         return False
+    from .models import LegalAcceptance
+
+    if LegalAcceptance.objects.filter(
+        user=candidate.user, purpose__in=["terms", "submission"],
+    ).exists():
+        return False  # New acceptance is not sharing permission, even with preview mode off.
     if candidate.profile_status != CandidateProfile.ProfileStatus.SUBMITTED:
         return False
     if not candidate.submission_consent_at:

@@ -134,6 +134,8 @@ services:
       dockerfile: frontend/Dockerfile
       args:
         VITE_API_URL: /api/v1
+        VITE_CANDIDATE_ONLY: ${CANDIDATE_ONLY:-false}
+        VITE_LEGAL_CONTENT_APPROVED: ${LEGAL_CONTENT_APPROVED:-false}
     restart: unless-stopped
     mem_limit: 128m
     logging: *logs

@@ -287,8 +287,11 @@ https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/free-tier-plans.htm
 - [ ] Approve the EXISTING consent wording/version, visibility and retention rules.
 - [ ] Approve a real support destination. Do not invent an address or legal policy.
 
-`LEGAL_CONTENT_APPROVED=false` blocks APP_ENV=production startup. It does NOT
-review your documents automatically. Keep staging private/restricted to testers;
+`LEGAL_CONTENT_APPROVED=false` blocks APP_ENV=production startup. Approval also
+requires the effective date and exact Privacy, Terms, age-confirmation and
+submission-confirmation SHA-256 values. The backend refuses internal review
+markers or mismatched files, and the frontend must be built with
+`VITE_LEGAL_CONTENT_APPROVED=true`. Keep staging private/restricted to testers;
 do not bypass the gate by using staging mode for public candidates.
 
 ## 2. Provision resources manually after approval

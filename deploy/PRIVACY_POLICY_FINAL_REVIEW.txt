@@ -1,0 +1,151 @@
+ENTER CANDIDATE PLATFORM — PRIVACY POLICY
+FINAL-REVIEW CANDIDATE — UNAPPROVED AND UNPUBLISHED
+Approved document identifier: enter-candidate-privacy-v1.0
+Review revision: 2026-10-22-r2 (consolidated final-review package)
+Approved D1 effective-date rule: the actual approved publication date, before intake
+opens. Effective date: [actual publication date; not backdated to D1 approval].
+This review copy is not an active policy or a statement that proposed controls
+have already been implemented. Resolve bracketed decisions before publication.
+
+1. Who we are
+ENTER Recruitment Private Limited operates the ENTER Candidate Platform at
+enter.careers. Contact sheba@enterrecruitment.com for privacy questions or support.
+Registered address: Regent Insignia, KHB Block Koramangala, 5th Block, Koramangala,
+Bengaluru, Karnataka 560034, India.
+Incorporation country: India. CIN: U74999DL2020PTC370862.
+Responsible privacy owner: Dikshita Verma, CEO.
+The platform initially serves candidates aged 18 or over in India, the United
+States and the United Kingdom.
+
+2. Information we handle
+We handle account/contact details, email-verification and authentication records,
+uploaded resumes and optional profile photographs, employment and education
+history, skills, career preferences, profile edits, visibility choices, submission
+records, support correspondence and necessary operational/security records.
+Information comes from you, extraction from your uploaded documents and your use
+of the service. Please avoid unnecessary sensitive information, identity documents
+and other people's contact information in your resume.
+[D3: approve handling of unsolicited sensitive information, purpose-specific legal
+bases and applicable regional rights disclosures.]
+
+3. How we use information
+We use information to provide and secure your account, verify your email, support
+password recovery, process your resume, let you review and maintain your profile,
+respond to requests and operate the platform. Necessary authentication cookies
+and tokens support account access.
+The application uses the enter_session authentication cookie and csrftoken CSRF
+cookie. Local browser session storage holds unsaved candidate answers and an
+intro-animation replay flag. The background video is requested from
+d8j0ntlcm91z4.cloudfront.net; that request necessarily exposes connection metadata
+such as IP address to the delivery service. No dedicated analytics SDK was found
+in the reviewed frontend source. This is not a claim that providers keep no logs.
+[D4: anonymous deployed-page inspection and HTTP headers confirmed same-origin
+application assets and the candidate video's CloudFront source on October 22.
+This is not a complete request/cookie audit or proof of no provider telemetry.
+Delivery-provider arrangements still require company confirmation; see register.]
+
+4. Resume processing and your review
+Uploaded PDF and DOCX resumes are privately stored and scanned using ClamAV.
+Queued processing uses a rule-based parser to extract profile information.
+External resume AI processing is disabled; resumes are not sent to an external
+AI extraction service under this pilot configuration.
+Extraction may omit or misinterpret information. You can review and correct your
+profile before submitting it. Submission does not guarantee employment or placement.
+Any future external AI processing requires a separate review and appropriate
+notice and permissions; this policy does not authorize it in advance.
+
+5. Visibility and future recruiter access
+Recruiter access is disabled during the candidate-only pilot. Draft and paused
+profiles are not available for recruiter discovery. Submitting your profile does
+not publish it on the open web or grant permission for future recruiter sharing.
+Before making your profile available to recruiters, ENTER will ask for a separate,
+explicit opt-in explaining recipients, purposes, accessible information, resume
+downloads and how to withdraw. Existing submission consent or Terms acceptance
+will not be treated as that future permission.
+Authorized operational/support access is distinct from recruiter access.
+[D5: supply actual authorized support/operations roles and access countries.
+Future recruiter-sharing withdrawal/download-copy wording is deferred until that
+separately approved feature launches; no such access is authorized by this pilot.]
+
+6. Providers and international handling
+The existing platform infrastructure uses Amazon Web Services in Sydney, Australia,
+for application/database hosting, private file storage, processing queues and
+encrypted database backups. ClamAV scanning runs within the deployed stack.
+Namecheap supplies domain/DNS services. The last recorded verified staging
+configuration uses Amazon SES in Sydney for transactional email and AWS SNS for
+operational notifications. The video uses the CloudFront hostname described above.
+[D6: revalidate production configuration; confirm contractual entities, support
+locations, external-video operator and necessary international arrangements.
+Technical service settings do not establish contracts or all processing locations.]
+Processing may occur outside your home country. We do not represent that all
+processing is confined to Australia or that a particular transfer mechanism has
+been approved without completing that review.
+
+7. Retention
+CONFIRMED BUSINESS RULE: candidate profiles and resumes are retained for 12 months
+after meaningful activity, with reminders 30 days and seven days before expiry.
+Earlier deletion requests are handled through the process below.
+[D7 OPERATIONAL PROPOSAL, NOT APPROVED: use 12 calendar months in UTC from a
+deliberate saved profile/career-settings change, accepted resume upload, submission
+or explicit renewal. Do not count passive login, background processing or admin
+changes. Apply to draft/submitted/paused profiles. Escalate failed reminders to
+the privacy owner without resetting activity. No extra grace period is proposed.
+For unknown historical activity, obtain explicit renewal rather than backfill;
+approve a one-time 30-day transition notice before enforcing expiry. At expiry,
+block ordinary processing and start approved deletion, with active deletion
+targeted within seven days; legal must approve this limited cleanup window.]
+[D8/D10: the single proposed retention schedule is in the consent/sign-off
+register, revision r6. Its additional periods are recommendations only. Automatic
+deletion remains disabled; these proposals are not current service guarantees.]
+
+8. Requests and deletion
+Contact sheba@enterrecruitment.com to request help with access, correction,
+deletion or other applicable privacy rights. The authenticated account-deletion
+flow requires password confirmation and typing DELETE. Account access is revoked
+and associated file cleanup is queued. Storage failures may delay cleanup.
+CONFIRMED TARGETS: acknowledge deletion requests within two business days and
+target active-data deletion within seven days. Dikshita Verma, CEO, is responsible;
+contact sheba@enterrecruitment.com. Applicable legal deadlines also govern.
+[D9 OPERATIONAL PROPOSAL, NOT APPROVED: record receipt immediately in UTC, do not
+restart the request clock after verification, and use Asia/Kolkata for business
+day calculation. The applicable holiday calendar still requires confirmation.
+Authenticated self-service retains password/DELETE verification; email requests
+use proportionate account-control verification. Escalate unresolved cleanup to
+the privacy owner and explain outstanding recovery copies accurately. Counsel
+must finalize regional deadlines, complaints and any expressly justified exception.]
+Any approved response wording must respect applicable legal deadlines rather than
+assume a universal 30-day period applies in every country.
+
+9. Backups and recovery
+Encrypted database backups can contain historical personal information after
+active records are deleted. Backup handling must remain access-restricted and
+consistent with the final approved retention and deletion procedure.
+Verified operational configuration, October 22, 2026: S3 expiration is enabled
+for postgres/hourly/ after seven days and postgres/daily/ after 30 days. The old
+14-day postgres/ rule is disabled. Expiration is asynchronous, not a guarantee
+of erasure at an exact deadline. Three existing legacy backups outside those
+scheduled prefixes remain retained pending an explicit disposition decision.
+This records current configuration, not complete-policy approval or proof that
+recurring backup timers are active. Resume-bucket versioning remains disabled.
+[D10: approve legacy-copy disposition, resume-recovery choice and the remaining
+evidence/ledger treatment in register r6. Local reconciliation blocks restored
+access and quarantines identities;
+this is not proof of permanent historical-copy erasure. A verified deletion ledger
+and approved erasure review are required before restored data can be reopened.]
+Database backups alone do not recover deleted resume files. Immediate erasure
+from every recovery copy is not promised.
+
+10. Security, complaints and changes
+Private storage, authorization controls and encrypted transport help protect
+information; no system can guarantee absolute security or uninterrupted service.
+Contact sheba@enterrecruitment.com with questions or complaints.
+[D3/D9: complete applicable rights, representative/regulator and complaints details;
+approve incident-response responsibilities and notification procedures.]
+We will maintain dated policy versions and communicate material changes through
+the approved notice process. Future recruiter access still requires explicit opt-in.
+
+REVIEW SIGN-OFF — NOT FOR THE PUBLIC PAGE
+Manager: ______  Legal reviewer: ______  Approval date: ______
+Final version/effective date: ______  Conditions resolved: ______
+Confirm actual implementation matches the approved promises before publication.
+LEGAL_CONTENT_APPROVED remains false until separately authorized.

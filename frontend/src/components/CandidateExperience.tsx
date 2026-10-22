@@ -14,6 +14,8 @@ import type { SettingsAutosaveHandle } from './SettingsAutosave'
 import { professionalTitle } from '../candidateIdentity'
 import { UserRound, GraduationCap, BriefcaseBusiness, MapPin, Camera, Trash2, Clock3, BadgeIndianRupee, House, Phone, Link2, FileText, Target, Globe2, Pencil, UploadCloud, LockKeyhole, Sparkles } from 'lucide-react'
 import './candidate-experience.css'
+import { ExistingLegalReview, LegalRetry } from './LegalReview'
+import { legalWorkflow, useLegalDocuments } from '../legalReview'
 
 const motivators = ['Exceptional team', 'Harder problems', 'More ownership', 'Compensation', 'Founding team', 'Leadership', 'Product', 'Global exposure', 'Founder']
 const exclusions = ['5-day WFO', 'Services companies', 'Pure management', 'Java roles', 'Below ₹50L', 'Large companies']
@@ -212,6 +214,7 @@ function ResumeReview({ profile, apply, busy }: { profile: Candidate; apply: (fi
 }
 
 export default function CandidateExperience({ beforeLeaveRef }: { accountDeleted?: () => void; beforeLeaveRef?: React.MutableRefObject<(() => Promise<boolean>) | null> }) {
+  const legalDocuments = useLegalDocuments()
   const [profile, setProfile] = useState<Candidate | null>(null)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
@@ -484,7 +487,8 @@ export default function CandidateExperience({ beforeLeaveRef }: { accountDeleted
     if (settingsAutosave.current && !await settingsAutosave.current.flush()) { focusControl('.cp-settings-inline-editor input:not([type=hidden]), .cp-settings-inline-editor select'); return }
     if (busyRef.current) return
     if (!await flushAnswer()) return
-    if (await run(() => api.submitCandidate(true), '')) { setSuccess(true); setReview(false); setMeaningfulDraft(null) }
+    if (legalWorkflow && !legalDocuments) return
+    if (await run(() => api.submitCandidate(true, legalDocuments?.submission.version), '')) { setSuccess(true); setReview(false); setMeaningfulDraft(null) }
   }
   const settingsEditor = (field: string) => editingSettings && editingSettingsField === field ? <SettingsAutosave ref={settingsAutosave} formRef={settingsForm} dirty={settingsDirty} flight={settingsFlight} save={saveSettings} onSaved={() => setSettingsSaved(Date.now())} closeOnSave={field === 'availability' || field === 'notice_period_days'} close={() => {
     const restoreFocus = settingsForm.current?.contains(document.activeElement)
@@ -519,6 +523,8 @@ export default function CandidateExperience({ beforeLeaveRef }: { accountDeleted
     </div>
     </section></aside>
   return <main className={`candidate-experience ${focusedProcessing ? 'is-processing' : ''}`} ref={mainRef}>
+    {!focusedProcessing && <ExistingLegalReview />}
+    {legalWorkflow && review && <LegalRetry />}
     {!success && !focusedProcessing && p.latest_resume && <header className="cp-welcome"><h1>Let's find work that feels great.</h1></header>}
     {error && !editingSettings && <p role="alert" className="error">{error}</p>}<p aria-live="polite" aria-atomic="true" className="cp-sr-only">{message}</p>
     {success ? <CandidateConfirmation onViewProfile={() => { setSuccess(false); focusControl('.cp-profile') }} /> : <>
@@ -556,8 +562,8 @@ export default function CandidateExperience({ beforeLeaveRef }: { accountDeleted
     {resume && settingsPanel}</div>}
     {review && !focusedProcessing && <section className="cp-section cp-brief"><h2>Here's how we'll remember you</h2><h3>{p.full_name}</h3><p>{title}{p.location && ` · ${p.location}`}</p><p>{skills.join(' · ')}</p>{preferences.standout_signal && <p>{preferences.standout_signal}</p>}<p>{preferences.availability || 'Availability not specified'} · {p.work_preferences.join(' / ') || 'Work mode to confirm'}</p>{preferences.motivators?.length ? <p>Drawn to {preferences.motivators.join(', ')}</p> : null}{preferences.exclusions?.length ? <p>Not interested in {preferences.exclusions.join(', ')}</p> : null}
       {p.submission_missing_fields.length > 0 && <div role="status"><p>Before confirming, complete:</p><ul>{profileMissing.map(field => <li key={field.field}>{field.label}</li>)}</ul><div className="cp-actions">{profileMissing.map(field => <button key={field.field} type="button" onClick={() => navigateMissing(field.field)}>{field.field === 'visibility' ? 'Choose profile visibility below' : `Add ${field.label}`}</button>)}</div></div>}
-      {!p.visibility && <label>Who may discover your profile?<select id="profile-visibility-select" aria-label="First-time profile visibility" value="" disabled={busy} onChange={e => { if (e.target.value) void save({ visibility: e.target.value as Candidate['visibility'] }) }}><option value="">Choose before giving consent</option><option value="approved_recruiters">Approved ENTER recruiters</option><option value="matching_roles">Only matching roles</option><option value="not_looking">Not looking right now — hidden</option></select></label>}
-      <form onSubmit={submit}><label className="cp-check"><input type="checkbox" required />I agree to share my profile with authorized ENTER recruiters according to my visibility preferences.</label><div className="cp-actions"><a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a><a href="/terms" target="_blank" rel="noopener noreferrer">Terms</a><button className="primary" disabled={busy || !p.can_submit || processing}>Yes, that's me ✓</button><button type="button" onClick={() => setReview(false)}>Keep editing</button></div></form>
+      {!legalWorkflow && !p.visibility && <label>Who may discover your profile?<select id="profile-visibility-select" aria-label="First-time profile visibility" value="" disabled={busy} onChange={e => { if (e.target.value) void save({ visibility: e.target.value as Candidate['visibility'] }) }}><option value="">Choose before giving consent</option><option value="approved_recruiters">Approved ENTER recruiters</option><option value="matching_roles">Only matching roles</option><option value="not_looking">Not looking right now — hidden</option></select></label>}
+      <form onSubmit={submit}><label className="cp-check"><input type="checkbox" required />{legalWorkflow ? legalDocuments?.submission.text || 'Submission wording unavailable.' : 'I agree to share my profile with authorized ENTER recruiters according to my visibility preferences.'}</label><div className="cp-actions"><a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a><a href="/terms" target="_blank" rel="noopener noreferrer">Terms</a><button className="primary" disabled={busy || !p.can_submit || processing || (legalWorkflow && !legalDocuments)}>Yes, that's me ✓</button><button type="button" onClick={() => setReview(false)}>Keep editing</button></div></form>
     </section>}
     </>}
     {!success && !focusedProcessing && <footer className="cp-footer" aria-label="Candidate help links"><div className="cp-footer-row"><img src="/enter-wordmark.svg" alt="ENTER" /><div className="cp-footer-links"><button aria-expanded={footerPanel === 'support'} onClick={() => void leave(() => setFooterPanel(value => value === 'support' ? null : 'support'))}>Help Center</button></div><div className="cp-connect"><strong>Connect with us</strong><div><a className="cp-footer-icon" href="https://www.linkedin.com/company/enterrecruitment/posts/?feedView=all" target="_blank" rel="noopener noreferrer" aria-label="ENTER Recruitment on LinkedIn"><LinkedInIcon /></a><a className="cp-footer-icon" href="https://www.enterrecruitment.com/" target="_blank" rel="noopener noreferrer" aria-label="ENTER Recruitment website"><Globe2 aria-hidden="true" /></a></div></div></div>{footerPanel === 'support' && <section className="cp-footer-panel"><h2>Help Center</h2><p>For help with your profile, contact your ENTER representative.</p><div className="cp-faqs"><h3>Frequently asked questions</h3><details><summary>How do I update my Career Journey?</summary><p>Use “Not quite — edit” to correct saved profile details, or review Resume updates after replacing a resume.</p></details><details><summary>When will my resume be ready?</summary><p>ENTER shows the processing state while your uploaded document is being read. Your profile opens automatically when processing is complete.</p></details><details><summary>How do I change what opportunities I receive?</summary><p>Use the career preferences beside your profile to update availability, notice period, compensation, work mode, locations, and contact preferences.</p></details><details><summary>Can I delete my profile?</summary><p>Open your name in the top-right account menu to access account deletion.</p></details></div></section>}</footer>}

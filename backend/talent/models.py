@@ -99,6 +99,7 @@ class CandidateProfile(models.Model):
     submission_consent_at = models.DateTimeField(null=True, blank=True)
     submission_consent_version = models.CharField(max_length=80, blank=True)
     profile_updated_at = models.DateTimeField(auto_now=True)
+    meaningful_activity_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         indexes = [
@@ -112,6 +113,51 @@ class CandidateProfile(models.Model):
             GinIndex(fields=["skills"], name="candidate_skills_gin"),
             GinIndex(fields=["work_preferences"], name="candidate_workprefs_gin"),
         ]
+
+
+class LegalAcceptance(models.Model):
+    """Separate immutable-text evidence; never synthesized for existing accounts."""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    purpose = models.CharField(max_length=30)
+    version = models.CharField(max_length=100)
+    document_text = models.TextField()
+    document_sha256 = models.CharField(max_length=64)
+    accepted_at = models.DateTimeField(default=timezone.now, editable=False)
+    unpublished = models.BooleanField(default=True)
+
+
+class InactivityReminder(models.Model):
+    candidate = models.ForeignKey(CandidateProfile, on_delete=models.CASCADE)
+    activity_at = models.DateTimeField()
+    days_before = models.PositiveSmallIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    # Outbox only: delivery is not authorized or implied by creation.
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["candidate", "activity_at", "days_before"], name="unique_inactivity_notice"
+            )
+        ]
+
+
+class DeletionRequest(models.Model):
+    @property
+    def acknowledgement_deadline_status(self):
+        return "provisional_weekdays_only_not_approved_business_calendar"
+
+    # Deliberately independent of User: deletion must not erase the recovery ledger.
+    subject_user_id = models.PositiveBigIntegerField()
+    subject_joined_at = models.DateTimeField()
+    requested_at = models.DateTimeField(default=timezone.now)
+    acknowledgement_due_at = models.DateTimeField()
+    active_deletion_target_at = models.DateTimeField()
+    acknowledged_at = models.DateTimeField(null=True, blank=True)
+    account_deleted_at = models.DateTimeField(null=True, blank=True)
+    storage_keys = models.JSONField(default=list)
+    storage_cleanup_verified_at = models.DateTimeField(null=True, blank=True)
 
 
 class CandidatePhoto(models.Model):

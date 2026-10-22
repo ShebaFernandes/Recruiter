@@ -6,7 +6,9 @@ COPY frontend .
 COPY design-references/prepared/trusted-by-review/assets /app/design-references/prepared/trusted-by-review/assets
 ARG VITE_API_URL=/api/v1
 ARG VITE_CANDIDATE_ONLY=false
+ARG VITE_LEGAL_CONTENT_APPROVED=false
 ENV VITE_CANDIDATE_ONLY=$VITE_CANDIDATE_ONLY
+ENV VITE_LEGAL_CONTENT_APPROVED=$VITE_LEGAL_CONTENT_APPROVED
 ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 

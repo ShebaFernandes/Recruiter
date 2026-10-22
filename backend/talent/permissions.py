@@ -21,6 +21,7 @@ def is_approved_recruiter(user):
     # Read current state: revocation must block existing sessions too.
     return bool(
         not settings.CANDIDATE_ONLY
+        and not settings.LEGAL_WORKFLOW_PREVIEW
         and user
         and user.is_authenticated
         and user.is_active

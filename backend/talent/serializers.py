@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -404,6 +405,12 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
         return list(dict.fromkeys(item.strip() for item in value))
 
     def _field_missing(self, obj, field):
+        if field == "visibility" and (
+            settings.CANDIDATE_ONLY
+            or settings.LEGAL_WORKFLOW_PREVIEW
+            or settings.LEGAL_CONTENT_APPROVED
+        ):
+            return False  # Submission is not a recruiter-sharing choice.
         if field == "work_experiences":
             return not obj.work_experiences.exists()
         value = getattr(obj, field)

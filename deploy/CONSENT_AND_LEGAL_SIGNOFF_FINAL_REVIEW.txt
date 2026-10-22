@@ -1,0 +1,1008 @@
+ENTER — EXACT CONSENT WORDING AND FINAL-REVIEW REGISTER
+CEO APPROVAL REPORTED / EXACT APPROVED COPIES UNRESOLVED / UNPUBLISHED
+Consolidated register revision: r6 (single consolidated final-review package).
+Privacy Policy and Terms review copies: revision 2026-10-22-r2.
+Business requirements are confirmed; final legal
+wording-to-approval linkage remains pending. D1/D2 remain closed.
+
+CEO APPROVAL RECORD — OCTOBER 22, 2026
+Dikshita Verma, CEO of ENTER Recruitment Private Limited, is recorded as approving
+Privacy Policy v1.0, Terms of Use v1.0 and Candidate Submission Consent v1.0 on
+October 22, 2026. The corresponding D1 identifiers are preserved below. This
+records the approval instruction and does not fabricate a signature or backdate
+the effective date. The current Privacy and Terms source files still contain the
+material bracketed provisions listed under COMPLETENESS RESULT. Those unresolved
+sentences cannot be made publishable by substituting invented legal language.
+Production packaging must therefore remain fail-closed until exact completed text,
+an actual publication/effective date and SHA-256 values for all four presented
+documents (Privacy, Terms, age confirmation and submission confirmation) match
+the configured release. No existing account acceptance may be backfilled.
+
+USER-PROVIDED WHATSAPP APPROVAL EVIDENCE — OCTOBER 22, 2026
+The user reports written WhatsApp approval by Dikshita Verma, CEO of ENTER
+Recruitment Private Limited, dated October 22, 2026, explicitly approving:
+1. ENTER Candidate Platform Privacy Policy v1.0.
+2. ENTER Candidate Platform Terms of Use v1.0.
+3. Candidate Submission Consent v1.0.
+Reported authorization: candidate-only launch, subject to technical/security checks.
+Evidence classification: user-provided account of written approval. The original
+message/export and the exact copies presented to the CEO were not supplied or
+independently inspected. This entry records that approval without fabricating a
+signature, quotation, document attachment, legal review or effective date.
+
+MATCHING D1 IDENTIFIERS (unchanged): enter-candidate-privacy-v1.0,
+enter-candidate-terms-v1.0, enter-candidate-submission-v1.0. A matching title/version
+does not establish that a local review copy is identical to the approved copy.
+
+CURRENT CONTENT FINGERPRINTS — NOT CEO-APPROVED HASHES
+Privacy r2 file, exact bytes including review notes:
+6c001d59ae66ad700661d49573b7766093b15864fbe01127684ff2877c32aabc
+Terms r2 file, exact bytes including review notes:
+2656080b81d32ad0d87d6064f0fa219e0739673bb215e8fbcd21f5e201dd1811
+Register r6 BEFORE this evidence entry, exact file bytes:
+3bc50a372a6fccb24bccf96017e7815cfe8ec8abcd9e9a2f0fedf23430b431e9
+Submission passage under 'Candidate submission confirmation/consent': UTF-8,
+including its opening/closing curly quotes and internal LF line breaks, with no
+trailing LF:
+a47c0d40da71d3eabfb29e37b168091935bf977eacee6e194c1574387a2941a0
+The passage is contained in this register, not a separate complete consent file.
+The pre-update register hash is historical evidence, not a self-hash of this
+modified register. Final public-text hashes must exclude internal review/sign-off
+material under an explicitly defined packaging convention.
+
+COMPLETENESS RESULT: FAIL — EXACT PUBLISHABLE COPIES NOT YET IDENTIFIED
+Privacy sections 2, 5-10 retain material D3/D5-D10 placeholders/proposals for
+regional/sensitive-data handling, actual access/provider arrangements, operational
+retention/deletion and legacy/recovery treatment. Section 3 also retains a
+technical browser-evidence qualification. Terms sections 2, 4, 6-8 retain D11 and
+D13-D16 account-dispute, permission, suspension, dispute/liability and acceptance
+clauses requiring completion. D3 itself explicitly remains proposed. Submission
+text exists, but D16 evidence/retention and existing-user/change handling remain
+unresolved and the local preview submission sentence differs from this passage.
+Effective dates remain actual publication/activation dates per D1, not automatically
+October 22. Review notes must not be published as legal clauses.
+
+RECONCILIATION: reported approval is recorded, not rejected or downgraded to mere
+business approval. However, no exact-copy comparison with what the CEO received
+is possible from the current evidence. Supply the exact approved copies or identify
+the existing exact text reviewed. If those copies contain completed clauses, use
+them as the source for reconciliation. If the CEO reviewed these unfinished copies,
+finalize the listed material gaps and obtain explicit confirmation covering the
+completed exact text/version or hashes. No renewed approval of D1/D2 or the five
+settled business decisions is requested. No missing clause is invented here.
+This current evidence entry supersedes older blanket statements below that no
+complete-document approval has been reported; the older unresolved-text findings
+still apply. Publication readiness and production activation remain blocked.
+Preserve local workflow/migration 0016; LEGAL_CONTENT_APPROVED remains false.
+
+CURRENT RECONCILIATION — AUTHORITATIVE STATUS, NOT A NEW POLICY DRAFT
+The user's latest confirmation attributes business approval to Dikshita Verma,
+CEO. All business answers below, including D1's identifiers/date rule and D2's
+registered particulars, are settled. Do not request their approval again.
+D1 and D2 entries below are unchanged. Actual publication/activation dates follow
+D1; October 22 approval does not backdate a later publication.
+
+The r2 policy copies now contain D2 particulars, free-service confirmation, the
+12-month/30-day/seven-day rule and confirmed deletion targets. These are settled,
+not approval requests. Approval of surrounding legal clauses is not inferred.
+
+FINAL-REVIEW PACKAGE CONTENTS AND SOURCE CHECK
+Use only PRIVACY_POLICY_FINAL_REVIEW.txt r2, TERMS_FINAL_REVIEW.txt r2 and this
+register r6. No new parallel drafts were created. Approved D1 identifiers remain
+unchanged; r2/r6 are review revisions, not new approved legal versions.
+No actual approved legal-text source was found for the unresolved D3/D11/D13-D16
+clauses in the inspected final-review documents and existing management records.
+Business approvals are preserved, but no clause is labelled counsel-approved.
+Qualified review must supply/approve those exact clauses; technical inspection
+does not establish a lawful basis, transfer mechanism, exemption or liability rule.
+
+D7/D9 OPERATIONAL PROPOSAL — NOT APPROVED, NOT ACTIVATED
+Use the precise proposals in Privacy r2 sections 7 and 8: calendar-month UTC
+activity clock; deliberate saved changes/upload/submission/renewal, not passive
+login or worker activity; same clock for draft/submitted/paused accounts; escalate
+failed notices without resetting the clock. Proposed unknown-activity transition:
+one explicit 30-day renewal notice, never fabricated historical activity. Proposed
+expiry handling: block ordinary processing and target active deletion within seven
+days, subject to approval of that cleanup window; no additional grace inferred.
+Record deletion-request receipt in UTC; proposed business-day timezone is
+Asia/Kolkata. The actual applicable holiday calendar is NOT supplied or implemented.
+Verification does not restart the receipt clock. Privacy owner handles failures.
+Local implementation has a reminder outbox and quarantine/reconciliation controls;
+it does not implement or activate this proposed transition/expiry automation.
+
+D8/D10 RETENTION SCHEDULE — PROPOSALS EXCEPT VERIFIED BACKUP CONFIGURATION
+Except for the explicitly verified database-backup row, these are purpose-based
+pilot recommendations, not statutory periods or authorized lifecycle rules.
+No row is a completed-erasure guarantee. Earlier deletion requests remain
+subject to the approved process and legal review. Do not apply them automatically.
+
+Record category | Proposed period / trigger | Reason and treatment
+Unverified accounts | 30 days from signup | Limited verification/retry window;
+  delete unused account and tokens; no meaningful activity fabricated.
+Replaced resumes | Up to 7 days after successful replacement and review | Short
+  correction/recovery window; remove old file and references after checks. A
+  failed replacement must not cause deletion of the last valid current resume.
+Failed uploads | Up to 7 days after terminal failure | Allow a bounded support
+  investigation; deny recruiter access, then erase file and unnecessary metadata.
+Confirmed malware files | Target removal within 24 hours after final scan result |
+  Minimize harmful content storage; keep only minimal failure metadata under the
+  log period. Do not preserve samples as an unapproved forensic exception.
+Job/security logs | 30 days from event | Bounded reliability/abuse investigation;
+  exclude resume bodies, credentials and tokens; erase or irreversibly aggregate.
+Support correspondence | 90 days after ticket closure | Short follow-up window;
+  minimize attachments, then delete identifying correspondence. Review mailbox
+  copies/provider retention too; application deletion alone does not cover them.
+Terms/submission evidence | Account lifetime plus proposed 12 months after closure |
+  Minimal proof of instructions/acceptance for disputes; counsel must justify or
+  shorten the post-closure period. No IP/device collection by default. Current
+  evidence CASCADE deletion does NOT implement this proposed post-closure period;
+  any change requires approval and an additive implementation. Non-personal exact
+  document archives may remain separately; do not retain candidate-linked copies
+  indefinitely under an archive label.
+Database backups | VERIFIED operational expiration: hourly 7 days; daily 30 days |
+  User installed rules and read-only verification confirmed them on October 22;
+  see C3 below. This is not approval of the complete Privacy Policy or a guarantee
+  of deletion at an exact time. Three legacy copies remain outside these prefixes;
+  individually approve their disposition, with no indefinite legal exemption.
+Resume versions (optional recovery choice) | Noncurrent versions: 7 days from
+  replacement/deletion | Bounded accidental-loss recovery; separate approval needed
+  for versioning/cost. Verified erasure must enumerate/delete relevant versions and
+  markers rather than merely hide current objects. Alternative: keep versioning off
+  and explicitly accept that deleted files may be unrecoverable; DB backups are
+  not file backups. Neither choice is silently selected by this package.
+Deletion ledger | Until every recoverable copy of the subject has expired/been
+  erased, plus proposed 7 days to verify reconciliation | Prevent resurrection;
+  with a validated 30-day maximum backup horizon this is at most 37 days after
+  active deletion. Older copies invalidate that bound: block closure, inventory
+  and obtain a disposition decision, never claim the ledger can expire safely.
+  Review any longer evidentiary need separately; retain minimal identity keys,
+  timestamps and cleanup status, not CV contents. Ledger copies need their own
+  bounded lifecycle; no recursive indefinite backup retention.
+
+For all categories: failed deletion remains an incident/pending cleanup, not a
+successful erasure. Recovery quarantines ALL restored accounts/tokens and keeps
+HTTP blocked; require a separately protected, independently checksummed deletion
+ledger and approved erasure reconciliation before reopening. Quarantine is not
+permanent erasure and does not satisfy historical-version deletion by itself.
+No new exception is authorized. Legal must approve any applicable mandatory
+retention with a specific basis, scope and end/review date rather than a blanket
+'legal purposes' extension. Operator: Dikshita Verma, CEO, or expressly designated
+authorized operations personnel. No timer, deletion, versioning or AWS change here.
+
+Basis for proposals: minimize retained data while allowing bounded operational
+recovery/support. ICO storage-limitation guidance explains that periods depend on
+specified purposes and must be justified; it does not approve these durations or
+determine ENTER's India/US/UK obligations. Guidance checked for this package:
+https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/data-protection-principles/a-guide-to-the-data-protection-principles/storage-limitation/
+The ICO page itself notes review following the Data (Use and Access) Act.
+
+LOCAL TECHNICAL STATUS (supersedes historical T6/T8 implementation statements)
+Implemented and tested locally: separate age/Terms confirmations, own-account
+current-version status, unpublished pages with loading/retry and version checks,
+separate submission evidence, no inferred recruiter permission, server timestamps
+and archived document hashes, candidate activity tracking, 30/7-day reminder
+outbox with in-memory test delivery, deletion ledger and completion reconciliation,
+and isolated-restore quarantine with checksum-verified ledger validation.
+Restored accounts/sessions/tokens remain disabled; restore HTTP access remains
+blocked. Completion checks do not claim backup/object-version erasure. Weekday-only
+acknowledgement deadlines are explicitly provisional. Migration 0016 is preserved;
+the latest safeguard changes introduced no additional migration. Nothing here
+asserts deployment or activation. No automatic retention deletion is enabled.
+Latest local verification: 429 backend tests passed, eight skipped; 113 frontend
+tests passed; four targeted browser tests passed; lint/build/Django/drift checks
+passed. These are local results, not current AWS verification.
+
+ONLY UNRESOLVED PUBLICATION ITEMS
+Factual / technical verification, not renewed business approval:
+- D4-D6: finish actual deployed-build external-request/cookie inventory when
+  staging HTTPS is reachable. Bucket configuration and EC2-role policies were
+  verified in the authenticated Console in the evidence refresh below. Company
+  records must establish provider contracts/support locations and the specific
+  authorized access roles/countries; source code cannot establish those facts.
+- Final approved text/version packaging and production workflow activation remain
+  dependent on complete-document sign-off. Local preview evidence must never be
+  converted into acceptance of published Terms. Existing production gates stay off.
+Specific decisions / legal wording still open:
+- D3,D9,D11: applicable regional processing/rights/complaints/transfer and sensitive
+  information provisions, request-clock/calendar and disputed/ineligible-account
+  procedure. The age threshold and two-business-day/seven-day targets are settled.
+- D7: choose qualifying activity events, timezone, unknown-existing-activity
+  transition and missed-notice/expiry handling. The 12-month duration and 30/7-day
+  reminders are settled; no extra grace period or exception is inferred.
+- D8,D10: periods/disposition for unverified accounts, replaced/failed uploads,
+  logs/support records, acceptance evidence, deletion ledger, database recovery
+  copies and historical resume versions. Resolve legacy copies and any expressly
+  justified exceptions; the profile/resume period does not decide these categories.
+- D13-D16: finalize the existing content-permission/acceptable-use, suspension/
+  appeal, governing-law/dispute/warranty/liability clauses and exact acceptance,
+  submission, change-notice and existing-user/refusal wording. Separate acceptance
+  and future explicit recruiter opt-in are settled controls, not open choices.
+- Approve the exact complete Privacy, Terms and consent copies/revisions through
+  the existing sign-off blocks once those clauses are resolved. Approver identity
+  is already known; actual complete-document approval and date are not inferred.
+Future recruiter-launch opt-in details can be reviewed before that separate launch;
+they do not justify blocking this pilot while recruiter access remains disabled.
+
+The current C3 follow-up supersedes every older statement that the backup schedule
+is merely proposed or the broad 14-day rule remains enabled. This does not approve
+legacy disposition, other category periods or complete legal documents.
+This package synchronizes existing unpublished policy text; it changes no runtime
+gate, deployment or AWS setting.
+Historical observations and earlier recommendations below remain provenance only
+where superseded by this status section. No recommendation becomes approved here.
+
+D4-D6 EVIDENCE REFRESH — R6 REVIEW, 22 OCTOBER 2026
+READ-ONLY AWS: STS confirmed account 431988153216. S3 authorization responses
+identified role ENTER-Staging-EC2-Role and instance i-08f84202dbb6b4cce. Allowlisted
+effective Django settings confirm staging (not production), Sydney S3/SQS regions,
+SES SMTP email-smtp.ap-southeast-2.amazonaws.com:587 with TLS, SQS resume queue,
+ClamAV scanner, private-storage signing enabled, 300-second signed links and
+overwrite disabled. All three resume-AI enable/approval/paid flags are false and
+AI_PROVIDER=disabled. LEGAL_CONTENT_APPROVED=false. Six containers are running;
+backend/worker/db/scanner report healthy. No candidate records were read.
+Runtime cookies: enter_session Secure=true, SameSite=Lax; token TTL seven days;
+CSRF cookie age 31,449,600 seconds. These technical settings are not additional
+approved personal-data retention periods.
+
+AUTHENTICATED CONSOLE FOLLOW-UP — 22 OCTOBER 2026, READ ONLY
+Following the user's sign-in confirmation, the authorized Chrome Console showed
+account 431988153216 (Ctrl Shift Believe), signed-in identity dikshita. The earlier
+instance-role S3/IAM metadata AccessDenied results were resolved for this inspection
+by reading Console pages, NOT by granting permissions. No object contents, resume
+keys, credentials or candidate records were inspected.
+
+Evidence C1: S3 > enter-staging-private-2021 > Permissions, Properties, Management,
+Sydney (ap-southeast-2). All four individual Block Public Access settings enabled:
+BlockPublicAcls, IgnorePublicAcls, BlockPublicPolicy, RestrictPublicBuckets.
+Bucket-owner-enforced ownership; ACLs disabled; public/authenticated-users ACL
+entries grant no access; bucket-policy panel empty. Default encryption SSE-S3;
+SSE-C blocked. Versioning and MFA delete disabled. No lifecycle or replication
+rules. Object Lock, server access logging and static website hosting disabled.
+
+Evidence C2: the same three Console tabs for enter-staging-backups-2021, Sydney.
+All four individual Block Public Access settings enabled; bucket-owner-enforced
+ownership and ACLs disabled. Default encryption SSE-S3; SSE-C blocked. Versioning,
+MFA delete, Object Lock, server access logging and website hosting disabled.
+No replication rules. Bucket-default encryption is not an object-by-object audit
+of historical encryption, and public-access blocking is not a restore guarantee.
+
+CURRENT RETENTION FACT (C3), superseding the earlier 14-day observation:
+After the user's manual correction, all THREE lifecycle rules were inspected
+in the authenticated Console, account 431988153216, Sydney, October 22, 2026:
+- enter-staging-backup-retention: DISABLED, postgres/, original Day 14 retained
+  only as inactive configuration.
+- enter-postgres-hourly-retention-7d: ENABLED, exactly postgres/hourly/, Day 7.
+- enter-postgres-daily-retention-30d: ENABLED, exactly postgres/daily/, Day 30.
+No tag/size restrictions appeared on the new rules; no additional noncurrent,
+multipart or marker actions appeared in the inventory. Console entry point:
+https://ap-southeast-2.console.aws.amazon.com/s3/management/enter-staging-backups-2021/lifecycle/view?region=ap-southeast-2&id=enter-staging-backup-retention
+Metadata verification at 2026-10-22 12:08:44 UTC found all five prior objects
+accessible (HEAD 200), AES256 encrypted, unchanged sizes/LastModified. Three legacy
+postgres/2026/10/21/ objects have no expiration header; together 306,616 bytes.
+The hourly object is 103,343 bytes, eligibility October 30 at 00:00 UTC. Approved
+daily recovery object postgres/daily/2026/10/22/053322-0a36d033f2db45ac997470eca9f6c7f1.dump
+is 103,344 bytes, eligibility November 22 at 00:00 UTC. Its independently recorded
+SHA-256 remains 999e83447c7fd29307f441cc83856a94a8bd329ac43282ac7535a2739337b889;
+contents were not downloaded or rehashed by this metadata check. The isolated
+rehearsal must validate this checksum and must not run before October 23, 2026,
+05:33:23 UTC. No recovery was performed here. Current rules affect existing and
+future matching objects; S3 expiration is asynchronous. No rule was changed by
+the assistant. Legacy disposition remains unresolved, not an indefinite exemption.
+With versioning/replication off, neither bucket currently provides version-based
+recovery after permanent deletion; a PostgreSQL dump does not recover a deleted
+resume file. The proposed optional recovery protection remains an approval item.
+
+Evidence C4: IAM > Roles > ENTER-Staging-EC2-Role > Permissions and Trust
+relationships. ARN arn:aws:iam::431988153216:role/ENTER-Staging-EC2-Role;
+matching instance-profile name. Trust permits ec2.amazonaws.com sts:AssumeRole.
+Two customer-inline policies, no permissions boundary shown:
+- ENTER-Staging-EC2-RolePolicy: ListBucket/GetBucketLocation on each of the two
+  named buckets; GetObject/PutObject/DeleteObject on private-resume bucket /*;
+  PutObject/GetObject (not DeleteObject) on backup bucket /postgres/*; SendMessage,
+  ReceiveMessage, DeleteMessage, ChangeMessageVisibility, GetQueueAttributes and
+  GetQueueUrl on arn:aws:sqs:ap-southeast-2:431988153216:enter-staging-resume-jobs.
+- ENTER-Operations-AlertsAndMetrics: sns:Publish only to
+  arn:aws:sns:ap-southeast-2:431988153216:enter-production-alerts;
+  sqs:GetQueueAttributes only to the enter-staging-resume-dlq ARN in that account/
+  region; cloudwatch:GetMetricStatistics on * with aws:RequestedRegion restricted
+  to ap-southeast-2. No IAM administration permissions appeared in these policies.
+Read-only STS independently confirmed the instance's assumed-role identity ending
+in /ENTER-Staging-EC2-Role/i-08f84202dbb6b4cce. This is role-policy inspection, not
+a claim of exhaustive account-wide effective-access or human-access auditing.
+
+Evidence C5: IAM user inventory showed two SES SMTP identities:
+ses-smtp-user.20261015-192131 and ses-smtp-user.20261015-192231. The first user's
+ENTER-SES-SMTP-Sending inline policy permits only ses:SendRawEmail against
+arn:aws:ses:ap-southeast-2:431988153216:identity/enter.careers. The second user's
+policy and which SMTP identity the runtime uses were not verified; no credential
+values were read to correlate them. Runtime SMTP host/port/TLS above verifies SES
+Sydney configuration, not message delivery, contracts or mailbox hosting. No email
+was sent. Console identity dikshita is observed, but its human permission set,
+other human administrators and their physical access countries are not established
+by the EC2 role or these two programmatic identities.
+
+CURRENT CODE: storage writes request AES256 encryption and private signed access;
+this is not proof of bucket-wide settings or encryption of historical objects.
+PlatformBackground.tsx uses the exact CloudFront video host already recorded in
+T4. nginx CSP allows that media origin, fonts only from self, styles self/inline;
+Google Fonts is declared in CSS but blocked by the reviewed production CSP.
+Do not list Google as a confirmed active production recipient on this evidence.
+Candidate answer drafts and intro replay use sessionStorage. No dedicated
+analytics SDK found in reviewed frontend source; deployed browser-network/log
+behavior still needs final inspection, not a claim of zero telemetry.
+
+Evidence C6 — earlier browser audit limitation: fresh Chrome navigation to
+https://staging.enter.careers/ timed out (30-second diagnostic navigation; authorized
+Chrome Console-profile navigation also timed out). A temporary local SSH-forwarded
+diagnostic preserving the hostname/TLS validation also timed out and was closed.
+No security group, proxy, DNS, server or TLS configuration was changed. Therefore
+actual loaded production-build requests, cookie metadata, fonts, video/CDN requests
+and telemetry are NOT VERIFIED in this refresh. Source/config observations above
+must not be presented as a successful browser capture or proof of zero tracking.
+Required technical follow-up: repeat an anonymous request/cookie metadata audit
+when authorized staging HTTPS access works, without logging cookie/token values,
+submitting forms or reading candidate records. This remains a technical evidence
+gap, not a request to reapprove settled business requirements.
+
+C6 FOLLOW-UP, October 22 at approximately 12:19 UTC: external HTTPS HEAD now
+returns 200 with certificate validation, Cache-Control: no-cache, nginx via Caddy.
+CSP permits same-origin scripts/connect/font requests and the exact CloudFront
+media origin; it does not permit the Google Fonts stylesheet declared in source.
+Authorized Chrome successfully rendered landing and candidate signup without
+submitting a form. Rendered application assets: /assets/index-Dhf0TqcQ.js and
+/assets/index-CSYTr_nC.css; landing scenery/logo assets are same-origin or embedded.
+Candidate video DOM references the existing d8j0ntlcm91z4.cloudfront.net MP4 with
+an embedded poster. No additional remote script element appeared in this inspected
+DOM. This is DOM/header evidence, NOT a full network trace, cookie-jar inspection,
+video-delivery success test or proof of absent telemetry. HttpOnly cookie settings
+remain source/runtime evidence, not freshly observed authenticated browser values.
+No credentials, cookie values or real candidate data were read. The earlier
+unreachable-site blocker is resolved; comprehensive request/cookie evidence remains
+an explicit technical follow-up rather than a company/legal decision.
+
+PRECISE IMPLEMENTATION REVIEW — NOT ACTIVATION OR NEW LEGAL APPROVAL
+Sources: backend/talent/legal.py, legal_views.py, legal_middleware.py,
+management/commands/{prepare_inactivity_reminders,reconcile_deletion_completion,
+export_deletion_ledger,reconcile_restored_deletions}.py, migration 0016,
+frontend/src/legalReview.ts and components/LegalReview.tsx; production Dockerfile.
+Existing local safeguards already implement independent unchecked confirmations,
+own-account acceptance status, server-side versions/timestamps/text hashes,
+unavailable/stale-document refusal, separate submission and no inferred sharing.
+No additional application edit is made by this document-only reconciliation.
+Migration 0016 and existing uncommitted implementation are preserved. No complete
+legal-text approval was found; D3 expressly remains PROPOSED despite business
+approval. Do not convert that business approval into clause approval.
+
+Required production delta, after exact wording is approved:
+1. Keep localhost unpublished preview separate. Add a production approved-document
+   manifest with D1 identifiers, actual effective dates, exact UTF-8 text hashes
+   and approval references. Validate files/hashes/dates fail-closed at startup;
+   package only approved public text, not this internal sign-off register, into
+   the backend image. Current Dockerfile copies backend, not deploy/legal files.
+2. Use that manifest for anonymous pre-signup document pages and backend validation;
+   frontend must accept approved published documents rather than require
+   unpublished=true. Never enable LEGAL_WORKFLOW_PREVIEW in production.
+3. Record new published acceptance events (unpublished=false); never reuse preview
+   events or backfill existing accounts. Preserve age/Terms/submission separation,
+   fail-closed version checks and no recruiter opt-in. Migration 0016 already has
+   the needed core evidence fields; separately review any approved archive model,
+   append-only enforcement or evidence-retention change before a new migration.
+4. After D16 wording/behavior approval, prompt existing accounts on authenticated
+   visits; proposed restriction is new uploads/submission only, retaining support,
+   privacy and deletion access. Freeze review to the presented immutable version;
+   refuse stale versions and re-prompt for an applicable approved new version.
+5. Production reminder delivery needs a durable delivery/retry record, idempotent
+   worker scheduling, stale-notice cancellation after meaningful activity, failure
+   escalation and genuine provider-acceptance/delivery distinction. Current sender
+   deliberately allows only in-memory local tests. Do not fabricate historical
+   activity or claim reminders are live. Use the approved 30/7-day boundaries.
+6. Track real acknowledgements separately from request receipt: local self-service
+   records acknowledged_at immediately, which must not imply an email/manual
+   acknowledgement was delivered. Preserve provisional weekday labels until the
+   business-day calendar is approved. Verify current-object cleanup separately
+   from legacy/version/backup erasure; never close deletion merely on quarantine.
+7. Recovery remains isolated and inaccessible pending independently checksummed
+   ledger reconciliation. Current command quarantines, not permanently erases,
+   restored identities. Approve/test a purge-and-verification procedure before
+   any recovered data becomes serviceable; no live restore or S3 deletion here.
+8. Test the published path, package/missing-file/hash failures, existing-user refusal,
+   version changes, no sharing, reminder retries and restored-deletion handling
+   using synthetic data before release. Prior local-preview test results are not
+   published-mode verification. LEGAL_CONTENT_APPROVED alone is not enforcement.
+
+OPERATIONAL RECOMMENDATIONS — STILL REQUIRE APPROVAL, NOT NEW BUSINESS QUESTIONS
+Existing accounts: use reliable recorded candidate activity only; where unknown,
+offer the proposed one-time 30-day renewal notice and preserve unknown status until
+an explicit candidate action. This notice is a transition proposal, not acceptance
+or an automatic extension. Existing users separately accept the approved Terms.
+Failed reminders: proposed bounded retries at one and 24 hours while the notice
+is timely, then privacy-owner escalation; a hard bounce goes straight to review.
+Cancel obsolete pending notices; never reset the retention clock or treat SMTP
+acceptance as inbox receipt. No silent indefinite extension on missed delivery.
+Ancillary records: retain the single purpose/period schedule above for D8 review;
+do not apply the 12-month profile rule to all logs, mail, evidence or failed files.
+Legacy backups: assign an owner and explicit disposition date for each of the
+three retained legacy copies after required recovery/evidence review; do not
+invent their expiry or claim a 30-day maximum while they remain recoverable.
+Deletion reconciliation: protect the ledger independently; on restore block all
+accounts/tokens/HTTP, verify ledger integrity, identify deleted subjects and
+reconcile active/private-file erasure before any separately approved reopening.
+Record partial failures, versions and retained backup exceptions accurately.
+These recommendations change no deadlines, timers, records or permissions.
+
+CONTRACTUAL FACTS NOT PROVEN: AWS contractual entity/processor terms and support
+access locations; Namecheap contractual arrangement; actual mailbox provider and
+its retention (SES is outbound delivery, not proof of inbox hosting); CloudFront
+distribution owner/license/logging/processing arrangements; authorized personnel
+roles and countries. Domain names and Sydney configuration cannot establish these
+facts. Keep existing verified Namecheap ownership as historical evidence, not a
+new contract audit. SNS alert subscription/receipt was previously confirmed by the
+user; no alert was sent and no new recipient was configured during this review.
+
+CONFIRMED BUSINESS ANSWERS — NOT COMPLETE DOCUMENT APPROVAL
+Operator name: ENTER Recruitment Private Limited.
+Privacy/support email: sheba@enterrecruitment.com.
+Minimum candidate age: 18.
+Initial markets: India, United States and United Kingdom.
+Future recruiter access: separate, explicit candidate opt-in required.
+Confirmed business decision: the Candidate Platform is free for candidates.
+Confirmed retention: candidate profiles/resumes are retained for 12 months after
+meaningful activity, with reminders 30 and seven days before expiry.
+Confirmed deletion targets: acknowledge within two business days; target active
+data deletion within seven days; follow applicable legal deadlines and approved
+backup-erasure procedures. No universal 30-day deadline is approved by this answer.
+Responsible privacy owner: Dikshita Verma, CEO.
+Access: authorized personnel only; recruiters remain blocked for candidate launch.
+Required controls: 18+ confirmation, separate Terms acceptance, accessible Privacy
+Policy, separate submission confirmation and future explicit recruiter-sharing opt-in.
+Source: user's explicit five-item management confirmation in this conversation.
+No signature, approval date or approval of complete legal text is inferred.
+Meaningful-activity events, operational handling, exceptions and exact legal text
+remain distinct from these confirmed business decisions. No automation is activated.
+
+REMAINING BLOCKERS — DO NOT REOPEN THE FIVE CONFIRMED BUSINESS DECISIONS
+Company information: actual authorized access roles/countries; provider contractual
+arrangements and processing/support locations not established by technical settings.
+Regional legal review: applicable India/US/UK grounds, notices, rights/deadlines,
+complaints, sensitive-data handling, incident duties and international arrangements.
+Retention/deletion legal review: justified periods for D8 categories, applicable
+exceptions (if any), backup/legacy-copy and resume-version erasure provisions.
+Terms legal review: content permissions/acceptable use, suspension/appeals,
+governing law/disputes, warranty/liability and mandatory regional protections.
+Acceptance legal review: exact sentences, existing-user/refusal/reacceptance
+handling and evidence retention; then explicit approval of each complete document.
+Technical/procedure details, NOT renewed business approvals: meaningful-activity
+event definition, calendar/timezone, existing-account transition, failed reminders,
+expiry handling, request-clock/business-day rules, cleanup and restore safeguards.
+These must be resolved/tested before implementation promises or automatic deletion.
+
+ONE-REVIEW SUMMARY — D1/D2 CLOSED; D3-D16 NOT AUTOMATICALLY APPROVED
+D1's approved version identifiers/effective-date rule and D2's recorded company
+particulars are preserved verbatim below. Do not request them again. Actual
+publication dates remain governed by the approved D1 rule, not the review date.
+D3 already names Dikshita as responsible reviewer and records business approval;
+its jurisdiction-specific text remains proposed pending qualified legal review.
+The detailed D3-D16 sections below remain the single decision record. Use this
+summary to return one set of answers rather than creating another draft.
+
+TECHNICAL FACTS VERIFIED — 22 OCTOBER 2026, APPROX. 09:55 UTC
+Method: read-only repository inspection, SSH instance identity, allowlisted
+container configuration/effective Django settings and systemd status. No candidate
+records, resume contents, credentials or email messages were accessed. No tests,
+uploads, notifications, service changes or AWS configuration writes were made.
+Evidence labels below distinguish code capability from deployed operation.
+
+T1 / D3,D5,D6 — LIVE: account 431988153216, region ap-southeast-2, instance
+i-08f84202dbb6b4cce matched the intended target. Six application containers run;
+backend, worker, database and scanner report healthy; frontend/edge have no Docker
+health status. Backend and worker APP_ENV=staging. Candidate-only/intake flags
+are absent from container environment; do not describe staging as the activated
+candidate-only production service. LEGAL_CONTENT_APPROVED=false in both services.
+CODE: production candidate-only restrictions exist in talent/permissions.py and
+config/settings.py; production activation is a separate future step.
+
+T2 / D3,D6 — LIVE: EMAIL_BACKEND is Django SMTP, host is
+email-smtp.ap-southeast-2.amazonaws.com, port 587, TLS=true (AWS SES endpoint).
+RESUME_QUEUE_BACKEND=sqs; AWS S3/SQS regions are ap-southeast-2;
+RESUME_SCANNER_BACKEND=clamav. AI_PROVIDER=disabled and RESUME_AI_ENABLED,
+RESUME_AI_EXTERNAL_PROCESSING_APPROVED, RESUME_AI_ALLOW_PAID are false on backend
+and worker. CODE: resume_processing.py parses files; resume_understanding.py
+returns rule-based interpretation when AI is disabled. No AI request was made.
+These settings establish service configuration, not a new end-to-end delivery test.
+
+T3 / D4 — CODE + LIVE SETTINGS: authentication uses an HttpOnly enter_session
+cookie, Secure=true, SameSite=Lax, token TTL 604800 seconds (seven days). CSRF
+cookie is csrftoken, HttpOnly=true, configured age 31449600 seconds (364 days).
+frontend/src/api.ts uses credentialed requests and keeps the CSRF token in memory;
+its auth.save does not persist tokens. CandidateExperience.tsx stores unsaved
+answer drafts in sessionStorage; IntroAnimation.tsx stores a session replay flag.
+These are technical lifetimes, not approved legal retention schedules.
+
+T4 / D4,D6 — CODE: PlatformBackground.tsx requests video from
+https://d8j0ntlcm91z4.cloudfront.net. styles.css contains a Google Fonts import;
+frontend/nginx.conf permits the CloudFront media origin but restricts style/font
+sources to self (plus inline styles). Thus the font declaration is not proof of
+a successful production Google request. No dedicated analytics SDK/integration
+was found in the inspected frontend source/package configuration; this is not a
+complete browser-network audit or a claim of no third-party data collection.
+The media host's contract/operator and logging/location practices are not proven
+by its hostname. Do not label partner website links as processing vendors merely
+because a link exists. External-asset disclosure needs the verified delivery
+inventory plus commercial/provider confirmation, not another business questionnaire.
+
+T5 / D6,D9,D10 — LIVE: application bucket enter-staging-private-2021;
+AWS_QUERYSTRING_AUTH=true, signed-link expiry 300 seconds, file overwrite=false.
+S3 metadata requests for Block Public Access, bucket encryption, versioning and
+lifecycle on this bucket and enter-staging-backups-2021 returned AccessDenied.
+No IAM changes attempted. Prior Console security evidence remains historical;
+current bucket controls and version lifecycle are NOT newly verified. The connected
+Chrome profile had no open AWS Console bucket page; no account switching attempted.
+Signed application access is not proof of bucket-wide public-access protection.
+
+T6 / D7-D10 — CODE: account deletion requires password plus literal DELETE;
+transactional deletion schedules private-file cleanup. storage_cleanup.py protects
+live references and retries failed deletes; successful cleanup jobs are removed.
+This is not an enduring deletion ledger or deletion from historical backups/S3
+versions. No 12-month inactivity engine, expiry notification/grace implementation
+or restore-time deletion replay was identified. profile_updated_at is auto_now,
+not a trustworthy candidate-only meaningful-activity signal. A rate-limit-bucket
+purge command exists but is not a candidate retention system.
+
+T7 / D10 — CODE: backup_safe.py enforces conditional upload/checksum capability,
+AES256 backup encryption/readback and isolated restore with network=none,
+CPU=0.5 and memory=768m. These are reviewed script safeguards, not a fresh backup
+or restore test in this review. LIVE: enter-backup.timer, enter-backup-daily.timer,
+enter-monitor.timer and enter-recovery.timer are all disabled. No retention
+deletion or resume versioning activation is inferred. Existing service/runtime
+contracts and backup history were not changed.
+
+T8 / D11,D16 — CODE: SignupSerializer currently has no required age/Terms fields.
+CandidateProfile stores submission_consent_at/version, but not separate Terms
+acceptance or archived legal-text hashes. LIVE submission version remains
+candidate-profile-sharing-v1. submit_candidate_profile accepts explicit consent
+or existing current-version consent; this legacy purpose must not be relabelled
+as acceptance of new Terms or future recruiter opt-in. New submission wording,
+separate acceptance evidence and existing-user transition require implementation
+AFTER approval. No existing acceptance events may be fabricated or backfilled.
+
+TECHNICAL VERIFICATION FOLLOW-UP — NOT MANAGEMENT LEGAL DECISIONS
+- Read bucket protection/version/lifecycle metadata through an already authorized
+  Console session when available; do not broaden IAM for this paperwork task.
+- Before publication, verify actual production browser requests for external
+  assets and reconcile them with the confirmed commercial provider inventory.
+- Separately implement/test approved age, Terms, consent, retention and restore
+  erasure safeguards. Current capability must not be described as already deployed.
+
+PRIOR GROUPED OPTIONS — CONFIRMATION STATUS UPDATED BELOW
+The confirmed business section and D-specific confirmations govern. Suggestions
+beyond the five explicit answers remain recommendations, not inferred approvals.
+M1 — Candidate experience (D5,D11,D12,D16): recommend free candidate pilot;
+separate unchecked 18+ and Terms controls; informational Privacy notice; separate
+submission instruction; no future sharing inferred. Recommend preserving account
+management when sharing is declined. Existing users accept new Terms before new
+uploads/submissions, retaining support/deletion access. Approve/revise exact
+sentences already above/below in this register, not a new wording set.
+Business answer recorded: free Candidate Platform and required separate controls.
+Exact wording, existing-user handling and refusal effects still require review.
+
+M2 — Inactivity (D7): recommend 12 calendar months after deliberate candidate
+activity, excluding passive login/background processing; 30-day and seven-day
+advance notices within that period. Approve the detailed D7 expiry, failed-notice
+and existing-account transition choices and identify the operating owner.
+Business answer recorded: 12 months after meaningful activity; 30/7-day reminders.
+Privacy owner: Dikshita Verma, CEO. Transition/event/timezone details remain open.
+
+M3 — Deletion and recovery (D8-D10): review the existing 2-business-day/7-day/
+30-day targets subject to counsel's deadlines; seven-day hourly and 30-day daily
+database retention; separate bounded resume recovery choice; deletion replay
+before reopening restored data. Supply justified per-category periods in D8,
+legacy-copy treatment and owner; legal approves any exceptions. No automatic
+deletion, lifecycle or versioning activation is authorized by this decision.
+Business answer recorded: two-business-day acknowledgement, seven-day active-data
+target, applicable legal deadlines and approved backup-erasure procedures.
+No approval inferred for the prior 30-day proposal or proposed backup periods.
+
+M4 — Operational accountability (D4-D6,D9,D11,D14): confirm authorized support
+roles/access countries, provider contracts and locations not visible in code,
+and who handles requests, disputes and incidents. Reuse sheba@enterrecruitment.com
+and already recorded company/representative details; no need to resupply them.
+Business answer recorded: Dikshita Verma, CEO, privacy owner; existing support
+email confirmed; authorized personnel only and recruiters blocked. Actual access
+roles/countries and provider arrangements remain to be documented.
+
+M5 — Complete-document approval (D3,D13-D16): obtain the legal review below, resolve
+its amendments into the SAME Privacy/Terms/register files, then approve each
+complete copy/version in the existing signature blocks. D1/D2 remain closed;
+no placeholder or proposed clause becomes approved by silence.
+Decision/legal reviewer and review reference: ________________________________
+
+QUALIFIED LEGAL REVIEW — SPECIFIC PROVISIONS, NOT A GENERIC APPROVAL REQUEST
+India (D3,D6-D11,D13-D16): assess applicable DPDP Act/Rules provisions and their
+phased commencement at the actual launch date; notice and processing grounds,
+consent/withdrawal, request/grievance process, security/breach responsibilities,
+retention/erasure, cross-border/processor arrangements and age handling. Supply
+applicable Terms/consumer, electronic acceptance and dispute provisions. Do not
+infer an exemption or full commencement from company size or a press summary.
+Official reference: https://www.meity.gov.in/documents/act-and-policies/digital-personal-data-protection-rules-2025-gDOxUjMtQWa?pageTitle=Digit
+
+UK (same decisions): assess territorial scope, purpose-specific lawful bases,
+special-category resume information, transparency and rights/deadlines, cookie
+rules, processor contracts, restricted transfers/safeguards, representative
+requirements where applicable, security/breach duties and retention. Review
+consumer/contract limits, governing-law clauses and acceptance evidence.
+Official transfer guidance: https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/international-transfers/a-guide-to-international-transfers/
+
+US (same decisions): assess applicable state/federal scope based on actual business
+activities and candidate locations, including thresholds/exemptions rather than
+assuming all state laws apply or none do. Review notices, rights/appeals, sensitive
+data, sale/sharing definitions where applicable, security/breach duties, retention,
+electronic acceptance and enforceability of Terms/dispute/liability provisions.
+California is one example, not a complete US assessment:
+https://cppa.ca.gov/pdf/business_comply.pdf
+https://cppa.ca.gov/regulations/cpi_adjustment.html
+
+Across all markets, counsel must finalize D13 content permissions, D14 suspension/
+appeal/termination and D15 governing law, warranty/liability and mandatory rights.
+No jurisdiction, waiver, lawful exception, contractual provider arrangement or
+compliance conclusion has been invented. These are review questions, not legal
+findings. All proposed wording stays unapproved until explicit complete sign-off.
+
+HOW TO COMPLETE THIS REGISTER
+Each recommendation is an option for review, NOT an approved answer, implemented
+control, legal requirement or compliance opinion. For every D1-D16 entry, supply
+the final answer and an explicit decision. Blank fields mean NOT APPROVED.
+Resolve answers into the existing policy/Terms copies before approving their
+complete text. Do not approve a document with unresolved bracketed placeholders.
+This register does not authorize implementation, publication or AWS changes.
+
+APPROVED D1 DOCUMENT IDENTIFIERS — COMPLETE TEXT APPROVAL STILL PENDING
+Privacy Policy: enter-candidate-privacy-v1.0
+Terms: enter-candidate-terms-v1.0
+Candidate submission wording: enter-candidate-submission-v1.0
+No future recruiter opt-in version is activated or accepted now.
+Do not reuse candidate-profile-sharing-v1 for the new submission purpose.
+
+EFFECTIVE DATES UNDER APPROVED D1 RULE
+Privacy and Terms: actual approved publication date, before opening candidate
+intake. Record the actual date when publication is authorized; do not reopen D1.
+Submission wording: actual approved deployment/activation date, recorded then.
+Do not backdate any document or acceptance event to this review date. If wording
+changes before approval, revise the review revision; if published wording changes,
+create a new immutable document version under the approved versioning policy.
+
+EXACT PROPOSED UI WORDING
+
+Age confirmation (separate, unchecked):
+“I confirm that I am at least 18 years old.”
+
+Terms acceptance (separate, unchecked):
+“I agree to the ENTER Candidate Platform Terms of Use (version
+enter-candidate-terms-v1.0).”
+Link “Terms of Use” to the exact displayed document/version.
+
+Privacy information (separate from the Terms checkbox):
+“Read how ENTER Recruitment Private Limited handles your information in the
+Privacy Policy (version enter-candidate-privacy-v1.0).”
+Link “Privacy Policy” to the exact displayed document/version. This statement
+is information, not blanket processing consent or recruiter-sharing permission.
+
+Candidate submission confirmation/consent (separate, unchecked):
+“I confirm that I have reviewed my profile and ask ENTER to save it as submitted.
+Recruiter access is currently disabled. ENTER will ask for my separate, explicit
+permission before sharing my profile or resume with approved recruiters.”
+Record wording version enter-candidate-submission-v1.0. Treat this as the candidate's
+submission instruction, not as the legal basis for all account processing.
+
+FUTURE RECRUITER OPT-IN
+No checkbox or acceptance is collected for future recruiter sharing now.
+Before launch, separately approve wording covering recipients, purposes, profile
+fields/resume downloads, withdrawal and effects on previously downloaded copies.
+Never infer this opt-in from signup, Terms acceptance, submission, old consent,
+an existing session or continued use of the platform.
+
+ACCEPTANCE RECORDS — LOCAL PREVIEW IMPLEMENTED; FINAL TEXT/RETENTION NOT APPROVED
+Record Terms acceptance separately from submission and privacy acknowledgement.
+Identify candidate, server timestamp, document/wording versions and archived text
+hash. Retain the exact text corresponding to each version. No invented/backfilled
+acceptance for existing users. Decide whether separate privacy acknowledgement is
+needed; do not equate it to consent. Do not add IP/device evidence without a need.
+[D16: approve retention/minimization, existing-user acceptance and reacceptance
+process. Legal evidence must not silently become indefinite personal retention.]
+
+D1 — DOCUMENT VERSIONS, DATES AND SIGN-OFF
+Final document identifiers
+- Privacy Policy: enter-candidate-privacy-v1.0
+- Terms of Use: enter-candidate-terms-v1.0
+- Candidate Submission: enter-candidate-submission-v1.0
+Proposed effective dates
+- Privacy Policy: 22-10-2026
+- Terms of Use: 22-10-2026
+- Candidate Submission: 22-10-2026
+Approval status:APPROVED — D1 document version identifiers and effective-date rule.
+Authorized approver: Dikshita Verma, CEO
+Approval date:22-10-2026
+Final document effective dates: To be confirmed upon actual publication and activation.
+Final approval of the complete Privacy Policy, Terms of Use and Candidate Submission wording will be recorded separately.
+
+
+
+D2 — COMPANY PARTICULARS
+Legal company name: ENTER Recruitment Private Limited
+Registered address: Regent Insignia, KHB Block Koramangala, 5th Block, Koramangala, Bengaluru, Karnataka 560034, India
+Incorporation country: India
+Corporate Identity Number (CIN): U74999DL2020PTC370862
+Privacy and support email:sheba@enterrecruitment.com
+Decision: APPROVED — D2 company particulars verified against the company's official registration records.
+Authorized approver: Dikshita Verma, CEO
+Approval date: 22-10-2026
+
+
+ D3 — REGIONAL LEGAL PROVISIONS
+Confirmed markets: India, United States and United Kingdom.
+Legal operator: ENTER Recruitment Private Limited
+Privacy contact: sheba@enterrecruitment.com
+Proposed privacy wording
+ENTER Recruitment Private Limited collects and processes candidate personal information to provide the ENTER Candidate Platform.
+This includes:
+- Account registration and email verification.
+- Resume uploading, scanning and processing.
+- Professional profile creation and editing.
+- Career preferences and candidate settings.
+- Account security, support and management.
+- Candidate profile submission and storage.
+- Data protection, recovery and account deletion.
+
+Candidate privacy rights
+Candidates may contact sheba@enterrecruitment.com to request:
+- Access to their personal information.
+- Correction of inaccurate information.
+- Deletion of their account and associated information.
+- Information about how their personal data is processed.
+- Assistance with other privacy rights applicable to them.
+ENTER will review and respond to privacy requests according to applicable legal requirements.
+Recruiter access and candidate permission
+
+Recruiter access will remain disabled during the candidate-only launch.
+
+Before enabling recruiter access in the future, ENTER will request separate, explicit permission from candidates.
+
+Candidates who decline future recruiter-sharing permission may continue managing their own profiles, subject to the applicable Terms.
+
+Sensitive information
+
+Candidates should avoid including unnecessary sensitive personal information in their resumes.
+
+ENTER will restrict access to uploaded information and apply appropriate security safeguards.
+Detailed handling, retention and incident-response procedures remain subject to the approved Privacy Policy and applicable legal requirements.
+Country-specific legal review
+India:
+Applicable provisions of the Digital Personal Data Protection Act, 2023, the notified Rules and other applicable laws will be reviewed, taking account of their commencement dates.
+United Kingdom:
+UK GDPR and Data Protection Act requirements, including applicable lawful processing bases, individual rights, complaints, international transfers and representative obligations, will be reviewed.
+United States:
+Applicable federal and state privacy laws will be assessed based on ENTER's activities, candidate locations and relevant legal thresholds.
+Responsible reviewer:Dikshita
+Final decision: PROPOSED — awaiting jurisdiction-specific legal review and approval of the complete wording.
+Authorized approver: Dikshita Verma
+Designation:CEO
+Business-requirements approval date: 22-10-2026
+Final D3 approval date:Pending legal review and authorized sign-off.
+
+
+
+D4 — COOKIES, TELEMETRY AND EXTERNAL ASSETS [INVENTORY REQUIRED]
+Recommendation: document actual production cookies/tokens, analytics, external
+fonts/video/CDNs, purposes, recipients and lifetimes; do not declare an absence
+of tracking without verification. Prefer no optional tracking for the pilot,
+subject to review; this does not change existing assets or configuration.
+Confirmed inventory/reference and owner: _____________________________________
+Final answer/decision, approver and date: _____________________________________
+
+D5 — ACCESS AND FUTURE SHARING [PARTLY CONFIRMED]
+Confirmed: future recruiter access requires separate explicit opt-in.
+Confirmed: access restricted to authorized personnel; recruiters remain blocked
+for candidate-only launch. Privacy owner: Dikshita Verma, CEO; privacy/support:
+sheba@enterrecruitment.com. This is a business requirement, not a new runtime claim.
+Recommendation: refusal leaves candidate account/profile management available;
+no sharing occurs. Withdrawal stops subsequent access, with an approved notice
+explaining limits concerning copies already lawfully downloaded. No opt-in is
+inferred from registration, Terms, submission, old records or continued use.
+Authorized operations/support roles, access purposes and countries: ____________
+Approved refusal/withdrawal consequences and future-notice requirements: _______
+Final answer/decision, approver and date: _____________________________________
+
+D6 — PROVIDERS AND INTERNATIONAL HANDLING [CONFIRMATION REQUIRED]
+The policy draft mentions AWS Sydney, Namecheap, transactional email and SNS;
+this is not a signed, complete provider inventory or transfer assessment.
+Recommendation: verify each provider/service, data categories, processing/support
+locations and contracts before approving disclosures. Include external asset
+delivery from D4. Do not infer an email provider or transfer mechanism.
+Final inventory/reference, international provisions and owner: _________________
+Final answer/decision, approver and date: _____________________________________
+
+D7 — PROFILE/RESUME INACTIVITY [BUSINESS RULE CONFIRMED; DETAILS PENDING]
+Confirmed: 12 months after meaningful activity; reminders 30 and seven days before
+expiry. Privacy owner: Dikshita Verma, CEO. The following event/calendar/transition
+recommendations are NOT implicitly approved by confirmation of the business rule.
+Recommended option A: 12 calendar months from a candidate-initiated profile edit,
+resume upload, submission, career-setting change or explicit 'keep my profile'
+action. Passive login, email opening, worker retries and administrative updates
+do not reset the clock. Alternative B: also count successful candidate login.
+Recommendation: apply the same clock to draft, submitted and paused profiles;
+notify 30 days and seven days before expiry, making the last 30 days the renewal
+window WITHIN the 12 months (not an extra month of silent retention). If notice
+delivery fails, escalate to the designated owner under an approved procedure;
+do not silently reset activity or retain indefinitely.
+Recommendation: at expiry close the account and erase active profile/resume data
+through the approved deletion process, subject only to expressly approved lawful
+exceptions. For existing users without reliable activity evidence, request an
+explicit renewal with an approved transition deadline; never fabricate activity.
+Duration: 12 months. Activity definition ______ Calendar rule/timezone _________
+Reminders: 30 and seven days before expiry. Additional grace, if any: __________
+Failed-notice handling ______ Expiry action ______ Transition/deadline ________
+Responsible privacy owner: Dikshita Verma, CEO.
+Final answer/decision, approver and date: _____________________________________
+
+D8 — OTHER RECORD RETENTION [R6 SCHEDULE PROPOSED ABOVE; APPROVAL REQUIRED]
+Recommendation: minimize each category separately; do not automatically apply
+12 months to every record. Choose a justified period, start event and disposal
+method for each, including backup/exception interactions. No period is approved.
+Category                         Period / trigger / rationale / owner
+Unverified accounts              ____________________________________________
+Replaced resume files            ____________________________________________
+Failed or quarantined uploads    ____________________________________________
+Job/security logs                ____________________________________________
+Support correspondence           ____________________________________________
+Terms/consent acceptance evidence ____________________________________________
+Deletion ledger                  ____________________________________________
+Recommendation: delete replaced files after successful replacement/recovery checks;
+quarantine access stays restricted pending an approved malware-handling window.
+Legal reviewer must resolve acceptance-evidence and deletion-ledger lifetimes;
+neither is permission for indefinite personal-data retention.
+Final answer/decision, approver and date: _____________________________________
+
+D9 — DELETION REQUESTS [BUSINESS TARGETS CONFIRMED; LEGAL DETAILS PENDING]
+Confirmed: acknowledge within two business days; target active-data deletion within
+seven days; follow applicable legal deadlines and approved backup-erasure procedures.
+Responsible privacy owner: Dikshita Verma, CEO. Contact: sheba@enterrecruitment.com.
+The earlier 30-day completion/response proposal is not confirmed; counsel must
+specify applicable deadlines under D3. Specify each
+clock's start; do not silently restart a legal clock after identity verification.
+Use authenticated password confirmation for self-service and proportionate
+verification for email requests; do not routinely request identity documents.
+Track queued object cleanup and failures until resolved. Provide accurate status,
+not a claim that recovery copies have disappeared immediately.
+Approved deadlines/start events/business-day calendar: ________________________
+Verification/escalation method ______ Privacy owner: Dikshita Verma, CEO.
+Approved exceptions (specify legal basis, scope, review/end date, or 'none
+identified' after review; never infer an exception): ___________________________
+Final answer/decision, approver and date: _____________________________________
+
+D10 — BACKUPS, RESUME RECOVERY AND RESTORE ERASURE [CONFIGURATION VERIFIED; DETAILS PENDING]
+Confirmed principle: follow approved backup-erasure procedures. The user's answer
+does not itself approve a particular retention period, exception, versioning choice
+or lifecycle/deletion operation. Those proposals remain subject to separate review.
+Current verified lifecycle configuration: hourly prefix seven days; daily prefix
+30 days; old broad 14-day rule disabled (C3). These are operational expiration
+settings, not statutory periods or complete-document approval. Monthly recovery
+rehearsal and recurring backup/monitor timers are not activated by this register.
+Apply expiry only to approved backup prefixes; inventory legacy/manual copies
+separately and approve their disposition, avoiding indefinite overlooked copies.
+Resume alternatives: A) bounded private object-version recovery with a separately
+approved duration, erasure procedure and cost; B) no versioning, explicitly accept
+that deleted objects may be unrecoverable. Database backups do not recover files.
+Recommendation: maintain a minimal separately protected deletion ledger; after
+any restore, reapply deletions and reconcile file cleanup before restoring access.
+Expire the ledger only when no retained recoverable copy can resurrect the data
+and the approved evidence period is satisfied. Test this before activation.
+Backup periods/prefixes ______ Legacy-copy treatment ______ Owner _____________
+Resume option/duration/erasure ______ Ledger policy ______ Restore owner _______
+Final answer/decision, approver and date: _____________________________________
+
+D11 — AGE AND ACCOUNT DISPUTES [AGE CONFIRMED; PROCEDURE PENDING]
+Confirmed minimum age: 18; required 18+ confirmation. Recommendation: separate unchecked attestation
+using the wording above, validated server-side; no date-of-birth collection solely
+for this attestation. This is self-attestation, not proof of age.
+Recommend restricted processing and prompt authorized review for suspected
+ineligible/disputed accounts; final notice, review and deletion handling must be
+approved rather than automatically destroying records or collecting extra IDs.
+Approved attestation/dispute/ineligible-user procedure and owner: ______________
+Final answer/decision, approver and date: _____________________________________
+
+D12 — FEES [BUSINESS DECISION CONFIRMED; COMPLETE TERMS PENDING]
+Confirmed answer: 'The Candidate Platform is free for candidates.'
+Source: user's explicit management confirmation. No paid option remains open for
+this launch decision. Complete Terms wording/approval remains separate; no future
+pricing-change permission is inferred and no signature/date is fabricated.
+
+D13 — CONTENT PERMISSION / ACCEPTABLE USE [LEGAL APPROVAL REQUIRED]
+Recommendation: review Terms section 4's limited permission to store, scan,
+process, display to the candidate and securely back up documents for the service.
+No general publication, AI-training or recruiter-sharing license. Review the
+existing malware, impersonation, privacy-abuse and security-abuse prohibitions.
+Approve exact section 4 or supply replacement wording: ________________________
+Final answer/decision, approver and date: _____________________________________
+
+D14 — SUSPENSION AND TERMINATION [LEGAL APPROVAL REQUIRED]
+Recommendation for review: proportionate restriction for security/abuse, notice
+and support review where safe, and a route to request data/deletion. Legal must
+supply final grounds, urgent-action handling, notice, appeal and closure effects.
+Approved wording/reference, notice procedure and owner: _______________________
+Final answer/decision, approver and date: _____________________________________
+
+D15 — GOVERNING LAW, DISPUTES AND LIABILITY [LEGAL TEXT REQUIRED]
+No governing jurisdiction, forum, liability cap or waiver is proposed as fact.
+Recommendation: obtain reviewed provisions suited to the confirmed markets,
+including mandatory-rights treatment, rather than importing generic clauses.
+Approved law/forum/process/warranty/liability/regional text: ___________________
+Final answer/decision, approver and date: _____________________________________
+
+D16 — ACCEPTANCE, CONSENT AND EXISTING ACCOUNTS [REQUIRES APPROVAL]
+Confirmed business controls: required 18+ confirmation; separate Terms acceptance;
+accessible Privacy Policy; separate submission confirmation; future explicit
+recruiter-sharing opt-in. Exact wording, evidence and existing-account procedures
+below remain pending review; this confirmation does not create acceptance events.
+Recommendation: approve or amend each exact UI sentence above independently.
+Required age and Terms checkboxes are separate and unchecked. Privacy notice is
+informational, not blanket consent. Submission is a separate instruction; future
+recruiter opt-in is never bundled or inferred.
+Record candidate ID, server-side UTC timestamp, immutable document/wording version
+and archived exact-text SHA-256; validate the version server-side. Retain the
+displayed document text. Do not collect IP/device evidence by default or backfill
+events. Approve personal-evidence retention under D8 separately from text archives.
+Existing-account recommendation: present new Terms at next authenticated visit;
+require affirmative acceptance before new uploads/submission, while preserving
+access to privacy, support and deletion. Refusal is not acceptance. Alternative:
+legal supplies a different explicit transition with notice and effective dates.
+Material Terms changes: present a new immutable version and obtain affirmative
+reacceptance before affected actions. Privacy changes use approved notice, not
+invented retrospective consent; separate sharing consent remains necessary.
+Age sentence approval/amendment ______ Terms sentence _________________________
+Privacy notice ______ Submission sentence ______ Privacy acknowledgement
+(recommended: no separate checkbox unless a specific need is approved) ________
+Evidence/retention ______ Existing-user/refusal flow ______ Change process _____
+Final answer/decision, approver and date: _____________________________________
+
+COMPLETE-DOCUMENT SIGN-OFF — APPROVAL/SIGNATURE FIELDS REMAIN BLANK
+Recorded authorized representative: Dikshita Verma
+Recorded title: CEO, ENTER Recruitment Private Limited
+These recorded identity details are not a signature or complete-document approval.
+Approval date (actual date; no backdating): ___________________________________
+Legal reviewer name/role and review date, if applicable: _______________________
+Remaining unresolved conditions (must be resolved before full approval): _______
+
+Complete these only AFTER the decisions are incorporated into the exact copies.
+A selection of recommendations or approval of business facts alone does not
+constitute approval of complete legal documents. Do not sign a placeholder copy.
+
+Privacy Policy — deploy/PRIVACY_POLICY_FINAL_REVIEW.txt
+Final version ______ Review revision ______ Effective date ___________________
+Exact approved copy SHA-256/reference ________________________________________
+Explicit approval: 'I approve the complete Privacy Policy identified above.'
+Authorized representative confirmation/signature ______ Actual date __________
+
+Terms of Use — deploy/TERMS_FINAL_REVIEW.txt
+Final version ______ Review revision ______ Effective date ___________________
+Exact approved copy SHA-256/reference ________________________________________
+Explicit approval: 'I approve the complete Terms of Use identified above.'
+Authorized representative confirmation/signature ______ Actual date __________
+
+Consent and Legal Sign-off — this register
+Final register revision ______ Submission wording version ____________________
+Submission activation date ______ Exact approved copy/reference ______________
+Explicit approval: 'I approve the complete consent wording and acceptance
+decisions identified above, including separate future recruiter opt-in.'
+Authorized representative confirmation/signature ______ Actual date __________
+If hashing this register, identify the fixed unsigned text and retain the approval
+as a separate record, or hash the final signed copy externally (no self-hash).
+
+REVIEW BASIS
+Recommendations are operational choices for review, not jurisdiction-specific
+legal advice. Retention durations need purpose-based justification; the following
+UK guidance does not determine ENTER's India/US/UK obligations or approve periods:
+https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/data-protection-principles/a-guide-to-the-data-protection-principles/storage-limitation/
+The existing confirmed requirement for separate recruiter opt-in is preserved.
+
+This sign-off does not authorize AWS deployment, legal-gate activation or public
+registration. Those remain separate decisions after local implementation/testing.
+LEGAL_CONTENT_APPROVED must remain false. No policy is published by this register.

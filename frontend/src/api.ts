@@ -1,4 +1,5 @@
 import type { Candidate, DocumentPreview, Notification, Project, ProjectDetail, Resume, Search, SearchResult, User } from './types'
+import type { LegalDocuments } from './legalReview'
 
 export type AuthPayload = { token?: string; user: User }
 export type SignupResponse = AuthPayload | { detail: string; requires_email_verification: true; local_verification_url?: string }
@@ -62,11 +63,14 @@ async function request<T>(path: string, options: RequestInit = {}, binary = fals
 }
 
 export const api = {
+  legalStatus: () => request<{ accepted: Record<'age' | 'terms', boolean>; versions: Record<'age' | 'terms', string> }>('/candidate/legal/accept/', { cache: 'no-store' }),
+  legalDocuments: () => request<{ enabled: boolean; documents?: LegalDocuments }>('/legal/documents/', { cache: 'no-store' }),
+  acceptLegal: (body: Record<string, unknown>) => request('/candidate/legal/accept/', { method: 'POST', body: JSON.stringify(body) }),
   resumePreview: (id: number) => request<DocumentPreview>(`/candidate/resumes/${id}/preview/`, { cache: 'no-store' }),
   reviewResume: (id: number, fields: string[], profile_updated_at: string, keep_pending = false) => request<Candidate>(`/candidate/resumes/${id}/review/`, { method: 'POST', body: JSON.stringify({ fields, profile_updated_at, keep_pending }) }),
   resumeDocument: (id: number) => request<Blob>(`/resumes/${id}/download/`, { cache: 'no-store' }, true),
   me: () => request<User>('/auth/me/'),
-  signup: (body: Record<string, string>) => request<SignupResponse>('/auth/signup/', { method: 'POST', body: JSON.stringify(body) }),
+  signup: (body: Record<string, unknown>) => request<SignupResponse>('/auth/signup/', { method: 'POST', body: JSON.stringify(body) }),
   login: (body: { email: string; password: string }) => request<AuthPayload>('/auth/login/', { method: 'POST', body: JSON.stringify(body) }),
   verifyEmail: (token: string) => request<AuthPayload>('/auth/verify-email/', { method: 'POST', body: JSON.stringify({ token }) }),
   resendVerification: (email: string) => request<{ detail: string }>('/auth/resend-verification/', { method: 'POST', body: JSON.stringify({ email }) }),
@@ -80,7 +84,7 @@ export const api = {
   uploadCandidatePhoto: (file: File) => { const body = new FormData(); body.append('file', file); return request<Candidate>('/candidate/photo/', { method: 'POST', body }) },
   candidatePhoto: () => request<Blob>('/candidate/photo/', { cache: 'no-store' }, true),
   removeCandidatePhoto: () => request<Candidate>('/candidate/photo/', { method: 'DELETE' }),
-  submitCandidate: (consent: boolean) => request<Candidate>('/candidate/profile/submit/', { method: 'POST', body: JSON.stringify({ consent }) }),
+  submitCandidate: (consent: boolean, submissionVersion?: string) => request<Candidate>('/candidate/profile/submit/', { method: 'POST', body: JSON.stringify({ consent, submission_accepted: consent, submission_version: submissionVersion }) }),
   uploadResume: (file: File) => { const body = new FormData(); body.append('file', file); return request<Candidate>('/candidate/resumes/', { method: 'POST', body }) },
   retryResume: (id: number) => request<Candidate>(`/candidate/resumes/${id}/retry/`, { method: 'POST' }),
   searches: () => request<Search[]>('/searches/'),

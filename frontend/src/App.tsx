@@ -20,6 +20,8 @@ import CareerJourney from './components/CareerJourney'
 import './components/auth.css'
 import EnterBrandText from './components/EnterBrandText'
 import './components/onboarding.css'
+import { LegalChecks, LegalRetry, UnpublishedLegalPage } from './components/LegalReview'
+import { legalWorkflow, useLegalDocumentState } from './legalReview'
 
 type SpeechRecognitionLike = {
   lang: string
@@ -132,6 +134,7 @@ function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
   role: 'candidate' | 'recruiter'; onDone: (payload: AuthPayload) => void; back: () => void
   initialMode?: 'signup' | 'login'
 }) {
+  const { documents: legalDocuments, loading: legalLoading, error: legalError } = useLegalDocumentState()
   const [mode, setMode] = useState<'signup' | 'login' | 'forgot'>(role === 'recruiter' ? 'login' : initialMode)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -152,7 +155,7 @@ function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
         return
       }
       const payload = mode === 'signup'
-        ? await api.signup({ ...data, role })
+        ? await api.signup({ ...data, role, age_accepted: data.age_accepted === 'on', terms_accepted: data.terms_accepted === 'on' })
         : await api.login({ email: data.email, password: data.password })
       if ('requires_email_verification' in payload) {
         setPendingEmail(data.email)
@@ -201,7 +204,10 @@ function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
         </div>
         <InlineError value={error} />
         {message && <div className="success" role="status"><Check size={17} aria-hidden="true" />{message}</div>}
-        <Button size="large" fullWidth disabled={busy}>{busy ? 'Please wait…' : mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send reset link' : 'Log in'}</Button>
+        {mode === 'signup' && legalWorkflow && (legalDocuments ? <LegalChecks key={legalDocuments.terms.version} documents={legalDocuments} /> : <div role={legalError ? 'alert' : 'status'}>{legalLoading ? 'Loading legal documents…' : legalError || 'Legal documents unavailable. Registration is disabled.'}<LegalRetry /></div>)}
+        {mode === 'signup' && legalWorkflow && legalDocuments && <LegalRetry />}
+        {mode === 'signup' && <p><a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a> · <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Use</a></p>}
+        <Button size="large" fullWidth disabled={busy || (mode === 'signup' && legalWorkflow && !legalDocuments)}>{busy ? 'Please wait…' : mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send reset link' : 'Log in'}</Button>
         {mode === 'login' && <Button type="button" variant="ghost" fullWidth onClick={() => { setMode('forgot'); setError(''); setMessage('') }}>Forgot password?</Button>}
         {(role === 'candidate' || mode === 'forgot') && <Button type="button" variant="ghost" fullWidth onClick={() => { setMode(mode === 'signup' ? 'login' : mode === 'login' ? 'signup' : 'login'); setError(''); setMessage('') }}>
           {mode === 'signup' ? 'Already have an account? Log in' : mode === 'login' ? 'New here? Create an account' : 'Back to login'}
@@ -253,6 +259,7 @@ function PasswordResetScreen({ token, done }: { token: string; done: (role: 'can
 }
 
 function LegalPlaceholder({ kind }: { kind: 'privacy' | 'terms' }) {
+  if (legalWorkflow) return <UnpublishedLegalPage kind={kind} />
   const title = kind === 'privacy' ? 'Privacy Policy' : 'Terms'
   return <main className="legal-page"><nav><Brand /><a href="/">Back to Enter</a></nav><article>
     <span>LEGAL REVIEW REQUIRED</span><h1>{title} placeholder</h1>

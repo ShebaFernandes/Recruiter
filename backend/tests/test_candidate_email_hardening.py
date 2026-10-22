@@ -194,7 +194,9 @@ def load_settings(overrides):
            "EMAIL_HOST": "smtp.example.test", "EMAIL_HOST_USER": "placeholder",
            "EMAIL_HOST_PASSWORD": "placeholder", "DEFAULT_FROM_EMAIL": "test@example.test",
            "EMAIL_USE_TLS": "true", "AI_PROVIDER": "disabled",
-           "LEGAL_CONTENT_APPROVED": "true"}
+           "LEGAL_CONTENT_APPROVED": "true", "LEGAL_EFFECTIVE_DATE": "2026-10-22",
+           "LEGAL_PRIVACY_SHA256": "1" * 64, "LEGAL_TERMS_SHA256": "2" * 64,
+           "LEGAL_AGE_SHA256": "3" * 64, "LEGAL_SUBMISSION_SHA256": "4" * 64}
     env.update(overrides)
     return subprocess.run(
         [sys.executable, "-c", "from config import settings; "

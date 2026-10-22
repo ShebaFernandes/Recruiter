@@ -1,0 +1,30 @@
+.legal-confirmations {
+  min-width: 0;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--border, #d7dfe5);
+  border-radius: 12px;
+}
+.legal-confirmations legend { padding: 0 6px; font-size: 13px; }
+.legal-confirmations .cp-check {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  margin: 12px 0;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+.legal-confirmations .cp-check input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  margin: 2px 0 0;
+  padding: 0;
+  appearance: auto;
+  box-shadow: none;
+}
+.legal-confirmations span { overflow-wrap: anywhere; }
+.legal-confirmations p { font-size: 14px; }
+.legal-confirmations a { color: inherit; text-decoration: underline; }

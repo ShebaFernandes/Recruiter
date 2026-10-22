@@ -44,6 +44,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "talent.legal_middleware.LocalLegalPreviewMiddleware",
     "talent.launch_controls.LaunchControlMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -380,8 +381,47 @@ RESUME_UPLOADS_PAUSED = os.getenv("RESUME_UPLOADS_PAUSED", "false").lower() == "
 
 # This is a release gate, not legal text. Approval must refer to the actual published documents.
 LEGAL_CONTENT_APPROVED = os.getenv("LEGAL_CONTENT_APPROVED", "false").lower() == "true"
+LEGAL_WORKFLOW_PREVIEW = os.getenv("LEGAL_WORKFLOW_PREVIEW", "false").lower() == "true"
+LEGAL_WORKFLOW_ENABLED = LEGAL_WORKFLOW_PREVIEW or LEGAL_CONTENT_APPROVED
+LEGAL_DOCUMENT_ROOT = Path(
+    os.getenv("LEGAL_DOCUMENT_ROOT", str(BASE_DIR.parent / "deploy"))
+)
+LEGAL_PRIVACY_VERSION = os.getenv(
+    "LEGAL_PRIVACY_VERSION", "enter-candidate-privacy-v1.0"
+)
+LEGAL_TERMS_VERSION = os.getenv("LEGAL_TERMS_VERSION", "enter-candidate-terms-v1.0")
+LEGAL_AGE_VERSION = os.getenv("LEGAL_AGE_VERSION", "enter-candidate-age-v1.0")
+LEGAL_SUBMISSION_VERSION = os.getenv(
+    "LEGAL_SUBMISSION_VERSION", "enter-candidate-submission-v1.0"
+)
+LEGAL_EFFECTIVE_DATE = os.getenv("LEGAL_EFFECTIVE_DATE", "")
+LEGAL_PRIVACY_SHA256 = os.getenv("LEGAL_PRIVACY_SHA256", "")
+LEGAL_TERMS_SHA256 = os.getenv("LEGAL_TERMS_SHA256", "")
+LEGAL_AGE_SHA256 = os.getenv("LEGAL_AGE_SHA256", "")
+LEGAL_SUBMISSION_SHA256 = os.getenv("LEGAL_SUBMISSION_SHA256", "")
+if LEGAL_WORKFLOW_PREVIEW and (not DEBUG or APP_ENV not in {"local", "test"}):
+    raise ImproperlyConfigured("Unpublished legal workflow requires local development/test.")
+if LEGAL_WORKFLOW_PREVIEW:
+    # Unpublished review must not send messages to real recipients.
+    EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 if APP_ENV == "production" and not LEGAL_CONTENT_APPROVED:
     raise ImproperlyConfigured("Approve published privacy, terms and consent before public launch.")
+if APP_ENV == "production" and LEGAL_CONTENT_APPROVED:
+    required_legal_release_values = {
+        "LEGAL_EFFECTIVE_DATE": LEGAL_EFFECTIVE_DATE,
+        "LEGAL_PRIVACY_SHA256": LEGAL_PRIVACY_SHA256,
+        "LEGAL_TERMS_SHA256": LEGAL_TERMS_SHA256,
+        "LEGAL_AGE_SHA256": LEGAL_AGE_SHA256,
+        "LEGAL_SUBMISSION_SHA256": LEGAL_SUBMISSION_SHA256,
+    }
+    missing_legal_release_values = [
+        name for name, value in required_legal_release_values.items() if not value
+    ]
+    if missing_legal_release_values:
+        raise ImproperlyConfigured(
+            "Published legal release is missing immutable evidence: "
+            + ", ".join(missing_legal_release_values)
+        )
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ["talent.authentication.ExpiringTokenAuthentication"],

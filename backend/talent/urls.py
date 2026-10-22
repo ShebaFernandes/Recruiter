@@ -1,8 +1,11 @@
 from django.urls import path
 
-from . import candidate_views, views
+from . import candidate_views, legal_views, views
 
 urlpatterns = [
+    path("legal/documents/", legal_views.legal_documents),
+    path("candidate/legal/accept/", legal_views.accept_terms),
+    path("candidate/activity/", legal_views.renew_activity),
     path("health/", views.health),
     path("health/ready/", views.readiness),
     path("auth/csrf/", views.csrf_token),
