@@ -47,7 +47,6 @@
 .ce-intro-aside { max-width: 660px; }
 .ce-intro-aside>p { font-size: var(--enter-text-base); line-height: 1.65; color: var(--ce-muted); margin: 14px 0 0; text-wrap: pretty; }
 .ce-intro-aside .ce-supporting-headline { font-size: 19px; line-height: 1.45; font-weight: 500; color: var(--ce-ink); margin: 0; }
-.ce-mobile-candidate-cta { display: none; }
 
 /* Shared-canvas artwork: isolate clipping to scenery, never navigation/focus rings. */
 .ce-mountain-hero { position: relative; isolation: isolate; min-height: clamp(620px, 78svh, 780px); }
@@ -124,7 +123,7 @@
   .simple-landing .ce-masthead .ce-audience-link,
   .simple-landing .ce-login summary { min-height: 44px; padding-block: 12px; font-size: 12px; }
   .simple-landing .ce-login-options { background: #fff; color: var(--ce-ink); }
-  .simple-landing .ce-intro-grid { gap: 20px; margin-top: clamp(32px, 6svh, 48px); }
+  .simple-landing .ce-intro-grid { gap: 24px; margin-top: clamp(32px, 5svh, 44px); }
   .simple-landing .ce-intro h1 {
     font-size: clamp(44px, 11.8vw, 54px);
     line-height: 1.02;
@@ -136,24 +135,6 @@
   .simple-landing .ce-intro-aside { max-width: 560px; }
   .simple-landing .ce-intro-aside>p { color: #303842; text-shadow: 0 1px 10px rgba(250, 248, 244, .86); }
   .simple-landing .ce-intro-aside .ce-supporting-headline { font-size: clamp(16px, 4.3vw, 19px); line-height: 1.4; }
-  .simple-landing .ce-mobile-candidate-cta {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    min-width: min(250px, 100%);
-    min-height: 48px;
-    margin-top: 22px;
-    padding: 13px 20px;
-    border: 1px solid #0b1f3a;
-    border-radius: var(--enter-radius-control);
-    background: #0b1f3a;
-    color: #fff;
-    font: 650 var(--enter-text-sm) var(--enter-font-ui);
-    box-shadow: 0 10px 24px rgba(11, 31, 58, .16);
-    cursor: pointer;
-  }
-  .simple-landing .ce-mobile-candidate-cta:focus-visible { outline-color: #0b1f3a; }
   .landing-surface .landing-motion-toggle {
     right: max(16px, env(safe-area-inset-right));
     bottom: max(16px, env(safe-area-inset-bottom));

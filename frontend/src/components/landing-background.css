@@ -15,6 +15,12 @@
  from { transform:scale(1) translate3d(-.4%,.3%,0); }
  to { transform:scale(1.045) translate3d(.4%,-.5%,0); }
 }
+@media (max-width:768px) {
+ /* Crop out excess sky on portrait screens while retaining the original plates
+    and their shared alignment, so the ridgelines sit closer to the copy. */
+ .landing-background__scene { inset:-45% -3% -3%; }
+ .landing-background__scene img { object-position:43% bottom; }
+}
 @media(prefers-reduced-motion:reduce) {
  .landing-background__scene,.landing-background__clouds-back,.landing-background__clouds-front { animation:none; transform:none; }
  .landing-surface .landing-motion-toggle { display:none; }

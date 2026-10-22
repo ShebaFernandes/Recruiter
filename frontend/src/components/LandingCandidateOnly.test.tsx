@@ -11,7 +11,8 @@ it('hides recruiter entry points while retaining candidate entry in candidate-on
   expect(screen.queryByTestId('for-recruiters')).not.toBeInTheDocument()
   expect(screen.queryByText('Recruiter log in')).not.toBeInTheDocument()
   expect(screen.getByTestId('for-candidates')).toBeVisible()
-  screen.getByRole('button', { name: 'Upload your resume' }).click()
+  expect(screen.queryByRole('button', { name: 'Upload your resume' })).not.toBeInTheDocument()
+  screen.getByTestId('for-candidates').click()
   expect(choose).toHaveBeenCalledWith('candidate')
 })
 it('preserves recruiter navigation when disabled', () => {

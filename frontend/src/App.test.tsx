@@ -19,7 +19,7 @@ describe('Enter Talent landing', () => {
       expect(screen.getAllByRole('button', { name })).toHaveLength(1)
       expect(within(nav).getByRole('button', { name })).toBeVisible()
     }
-    expect(within(document.querySelector('.ce-intro') as HTMLElement).getByRole('button', { name: 'Upload your resume' })).toBeInTheDocument()
+    expect(within(document.querySelector('.ce-intro') as HTMLElement).queryByRole('button')).not.toBeInTheDocument()
     expect(document.querySelector('.ce-hero-actions')).toBeNull()
     expect(document.querySelector('.ce-preview-interface')).toBeNull()
     expect(document.querySelector('.enter-intro-shell')).toBeNull()
