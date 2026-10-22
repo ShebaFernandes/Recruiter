@@ -1,0 +1,171 @@
+ENTER OPERATIONS HARDENING — LOCAL PREPARATION, NOT EXECUTED
+Base candidate release: 972aef09a5e95b740c0947ea90352de6b0443816
+This operations release is prepared locally, not installed. No UI/backend
+application change is required: monitoring executes read-only aggregate queries
+through the existing manage.py shell, using existing models and worker health code.
+
+APPROVAL GATES
+Approve final script diff, immutable ops artifact/checksum, operator recipient,
+SNS/topic and monitoring budget, lifecycle deletion, resume-version/deletion design,
+and a supervised historical drill separately. No AWS changes are authorized here.
+Verify account431988153216 / regionap-southeast-2 / instancei-08f84202dbb6b4cce.
+Do not change IAM merely because a check is denied: report exact missing permission.
+
+INSTALLATION (AFTER APPROVAL; existing server only)
+1. Record current scripts/units/ops.env permissions and checksums; preserve private
+   timestamped configuration copies. Check existing timers to avoid duplicate schedules.
+   Confirm Docker paths/names and database mount match pinned backup guards. Do not
+   overwrite the application checkout or change deployed application images.
+2. Stage reviewed ops artifacts at an approved immutable directory, e.g.
+   /opt/enter-ops/releases/<approved-ops-sha>/deploy. Keep ENTER_REPO_DIR pointing
+   to /opt/enter/Recruiter for Compose/config. Unit ExecStart uses ENTER_OPS_DIR
+   for the immutable scripts; wrappers use that same location.
+   Validate python3+boto3/botocore, aws CLI conditional-put/checksum support, Docker,
+   flock, curl and systemd. Pin host dependencies before installation, no global
+   blind upgrades. Docker access is privileged; use existing approved operator.
+3. install -d -m 0700 /var/lib/enter-ops
+   Provision /etc/enter/ops.env mode0600 from ops.env.example, preserving secrets.
+   Set ENTER_OPS_DIR to the immutable release's deploy directory. Set exact existing
+   SQS and DLQ URLs, frontend/readiness HTTPS URLs and optional operator SNS ARN.
+   ENTER_BACKUP_SECURITY_REVIEWED=true only after current independent security review.
+   No AWS keys: scripts require EC2 IAM-role credentials. Clear inherited AWS credential
+   overrides in service context; never print them. Verify inherited proxy/env settings.
+4. Validate units on the Linux host with systemd-analyze verify before installation;
+   local macOS validation checks template structure, not systemd runtime behavior.
+   Install reviewed units into /etc/systemd/system after confirming ENTER_OPS_DIR.
+   sudo systemctl daemon-reload
+   Do NOT enable timers yet. Run services manually and verify results first:
+   sudo systemctl start enter-backup.service
+   sudo systemctl start enter-backup-daily.service
+   Separate backup-verified-hourly.json and backup-verified-daily.json are written
+   only after checksum, scratch restore and cleanup succeed. Legacy single marker
+   is deliberately not accepted as evidence for both schedules.
+5. Select a retained historical daily object older than24h but safely before expiry.
+   Approve exact key and independently recorded SHA256 from prior verified report;
+   do not invent a checksum or blindly trust a newly calculated downloaded hash.
+   Provision /etc/enter/recovery.env mode0600 with ENTER_RESTORE_KEY and
+   ENTER_RESTORE_SHA256. Never set these in shared ops.env/backup services.
+   sudo systemctl start enter-recovery.service
+   Verify recovery marker, duration, table-read/pg_amcheck result, and identical live
+   container IDs/start times. Inspect only aggregate results, not candidate rows.
+   Historical path performs no pg_dump or S3 PUT; scratch postgres image is existing
+   and local. No network, published ports, bind mounts or live volume access.
+6. Confirm SNS email subscription manually using operator inbox. A successful SNS
+   Publish is acceptance, NOT proof of delivery: verify a controlled alert and
+   subsequent recovery arrive. No candidate addresses. No real-job failure injection.
+   sudo systemctl start enter-monitor.service
+   Monitor exit0=healthy/notification configured; exit1=health failure;
+   exit2=configuration or notification unavailable. Missing SNS never reports success.
+   Guard against monitor reaching a different Compose project: verify projectrecruiter
+   and six resolved container IDs. Runtime instance target for backup is IMDS checked;
+   monitoring verifies role/account/region-scoped URLs and uses local Compose only.
+   Test synthetic stale markers via separate test configuration, not by editing real
+   successful markers. Rehearse missing SNS/denied Publish and state-file failures.
+7. Only after all manual tests and separate schedule approval:
+   sudo systemctl enable --now enter-backup.timer enter-backup-daily.timer
+   sudo systemctl enable --now enter-monitor.timer enter-recovery.timer
+   Verify systemctl list-timers and next UTC execution times. Shared backup/recovery
+   flock prevents concurrent restore load. A collision fails visibly; review/retry it.
+   Monthly timer requires operator refresh of approved historical key/checksum before
+   each run: an expired selection fails safely, it never substitutes an unapproved key.
+
+PERMISSIONS (only add missing actions after explicit IAM approval)
+Backup runtime: s3:GetBucketLocation on enter-staging-backups-2021; s3:PutObject,
+s3:GetObject on postgres/hourly/* and postgres/daily/* only. HeadObject uses GetObject.
+SSE-S3 AES256 uses no customer KMS key. STS identity check, existing IMDS role access.
+No runtime ListBucket, DeleteObject, lifecycle or bucket-policy management required.
+Monitoring: sqs:GetQueueAttributes on reviewed queue and DLQ ARNs;
+cloudwatch:GetMetricStatistics (API generally requires Resource:*; constrain region);
+sns:Publish on one approved topic. No PutMetricData/alarms/queue mutations in scripts.
+Operator separately needs subscription confirmation and service installation rights.
+Historical object selection/security inspection can use Console; do not broaden the
+instance role for operator-only administration. Role policy ARN/resource review pending.
+
+RETENTION / CAPACITY
+Proposed lifecycle rules apply ONLY postgres/hourly/ (7d) and postgres/daily/ (30d).
+Read and merge existing bucket lifecycle first. Never overwrite unrelated rules.
+No script performs S3 deletes. No resume prefix belongs in backup lifecycle rules.
+Check bucket versioning: expiration of current objects may leave noncurrent versions;
+noncurrent expiration requires a separate approved rule. Historical legacy prefixes
+remain untouched. Expiration is irreversible and not an exact wall-clock scheduler.
+Restore-test every new backup plus monthly independently selected older snapshot.
+Targets RPO<=1h/RTO<=4h remain goals until measured end-to-end recovery rehearsal.
+
+Limits UNCHANGED: live database <50MiB, MemAvailable>3GiB, /tmp free>5GiB.
+Scratch: CPU0.5, memory+swap768MiB, tmpfs384MiB, pids128, no network/ports, pullnever.
+Archive also capped below50MiB; compressed size does not guarantee restored size.
+Growing historical archives may exceed scratch capacity and fail; do not enlarge it
+without measured resource review. Failure retains private files/container for diagnosis;
+monitor disk/memory, investigate promptly, never docker-prune or broad recursive delete.
+Current live capacity NOT measured this phase. Cannot certify1000 candidates from
+row count alone: resume bytes live in S3 but extracted text/indexes/job history grow DB.
+Before pilot measure pg_database_size baseline, synthetic100-profile delta, backlog
+drain rate and restore peaks on isolated data. Estimate safe count as
+floor((40MiB-baseline_bytes)/measured_bytes_per_profile), retaining10MiB guard margin.
+Stop expansion at40MiB pending review; >=50MiB automated backups fail closed.
+If baseline already>=40MiB, gate must be reviewed before launch, not after failure.
+1,000 CVs at2MB each is ~2GB of S3 originals, NOT evidence the DB stays under50MiB.
+
+MONITORING SEMANTICS / LIMITATIONS
+Every5min: frontend+API exactHTTPS200, DBready, scanner, worker heartbeat, overdue jobs,
+recent failed jobs (updated within1h), cleanup backlog>24h, both filesystems>=80% or
+free<=5GiB, memoryavailable<=max(1GiB,15%), independent backup/recovery freshness.
+MainSQS total visible+inflight+delayed>100, oldestage>600s; DLQ total>0.
+Nonemptyqueue with no fresh CloudWatch datapoint<=5min fails as unverified.
+Queue metrics approximate/lag; thresholds need load rehearsal, no auto scaling.
+Historical failures remain in DB; no mutating acknowledgement. A recent failure
+ages out after1h: recovery notification explicitly does NOT mean the job was repaired.
+Operator must review every failure; monitor outage>1h may miss that event. Independent
+monitor heartbeat/missing-data alarms and operator reconciliation are mandatory.
+Alerts dedup by set of checkIDs, resend after6h while unresolved, recovery when clear.
+Only successfully accepted notifications advance delivery state; failures retry.
+SNS optional for local/manual checks but exit2 until configured. Private state directory,
+atomic markers, flock; malformed state fails closed. External observer must alert on
+missing monitor heartbeat/nonzero service exits: a failed host cannot alert itself.
+No external observer/CloudWatch alarm is installed by this patch. This remains a gate.
+
+S3 RESUME RECOVERY / ERASURE PROPOSAL — NOT IMPLEMENTED
+Current UUID object keys avoid routine overwrite. Transactional cleanup outbox retries
+default_storage.delete and protects live references. It does NOT enumerate/delete
+historical S3 versions. Enabling versioning alone would make erasure incomplete.
+Propose30-day noncurrent version retention, private encryption unchanged, no ObjectLock.
+Accidental delete: identify exact key/version under incident approval, reconcile DB
+reference, then restore selected version without overwriting unrelated files. If DB
+record was deleted, object recovery alone does not recover profile/authorization.
+Erasure: revoke access first; journal exact keys; paginate all versions/delete markers
+for each exact key; delete with retry/verification, including approved recovery copies.
+Use separately approved minimal version-management permissions; do not use prefix-wide
+deletion or give public API broad bucket permissions. Implement/test before versioning.
+Backup retention may retain erased rows until expiry; document legal basis, restricted
+restore use and apply durable erasure ledger after any recovery before enabling access.
+No erasure ledger implemented by this patch. Approve legal retention policy first.
+
+COST ALLOWANCES (USD, not account quote; no billing access this phase)
+Hourly+daily:750 PUT/month,>=750 readbacks plus HEAD; retained~198 dumps plus
+lifecycle timing. At50MB compressed each ~9.9GB, but DBguard currently below50MiB.
+Budget$1-5/month backups initially; restore uses existing EC2 CPU/RAM, no new instance.
+IMPORTANT: retention is NOT authorized for installation. Without lifecycle deletion,
+750 dumps/month at50MB add about37.5GB/month cumulatively (before versioning).
+The198-dump estimate applies only AFTER separately approved lifecycle activation.
+Track accumulated bytes and revisit cost; do not silently cap storage by deleting data.
+Monitoring:2 CloudWatch metric requests/5min ~=17,280/month plusSQS/SNS; reserve
+$5-15/month including small separately approved external/CloudWatch alerts. No log
+ingestion or custom metrics enabled here; don't promise free-tier coverage.
+Versioning extra storage = sum retained superseded/deleted object-version bytes.
+At1000x2MB, one additional version each ~2GB; at illustrative$0.025/GB-month ~5c,
+plusrequests. Repeated replacement/longretention multiplies this. Verify Sydneyquote.
+Existing stack's prior$100-150/month allowance is NOT current billing verification.
+Provisional total$106-170/month plustraffic/email/tax/versionstorage. Confirm actual
+plan/credit expiry and balance before public launch; Freeplan continuity unresolved.
+Pricing references: https://aws.amazon.com/s3/pricing/
+https://aws.amazon.com/cloudwatch/pricing/ and https://aws.amazon.com/sns/pricing/
+
+ROLLBACK / EMERGENCY
+Disable only new timers if misbehaving; do not kill an active restore blindly.
+Record scratch label/name/private directory, inspect ownership, then approve scoped
+cleanup. Restore previous ops scripts/env/units and daemon-reload; application images,
+database, resumes, queues and network remain unchanged. Keep retained S3 backups.
+Lifecycle deletions cannot be undone by disabling a timer: separately disable only
+the new lifecycle rules if incorrect, with approval. No database restore for code rollback.
+If backups stop, escalate, preserve lastgoodbackup, assess intake pause separately.
+No automatic registration pause, restart, IAM change or infrastructure mutation exists.

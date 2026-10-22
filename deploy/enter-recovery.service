@@ -1,0 +1,11 @@
+[Unit]
+Description=ENTER approved historical recovery rehearsal
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/enter/ops.env
+# Operator selects an older retained object and its independently recorded checksum.
+EnvironmentFile=/etc/enter/recovery.env
+ExecStart=/bin/bash ${ENTER_OPS_DIR}/restore-test.sh

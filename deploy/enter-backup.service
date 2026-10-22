@@ -6,4 +6,4 @@ Requires=docker.service
 [Service]
 Type=oneshot
 EnvironmentFile=/etc/enter/ops.env
-ExecStart=/bin/bash ${ENTER_REPO_DIR}/deploy/backup.sh
+ExecStart=/bin/bash ${ENTER_OPS_DIR}/backup.sh

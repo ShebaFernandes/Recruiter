@@ -5,4 +5,4 @@ After=docker.service
 [Service]
 Type=oneshot
 EnvironmentFile=/etc/enter/ops.env
-ExecStart=/bin/bash ${ENTER_REPO_DIR}/deploy/monitor.sh
+ExecStart=/bin/bash ${ENTER_OPS_DIR}/monitor.sh

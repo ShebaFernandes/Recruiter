@@ -3,6 +3,7 @@ import datetime
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -25,6 +26,8 @@ docker = ["docker"]
 stage = "preflight"
 work = None
 scratch = None
+started = time.monotonic()
+historical_key = os.environ.get("ENTER_RESTORE_KEY", "")
 
 
 class BackupSafetyError(RuntimeError):
@@ -211,54 +214,64 @@ try:
     dump = work / "database.dump"
     downloaded = work / "verified-from-s3.dump"
     stage = "consistent pg_dump"
-    with dump.open("xb") as f:
-        run(
-            docker
-            + [
-                "exec",
-                "recruiter-db-1",
-                "pg_dump",
-                "-U",
-                "enter",
-                "-d",
-                "enter",
-                "--format=custom",
-                "--no-owner",
-                "--lock-wait-timeout=10s",
-            ],
-            destination=f,
+    if historical_key:
+        require(
+            re.fullmatch(r"postgres/(hourly|daily)/[0-9/]+-[a-f0-9]{32}\.dump", historical_key),
+            "Unapproved historical key prefix or format",
         )
-    with dump.open("rb") as f:
-        run(docker + ["exec", "-i", "recruiter-db-1", "pg_restore", "--list"], source=f)
-    digest = hashlib.sha256(dump.read_bytes()).digest()
-    checksum = base64.b64encode(digest).decode()
-    stage = "conditional encrypted S3 upload"
-    run(
-        [
-            "aws",
-            "s3api",
-            "put-object",
-            "--region",
-            os.environ["ENTER_AWS_REGION"],
-            "--expected-bucket-owner",
-            os.environ["ENTER_AWS_ACCOUNT"],
-            "--bucket",
-            bucket,
-            "--key",
-            key,
-            "--body",
-            str(dump),
-            "--if-none-match",
-            "*",
-            "--server-side-encryption",
-            "AES256",
-            "--checksum-algorithm",
-            "SHA256",
-            "--checksum-sha256",
-            checksum,
-        ]
-    )
-    print("UPLOADED", "s3://" + bucket + "/" + key, flush=True)
+        expected = os.environ.get("ENTER_RESTORE_SHA256", "")
+        require(re.fullmatch(r"[a-f0-9]{64}", expected), "Approved SHA256 required")
+        key = historical_key
+        digest = bytes.fromhex(expected)
+        checksum = base64.b64encode(digest).decode()
+    else:
+        with dump.open("xb") as f:
+            run(
+                docker
+                + [
+                    "exec",
+                    "recruiter-db-1",
+                    "pg_dump",
+                    "-U",
+                    "enter",
+                    "-d",
+                    "enter",
+                    "--format=custom",
+                    "--no-owner",
+                    "--lock-wait-timeout=10s",
+                ],
+                destination=f,
+            )
+        with dump.open("rb") as f:
+            run(docker + ["exec", "-i", "recruiter-db-1", "pg_restore", "--list"], source=f)
+        digest = hashlib.sha256(dump.read_bytes()).digest()
+        checksum = base64.b64encode(digest).decode()
+        stage = "conditional encrypted S3 upload"
+        run(
+            [
+                "aws",
+                "s3api",
+                "put-object",
+                "--region",
+                os.environ["ENTER_AWS_REGION"],
+                "--expected-bucket-owner",
+                os.environ["ENTER_AWS_ACCOUNT"],
+                "--bucket",
+                bucket,
+                "--key",
+                key,
+                "--body",
+                str(dump),
+                "--if-none-match",
+                "*",
+                "--server-side-encryption",
+                "AES256",
+                "--checksum-algorithm",
+                "SHA256",
+                "--checksum-sha256",
+                checksum,
+            ],
+        )
     stage = "S3 readback and checksum verification"
     head = s3.head_object(
         Bucket=bucket,
@@ -266,7 +279,9 @@ try:
         ChecksumMode="ENABLED",
         ExpectedBucketOwner=os.environ["ENTER_AWS_ACCOUNT"],
     )
-    require(head["ContentLength"] == dump.stat().st_size, "Backup safety check failed at check 205")
+    require(0 < head["ContentLength"] < 50 * 1024**2, "Archive exceeds reviewed limit")
+    if not historical_key:
+        require(head["ContentLength"] == dump.stat().st_size, "Backup size mismatch")
     require(head["ServerSideEncryption"] == "AES256", "Backup safety check failed at check 206")
     require(head["ChecksumSHA256"] == checksum, "Backup safety check failed at check 207")
     response = s3.get_object(
@@ -275,12 +290,13 @@ try:
     with downloaded.open("xb") as f:
         for chunk in response["Body"].iter_chunks(chunk_size=1024 * 1024):
             f.write(chunk)
+            require(f.tell() <= head["ContentLength"], "Readback exceeds expected size")
     response["Body"].close()
     require(
         hashlib.sha256(downloaded.read_bytes()).digest() == digest,
         "Backup safety check failed at check 213",
     )
-    print("CHECKSUM_READBACK_PASS", "BYTES", dump.stat().st_size, flush=True)
+    print("CHECKSUM_READBACK_PASS", "BYTES", downloaded.stat().st_size, flush=True)
     stage = "isolated restore preflight"
     require(inspect_live() == before, "Backup safety check failed at check 216")
     require(shutil.disk_usage("/tmp").free > 5 * 1024**3, "Backup safety check failed at check 217")
@@ -355,6 +371,7 @@ try:
             docker + ["exec", scratch, "pg_isready", "-U", "enter", "-d", db],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            timeout=10,
         )
         if (
             p.returncode == 0
@@ -417,6 +434,9 @@ try:
         sql("SELECT count(*) FROM pg_index WHERE NOT indisvalid;") == "0",
         "Backup safety check failed at check 324",
     )
+    # Read application tables only inside the scratch database; never print rows.
+    for table in ("talent_candidateprofile", "talent_resume", "talent_resumeprocessingjob"):
+        require(int(sql("SELECT count(*) FROM " + table + ";")) >= 0, "Unreadable app table")
     run(
         docker
         + ["exec", scratch, "pg_amcheck", "-U", "enter", "--database=" + db, "--install-missing"]
@@ -432,6 +452,8 @@ try:
     # Do not stop intake or mutate live data to manufacture a quiet backup window.
     stage = "cleanup verified scratch resources"
     state = Path(os.environ["ENTER_BACKUP_STATE_FILE"])
+    suffix = "recovery" if historical_key else backup_class
+    state = state.with_name(state.stem + "-" + suffix + state.suffix)
     require(state.is_absolute() and not state.is_symlink(), "Unsafe backup marker")
     require(state.parent.is_dir() and not state.parent.is_symlink(), "Unsafe marker directory")
     require(state.parent.stat().st_mode & 0o077 == 0, "Marker directory must be private")
@@ -452,12 +474,15 @@ try:
                     "key": key,
                     "sha256": digest.hex(),
                     "bytes": head["ContentLength"],
+                    "class": suffix,
+                    "duration_seconds": round(time.monotonic() - started, 2),
                 }
             )
         )
     os.replace(pending, state)
     for path in [dump, downloaded, work / "operation-errors.log"]:
-        path.unlink()
+        if path.exists():
+            path.unlink()
     work.rmdir()
     print(
         json.dumps(
