@@ -37,7 +37,7 @@ async function request<T>(path: string, options: RequestInit = {}, binary = fals
   if (options.body && !(options.body instanceof FormData)) headers.set('Content-Type', 'application/json')
   let response: Response
   try {
-    response = await fetch(`${API_URL}${path}`, { ...options, headers, credentials: 'include' })
+    response = await fetch(`${API_URL}${path}`, { credentials: 'include', ...options, headers })
   } catch {
     throw new ApiError('We can’t reach Enter right now. Check your connection and try again.', 0, 'connection')
   }
@@ -49,7 +49,7 @@ async function request<T>(path: string, options: RequestInit = {}, binary = fals
       message = body.detail || Object.values(body).flat().join(' ') || message
       code = body.code || ''
     } catch { /* preserve fallback */ }
-    if (response.status === 401) {
+    if (response.status === 401 && options.credentials !== 'omit') {
       message = 'Your session has expired. Please sign in again.'
       window.dispatchEvent(new CustomEvent('enter-auth-expired'))
     }
@@ -64,7 +64,8 @@ async function request<T>(path: string, options: RequestInit = {}, binary = fals
 
 export const api = {
   legalStatus: () => request<{ accepted: Record<'age' | 'terms', boolean>; versions: Record<'age' | 'terms', string> }>('/candidate/legal/accept/', { cache: 'no-store' }),
-  legalDocuments: () => request<{ enabled: boolean; documents?: LegalDocuments }>('/legal/documents/', { cache: 'no-store' }),
+  // Public publication must remain readable even when a saved session has expired.
+  legalDocuments: () => request<{ enabled: boolean; documents?: LegalDocuments }>('/legal/documents/', { cache: 'no-store', credentials: 'omit' }),
   acceptLegal: (body: Record<string, unknown>) => request('/candidate/legal/accept/', { method: 'POST', body: JSON.stringify(body) }),
   resumePreview: (id: number) => request<DocumentPreview>(`/candidate/resumes/${id}/preview/`, { cache: 'no-store' }),
   reviewResume: (id: number, fields: string[], profile_updated_at: string, keep_pending = false) => request<Candidate>(`/candidate/resumes/${id}/review/`, { method: 'POST', body: JSON.stringify({ fields, profile_updated_at, keep_pending }) }),

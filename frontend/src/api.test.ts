@@ -6,6 +6,30 @@ afterEach(() => {
 })
 
 describe('API recovery messages', () => {
+  it('loads public legal documents without a stale session cookie', async () => {
+    const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ enabled: true })))
+    vi.stubGlobal('fetch', fetch)
+    await api.legalDocuments()
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/legal/documents/'), expect.objectContaining({ credentials: 'omit', cache: 'no-store' }))
+  })
+
+  it('does not expire the session when a public legal request is rejected', async () => {
+    const expired = vi.fn()
+    window.addEventListener('enter-auth-expired', expired)
+    try {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ detail: 'Unavailable' }), { status: 401 })))
+      await expect(api.legalDocuments()).rejects.toMatchObject({ status: 401 })
+      expect(expired).not.toHaveBeenCalled()
+    } finally { window.removeEventListener('enter-auth-expired', expired) }
+  })
+
+  it('retains session cookies on private candidate requests', async () => {
+    const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({})))
+    vi.stubGlobal('fetch', fetch)
+    await api.candidateProfile()
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/candidate/profile/'), expect.objectContaining({ credentials: 'include' }))
+  })
+
   it('replaces browser network errors with a useful connection message', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')))
     await expect(api.me()).rejects.toMatchObject({
