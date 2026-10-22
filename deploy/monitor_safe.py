@@ -136,7 +136,13 @@ def main():
 
         def https(v=variable):
             url = os.environ[v]
-            require(url.startswith("https://"), "HTTPS required")
+            require(
+                url in (
+                    "https://staging.enter.careers/",
+                    "https://staging.enter.careers/api/v1/health/ready/",
+                ),
+                "Unreviewed local HTTPS endpoint",
+            )
             require(
                 command(
                     [
@@ -145,6 +151,12 @@ def main():
                         "--show-error",
                         "--max-time",
                         "15",
+                        # On-host health only: retain Host/SNI and normal TLS validation.
+                        # Public reachability requires a separate off-host monitor.
+                        "--noproxy",
+                        "*",
+                        "--resolve",
+                        "staging.enter.careers:443:127.0.0.1",
                         "--output",
                         "/dev/null",
                         "--write-out",

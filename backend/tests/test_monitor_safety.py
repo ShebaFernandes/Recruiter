@@ -131,7 +131,9 @@ def test_unit_templates_and_independent_schedules():
     assert "OnCalendar=*-*-01 03:30:00 UTC" in (SCRIPT.parent / "enter-recovery.timer").read_text()
 
 
-@pytest.mark.parametrize("failed", [None, "delivery", "sns_missing", "old_daily", "jobs"])
+@pytest.mark.parametrize(
+    "failed", [None, "delivery", "sns_missing", "old_daily", "jobs", "https", "tls", "url"]
+)
 def test_monitor_orchestration(monitor, monkeypatch, tmp_path, capsys, failed):
     import boto3
 
@@ -141,8 +143,10 @@ def test_monitor_orchestration(monitor, monkeypatch, tmp_path, capsys, failed):
     for key, value in {
         "ENTER_MONITOR_STATE_FILE": str(tmp_path / "monitor.json"),
         "ENTER_BACKUP_STATE_FILE": str(tmp_path / "backup.json"),
-        "ENTER_FRONTEND_URL": "https://example.invalid/",
-        "ENTER_HTTPS_URL": "https://example.invalid/ready",
+        "ENTER_FRONTEND_URL": "https://example.invalid/"
+        if failed == "url"
+        else "https://staging.enter.careers/",
+        "ENTER_HTTPS_URL": "https://staging.enter.careers/api/v1/health/ready/",
         "ENTER_SQS_URL": "https://sqs.ap-southeast-2.amazonaws.com/431988153216/main",
         "ENTER_DLQ_URL": "https://sqs.ap-southeast-2.amazonaws.com/431988153216/dlq",
         "ENTER_ALERT_TOPIC_ARN": ""
@@ -169,7 +173,13 @@ def test_monitor_orchestration(monitor, monkeypatch, tmp_path, capsys, failed):
                 )
             )
         if "curl" in args:
-            return "200"
+            assert args[args.index("--noproxy") + 1] == "*"
+            assert args[args.index("--resolve") + 1] == "staging.enter.careers:443:127.0.0.1"
+            assert args[-1].startswith("https://staging.enter.careers/")
+            assert not set(args) & {"-k", "--insecure", "-L", "--location"}
+            if failed == "tls":
+                raise RuntimeError("synthetic certificate validation failure")
+            return "503" if failed == "https" else "200"
         return "success"
 
     monkeypatch.setattr(monitor, "command", command)
@@ -202,6 +212,8 @@ def test_monitor_orchestration(monitor, monkeypatch, tmp_path, capsys, failed):
     assert monitor.main() == expected
     output = json.loads(capsys.readouterr().out)
     assert ("backup_daily" in output["failed_checks"]) == (failed == "old_daily")
+    assert ("frontend_https" in output["failed_checks"]) == (failed in ("https", "tls", "url"))
+    assert ("api_https" in output["failed_checks"]) == (failed in ("https", "tls"))
     state = json.loads((tmp_path / "monitor.json").read_text())
     if failed in ("delivery", "sns_missing"):
         assert state == {}
