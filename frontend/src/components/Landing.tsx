@@ -39,6 +39,9 @@ export default function Landing({ choose }: {
         <div className="ce-intro-aside">
           <p className="ce-supporting-headline">What You Build Tomorrow Depends on Who You Hire Today</p>
           <p>Every breakthrough product, high-performing team, and successful company is built by exceptional people. We help ambitious companies hire them.</p>
+          <button className="ce-mobile-candidate-cta" type="button" onClick={() => choose('candidate')}>
+            Upload your resume <ArrowRight size={16} aria-hidden="true" />
+          </button>
         </div>
       </div>
     </section>

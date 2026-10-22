@@ -38,7 +38,9 @@ test(`landing motion at ${width}px preserves layout without lower scroll section
   await expect(candidateLink).toHaveCSS('outline-style', 'solid')
   await expect(page.getByRole('navigation').getByTestId('for-recruiters')).toHaveCount(1)
   await expect(page.getByRole('navigation').getByTestId('for-candidates')).toHaveCount(1)
-  await expect(page.locator('.ce-intro button')).toHaveCount(0)
+  const mobileCta = page.getByRole('button', { name: 'Upload your resume' })
+  if (width <= 768) await expect(mobileCta).toBeVisible()
+  else await expect(mobileCta).toBeHidden()
   // The approved simple navigation retains its existing text-only login link.
   await expect(page.getByRole('navigation').locator('.ce-login summary')).toHaveText('Log in')
   await expect(page.getByRole('navigation').locator('.ce-login summary')).toBeVisible()
