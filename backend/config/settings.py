@@ -1,5 +1,6 @@
 import os
 import sys
+from datetime import date
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -379,6 +380,39 @@ CANDIDATE_REGISTRATION_PAUSED = (
 )
 RESUME_UPLOADS_PAUSED = os.getenv("RESUME_UPLOADS_PAUSED", "false").lower() == "true"
 
+# India-first registration is self-declared and enforced server-side. It reduces
+# unsupported registrations but is not represented as proof of physical location.
+_registration_countries = os.getenv(
+    "CANDIDATE_REGISTRATION_COUNTRIES", "IN" if APP_ENV == "production" else ""
+)
+CANDIDATE_REGISTRATION_COUNTRIES = {
+    code.strip().upper() for code in _registration_countries.split(",") if code.strip()
+}
+if any(len(code) != 2 or not code.isalpha() for code in CANDIDATE_REGISTRATION_COUNTRIES):
+    raise ImproperlyConfigured("CANDIDATE_REGISTRATION_COUNTRIES must contain ISO alpha-2 codes.")
+
+# Supply the approved Karnataka calendar as comma-separated YYYY-MM-DD values.
+# Empty is permitted while automation is disabled; production enforcement fails closed.
+_business_holidays = os.getenv("LEGAL_BUSINESS_HOLIDAYS", "")
+try:
+    LEGAL_BUSINESS_HOLIDAYS = {
+        date.fromisoformat(value.strip())
+        for value in _business_holidays.split(",")
+        if value.strip()
+    }
+except ValueError as error:
+    raise ImproperlyConfigured("LEGAL_BUSINESS_HOLIDAYS must contain ISO dates.") from error
+RETENTION_REMINDER_DELIVERY_ENABLED = (
+    os.getenv("RETENTION_REMINDER_DELIVERY_ENABLED", "false").lower() == "true"
+)
+RETENTION_DELETION_ENABLED = (
+    os.getenv("RETENTION_DELETION_ENABLED", "false").lower() == "true"
+)
+ANCILLARY_RETENTION_ENABLED = (
+    os.getenv("ANCILLARY_RETENTION_ENABLED", "false").lower() == "true"
+)
+RETENTION_REMINDER_MAX_ATTEMPTS = int(os.getenv("RETENTION_REMINDER_MAX_ATTEMPTS", "5"))
+
 # This is a release gate, not legal text. Approval must refer to the actual published documents.
 LEGAL_CONTENT_APPROVED = os.getenv("LEGAL_CONTENT_APPROVED", "false").lower() == "true"
 LEGAL_WORKFLOW_PREVIEW = os.getenv("LEGAL_WORKFLOW_PREVIEW", "false").lower() == "true"
@@ -421,6 +455,21 @@ if APP_ENV == "production" and LEGAL_CONTENT_APPROVED:
         raise ImproperlyConfigured(
             "Published legal release is missing immutable evidence: "
             + ", ".join(missing_legal_release_values)
+        )
+    if CANDIDATE_REGISTRATION_COUNTRIES != {"IN"}:
+        raise ImproperlyConfigured(
+            "The approved candidate launch requires CANDIDATE_REGISTRATION_COUNTRIES=IN."
+        )
+if APP_ENV == "production" and (
+    RETENTION_REMINDER_DELIVERY_ENABLED
+    or RETENTION_DELETION_ENABLED
+    or ANCILLARY_RETENTION_ENABLED
+):
+    if not LEGAL_CONTENT_APPROVED:
+        raise ImproperlyConfigured("Retention automation requires approved legal content.")
+    if not LEGAL_BUSINESS_HOLIDAYS:
+        raise ImproperlyConfigured(
+            "Retention automation requires the approved LEGAL_BUSINESS_HOLIDAYS calendar."
         )
 
 REST_FRAMEWORK = {

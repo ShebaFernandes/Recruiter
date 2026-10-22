@@ -407,6 +407,7 @@
 .auth-fields{display:grid;gap:15px;margin:22px 0 5px}.auth-card .ui-form-field{margin:0;color:var(--color-ink)}
 .auth-card .ui-form-field__input{border-color:var(--color-border);border-radius:var(--radius-sm);padding:0 14px;color:var(--color-ink)}
 .auth-card .ui-form-field__input:focus{border-color:var(--color-violet-500);box-shadow:var(--enter-focus-halo)}
+.auth-country-field{display:grid;gap:6px;color:var(--color-ink);font-size:var(--enter-text-sm);font-weight:700}.auth-country-field select{height:var(--enter-control-large);border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--enter-surface);padding:0 14px;color:var(--color-ink)}.auth-country-field select:focus{outline:0;border-color:var(--color-violet-500);box-shadow:var(--enter-focus-halo)}.auth-country-field small{color:var(--color-copy);font-size:var(--enter-text-xs);font-weight:400}
 .auth-form>.ui-button--primary{margin-top:17px}.auth-form>.ui-button--ghost{margin-top:8px}.auth-form>.ui-button--ghost+.ui-button--ghost{margin-top:0}
 .auth-card .error,.auth-card .success{border-radius:var(--radius-sm);font-size:var(--enter-text-xs)}.auth-card .success{background:var(--enter-success-soft);color:var(--enter-success)}
 .auth-state-card{text-align:center}.auth-state-card .brand{justify-content:center}.auth-state-card .auth-state-icon{background:var(--color-violet-100);color:var(--color-violet-700);border-radius:var(--enter-radius-card);margin:26px auto 18px}.auth-state-card .ui-button{margin-top:12px}.auth-state-card .ui-button--ghost{margin-top:7px}

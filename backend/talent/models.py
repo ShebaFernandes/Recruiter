@@ -1,10 +1,12 @@
 import uuid
+from datetime import timedelta
 from pathlib import Path
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.postgres.indexes import GinIndex
 from django.db import models
-from django.db.models.signals import post_delete
+from django.db.models.signals import post_delete, pre_delete
 from django.dispatch import receiver
 from django.utils import timezone
 
@@ -66,6 +68,7 @@ class CandidateProfile(models.Model):
     headline = models.CharField(max_length=240, blank=True)
     current_company = models.CharField(max_length=180, blank=True)
     email = models.EmailField(blank=True)
+    registration_country_code = models.CharField(max_length=2, blank=True)
     phone = models.CharField(max_length=40, blank=True)
     location = models.CharField(max_length=120, blank=True)
     total_experience = models.DecimalField(max_digits=4, decimal_places=1, default=0)
@@ -100,6 +103,7 @@ class CandidateProfile(models.Model):
     submission_consent_version = models.CharField(max_length=80, blank=True)
     profile_updated_at = models.DateTimeField(auto_now=True)
     meaningful_activity_at = models.DateTimeField(null=True, blank=True)
+    retention_transition_started_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         indexes = [
@@ -118,22 +122,37 @@ class CandidateProfile(models.Model):
 class LegalAcceptance(models.Model):
     """Separate immutable-text evidence; never synthesized for existing accounts."""
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    subject_user_id = models.PositiveBigIntegerField(null=True, blank=True)
+    subject_joined_at = models.DateTimeField(null=True, blank=True)
     purpose = models.CharField(max_length=30)
     version = models.CharField(max_length=100)
     document_text = models.TextField()
     document_sha256 = models.CharField(max_length=64)
     accepted_at = models.DateTimeField(default=timezone.now, editable=False)
+    account_closed_at = models.DateTimeField(null=True, blank=True)
+    earliest_disposition_at = models.DateTimeField(null=True, blank=True)
     unpublished = models.BooleanField(default=True)
 
 
 class InactivityReminder(models.Model):
+    class NoticeKind(models.TextChoices):
+        INACTIVITY = "inactivity", "Inactivity"
+        TRANSITION = "transition", "Existing-account transition"
+
     candidate = models.ForeignKey(CandidateProfile, on_delete=models.CASCADE)
     activity_at = models.DateTimeField()
     days_before = models.PositiveSmallIntegerField()
+    notice_kind = models.CharField(
+        max_length=20, choices=NoticeKind.choices, default=NoticeKind.INACTIVITY
+    )
+    deadline_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    # Outbox only: delivery is not authorized or implied by creation.
     sent_at = models.DateTimeField(null=True, blank=True)
+    delivery_attempts = models.PositiveSmallIntegerField(default=0)
+    last_attempt_at = models.DateTimeField(null=True, blank=True)
+    next_attempt_at = models.DateTimeField(null=True, blank=True)
+    last_error_code = models.CharField(max_length=40, blank=True)
 
     class Meta:
         constraints = [
@@ -146,7 +165,11 @@ class InactivityReminder(models.Model):
 class DeletionRequest(models.Model):
     @property
     def acknowledgement_deadline_status(self):
-        return "provisional_weekdays_only_not_approved_business_calendar"
+        return (
+            "approved_karnataka_calendar_configured"
+            if settings.LEGAL_BUSINESS_HOLIDAYS
+            else "karnataka_calendar_not_configured"
+        )
 
     # Deliberately independent of User: deletion must not erase the recovery ledger.
     subject_user_id = models.PositiveBigIntegerField()
@@ -158,6 +181,19 @@ class DeletionRequest(models.Model):
     account_deleted_at = models.DateTimeField(null=True, blank=True)
     storage_keys = models.JSONField(default=list)
     storage_cleanup_verified_at = models.DateTimeField(null=True, blank=True)
+    earliest_disposition_at = models.DateTimeField(null=True, blank=True)
+
+
+@receiver(pre_delete, sender=User)
+def preserve_legal_acceptance_evidence(sender, instance, **kwargs):
+    """Retain genuine acceptance evidence; never synthesize a missing event."""
+    closed_at = timezone.now()
+    LegalAcceptance.objects.filter(user=instance).update(
+        subject_user_id=instance.pk,
+        subject_joined_at=instance.date_joined,
+        account_closed_at=closed_at,
+        earliest_disposition_at=closed_at + timedelta(days=365),
+    )
 
 
 class CandidatePhoto(models.Model):

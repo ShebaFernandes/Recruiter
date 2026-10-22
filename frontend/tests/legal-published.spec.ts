@@ -37,6 +37,7 @@ test('published documents gate registration without granting recruiter sharing',
   await page.getByRole('button', { name: 'Create account', exact: true }).click()
   await expect(page.getByText('Synthetic verification only.')).toBeVisible()
   expect(signupBody).toMatchObject({
+    country_code: 'IN',
     age_accepted: true,
     terms_accepted: true,
     age_version: 'enter-candidate-age-v1.0',

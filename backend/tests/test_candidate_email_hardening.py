@@ -208,6 +208,14 @@ def load_settings(overrides):
 
 @pytest.mark.parametrize("overrides,expected", [
     ({"LEGAL_CONTENT_APPROVED": "false"}, "Approve published privacy"),
+    (
+        {"CANDIDATE_REGISTRATION_COUNTRIES": "US"},
+        "requires CANDIDATE_REGISTRATION_COUNTRIES=IN",
+    ),
+    (
+        {"RETENTION_REMINDER_DELIVERY_ENABLED": "true"},
+        "approved LEGAL_BUSINESS_HOLIDAYS",
+    ),
     ({"ALLOWED_HOSTS": "*"}, "exact host names"),
     ({"CORS_ALLOWED_ORIGINS": "https://*.example.com"}, "exact HTTPS origins"),
     ({"SECURE_SSL_REDIRECT": "false"}, "must enforce HTTPS"),

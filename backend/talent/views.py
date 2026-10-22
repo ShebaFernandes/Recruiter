@@ -178,7 +178,10 @@ def signup(request):
         )
         UserRole.objects.create(user=user, role=data["role"])
         CandidateProfile.objects.create(
-            user=user, full_name=data["full_name"], email=data["email"]
+            user=user,
+            full_name=data["full_name"],
+            email=data["email"],
+            registration_country_code=data["country_code"],
         )
         for purpose, doc in accepted.items():
             legal.record(user, purpose, doc)

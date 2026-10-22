@@ -27,7 +27,7 @@ class Command(BaseCommand):
         self.stdout.write(
             f"Verified: {verified}; pending: {pending}; failed: {failed}. "
             "Current objects only; not historical backup/version erasure. "
-            "Acknowledgement deadlines are provisional weekdays only."
+            f"Business calendar: {'configured' if settings.LEGAL_BUSINESS_HOLIDAYS else 'missing'}."
         )
         if pending or failed:
             raise CommandError(

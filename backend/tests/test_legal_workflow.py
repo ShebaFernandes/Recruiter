@@ -1,6 +1,6 @@
 import hashlib
 import json
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from datetime import timezone as dt_timezone
 from io import StringIO
 
@@ -11,7 +11,13 @@ from django.core.management.base import CommandError
 from django.test import override_settings
 from django.utils import timezone
 from talent import legal
-from talent.models import CandidateProfile, DeletionRequest, InactivityReminder, LegalAcceptance
+from talent.models import (
+    CandidateProfile,
+    DeletionRequest,
+    InactivityReminder,
+    LegalAcceptance,
+    Resume,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -60,7 +66,7 @@ def test_completion_command_reports_counts_and_does_not_delete(candidate_account
         call_command("reconcile_deletion_completion", stdout=StringIO())
         row.refresh_from_db()
         assert row.storage_cleanup_verified_at
-        assert row.acknowledgement_deadline_status.startswith("provisional")
+        assert row.acknowledgement_deadline_status == "karnataka_calendar_not_configured"
 
 
 def test_restore_quarantines_all_identities_and_tokens(candidate_account):
@@ -166,12 +172,19 @@ def acceptance(*purposes):
 def published_legal_settings(tmp_path):
     privacy = "ENTER Candidate Privacy Policy v1.0\nEffective 2026-10-22."
     terms = "ENTER Candidate Terms of Use v1.0\nEffective 2026-10-22."
-    (tmp_path / "PRIVACY_POLICY_FINAL_REVIEW.txt").write_text(privacy)
-    (tmp_path / "TERMS_FINAL_REVIEW.txt").write_text(terms)
+    (tmp_path / "PRIVACY_POLICY_FINAL_REVIEW.txt").write_text(
+        f"INTERNAL REVIEW\nPROPOSED PUBLIC COPY\n{privacy}\nEND OF PROPOSED PUBLIC COPY\n"
+    )
+    (tmp_path / "TERMS_FINAL_REVIEW.txt").write_text(
+        f"INTERNAL REVIEW\nPROPOSED PUBLIC COPY\n{terms}\nEND OF PROPOSED PUBLIC COPY\n"
+    )
+    privacy = f"{privacy}\n"
+    terms = f"{terms}\n"
     age = "I confirm that I am at least 18 years old."
     submission = (
         "I confirm that I have reviewed my profile and ask ENTER to save it as submitted. "
-        "Recruiter access is disabled. This does not authorize future recruiter sharing."
+        "Recruiter access is currently disabled. ENTER will ask for my separate, explicit "
+        "permission before sharing my profile or resume with approved recruiters."
     )
     return {
         "LEGAL_CONTENT_APPROVED": True,
@@ -182,6 +195,7 @@ def published_legal_settings(tmp_path):
         "LEGAL_TERMS_SHA256": hashlib.sha256(terms.encode()).hexdigest(),
         "LEGAL_AGE_SHA256": hashlib.sha256(age.encode()).hexdigest(),
         "LEGAL_SUBMISSION_SHA256": hashlib.sha256(submission.encode()).hexdigest(),
+        "CANDIDATE_REGISTRATION_COUNTRIES": {"IN"},
     }
 
 
@@ -214,6 +228,7 @@ def test_published_signup_records_exact_version_without_backfill(client, tmp_pat
             "full_name": "Published Synthetic Candidate",
             "password": "Strong-password-254!",
             "role": "candidate",
+            "country_code": "IN",
             **acceptance("age", "terms"),
         }
         assert client.post(
@@ -228,12 +243,40 @@ def test_published_signup_records_exact_version_without_backfill(client, tmp_pat
         ]
 
 
+def test_india_first_signup_is_enforced_server_side(client):
+    with override_settings(
+        LEGAL_WORKFLOW_PREVIEW=True,
+        CANDIDATE_REGISTRATION_COUNTRIES={"IN"},
+    ):
+        payload = {
+            "email": "india-first@example.test",
+            "full_name": "India First Candidate",
+            "password": "Strong-password-254!",
+            "role": "candidate",
+            **acceptance("age", "terms"),
+        }
+        assert client.post("/api/v1/auth/signup/", payload, format="json").status_code == 400
+        assert (
+            client.post(
+                "/api/v1/auth/signup/", {**payload, "country_code": "US"}, format="json"
+            ).status_code
+            == 400
+        )
+        response = client.post(
+            "/api/v1/auth/signup/", {**payload, "country_code": "in"}, format="json"
+        )
+        assert response.status_code == 201
+        assert CandidateProfile.objects.get().registration_country_code == "IN"
+
+
 @pytest.mark.parametrize("failure", ["placeholder", "hash"])
 def test_published_documents_fail_closed(client, tmp_path, failure):
     configured = published_legal_settings(tmp_path)
     if failure == "placeholder":
-        text = "ENTER Privacy\n[D3: unresolved legal clause]"
-        (tmp_path / "PRIVACY_POLICY_FINAL_REVIEW.txt").write_text(text)
+        text = "ENTER Privacy\n[D3: unresolved legal clause]\n"
+        (tmp_path / "PRIVACY_POLICY_FINAL_REVIEW.txt").write_text(
+            f"PROPOSED PUBLIC COPY\n{text}END OF PROPOSED PUBLIC COPY\n"
+        )
         configured["LEGAL_PRIVACY_SHA256"] = hashlib.sha256(text.encode()).hexdigest()
     else:
         configured["LEGAL_PRIVACY_SHA256"] = "0" * 64
@@ -367,6 +410,27 @@ def test_reminder_boundaries_and_unknown_activity(candidate_account):
     assert CandidateProfile.objects.filter(pk=profile.pk).exists()
 
 
+def test_existing_account_transition_is_explicit_and_not_fabricated(candidate_account):
+    now = timezone.now()
+    profile = CandidateProfile.objects.get()
+    assert legal.start_existing_account_transitions(now) == 1
+    profile.refresh_from_db()
+    assert profile.meaningful_activity_at is None
+    assert profile.retention_transition_started_at == now
+    reminder = InactivityReminder.objects.get()
+    assert reminder.notice_kind == "transition"
+    assert reminder.deadline_at == now + timedelta(days=30)
+    assert legal.start_existing_account_transitions(now) == 0
+
+
+def test_business_deadline_uses_configured_karnataka_holidays():
+    start = datetime(2026, 10, 23, 12, tzinfo=dt_timezone.utc)  # Friday
+    with override_settings(LEGAL_BUSINESS_HOLIDAYS={date(2026, 10, 26)}):
+        assert legal.business_due(start, 2) == datetime(
+            2026, 10, 28, 12, tzinfo=dt_timezone.utc
+        )
+
+
 def test_deletion_evidence_survives_without_false_cleanup_claim(client, candidate_account):
     with override_settings(LEGAL_WORKFLOW_PREVIEW=True):
         assert (
@@ -465,9 +529,17 @@ def test_local_reminder_delivery_stale_suppression_and_failures(candidate_accoun
         monkeypatch.setattr(mail, "send_mail", lambda *a, **k: 0)
         with pytest.raises(RuntimeError):
             legal.deliver_local_reminders(now)
-        assert InactivityReminder.objects.get().sent_at is None
+        reminder = InactivityReminder.objects.get()
+        assert reminder.sent_at is None
+        assert reminder.delivery_attempts == 1
+        assert reminder.last_error_code == "delivery_failed"
+        assert reminder.next_attempt_at == now + timedelta(hours=1)
         monkeypatch.undo()
-        assert legal.deliver_local_reminders(now) == 1
+        assert legal.deliver_local_reminders(now) == 0
+        assert legal.deliver_local_reminders(now + timedelta(hours=1)) == 1
+        reminder.refresh_from_db()
+        assert reminder.delivery_attempts == 2
+        assert reminder.last_error_code == ""
         assert legal.deliver_local_reminders(now) == 0
         assert sum(m.subject.startswith("UNPUBLISHED LOCAL TEST") for m in mail.outbox) == 1
     with override_settings(
@@ -597,3 +669,91 @@ def test_recovery_manifest_validation_and_dry_run(tmp_path):
             stdout=output,
         )
         assert "No changes" in output.getvalue()
+
+
+def test_acceptance_evidence_survives_account_deletion(client, candidate_account):
+    user = User.objects.get(pk=candidate_account["user"]["id"])
+    user_id = user.pk
+    with override_settings(LEGAL_WORKFLOW_PREVIEW=True):
+        client.post("/api/v1/candidate/legal/accept/", acceptance("age", "terms"), format="json")
+    accepted_ids = list(LegalAcceptance.objects.values_list("pk", flat=True))
+    user.delete()
+    evidence = LegalAcceptance.objects.filter(pk__in=accepted_ids)
+    assert evidence.count() == 2
+    assert not evidence.exclude(user=None).exists()
+    assert not evidence.exclude(subject_user_id=user_id).exists()
+    assert not evidence.filter(account_closed_at=None).exists()
+    assert not evidence.filter(earliest_disposition_at=None).exists()
+
+
+def test_legal_release_manifest_uses_exact_public_copy(tmp_path):
+    configured = published_legal_settings(tmp_path)
+    output = StringIO()
+    with override_settings(**configured):
+        call_command("legal_release_manifest", stdout=output)
+    manifest = json.loads(output.getvalue())
+    assert manifest["privacy"]["sha256"] == configured["LEGAL_PRIVACY_SHA256"]
+    assert manifest["submission"]["sha256"] == configured["LEGAL_SUBMISSION_SHA256"]
+
+
+def test_retention_enforcement_is_dry_run_and_fail_closed(candidate_account):
+    from talent.management.commands.enforce_candidate_retention import eligible_profile_ids
+
+    now = timezone.now()
+    profile = CandidateProfile.objects.get()
+    profile.meaningful_activity_at = now.replace(year=now.year - 1) - timedelta(days=1)
+    profile.save()
+    deadline = legal.expiry(profile.meaningful_activity_at)
+    for days in (30, 7):
+        InactivityReminder.objects.create(
+            candidate=profile,
+            activity_at=profile.meaningful_activity_at,
+            days_before=days,
+            deadline_at=deadline,
+            sent_at=now - timedelta(days=days),
+        )
+    assert eligible_profile_ids(now) == [profile.pk]
+    output = StringIO()
+    call_command("enforce_candidate_retention", stdout=output)
+    assert "Dry run only" in output.getvalue()
+    assert CandidateProfile.objects.filter(pk=profile.pk).exists()
+    with pytest.raises(CommandError, match="retention deletion"):
+        call_command(
+            "enforce_candidate_retention",
+            apply=True,
+            confirm="DELETE-EXPIRED-CANDIDATES",
+        )
+
+
+def test_ancillary_retention_classifies_without_changing_data(candidate_account):
+    from talent.management.commands.enforce_ancillary_retention import candidates
+
+    now = timezone.now()
+    user = User.objects.get(pk=candidate_account["user"]["id"])
+    profile = CandidateProfile.objects.get(user=user)
+    profile.email_verified_at = None
+    profile.save(update_fields=["email_verified_at"])
+    User.objects.filter(pk=user.pk).update(date_joined=now - timedelta(days=31))
+    old = Resume.objects.create(
+        candidate=profile,
+        file="quarantine/synthetic-old.pdf",
+        original_name="synthetic-old.pdf",
+        version=1,
+        processing_status=Resume.ProcessingStatus.FAILED,
+        scan_status=Resume.ScanStatus.FAILED,
+    )
+    Resume.objects.filter(pk=old.pk).update(uploaded_at=now - timedelta(days=8))
+    user_ids, resume_ids = candidates(now)
+    assert user.pk in user_ids
+    assert old.pk in resume_ids
+    output = StringIO()
+    call_command("enforce_ancillary_retention", stdout=output)
+    assert "Dry run only" in output.getvalue()
+    assert User.objects.filter(pk=user.pk).exists()
+    assert Resume.objects.filter(pk=old.pk).exists()
+    with pytest.raises(CommandError, match="ancillary retention"):
+        call_command(
+            "enforce_ancillary_retention",
+            apply=True,
+            confirm="APPLY-ANCILLARY-RETENTION",
+        )

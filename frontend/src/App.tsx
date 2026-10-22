@@ -199,6 +199,7 @@ function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
         <p>{mode === 'forgot' ? 'Enter your email. If an account exists, we’ll send a secure reset link.' : role === 'recruiter' ? 'Search real candidate profiles and build a thoughtful shortlist.' : 'Turn your resume into a profile you control.'}</p>
         <div className="auth-fields">
           {mode === 'signup' && <FormField label="Full name" name="full_name" required autoComplete="name" />}
+          {mode === 'signup' && <label className="auth-country-field"><span>Country</span><select name="country_code" defaultValue="IN" required><option value="IN">India</option></select><small>Candidate registration is currently available in India.</small></label>}
           <FormField label="Email" name="email" type="email" required autoComplete="email" />
           {mode !== 'forgot' && <FormField label="Password" name="password" type="password" minLength={8} required autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} hint={mode === 'signup' ? 'Use at least 8 characters.' : undefined} />}
         </div>

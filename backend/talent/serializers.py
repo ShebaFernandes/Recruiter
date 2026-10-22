@@ -29,6 +29,7 @@ class SignupSerializer(serializers.Serializer):
     full_name = serializers.CharField(max_length=180)
     role = serializers.ChoiceField(choices=["candidate"])
     company = serializers.CharField(max_length=180, required=False, allow_blank=True)
+    country_code = serializers.CharField(max_length=2, required=False, allow_blank=True)
 
     def validate_email(self, value):
         if User.objects.filter(username__iexact=value).exists():
@@ -36,6 +37,17 @@ class SignupSerializer(serializers.Serializer):
         return value.lower()
 
     def validate(self, attrs):
+        country_code = attrs.get("country_code", "").strip().upper()
+        if settings.CANDIDATE_REGISTRATION_COUNTRIES:
+            if country_code not in settings.CANDIDATE_REGISTRATION_COUNTRIES:
+                raise serializers.ValidationError(
+                    {
+                        "country_code": (
+                            "Candidate registration is currently available only in India."
+                        )
+                    }
+                )
+        attrs["country_code"] = country_code
         user = User(username=attrs["email"], email=attrs["email"])
         try:
             validate_password(attrs["password"], user)

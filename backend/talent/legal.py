@@ -7,6 +7,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -22,7 +23,15 @@ def published():
 
 
 def _published_text(path):
-    text = path.read_text()
+    source = path.read_text()
+    start_marker = "PROPOSED PUBLIC COPY"
+    end_marker = "END OF PROPOSED PUBLIC COPY"
+    lines = source.splitlines(keepends=True)
+    start_indexes = [index for index, line in enumerate(lines) if line.strip() == start_marker]
+    end_indexes = [index for index, line in enumerate(lines) if line.strip() == end_marker]
+    if len(start_indexes) != 1 or len(end_indexes) != 1 or end_indexes[0] <= start_indexes[0]:
+        raise ValidationError("Approved legal document has no unique public-text boundary.")
+    text = "".join(lines[start_indexes[0] + 1 : end_indexes[0]]).strip() + "\n"
     blocking_markers = (
         "UNAPPROVED AND UNPUBLISHED",
         "[D3",
@@ -39,8 +48,11 @@ def _published_text(path):
         "[D15",
         "[D16",
         "REVIEW SIGN-OFF — NOT FOR THE PUBLIC PAGE",
+        "proposed ",
+        "must be confirmed before publication",
+        "must be loaded into the operating configuration before",
     )
-    if any(marker in text for marker in blocking_markers):
+    if any(marker.lower() in text.lower() for marker in blocking_markers):
         raise ValidationError(
             "Approved legal document still contains internal review or unresolved clauses."
         )
@@ -56,7 +68,8 @@ def documents():
         "age": "I confirm that I am at least 18 years old.",
         "submission": (
             "I confirm that I have reviewed my profile and ask ENTER to save it as submitted. "
-            "Recruiter access is disabled. This does not authorize future recruiter sharing."
+            "Recruiter access is currently disabled. ENTER will ask for my separate, explicit "
+            "permission before sharing my profile or resume with approved recruiters."
         ),
     }
     versions = {
@@ -108,6 +121,8 @@ def validate_acceptance(data, purpose, doc=None):
 def record(user, purpose, doc):
     return LegalAcceptance.objects.create(
         user=user,
+        subject_user_id=user.pk,
+        subject_joined_at=user.date_joined,
         purpose=purpose,
         version=doc["version"],
         document_text=doc["text"],
@@ -149,11 +164,12 @@ def expiry(activity_at):
 
 
 def prepare_reminders(now=None):
-    """Local outbox only. Unknown activity remains unknown; expired users are not deleted."""
+    """Create a durable outbox without sending mail or deleting candidates."""
     now = now or timezone.now()
     created = 0
-    for profile in CandidateProfile.objects.exclude(meaningful_activity_at=None):
-        remaining = expiry(profile.meaningful_activity_at) - now
+    for profile in CandidateProfile.objects.exclude(meaningful_activity_at=None).iterator():
+        deadline = expiry(profile.meaningful_activity_at)
+        remaining = deadline - now
         # Never queue stale 30-day notices at the seven-day boundary or after expiry.
         days = 7 if timedelta(0) < remaining <= timedelta(days=7) else 30
         if not timedelta(0) < remaining <= timedelta(days=30):
@@ -162,43 +178,137 @@ def prepare_reminders(now=None):
             candidate=profile,
             activity_at=profile.meaningful_activity_at,
             days_before=days,
+            defaults={"deadline_at": deadline, "next_attempt_at": now},
         )
         created += new
     return created
 
 
-def deliver_local_reminders(now=None):
-    """Exercise delivery only against Django's in-memory backend, never SMTP."""
+def start_existing_account_transitions(now=None):
+    """Start the approved one-time window without fabricating meaningful activity."""
+    now = now or timezone.now()
+    created = 0
+    with transaction.atomic():
+        profiles = list(
+            CandidateProfile.objects.select_for_update().filter(
+                meaningful_activity_at=None,
+                retention_transition_started_at=None,
+            )
+        )
+        for profile in profiles:
+            profile.retention_transition_started_at = now
+            profile.save(update_fields=["retention_transition_started_at"])
+            _, new = InactivityReminder.objects.get_or_create(
+                candidate=profile,
+                activity_at=now,
+                days_before=30,
+                defaults={
+                    "notice_kind": InactivityReminder.NoticeKind.TRANSITION,
+                    "deadline_at": now + timedelta(days=30),
+                    "next_attempt_at": now,
+                },
+            )
+            created += new
+    return created
+
+
+def _reminder_is_current(reminder, candidate, now):
+    deadline = reminder.deadline_at or expiry(reminder.activity_at)
+    remaining = deadline - now
+    if reminder.notice_kind == InactivityReminder.NoticeKind.TRANSITION:
+        return (
+            candidate.meaningful_activity_at is None
+            and candidate.retention_transition_started_at == reminder.activity_at
+            and timedelta(0) < remaining <= timedelta(days=30)
+        )
+    lower = timedelta(days=7) if reminder.days_before == 30 else timedelta(0)
+    return (
+        candidate.meaningful_activity_at == reminder.activity_at
+        and lower < remaining <= timedelta(days=reminder.days_before)
+    )
+
+
+def deliver_reminders(now=None, *, require_enabled=True):
+    """Deliver the durable outbox with bounded, non-PII failure evidence."""
     from django.core.mail import send_mail
 
-    if not enabled() or settings.EMAIL_BACKEND != "django.core.mail.backends.locmem.EmailBackend":
-        raise PermissionDenied("Reminder delivery is limited to unpublished in-memory tests.")
+    if require_enabled and not settings.RETENTION_REMINDER_DELIVERY_ENABLED:
+        raise PermissionDenied("Retention reminder delivery is not enabled.")
     now = now or timezone.now()
-    sent = 0
-    for reminder in InactivityReminder.objects.filter(sent_at=None).select_related("candidate"):
+    sent = failed = 0
+    pending_ids = InactivityReminder.objects.filter(sent_at=None).filter(
+        Q(next_attempt_at=None) | Q(next_attempt_at__lte=now)
+    ).values_list("pk", flat=True)
+    for reminder_id in pending_ids.iterator():
         with transaction.atomic():
-            current = InactivityReminder.objects.select_for_update().get(pk=reminder.pk)
-            candidate = CandidateProfile.objects.select_for_update().get(pk=current.candidate_id)
-            if current.sent_at or candidate.meaningful_activity_at != current.activity_at:
+            reminder = InactivityReminder.objects.select_for_update().get(pk=reminder_id)
+            candidate = CandidateProfile.objects.select_for_update().get(
+                pk=reminder.candidate_id
+            )
+            if reminder.sent_at or not _reminder_is_current(reminder, candidate, now):
                 continue
-            remaining = expiry(current.activity_at) - now
-            lower = timedelta(days=7) if current.days_before == 30 else timedelta(0)
-            if not lower < remaining <= timedelta(days=current.days_before):
+            if reminder.delivery_attempts >= settings.RETENTION_REMINDER_MAX_ATTEMPTS:
                 continue
+            reminder.delivery_attempts += 1
+            reminder.last_attempt_at = now
+            reminder.last_error_code = ""
+            reminder.save(
+                update_fields=["delivery_attempts", "last_attempt_at", "last_error_code"]
+            )
+        deadline = reminder.deadline_at or expiry(reminder.activity_at)
+        try:
+            subject_prefix = "" if published() else "UNPUBLISHED LOCAL TEST — "
             accepted = send_mail(
-                "UNPUBLISHED LOCAL TEST: profile inactivity reminder",
-                f"Local test only. Profile expiry: {expiry(current.activity_at).isoformat()}. "
-                "No automatic deletion is enabled.",
+                f"{subject_prefix}Action needed: keep your ENTER candidate profile",
+                (
+                    f"Your ENTER candidate profile is scheduled to expire on "
+                    f"{deadline.date().isoformat()}. Sign in and explicitly renew or update "
+                    "your profile if you want to keep it. This message does not enable "
+                    "recruiter sharing."
+                ),
                 settings.DEFAULT_FROM_EMAIL,
                 [candidate.email],
                 fail_silently=False,
             )
             if accepted != 1:
-                raise RuntimeError("Reminder was not accepted; outbox remains pending.")
-            current.sent_at = now
-            current.save(update_fields=["sent_at"])
-            sent += 1
+                raise RuntimeError("email_not_accepted")
+        except Exception:
+            retry_hours = (1, 24, 72, 168)
+            next_attempt = (
+                now + timedelta(hours=retry_hours[reminder.delivery_attempts - 1])
+                if reminder.delivery_attempts <= len(retry_hours)
+                else None
+            )
+            InactivityReminder.objects.filter(pk=reminder_id, sent_at=None).update(
+                last_error_code="delivery_failed", next_attempt_at=next_attempt
+            )
+            failed += 1
+            continue
+        InactivityReminder.objects.filter(pk=reminder_id, sent_at=None).update(
+            sent_at=now, last_error_code="", next_attempt_at=None
+        )
+        sent += 1
+    return sent, failed
+
+
+def deliver_local_reminders(now=None):
+    """Exercise delivery only against Django's in-memory backend, never SMTP."""
+    if not enabled() or settings.EMAIL_BACKEND != "django.core.mail.backends.locmem.EmailBackend":
+        raise PermissionDenied("Reminder delivery is limited to unpublished in-memory tests.")
+    sent, failed = deliver_reminders(now, require_enabled=False)
+    if failed:
+        raise RuntimeError("Reminder delivery failed; outbox remains pending.")
     return sent
+
+
+def business_due(start, business_days):
+    due = start
+    counted = 0
+    while counted < business_days:
+        due += timedelta(days=1)
+        if due.weekday() < 5 and due.date() not in settings.LEGAL_BUSINESS_HOLIDAYS:
+            counted += 1
+    return due
 
 
 def verify_active_file_cleanup(deletion):
@@ -224,12 +334,7 @@ def verify_active_file_cleanup(deletion):
 
 def request_deletion(user):
     now = timezone.now()
-    due = now
-    count = 0
-    # Provisional weekday calculation, explicitly not a jurisdictional holiday calendar.
-    while count < 2:
-        due += timedelta(days=1)
-        count += due.weekday() < 5
+    due = business_due(now, 2)
     profile = user.candidate_profile
     keys = list(profile.resumes.values_list("file", flat=True))
     if hasattr(profile, "photo"):
@@ -241,6 +346,7 @@ def request_deletion(user):
         acknowledged_at=now,
         acknowledgement_due_at=due,
         active_deletion_target_at=now + timedelta(days=7),
+        earliest_disposition_at=expiry(now),
         storage_keys=keys,
     )
 
