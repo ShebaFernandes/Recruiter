@@ -1,0 +1,198 @@
+ENTER off-host HTTPS monitoring — LOCAL PREPARATION ONLY
+======================================================
+
+Scope and approval boundary
+---------------------------
+Target account 431988153216; region ap-southeast-2. No EC2, application,
+on-server monitor, data, DNS, ingress, existing IAM role or timer changes.
+No AWS command below has been executed as part of local preparation.
+The user's receipt of the operations email is recorded; no subscription or
+recipient change is proposed. CloudWatch alarm delivery is a separate path
+and must be tested after approval, not inferred from EC2 SNS delivery.
+
+Design
+------
+Lambda enter-public-https-monitor outside VPC, Python 3.12, 128 MiB, 30s timeout.
+EventBridge Scheduler enter-public-https-monitor in a dedicated same-named
+schedule group, every five minutes. No flexible window or Scheduler retries.
+CloudWatch namespace ENTER/PublicAvailability; metric Healthy (Count, no
+dimensions); alarm enter-public-https-unavailable. Minimum <1, two of two
+five-minute periods, missing data breaching. ALARM and OK actions use:
+arn:aws:sns:ap-southeast-2:431988153216:enter-production-alerts
+Notifications are state transitions, not an email on every failed probe.
+Both schedule and alarm actions are DISABLED at installation.
+No endpoint can be selected by invocation input. Current reviewed host is
+staging.enter.careers. A production hostname requires a reviewed code change.
+
+GET / must return 200, HTML and the existing React root marker. GET
+/api/v1/health/ready/ must return 200 JSON status=ready and database=ok.
+These are availability checks, not browser rendering or complete worker checks;
+the existing on-server monitor continues checking queues/scanner/worker/backups.
+Both requests use public IPv4 DNS, connect to a validated public IP, preserve
+Host/SNI, and verify TLS using the system CA store. No proxy, redirects,
+credentials, cookies, private DNS addresses, local overrides or auth requests.
+Only bounded bodies are examined in memory; none are logged or persisted.
+Logs/return values contain fixed fields and booleans. Raw exception text and
+invocation events are never logged. A stalled invocation times out; absent
+metrics are alarm failures. IPv6-only hosting is not supported by this version.
+This survives EC2 loss but is not independent of Sydney/AWS/account failure.
+
+NETWORK BLOCKER: current staging ingress is restricted to authorized IPs.
+Non-VPC Lambda does not have a fixed egress address suitable for that allowlist.
+Do not change ingress, create NAT/EIP, or use loopback to manufacture success.
+Keep scheduling disabled until a separately approved public-access/cutover
+plan makes the reviewed endpoint genuinely reachable from the probe.
+
+Local release artifacts (no AWS access)
+--------------------------------------
+From repository root, select a NEW output directory; existing directories are
+rejected rather than overwritten:
+  .venv/bin/python deploy/prepare_public_monitor.py --output /private/tmp/enter-public-monitor-review
+  cd /private/tmp/enter-public-monitor-review
+  shasum -a 256 -c SHA256SUMS
+Record template.json SHA-256 independently in the approval record.
+The template embeds the exact reviewed probe source (index.handler), so no
+S3 code bucket, source upload service or separately drifting ZIP is needed.
+Review all six JSON documents and the checksum manifest before approval.
+Do not commit generated temporary artifacts or secrets. No new Git commit
+is made without approval; the preparation is a working-tree change set.
+
+Runtime IAM (documents emitted by the renderer)
+-----------------------------------------------
+ENTER-PublicHttpsMonitor-Role trusts lambda.amazonaws.com:
+  cloudwatch:PutMetricData Resource * with StringEquals:
+    cloudwatch:namespace = ENTER/PublicAvailability
+    aws:RequestedRegion = ap-southeast-2
+  logs:CreateLogStream, logs:PutLogEvents on:
+    arn:aws:logs:ap-southeast-2:431988153216:log-group:/aws/lambda/enter-public-https-monitor:log-stream:*
+Log group is created by installation, retained on stack deletion, with 7-day
+log expiry. No logs:CreateLogGroup runtime permission is necessary.
+
+ENTER-PublicHttpsScheduler-Role trusts scheduler.amazonaws.com, conditioned on
+aws:SourceAccount=431988153216 and aws:SourceArn equal to the dedicated
+arn:aws:scheduler:ap-southeast-2:431988153216:schedule-group/enter-public-https-monitor
+(Scheduler trust is scoped to the GROUP, not individual schedule.)
+Its only action is lambda:InvokeFunction on:
+arn:aws:lambda:ap-southeast-2:431988153216:function:enter-public-https-monitor
+
+SNS policy addition: CloudWatch service principal, sns:Publish only on the
+existing topic, SourceAccount=431988153216, SourceArn exact alarm ARN.
+sns-policy-addition.json is ONE STATEMENT, NOT a replacement topic policy.
+There is deliberately no AWS::SNS::TopicPolicy resource: that could overwrite
+the existing topic policy. No SNS permission is added to either runtime role.
+
+Installer permissions (not granted to either runtime role)
+--------------------------------------------------------
+Use an authorized operator; do not attach an administrator managed policy.
+CloudFormation CreateChangeSet/DescribeChangeSet/ExecuteChangeSet,
+DescribeStacks/DescribeStackEvents/GetTemplate on the named monitor stack and
+change sets; ValidateTemplate/ListStacks/DescribeStackResources as required
+for review. Some discovery/validation actions require Resource *.
+Provisioning actions, limited to the named resources where IAM supports it:
+  iam:CreateRole/GetRole/PutRolePolicy/GetRolePolicy/DeleteRolePolicy/DeleteRole
+    on the TWO new role ARNs only.
+  iam:PassRole on runtime role only to lambda.amazonaws.com and scheduler role
+    only to scheduler.amazonaws.com (iam:PassedToService condition).
+  lambda:CreateFunction/GetFunction/GetFunctionConfiguration/UpdateFunctionCode/
+    UpdateFunctionConfiguration/DeleteFunction on the exact new function ARN.
+  scheduler:CreateScheduleGroup/GetScheduleGroup/DeleteScheduleGroup on the
+    exact dedicated group; CreateSchedule/GetSchedule/UpdateSchedule/
+    DeleteSchedule on the exact named schedule in that group.
+  logs:CreateLogGroup/DescribeLogGroups/PutRetentionPolicy/DeleteLogGroup on
+    the named log group where supported; DescribeLogGroups requires Resource *.
+  cloudwatch:PutMetricAlarm/DescribeAlarms/DeleteAlarms/EnableAlarmActions/
+    DisableAlarmActions on the named alarm where supported.
+  sns:GetTopicAttributes/SetTopicAttributes on the existing exact topic only,
+    only for the separately approved additive policy merge.
+Read-only sts:GetCallerIdentity verifies account. CloudFormation rollback may
+delete ONLY newly created monitor resources; retained logs remain. Any extra
+permission requested by AWS is a STOP, not authorization to broaden permissions.
+For supervised tests only: lambda:InvokeFunction on this function and
+cloudwatch:SetAlarmState on this alarm (synthetic notification test).
+No grants to S3, application queues, database, secrets or EC2.
+
+Supervised installation AFTER separate approval
+-----------------------------------------------
+1. Verify account/region, artifact checksums, no conflicting same-named
+   resources, public reachability plan, and installed-role policy documents.
+2. Prepare an unexecuted change set using the reviewed template hash:
+   ENTER_APPROVE_MONITOR_CHANGE_SET=431988153216/ap-southeast-2 \
+     bash deploy/public_monitor_change_set.sh /private/tmp/enter-public-monitor-review APPROVED_TEMPLATE_SHA256
+   This creates a CloudFormation change set only. It is NOT a local dry run.
+3. Inspect all additions and permission changes:
+   aws cloudformation describe-change-set --region ap-southeast-2 \
+     --stack-name enter-public-https-monitor --change-set-name REVIEWED_CHANGE_SET_NAME
+   Require only the seven declared monitor resources. No existing resource
+   replacement and no EC2/SNS topic/S3/network changes.
+4. With explicit execution approval:
+   aws cloudformation execute-change-set --region ap-southeast-2 \
+     --stack-name enter-public-https-monitor --change-set-name REVIEWED_CHANGE_SET_NAME
+   aws cloudformation wait stack-create-complete --region ap-southeast-2 \
+     --stack-name enter-public-https-monitor
+5. Verify Scheduler DISABLED, alarm ActionsEnabled=false, log retention,
+   exact roles, function source and absence of VPC configuration.
+6. Inspect SNS topic attributes. Back up the current policy. Merge the exact
+   reviewed statement, preserving every existing statement; compare the latest
+   policy again immediately before writing. Stop on concurrent differences.
+   The setter is intentionally not automated. Verify the resulting policy.
+7. When public reachability has separately been approved, invoke once:
+   aws lambda invoke --region ap-southeast-2 --function-name enter-public-https-monitor \
+     --payload '{}' --cli-binary-format raw-in-base64-out /private/tmp/enter-public-monitor-result.json
+   Require metric_published=true, frontend=true, readiness=true and Healthy=1.
+   Do not treat successful Lambda invocation alone as successful HTTPS checks.
+8. Separately approve activation. Update the stack with Schedule State=ENABLED
+   and alarm ActionsEnabled=true through a reviewed UPDATE change set, changing
+   only those two properties. Retain the disabled template as rollback.
+   Confirm two successive samples, and test notification ALARM -> OK using
+   SetAlarmState with a synthetic reason on this alarm only. Request inbox
+   confirmation of both messages. Do not stop EC2 or break application services.
+   A supervised disabled-schedule drill (about 10-15 minutes) must verify missing
+   data detection and subsequent recovery; promptly restore its approved state.
+   State-forcing alone does NOT prove missing-data evaluation works.
+9. Record actual artifact hash, stack/resource ARNs, delivery receipts, timing,
+   public DNS/TLS results and any failed checks. Not tested until performed.
+
+Rollback/emergency
+------------------
+Use a reviewed UPDATE change set reverting Schedule State=DISABLED and alarm
+ActionsEnabled=false. Preserve EC2 monitoring, data, application and SNS topic.
+Do not delete the shared SNS topic or replace its whole policy. If removing
+the installation later, remove only this exact policy statement after review.
+Do not use stack deletion as the default incident response.
+
+Cost estimate — incremental, USD, before credits/taxes
+----------------------------------------------------
+8,640 invocations per 30 days. 128MiB at the 30s timeout ceiling is 32,400 GB-s;
+at the published illustrative x86 duration rate (~$0.0000166667/GB-s), about
+$0.54 compute worst-case; healthy quick responses cost substantially less.
+Requests ~ $0.002; one standard custom metric ~$0.30; one standard alarm ~$0.10;
+metric API requests, Scheduler, minimal logs and rare SNS email add small usage.
+Propose a $1-2/month planning allowance, not a guaranteed Sydney quote or cap.
+Recheck regional calculator and account service eligibility before creation.
+Free allowances may reduce cost; do not rely on them or assume credits extend
+the Free plan. No second EC2, NAT, EIP, S3 artifact bucket or paid AI needed.
+Official references:
+https://aws.amazon.com/lambda/pricing/
+https://aws.amazon.com/cloudwatch/pricing/
+https://aws.amazon.com/eventbridge/pricing/
+https://aws.amazon.com/sns/pricing/
+https://docs.aws.amazon.com/scheduler/latest/UserGuide/cross-service-confused-deputy-prevention.html
+
+Historical recovery — unchanged hard not-before boundary
+--------------------------------------------------------
+NOT BEFORE 2026-10-23 05:33:23 UTC (11:03:23 IST).
+No restore or recurring timer is scheduled/activated by this release.
+Bucket enter-staging-backups-2021
+Key postgres/daily/2026/10/22/053322-0a36d033f2db45ac997470eca9f6c7f1.dump
+Independently recorded SHA256:
+999e83447c7fd29307f441cc83856a94a8bd329ac43282ac7535a2739337b889
+After that time, supervised operator verifies UTC, exact target and capacity,
+configures the existing root-only recovery.env with the approved key/checksum,
+then starts enter-recovery.service. Require encrypted object validation,
+SHA256 readback, isolated restore/readability checks, measured duration, safe
+scratch cleanup and unchanged live container IDs/start times. No live mounts,
+network, ports, candidate output or modified capacity thresholds.
+Only after PASS and separate approval may hourly/daily/monitoring timers be
+enabled sequentially. Monthly rehearsal requires a maintained reviewed backup
+selection/checksum process, not a permanently fixed October object.
+Retention deletion, resume versioning and public launch remain unapproved.
