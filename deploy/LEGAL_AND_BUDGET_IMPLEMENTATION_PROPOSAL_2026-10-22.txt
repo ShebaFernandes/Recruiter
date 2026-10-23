@@ -1,0 +1,131 @@
+ENTER — LOCAL IMPLEMENTATION AND HOSTING DECISION PROPOSAL
+22 October 2026. No implementation, migration, deletion, deployment, timer,
+AWS change, billing upgrade or publication authorized by this document.
+Management budget: USD30 target / USD40 maximum per month. Confirm whether this
+includes taxes, FX, domain renewal and email. Credit coverage is not a cost saving.
+
+1. TERMS/CONSENT EVIDENCE — PROPOSED NARROW CHANGE
+Add immutable published-document versions (type, version, effective date, text
+hash and archived content). Append acceptance events with candidate/account
+reference, document versions, timestamp and action. Avoid raw IP/device collection
+unless a reviewed need exists. Protect access and define evidence retention and
+deletion/minimization after account erasure; “immutable” must not mean forever.
+Bind signup acceptance to server-recognized current Terms; reject absent, false
+or stale versions via direct API as well as UI. Record privacy acknowledgement
+separately from optional processing/sharing consent. Reject arbitrary versions.
+Give existing users a genuine acceptance flow; never fabricate/backfill acceptance.
+Publish without enabling intake, then test refusal/acceptance/version changes using
+approved disposable data. Keep recovery/deletion/support access available.
+Create separate future recruiter-sharing consent, default false, with revocation
+and versioned scope. All recruiter search/profile/download authorization must
+require that new consent, not legacy submission_consent_version. Existing sessions,
+direct URLs and cached results must not bypass withdrawal. No recruiter launch now.
+This likely needs additive DB migrations: review separately; do not claim zero
+migrations for this proposed work. Older binaries may ignore new gates, so rollback
+must remain fail-closed with intake/recruiter access blocked.
+
+2. RETENTION AND DELETION — DESIGN BEFORE ACTIVATION
+Add explicit last_meaningful_activity_at only after management defines qualifying
+events. Current profile_updated_at is auto_now and is not a reliable inactivity
+clock; background jobs can save profiles. Do not use fabricated legacy timestamps.
+Use UTC and an approved calendar-month calculation. Decide notices, grace period,
+draft/paused handling and whether account credentials are also deleted. Twelve
+months of inactivity is a maximum proposal, not a minimum blocking user deletion.
+Start with a read-only dry-run inventory and aggregate counts. Default enforcement
+off. Add bounded batches, locking/recheck against concurrent activity, idempotency,
+explicit legal holds and approved audit records. Do not run global S3 age deletion
+against active resumes: object age is not last meaningful candidate activity.
+Reuse the existing transactional file-cleanup outbox and immediate access revocation.
+Track request receipt, identity verification, applicable jurisdiction deadline,
+acknowledgement, active deletion and storage verification separately. Verify all
+associated original/derived/photo objects; retry storage failures with alerts.
+Do not mark completion on a queued request alone. Build jurisdiction-aware deadlines
+rather than timedelta(days=30) for every UK request. Review local business holidays.
+Maintain a minimal protected erasure ledger independent of restored backups; replay
+before reopening restored services. Define backup/legacy-copy expiry and any
+future S3 noncurrent-version/delete-marker erasure. Never delete real data in tests.
+Tests: version refusal, future consent, withdrawal, direct API, month boundaries,
+leap years, concurrent edits, retries, legal holds, old-backup restore replay and
+no raw CV/contact data in logs. Synthetic data only.
+
+3. COST COMPARISON — USD, NO TAX, LOW-TRAFFIC PLANNING, NOT A QUOTE
+Current measured-reference spending: about USD3.09/day, approximately USD93/month.
+Use USD90–105/month planning range for the existing stack, not a fresh billing
+measurement. The USD99.80 credit reference was dated22Oct; do not treat as current.
+
+Option                         Base / planning total       Decision
+Existing Sydney 8GiB stack      ~93 / ~90–105 per month     Safest unchanged; over40.
+Smaller EC2 4GiB x86            Quote required; likely     Do not resize yet; little
+                               above40 fully loaded       cost/memory margin.
+Lightsail Linux4GB publicIPv4   24 / ~28–38 per month       Budget candidate ONLY,
+                                                          not validated or approved.
+Lightsail Linux8GB publicIPv4   44 / ~48–58 per month       More headroom; over40.
+ARM/commitment/Spot alternatives Exact Sydney quote needed Not a ready replacement.
+
+Lightsail published bundle includes disk/publicIPv4/transfer allowance:4GB=80GB
+SSD,8GB=160GB; do not add another EC2 IPv4 charge to that bundle. Planning extras
+USD4–14 cover low-volume S3/backups/requests, email, SQS, small monitoring/logs and
+limited snapshot allowance. This allowance is NOT a cap; taxes/FX, domain renewal,
+growth, snapshots and excess egress may exceed it. Confirm each line in a Sydney
+calculator and Free-plan eligibility before choosing; no new host is authorized.
+For EC2, price all730h compute + EBS + publicIPv4 + S3/backups + SQS/email + monitoring
++ transfer + possible surplus CPU credits. Published US-East prices are not Sydney
+quotes. IPv4 alone is USD3.65/730h, before credits. Do not claim savings from coupons
+or a purchase commitment without amortizing upfront cost and contractual risk.
+
+4. WHY USD40 IS NOT YET A SAFE GUARANTEE
+Existing8GiB host snapshot: ~5.49GiB available, ~9.72MiB DB, ~15.56GiB disk free.
+This is idle/headroom evidence, not a peak-load benchmark. Container limits include
+ClamAV3GiB, DB1GiB, backend1GiB, worker1GiB, plus edge/frontend and OS. Limits are
+ceilings, not reserved usage, but concurrent peaks can exceed a4GiB machine.
+The approved backup guard requires MORE THAN3GiB available RAM, >5GiB free disk
+and DB<50MiB. An active4GiB host is unlikely to pass unchanged. Restore uses768MiB
+memory limit and384MiB tmpfs. Do NOT lower these safety guards to fit a price.
+ClamAV signature updates, malicious/large documents, parser subprocesses and
+backup restores must coexist without OOM-killing PostgreSQL or dropping jobs.
+Lightsail is a migration, not an EC2 resize; existing EC2 instance-role credentials,
+pinned instance/account guards and installation paths cannot be assumed portable.
+Require a supported temporary-credential design for S3/SQS/SNS; do not replace the
+role with embedded long-lived access keys. Migration effort/temporary overlap extra.
+ARM needs new arm64 images/scans/tests; current approved images are amd64. Spot is
+not recommended for the sole stateful database/application host. Stopping nightly
+would break24/7 availability, queues and scheduled protection. Disabling ClamAV,
+backups, TLS or private storage is not an acceptable budget measure.
+
+5. CAPACITY AND LOWEST-RISK PATH
+Clarify volume and burst requirements first.1000CVs/month averages33/day, but
+1000 simultaneous submissions is a different requirement. At2MB/file,1000 originals
+are ~2GB before replacements/recovery copies; no inference about DB/CPU capacity.
+Measure synthetic peak RSS, scanner-update overlap, processing time p95, queue age,
+CPU credit depletion, DB growth per profile, restore peaks and disk growth.
+With a measured worker throughput r resumes/hour, a burst of1000 needs roughly
+1000/r hours excluding retries; choose admission limits/queue targets explicitly.
+DB operating review threshold40MiB, hard backup guard50MiB: with baseline9.72MiB,
+1000 profiles would need average incremental DB growth below roughly31KiB/profile
+to stay under40MiB. This is a calculation, not verified parser/index growth.
+Propose a separately approved isolated4GiB benchmark using synthetic data, one
+worker and realistic scanner/backup overlap. Keep security protections intact.
+Only after evidence review propose any backup architecture or concurrency changes.
+If it passes plus credential/recovery design and full cost estimate, a4GiB bundle
+may meet30–40; otherwise increase budget or defer launch. No production downsizing
+is recommended now. Reusing the exact current server and staying below40 cannot
+both be promised on the existing evidence.
+Meanwhile audit unused paid resources, log retention and egress read-only; savings
+must be measured and deletion separately approved. No cheap-server shortcut.
+
+6. CONTINUITY / APPROVALS
+Free-plan credit exhaustion can interrupt hosting before the calendar expiry.
+Paid-plan conversion, budget alerts and thresholds require separate approval;
+budgets are alerts, not a hard ceiling. Approve an owner and action at forecast40.
+At a strict40 ceiling do not launch a known~93/month stack based on temporary credits.
+Approve legal decisions, separate implementation/migrations, capacity evaluation,
+costed architecture, recovery/retention and eventual production changes in stages.
+Historical recovery remains time-gated at2026-10-23 05:33:23UTC; no run here.
+
+PRICE/TECHNICAL SOURCES CHECKED22OCT2026
+https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-bundles.html
+https://aws.amazon.com/lightsail/pricing/
+https://aws.amazon.com/vpc/pricing/
+https://aws.amazon.com/ec2/instance-types/t3/ (shown prices US-East; not used as Sydney quote)
+https://docs.aws.amazon.com/lightsail/latest/userguide/security_iam.html
+https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/free-tier-plans.html

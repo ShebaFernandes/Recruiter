@@ -1,0 +1,78 @@
+ENTER CANDIDATE TERMS — UNPUBLISHED MANAGEMENT/LEGAL DRAFT
+Proposed version: terms-candidate-v1. Effective date: NOT SET.
+Not approved; bracketed decisions are publication blockers.
+
+1. Parties and scope
+These Terms are between you and ENTER Recruitment Private Limited, operator of
+ENTER Candidate at enter.careers. Support/privacy: sheba@enterrecruitment.com.
+[INSERT approved registered address, incorporation details and legal notices.]
+The pilot serves candidates aged at least 18 in India, the US and UK.
+[LEGAL REVIEW eligibility, residency scope and how age eligibility is confirmed.]
+
+2. Accounts
+Provide accurate registration details, verify your email and protect your password.
+Notify support if you suspect unauthorized access. Do not impersonate another
+person or access another candidate's account. [APPROVE process for underage
+accounts, security incidents and disputed account ownership.]
+
+3. Candidate service
+You may upload supported resumes, review rule-based extraction, edit career/profile
+information and save or submit a profile. Extraction may be wrong or incomplete;
+review your details. ENTER does not guarantee job offers, interviews, placement,
+uninterrupted availability or error-free extraction. External resume AI is disabled.
+Recruiter access is unavailable during the candidate-only pilot. Submission does
+not authorize future sharing; a separate explicit opt-in is required before
+recruiter access launches. [CONFIRM whether pilot use is free; no fees are invented.]
+
+4. Your content and permitted use
+You retain your rights in your resume and profile. Upload only information you
+are entitled to provide. Grant ENTER the limited permission necessary to store,
+scan, extract, display to you and securely back up your information to provide
+the service under the Privacy Notice. This is not a general license for advertising,
+AI training, public publication or future recruiter sharing.
+Do not upload malware, misuse other people's information, evade security controls,
+scrape private records or disrupt the service. [LEGAL REVIEW license wording,
+third-party content and lawful handling of sensitive information.]
+
+5. Privacy, retention and requests
+The separately versioned Privacy Notice explains data handling. The proposed
+12-month inactivity retention and deletion response targets remain subject to
+management/legal approval and technical implementation. Do not publish this
+sentence as a substitute for an approved, operational retention schedule.
+Candidates can request assistance or use authenticated deletion. Storage cleanup
+and restricted backup expiry are distinct; do not promise immediate backup erasure.
+
+6. Suspension and termination
+[APPROVE proportionate grounds, notice, urgent security suspension, appeal route,
+access to data after suspension and account-closure effects.]
+Do not use a blanket right to retain personal data indefinitely after termination.
+Any future fees or material changes need an approved notice/acceptance process.
+
+7. Responsibility, disputes and complaints
+Contact sheba@enterrecruitment.com for complaints.
+[COUNSEL MUST SUPPLY: appropriate warranties, liability limits/exclusions,
+mandatory consumer-rights protections, governing law, courts/dispute process,
+local-country qualifications and complaint escalation. No blanket waiver,
+mandatory arbitration or liability cap has been invented.]
+
+8. Versions and acceptance
+Display the exact Terms and Privacy versions before acceptance. Archive published
+text and record acceptance as described in the accompanying implementation plan.
+Do not backdate or convert prior profile-sharing consent into Terms acceptance.
+Material changes must follow the legally approved notification/reacceptance process.
+
+PROPOSED UI TEXT FOR APPROVAL — NOT IMPLEMENTED
+Eligibility: “I confirm that I am at least 18 years old.”
+Terms checkbox, unchecked: “I agree to ENTER Candidate Terms [version].”
+Notice link/acknowledgement: “Read how we use your information in our Privacy
+Notice [version].” A notice acknowledgement is not blanket processing consent.
+Submission: “I confirm that I have reviewed my profile and ask ENTER to save it
+as submitted. Recruiter access is currently disabled. ENTER will ask for my
+separate permission before sharing my profile with approved recruiters.”
+No recruiter-sharing checkbox should be preselected or treated as accepted now.
+Future sharing consent must define recipients, scope, withdrawal and download risks.
+
+CURRENT IMPLEMENTATION GAP
+The current submission checkbox refers to authorized recruiters and records only
+the profile's submission consent timestamp/version. It must not be repurposed as
+evidence of acceptance of these new Terms or of future recruiter opt-in.

@@ -59,11 +59,11 @@ describe('Enter Talent landing', () => {
     expect(screen.queryByText('CANDIDATE PLATFORM')).not.toBeInTheDocument()
   })
 
-  it('marks legal routes as launch-blocking placeholders', () => {
+  it('fails closed when approved legal publication is unavailable', () => {
     window.history.replaceState({}, '', '/privacy')
     render(<App />)
-    expect(screen.getByRole('heading', { name: 'Privacy Policy placeholder' })).toBeVisible()
-    expect(screen.getByText(/not a legal policy/i)).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Privacy Policy unavailable' })).toBeVisible()
+    expect(screen.getByText(/Registration remains disabled/i)).toBeVisible()
   })
 
   it('uses the existing transparent headline mark and direct candidate entry', async () => {

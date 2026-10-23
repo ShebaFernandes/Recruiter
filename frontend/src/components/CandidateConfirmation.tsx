@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { ArrowRight, CircleCheck, MessageCircle, Search } from 'lucide-react'
 import { AnimatedTicket } from './ui/ticket-confirmation-card'
 import './candidate-confirmation.css'
-import { legalWorkflow } from '../legalReview'
+import { legalPublished } from '../legalReview'
 
 export default function CandidateConfirmation({ onViewProfile }: { onViewProfile: () => void }) {
   const heading = useRef<HTMLHeadingElement>(null)
@@ -18,12 +18,12 @@ export default function CandidateConfirmation({ onViewProfile }: { onViewProfile
     <h2 id="confirmation-title" ref={heading} tabIndex={-1}>You're in.</h2>
     <div className="cp-confirmation-content">
       <h3>We'll take it from here.</h3>
-      <p className="cp-confirmation-message">{legalWorkflow ? 'Your profile has been submitted. Recruiter access remains disabled; submission is not permission to share.' : 'Your profile has been submitted successfully. When a relevant opportunity comes along, ENTER can help connect you with the right people.'}</p>
+      <p className="cp-confirmation-message">{legalPublished ? 'Your profile has been submitted. Recruiter access remains disabled; submission is not permission to share.' : 'Your profile has been submitted successfully. When a relevant opportunity comes along, ENTER can help connect you with the right people.'}</p>
       <section className="cp-confirmation-next" aria-labelledby="confirmation-next-title">
         <h4 id="confirmation-next-title">What happens next?</h4>
         <ul>
           <li><CircleCheck aria-hidden="true" /><div><h5>Your profile is saved</h5><p>Your experience and career preferences are securely recorded.</p></div></li>
-          <li><Search aria-hidden="true" /><div><h5>{legalWorkflow ? 'Recruiter sharing is disabled' : 'Relevant recruiters can discover you'}</h5><p>{legalWorkflow ? 'ENTER will request a separate explicit opt-in before future recruiter access.' : 'When your profile matches their search and your availability settings permit discovery.'}</p></div></li>
+          <li><Search aria-hidden="true" /><div><h5>{legalPublished ? 'Recruiter sharing is disabled' : 'Relevant recruiters can discover you'}</h5><p>{legalPublished ? 'ENTER will request a separate explicit opt-in before future recruiter access.' : 'When your profile matches their search and your availability settings permit discovery.'}</p></div></li>
           <li><MessageCircle aria-hidden="true" /><div><h5>We'll be in touch</h5><p>If there's a relevant opportunity, you'll be contacted according to your saved preferences.</p></div></li>
         </ul>
       </section>

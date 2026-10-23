@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from './api'
 
-export const legalPreview = import.meta.env.VITE_LEGAL_WORKFLOW_PREVIEW === 'true'
 export const legalPublished = import.meta.env.VITE_LEGAL_CONTENT_APPROVED === 'true'
-export const legalWorkflow = legalPreview || legalPublished
 export type LegalDocument = { text: string; version: string; sha256: string; effective_date?: string | null; unpublished: boolean }
 export type LegalDocuments = Record<'terms' | 'privacy' | 'age' | 'submission', LegalDocument>
 
@@ -18,7 +16,7 @@ export function retryLegalDocuments() {
 export function useLegalDocumentState() {
   const [documents, setDocuments] = useState<LegalDocuments | null>(null)
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(legalWorkflow)
+  const [loading, setLoading] = useState(legalPublished)
   const [attempt, setAttempt] = useState(0)
   useEffect(() => {
     const retry = () => setAttempt(value => value + 1)
@@ -26,17 +24,17 @@ export function useLegalDocumentState() {
     return () => window.removeEventListener('enter-legal-retry', retry)
   }, [])
   useEffect(() => {
-    if (!legalWorkflow) return
+    if (!legalPublished) return
     let active = true
     // Clear stale content before a refreshed version can be accepted.
     Promise.resolve().then(() => { if (active) { setDocuments(null); setError(''); setLoading(true) } })
     api.legalDocuments().then(result => {
       if (!result.enabled || !result.documents || !['terms', 'privacy', 'age', 'submission'].every(key => {
         const doc = result.documents?.[key as keyof LegalDocuments]
-        return doc && doc.text && doc.version && doc.sha256 && doc.unpublished === !legalPublished
+        return doc && doc.text && doc.version && doc.sha256 && doc.unpublished === false
       })) throw new Error('Unavailable documents')
       if (active) setDocuments(result.documents)
-    }).catch(() => { if (active) setError('Legal review content could not load. Acceptance is blocked.') })
+    }).catch(() => { if (active) setError('Legal documents could not load. Acceptance is blocked.') })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [attempt])

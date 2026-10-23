@@ -21,8 +21,8 @@ five-minute periods, missing data breaching. ALARM and OK actions use:
 arn:aws:sns:ap-southeast-2:431988153216:enter-production-alerts
 Notifications are state transitions, not an email on every failed probe.
 Both schedule and alarm actions are DISABLED at installation.
-No endpoint can be selected by invocation input. Current reviewed host is
-staging.enter.careers. A production hostname requires a reviewed code change.
+No endpoint can be selected by invocation input. The reviewed host is
+enter.careers.
 
 GET / must return 200, HTML and the existing React root marker. GET
 /api/v1/health/ready/ must return 200 JSON status=ready and database=ok.
@@ -37,11 +37,10 @@ invocation events are never logged. A stalled invocation times out; absent
 metrics are alarm failures. IPv6-only hosting is not supported by this version.
 This survives EC2 loss but is not independent of Sydney/AWS/account failure.
 
-NETWORK BLOCKER: current staging ingress is restricted to authorized IPs.
-Non-VPC Lambda does not have a fixed egress address suitable for that allowlist.
-Do not change ingress, create NAT/EIP, or use loopback to manufacture success.
-Keep scheduling disabled until a separately approved public-access/cutover
-plan makes the reviewed endpoint genuinely reachable from the probe.
+The public endpoint must be genuinely reachable from the non-VPC probe. Do not
+change ingress, create NAT/EIP, or use loopback to manufacture success without
+explicit launch authorization. Keep scheduling disabled until the authorized
+candidate-only cutover makes enter.careers publicly reachable.
 
 Local release artifacts (no AWS access)
 --------------------------------------

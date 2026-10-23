@@ -6,8 +6,8 @@ import type { LegalDocuments } from '../legalReview'
 
 afterEach(cleanup)
 const documents = Object.fromEntries(['terms', 'privacy', 'age', 'submission'].map(purpose => [purpose, {
-  text: purpose === 'age' ? 'I confirm that I am at least 18 years old.' : 'Unpublished synthetic review',
-  version: `unpublished-${purpose}-fixture`, sha256: 'fixture', unpublished: true,
+  text: purpose === 'age' ? 'I confirm that I am at least 18 years old.' : 'Published synthetic document',
+  version: `enter-candidate-${purpose}-v1.0`, sha256: 'fixture', unpublished: false,
 }])) as LegalDocuments
 
 it('requires independent unchecked age and Terms controls without sharing consent', () => {

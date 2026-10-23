@@ -107,7 +107,7 @@ def test_private_or_empty_dns_rejected(probe, monkeypatch, addresses):
         lambda *args: [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (ip, 443)) for ip in addresses],
     )
     with pytest.raises(ValueError):
-        probe[0].public_address("staging.enter.careers")
+        probe[0].public_address("enter.careers")
 
 
 def test_connection_uses_validated_ip_with_original_sni(probe, monkeypatch):
@@ -116,12 +116,12 @@ def test_connection_uses_validated_ip_with_original_sni(probe, monkeypatch):
     raw = Mock()
     connect = Mock(return_value=raw)
     monkeypatch.setattr(socket, "create_connection", connect)
-    conn = module.PublicHTTPSConnection("staging.enter.careers", timeout=5)
+    conn = module.PublicHTTPSConnection("enter.careers", timeout=5)
     context = Mock()
     conn._context = context
     conn.connect()
     connect.assert_called_once_with(("3.26.28.4", 443), timeout=5)
-    context.wrap_socket.assert_called_once_with(raw, server_hostname="staging.enter.careers")
+    context.wrap_socket.assert_called_once_with(raw, server_hostname="enter.careers")
 
 
 @pytest.mark.parametrize("healthy", [True, False])

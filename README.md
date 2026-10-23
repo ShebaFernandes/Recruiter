@@ -27,3 +27,6 @@ VITE_API_URL=http://127.0.0.1:8010/api/v1 npm run dev
 ```
 
 Open `http://127.0.0.1:5173`. See `AGENTS.md` for verification commands and `DEPLOYMENT.md` for production configuration.
+
+For a beginner-friendly explanation of the candidate backend, resume parsing, filters, security,
+AI status and production limits, see [ENTER Candidate Backend Guide](docs/ENTER_CANDIDATE_BACKEND_GUIDE.md).

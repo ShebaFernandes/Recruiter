@@ -17,8 +17,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         root = Path(settings.LEGAL_DOCUMENT_ROOT)
         try:
-            privacy = legal._published_text(root / "PRIVACY_POLICY_FINAL_REVIEW.txt")
-            terms = legal._published_text(root / "TERMS_FINAL_REVIEW.txt")
+            privacy = legal._published_text(root / "PRIVACY_POLICY_PUBLICATION.txt")
+            terms = legal._published_text(root / "TERMS_PUBLICATION.txt")
         except (OSError, ValidationError) as error:
             raise CommandError("Legal documents are not publication-ready.") from error
 

@@ -1,0 +1,73 @@
+ENTER CANDIDATE — MANAGER APPROVAL SHEET
+UNPUBLISHED. No legal approval, implementation or production authorization implied.
+
+CONFIRMED BUSINESS DIRECTION — PRESERVE
+Operator: ENTER Recruitment Private Limited (management supplied).
+Support/privacy: sheba@enterrecruitment.com.
+Eligibility:18+; initial markets India, US, UK.
+Recruiter sharing: separate explicit opt-in before any future recruiter launch.
+Proposed profile/resume retention:12 months after last meaningful activity.
+Hosting target USD30/month, maximum USD40; privacy/scanning/backups not optional.
+
+MANAGER/LEGAL DECISIONS — FILL IN AND APPROVE
+1. Company: registered address ______; incorporation jurisdiction ______;
+   registration/CIN details if required ______; legal reviewer ______.
+2. Contact coverage: privacy owner ______; support owner ______; deputy ______;
+   confirm the mailbox is monitored and approve incident escalation ______.
+3. Market review: confirm India/US/UK applicability, lawful bases, transfers,
+   any representative and local rights/complaint wording with counsel ______.
+4. Terms: approve final service/fee status ______, liability and mandatory rights
+   ______, governing law/disputes ______, suspension/appeal process ______.
+5. Retention: define qualifying meaningful activity ______; does login count? ____;
+   notice/grace period ______; account closure versus profile deletion ______;
+   treatment of paused/draft and existing accounts ______.
+   Automated processing/backups must not silently extend the inactivity clock.
+6. Separate periods: unverified accounts ______; replaced/failed/quarantined files
+   ______; logs/jobs ______; support records ______; consent evidence ______.
+   No periods other than the proposed12 months are assumed approved.
+7. Deletion: approve proposed2-business-day acknowledgement,7-day active deletion
+   target and completion/response within30 days subject to applicable deadlines.
+   UK one-calendar-month deadlines must not be replaced with a universal30 days.
+   Business calendar ______; verification method ______; owner ______;
+   failure escalation ______; exceptions/legal holds ______.
+8. Recovery: backup retention decision ______ (7-day hourly/30-day daily are only
+   proposals); older backup disposition ______; resume recovery method/period
+   ______; historical-copy erasure and restoration deletion-ledger owner ______.
+9. Providers: confirm SMTP provider/location/contracts, authorized support access,
+   external asset/telemetry inventory and international safeguards ______.
+10. Evidence: approve document versions/effective dates ______; acceptance-event
+    retention/minimization ______; published-text archive owner ______.
+
+PROPOSED USER WORDING — APPROVE EXACT TEXT, DO NOT PUBLISH YET
+Eligibility: “I confirm that I am at least18 years old.”
+Unchecked Terms checkbox: “I agree to ENTER Candidate Terms [version].”
+Notice: “Read how we use your information in Privacy Notice [version].”
+Submission: “I confirm that I have reviewed my profile and ask ENTER to save it
+as submitted. Recruiter access is currently disabled. ENTER will ask for my
+separate permission before sharing my profile with approved recruiters.”
+Do not combine notice acknowledgement, Terms acceptance and future sharing into
+one blanket consent. No present consent is inferred for future recruiter access.
+
+MINIMUM TECHNICAL CHANGE PROPOSAL — NOT IMPLEMENTED
+Frontend: replace legal placeholders with approved versioned text; add18+
+confirmation and separate unchecked Terms acceptance; show the approved submission
+wording and a deliberate existing-user acceptance flow. Preserve existing layout.
+Backend: server-side age attestation/Terms-version validation; append acceptance
+events with account reference,time,document versions and archived-text hash;
+separate notice acknowledgement from consent. Do not backdate legacy records.
+Before recruiter launch: new explicit opt-in/version/withdrawal gate on every
+search/profile/download path, independent of legacy submission consent.
+Retention: explicit meaningful-activity field, default-off dry-run evaluator and
+concurrency-safe approved expiry. Do not use auto_now as the activity definition.
+Deletion: reuse transaction/outbox; track request deadlines and verified storage
+cleanup, holds and minimal erasure ledger; replay deletions before restore reopens.
+Additive migrations likely required; approve separately. Synthetic direct-API,
+version/refusal/withdrawal, deletion/retry and restore-replay tests before rollout.
+Protect legal evidence but do not retain identifiable acceptance records forever.
+
+SIGN-OFF
+Manager/name/date ______. Legal reviewer/name/date ______.
+Approved document versions ______. Outstanding conditions ______.
+Full drafts: PRIVACY_POLICY_MANAGEMENT_DRAFT_2026-10-22.txt and
+TERMS_MANAGEMENT_DRAFT_2026-10-22.txt.
+LEGAL_CONTENT_APPROVED remains false. No policy publication or intake opening.

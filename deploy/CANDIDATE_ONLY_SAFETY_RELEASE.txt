@@ -1,5 +1,48 @@
 LOCAL PREPARATION ONLY — NOT APPROVED FOR AWS INSTALLATION OR PUBLIC LAUNCH
 
+CURRENT CANDIDATE LAUNCH PATH — SUPERSEDES THE MULTI-CHECKLIST PROCESS BELOW
+
+The material below remains historical evidence and operational reference. It is
+not a set of independent launch approvals. D1–D16, AWS invoice collection,
+exhaustive provider-support mapping, deletion of the three protected legacy
+backups, and future UK/US launch work are not separate blockers for the India-only
+candidate launch unless an identified omission makes the publication copy
+inaccurate or prevents compliance.
+
+SINGLE REMAINING APPROVAL ACTION
+
+One focused qualified review must approve these three clauses together, followed
+by the owner's explicit authorization of the exact candidate-only release:
+
+- Privacy Policy section 3, final paragraph: phased Indian DPDP commencement and
+  the legal basis/consent treatment at the effective date.
+- Privacy Policy section 5, final paragraph: Australia/overseas processing and any
+  additional transfer wording or safeguard required for the disclosed services.
+- Terms section 8: warranty/liability limitations and India-law/Bengaluru
+  non-exclusive jurisdiction, preserving mandatory candidate rights.
+
+That approval authorizes the exact publication wording and effective date, the two
+PUBLICATION STATUS changes to APPROVED, immutable hashes, and the paused direct
+deployment. It does not authorize AWS billing changes or backup deletion.
+
+EXACT LAUNCH ACTION AFTER THAT APPROVAL
+
+Set the approved effective date and statuses; generate and configure the exact
+hashes with `python manage.py legal_release_manifest`; deploy once with
+CANDIDATE_ONLY=true, CANDIDATE_REGISTRATION_PAUSED=true and
+RESUME_UPLOADS_PAUSED=true; then, on the production host with
+ENTER_BACKUP_STATE_FILE and ENTER_ENV_FILE set, run
+`uv run python scripts/candidate_launch_check.py` from the repository root.
+
+Only a PASS permits the two intake pause flags to be changed to false and the
+backend/frontend to be recreated from the same approved release. Recruiter access
+remains disabled. A failure leaves intake paused.
+
+No policy status, deployment, registration switch, AWS resource, billing setting,
+or backup is changed by the check.
+
+HISTORICAL DETAIL — PRESERVED, NOT A SEPARATE RELEASE WORKFLOW
+
 Hardening addendum: backup validation now uses explicit exceptions, not Python
 assertions. Normal and optimized-Python offline orchestration tests cover success
 and injected failures. Target account/instance/region/bucket/database/storage are

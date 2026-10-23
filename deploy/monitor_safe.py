@@ -138,8 +138,8 @@ def main():
             url = os.environ[v]
             require(
                 url in (
-                    "https://staging.enter.careers/",
-                    "https://staging.enter.careers/api/v1/health/ready/",
+                    "https://enter.careers/",
+                    "https://enter.careers/api/v1/health/ready/",
                 ),
                 "Unreviewed local HTTPS endpoint",
             )
@@ -156,7 +156,7 @@ def main():
                         "--noproxy",
                         "*",
                         "--resolve",
-                        "staging.enter.careers:443:127.0.0.1",
+                        "enter.careers:443:127.0.0.1",
                         "--output",
                         "/dev/null",
                         "--write-out",

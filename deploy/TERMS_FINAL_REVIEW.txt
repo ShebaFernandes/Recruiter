@@ -1,81 +1,239 @@
 ENTER CANDIDATE PLATFORM — TERMS OF USE
-FINAL-REVIEW CANDIDATE — UNAPPROVED AND UNPUBLISHED
-Approved document identifier: enter-candidate-terms-v1.0
-Review revision: 2026-10-22-r2 (consolidated final-review package)
-Effective date: [D1: actual approved publication date, YYYY-MM-DD].
-No effective date is assigned by the review date. Bracketed provisions require
-completion and approval; this is not a live contract.
+FINAL TEXT REVIEW CANDIDATE — UNAPPROVED AND UNPUBLISHED
+Document identifier: enter-candidate-terms-v1.0
+Review revision: 2026-10-22-r3
+Proposed effective date: the actual publication date, before candidate intake opens.
 
-1. Operator and eligibility
-These Terms describe use of ENTER Candidate at enter.careers, operated by
-ENTER Recruitment Private Limited. Contact: sheba@enterrecruitment.com.
-Registered address: Regent Insignia, KHB Block Koramangala, 5th Block, Koramangala,
-Bengaluru, Karnataka 560034, India. Incorporation country: India.
-CIN: U74999DL2020PTC370862. Privacy owner: Dikshita Verma, CEO.
-The initial service is for candidates aged 18 or over in India, the United States
-and the United Kingdom.
+This review copy is not an active contract. LEGAL_CONTENT_APPROVED must remain
+false until an authorized representative approves this exact copy and publication
+is separately authorized.
 
-2. Your account
+MANAGEMENT AUTHORIZATION EVIDENCE — OCTOBER 22, 2026
+
+Management authorized company-fact verification and publication preparation on
+October 22, 2026. That authorization does not independently verify provider
+contracts, staff access countries or the qualified legal choices below, and does
+not constitute exact-copy publication approval.
+
+Management also confirmed that the AWS account country is India, Namecheap
+provides DNS/email forwarding, sheba@enterrecruitment.com is the designated
+AWS/SSH operational contact and the reported forwarding destination is
+joel@enterrecruitment.com. Authenticated configuration corroborates the AWS Sydney
+deployment and Namecheap forwarding mode, but not personnel location, SSH-key
+ownership or the destination mailbox provider.
+
+FINAL LEGAL CHOICES TO CONFIRM
+
+1. Qualified legal review must approve or replace section 10’s warranty and
+   liability wording, including whether a numerical cap is needed.
+2. AWS's contracting-party table maps the management-confirmed India account
+   country to Amazon Web Services India Private Limited, and the AWS Service Terms
+   incorporate the AWS DPA. The account's tax/seller-of-record evidence, the
+   Namecheap acceptance record, the ultimate forwarded-mailbox provider and actual
+   India-only staff-access verification remain the factual confirmations identified
+   in the Privacy Policy. The 2026 Karnataka calendar and continued protection of
+   the three legacy backups are recorded operational decisions, not unresolved
+   publication choices.
+
+PROPOSED PUBLIC COPY
+
+1. Operator and contact
+
+These Terms govern the ENTER Candidate Platform at enter.careers, operated by
+ENTER Recruitment Private Limited (“ENTER”, “we”, “us”).
+
+Registered address: Regent Insignia, KHB Block Koramangala, 5th Block,
+Koramangala, Bengaluru, Karnataka 560034, India.
+Corporate Identity Number: U74999DL2020PTC370862.
+Contact: sheba@enterrecruitment.com.
+
+2. Eligibility and acceptance
+
+New registration is initially available only to individuals aged 18 or over in
+India. United States, United Kingdom and other-country registration requires a
+separate launch approval. Technical country controls are not guaranteed to prove
+physical location, and mandatory rights of existing affected people remain
+preserved. You must separately and affirmatively confirm that
+you are at least 18 and accept the displayed version of these Terms. The checkbox
+is unchecked by default. Privacy information is provided separately and is not a
+blanket consent. Profile submission is also a separate confirmation.
+
+If we reasonably believe an account belongs to an ineligible person, we may
+restrict new uploads and submission while we review it. We will use proportionate
+account-control checks and will not routinely collect identity documents solely
+for age attestation. If eligibility cannot be established, we may close the account
+and handle its data under the Privacy Policy and applicable law.
+
+3. Your account
+
 Provide accurate registration information, verify your email, keep your password
-secure and notify support if you suspect unauthorized access. Do not impersonate
-others or use another person's account without authorization.
-[D11: approve age-attestation handling, account-ownership disputes and treatment
-of ineligible users.]
+secure and notify us promptly if you suspect unauthorized access. Do not impersonate
+another person, create an account for another person without authority, transfer
+an account or use credentials that are not yours.
 
-3. The candidate service
-ENTER lets you upload supported resumes, review rule-based extraction, edit career
-and profile information, and save or submit your profile. Review extracted details
-because processing may be incomplete or incorrect. ENTER does not guarantee an
-interview, employment or placement. External resume AI processing is disabled.
-Recruiter access is disabled during the candidate-only pilot. Submission does not
-authorize future sharing: a separate explicit opt-in is required before recruiters
-can access your profile. Terms acceptance is not recruiter-sharing consent.
-The Candidate Platform is free for candidates. No future fee-change permission
-is inferred from this confirmed pilot requirement.
+For an ownership dispute, ENTER may temporarily restrict sensitive changes,
+uploads or submission while it checks control of the registered email and other
+proportionate evidence. We will provide a support route and record the decision.
+Privacy and deletion requests remain available during a restriction.
 
-4. Your documents and acceptable use
-You retain your rights in your documents. Upload only information you have the
-right to provide. The proposed permission to ENTER is limited to storing, scanning,
-processing, displaying to you and securely backing up your information to provide
-the candidate service under the Privacy Policy. It does not grant a general
-permission for public publication, AI training or future recruiter sharing.
-Do not upload malware, impersonate others, misuse private information, circumvent
-security controls or disrupt the platform.
-[D13: legal approval of content-permission wording and acceptable-use provisions.]
+4. The candidate service
 
-5. Privacy and retention
-The separately versioned Privacy Policy explains information handling. The confirmed
-profile/resume retention period is 12 months after meaningful activity, with 30-day
-and seven-day reminders. The confirmed deletion targets are two business days for
-acknowledgement and seven days for active-data deletion, subject to applicable
-legal deadlines. Operational details and additional record/recovery-copy periods
-remain proposals in Privacy revision r2 and sign-off register r6 [D7-D10], except
-the verified operational S3 expiration configuration: seven-day hourly and
-30-day daily backup prefixes, with legacy copies pending disposition. That
-configuration does not constitute approval of these complete documents, which
-are not yet published or effective. Terms acceptance does
-not override privacy rights or authorize indefinite retention.
+The platform lets you upload supported resumes, receive rule-based extraction,
+review and edit career/profile information, preview a resume and save or submit a
+profile. You are responsible for reviewing extracted information because it may
+be incomplete or wrong. ENTER does not guarantee an interview, employment,
+placement, response from an employer or uninterrupted availability.
 
-6. Suspension and ending use
-You can contact support or use the authenticated account-deletion flow.
-[D14: supply approved suspension/termination grounds, urgent-security handling,
-notice, appeal process, access to data and consequences of closure.]
+The Candidate Platform is free for candidates under this version. These Terms do
+not authorize ENTER to introduce a candidate fee without advance notice and any
+new agreement required by law.
 
-7. Responsibility and disputes
-Contact sheba@enterrecruitment.com for service complaints.
-[D15: legal reviewer to supply governing law, dispute forum/process, liability and
-warranty provisions, mandatory consumer-rights protections and regional variations.
-No jurisdiction, liability cap, deletion exception or waiver is invented here.]
+External resume AI is disabled. Recruiter access is disabled during the
+candidate-only pilot. Submission does not authorize recruiter access. Before any
+future recruiter sharing, ENTER must obtain a separate, explicit opt-in describing
+the approved recipients, purpose, visible information, downloads and withdrawal.
 
-8. Changes and acceptance
-ENTER will identify the Terms version presented for acceptance. Material changes
-will follow an approved notification and, where required, reacceptance process.
-[D16: approve that process, existing-user treatment and acceptance evidence policy.]
-Prior profile-sharing consent will not be converted into acceptance of these Terms
-or permission for future recruiter access.
+5. Your content and the permission you give ENTER
 
-REVIEW SIGN-OFF — NOT FOR THE PUBLIC PAGE
-Manager: ______  Legal reviewer: ______  Approval date: ______
-Final version/effective date: ______  Conditions resolved: ______
-Publish only after the outstanding provisions and corresponding implementation
-have been approved. Keep LEGAL_CONTENT_APPROVED=false until separately authorized.
+You keep ownership and other rights in your resume, photograph, profile and other
+material you provide (“Candidate Content”). You confirm that you have the right
+to provide it and that doing so does not violate another person’s rights.
+
+You give ENTER a non-exclusive, worldwide, royalty-free permission, limited to the
+retention period in the Privacy Policy, to host, copy, malware-scan, parse,
+structure, display back to you, transmit within ENTER’s service infrastructure and
+make protected backup copies of Candidate Content solely to operate, secure,
+support and recover the Candidate Platform. This permission ends when the content
+is deleted, subject to the limited backup and legal-retention treatment in the
+Privacy Policy.
+
+This permission does not authorize public publication, advertising, sale, external
+AI training or recruiter sharing. Future recruiter sharing requires the separate
+opt-in described above.
+
+6. Acceptable use
+
+You must not:
+
+- upload malware, executable content or material intended to harm the service;
+- impersonate another person or submit content without the right to do so;
+- include another person’s private or sensitive information without authority;
+- probe, bypass or interfere with authentication, authorization, rate limits,
+  malware scanning or other security controls;
+- scrape, overload, reverse engineer or disrupt the platform except where a
+  mandatory law expressly permits an activity that cannot be restricted; or
+- use the platform for unlawful, fraudulent, abusive or discriminatory conduct.
+
+7. Privacy, retention and deletion
+
+The separately versioned Privacy Policy explains what ENTER handles, why, where,
+for how long and how to make a request. Candidate profiles and current resumes are
+retained for 12 months after meaningful activity, with reminders 30 days and seven
+days before expiry, subject to earlier verified deletion and documented legal
+requirements. Routine encrypted hourly database backups expire after seven days
+and daily backups after 30 days; backup expiration is asynchronous.
+
+Terms acceptance does not waive privacy rights or authorize indefinite retention.
+The account-deletion flow and support channel remain available. Deleting an account
+does not require restoring an old database snapshot and does not authorize ENTER
+to reactivate deleted information during recovery.
+
+8. Restriction, suspension and closure
+
+ENTER may proportionately restrict or suspend an account when reasonably necessary
+to address suspected unauthorized access, malware, material breach of these Terms,
+fraud, danger to another person, service integrity or a legal requirement. In an
+urgent security case, restriction may be immediate. Otherwise, ENTER will give
+reasonable notice and an opportunity to correct the issue where practicable.
+
+We will explain the general reason unless doing so would create a security risk or
+be prohibited by law. You may request review at sheba@enterrecruitment.com.
+Restriction does not eliminate applicable privacy rights. Where safe and lawful,
+we will provide a reasonable route to access, correct or delete account information.
+
+You may stop using the platform and request deletion. On closure, the content
+permission in section 5 ends except for access-restricted backup copies and records
+temporarily retained under the Privacy Policy or applicable law. ENTER will not
+use suspension or closure to infer recruiter-sharing permission.
+
+9. Service availability and changes
+
+We may maintain, secure, repair or update the platform and may pause registration
+or resume uploads without disabling existing login or interrupting already-running
+jobs where technically safe. We may discontinue the candidate service only after
+reasonable notice where practicable and after providing legally required options
+for candidate information.
+
+10. Warranties and responsibility
+
+The service is provided on an “as available” basis. To the extent permitted by
+law, ENTER does not promise that extraction will be accurate, that the service will
+be uninterrupted or error-free, or that using it will lead to employment.
+
+To the extent permitted by law, neither party is responsible for indirect,
+incidental, special or consequential loss that was not reasonably foreseeable from
+the event giving rise to the claim. ENTER remains responsible for direct loss that
+applicable law does not allow it to exclude or limit. Nothing in these Terms
+excludes or limits liability for fraud or fraudulent misrepresentation, wilful
+misconduct, death or personal injury caused by negligence, a breach of privacy or
+data-protection duties where liability cannot lawfully be limited, or any other
+right or liability that cannot lawfully be excluded. No numerical liability cap
+is proposed in this review copy.
+
+11. Complaints, governing law and disputes
+
+Contact sheba@enterrecruitment.com first so ENTER can investigate a service or
+account complaint. The parties will try in good faith to resolve a dispute for 30
+days after written notice, without preventing an urgent court application or the
+exercise of a privacy or regulatory right.
+
+These Terms are governed by the law of India. The courts at Bengaluru, Karnataka
+have non-exclusive jurisdiction. This choice does not deprive a candidate
+in the United Kingdom, United States or elsewhere of mandatory consumer or privacy
+protections that applicable law does not permit the candidate to waive, or prevent
+a complaint to a competent data-protection or consumer authority.
+
+12. Terms versions, existing accounts and changes
+
+ENTER records the candidate identifier, server-side UTC timestamp, immutable Terms
+version and SHA-256 hash of the exact archived text accepted. It does not backfill
+acceptance or infer it from prior use, a prior sharing record, submission or an
+existing session.
+
+An existing candidate who has not accepted this version may still sign in to view
+the legal documents and reach privacy, support and deletion functions, but must
+affirmatively accept before a new resume upload or profile submission. Refusal is
+not acceptance and does not authorize recruiter sharing.
+
+For a material Terms change, ENTER will create a new immutable version, give
+reasonable advance notice and obtain affirmative reacceptance before actions
+affected by the new Terms. Non-material corrections may be notified without
+retrospective consent where law permits. A Privacy Policy change follows its own
+notice requirements and cannot be used to infer consent.
+
+13. General
+
+If a provision is unenforceable, it will be limited to the minimum extent required
+and the remaining provisions continue. A failure to enforce a provision once is
+not a waiver. ENTER may not transfer these Terms in a way that reduces mandatory
+candidate rights. These Terms, the displayed Privacy Policy and the separate
+submission wording are the relevant candidate documents; the Privacy Policy does
+not become a contractual waiver of statutory rights.
+
+14. Contact
+
+ENTER Recruitment Private Limited
+Regent Insignia, KHB Block Koramangala, 5th Block, Koramangala,
+Bengaluru, Karnataka 560034, India
+sheba@enterrecruitment.com
+
+END OF PROPOSED PUBLIC COPY
+
+FINAL TEXT SIGN-OFF — NOT FOR PUBLICATION
+Authorized representative: Dikshita Verma, CEO
+Exact-copy approval: _________________________________________________
+Legal reviewer/name/date (if used): __________________________________
+Effective date authorized: ___________________________________________
+Outstanding choices resolved: ________________________________________
+Do not compute the final publication hash or activate LEGAL_CONTENT_APPROVED until
+this exact copy is approved and the effective date is authorized.

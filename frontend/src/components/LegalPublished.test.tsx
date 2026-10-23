@@ -1,15 +1,14 @@
 import '@testing-library/jest-dom/vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 
 vi.hoisted(() => {
-  vi.stubEnv('VITE_LEGAL_WORKFLOW_PREVIEW', 'false')
   vi.stubEnv('VITE_LEGAL_CONTENT_APPROVED', 'true')
 })
 
 import { api } from '../api'
 import type { LegalDocuments } from '../legalReview'
-import { ExistingLegalReview, LegalChecks, UnpublishedLegalPage } from './LegalReview'
+import { ExistingLegalReview, LegalChecks, LegalPage } from './LegalReview'
 
 const documents = Object.fromEntries(['terms', 'privacy', 'age', 'submission'].map(purpose => [purpose, {
   text: `${purpose} v1.0`,
@@ -31,8 +30,30 @@ it('presents separate production confirmations without recruiter-sharing consent
 
 it('shows the immutable published version and effective date', async () => {
   vi.spyOn(api, 'legalDocuments').mockResolvedValue({ enabled: true, documents })
-  render(<UnpublishedLegalPage kind="privacy" />)
+  render(<LegalPage kind="privacy" />)
   expect(await screen.findByText(/Version: enter-candidate-privacy-v1.0 · Effective 2026-10-22/)).toBeInTheDocument()
+  expect(screen.queryByText(/UNPUBLISHED/)).not.toBeInTheDocument()
+})
+
+it('fails closed when an existing account has a stale Terms version', async () => {
+  vi.spyOn(api, 'legalDocuments').mockResolvedValue({ enabled: true, documents })
+  vi.spyOn(api, 'legalStatus').mockResolvedValue({
+    accepted: { age: true, terms: true },
+    versions: { age: documents.age.version, terms: 'stale' },
+  })
+  render(<ExistingLegalReview />)
+  expect(await screen.findByRole('button', { name: 'Review current version' })).toBeInTheDocument()
+  expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+})
+
+it('retries a failed published-document request without exposing review content', async () => {
+  const load = vi.spyOn(api, 'legalDocuments').mockRejectedValueOnce(new Error('offline'))
+    .mockResolvedValue({ enabled: true, documents })
+  render(<LegalPage kind="terms" />)
+  await screen.findByRole('alert')
+  fireEvent.click(screen.getByRole('button', { name: 'Retry legal documents' }))
+  await screen.findByText(documents.terms.text)
+  await waitFor(() => expect(load).toHaveBeenCalledTimes(2))
   expect(screen.queryByText(/UNPUBLISHED/)).not.toBeInTheDocument()
 })
 

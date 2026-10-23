@@ -1,5 +1,13 @@
 # ENTER: low-cost EC2 launch runbook
 
+> **Current candidate-only launch control:** the single authoritative launch path
+> is at the top of `CANDIDATE_ONLY_SAFETY_RELEASE.txt`. The longer staging,
+> infrastructure, image, and historical review sections in this runbook preserve
+> evidence and operating detail; they are not separate publication approvals.
+> Candidate launch remains fail closed on the approved legal-copy status and
+> hashes, and registration stays paused until the consolidated check passes and
+> final authorization is given.
+
 ## Caddy and PostgreSQL remediation — 15 October 2026
 
 ### Decision and scope

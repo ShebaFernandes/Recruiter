@@ -145,8 +145,8 @@ def test_monitor_orchestration(monitor, monkeypatch, tmp_path, capsys, failed):
         "ENTER_BACKUP_STATE_FILE": str(tmp_path / "backup.json"),
         "ENTER_FRONTEND_URL": "https://example.invalid/"
         if failed == "url"
-        else "https://staging.enter.careers/",
-        "ENTER_HTTPS_URL": "https://staging.enter.careers/api/v1/health/ready/",
+        else "https://enter.careers/",
+        "ENTER_HTTPS_URL": "https://enter.careers/api/v1/health/ready/",
         "ENTER_SQS_URL": "https://sqs.ap-southeast-2.amazonaws.com/431988153216/main",
         "ENTER_DLQ_URL": "https://sqs.ap-southeast-2.amazonaws.com/431988153216/dlq",
         "ENTER_ALERT_TOPIC_ARN": ""
@@ -174,8 +174,8 @@ def test_monitor_orchestration(monitor, monkeypatch, tmp_path, capsys, failed):
             )
         if "curl" in args:
             assert args[args.index("--noproxy") + 1] == "*"
-            assert args[args.index("--resolve") + 1] == "staging.enter.careers:443:127.0.0.1"
-            assert args[-1].startswith("https://staging.enter.careers/")
+            assert args[args.index("--resolve") + 1] == "enter.careers:443:127.0.0.1"
+            assert args[-1].startswith("https://enter.careers/")
             assert not set(args) & {"-k", "--insecure", "-L", "--location"}
             if failed == "tls":
                 raise RuntimeError("synthetic certificate validation failure")

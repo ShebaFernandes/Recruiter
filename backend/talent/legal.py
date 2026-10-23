@@ -24,6 +24,13 @@ def published():
 
 def _published_text(path):
     source = path.read_text()
+    status_lines = [
+        line.strip() for line in source.splitlines() if line.startswith("PUBLICATION STATUS:")
+    ]
+    if status_lines != ["PUBLICATION STATUS: APPROVED"]:
+        raise ValidationError(
+            "Legal publication requires one explicit approved publication status."
+        )
     start_marker = "PROPOSED PUBLIC COPY"
     end_marker = "END OF PROPOSED PUBLIC COPY"
     lines = source.splitlines(keepends=True)
@@ -63,8 +70,8 @@ def documents():
     root = Path(settings.LEGAL_DOCUMENT_ROOT)
     reader = _published_text if published() else lambda path: path.read_text()
     texts = {
-        "terms": reader(root / "TERMS_FINAL_REVIEW.txt"),
-        "privacy": reader(root / "PRIVACY_POLICY_FINAL_REVIEW.txt"),
+        "terms": reader(root / "TERMS_PUBLICATION.txt"),
+        "privacy": reader(root / "PRIVACY_POLICY_PUBLICATION.txt"),
         "age": "I confirm that I am at least 18 years old.",
         "submission": (
             "I confirm that I have reviewed my profile and ask ENTER to save it as submitted. "

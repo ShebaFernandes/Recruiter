@@ -8,7 +8,7 @@ import socket
 import ssl
 from concurrent.futures import ThreadPoolExecutor
 
-HOST = "staging.enter.careers"
+HOST = "enter.careers"
 REGION = "ap-southeast-2"
 NAMESPACE = "ENTER/PublicAvailability"
 TIMEOUT = 5

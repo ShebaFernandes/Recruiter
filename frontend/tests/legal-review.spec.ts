@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test'
 
 const documents = Object.fromEntries(['terms', 'privacy', 'age', 'submission'].map(purpose => [purpose, {
-  text: purpose === 'age' ? 'I confirm that I am at least 18 years old.' : `UNPUBLISHED ${purpose} synthetic review content`,
-  version: `unpublished-${purpose}-fixture`, sha256: 'fixture', unpublished: true,
+  text: purpose === 'age' ? 'I confirm that I am at least 18 years old.' : `Published ${purpose} synthetic content`,
+  version: `enter-candidate-${purpose}-v1.0`, sha256: 'fixture', unpublished: false,
 }]))
 
 test('unavailable documents block signup until explicit retry succeeds', async ({ page }) => {
@@ -22,7 +22,7 @@ test('unavailable documents block signup until explicit retry succeeds', async (
 })
 
 for (const width of [390, 768, 1440]) {
-  test(`unpublished review and independent confirmations at ${width}`, async ({ page }, info) => {
+  test(`published documents and independent confirmations at ${width}`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 1000 })
     await page.route('**/*.mp4', route => route.abort())
     await page.route('**/api/v1/auth/me/', route => route.fulfill({ status: 401, json: {} }))
@@ -53,14 +53,14 @@ for (const width of [390, 768, 1440]) {
     await checks.nth(0).check()
     await page.getByRole('button', { name: 'Create account', exact: true }).click()
     expect(posted).toBe(false)
-    await page.screenshot({ path: info.outputPath(`legal-review-${width}.png`), fullPage: true })
+    await page.screenshot({ path: info.outputPath(`legal-published-${width}.png`), fullPage: true })
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await checks.nth(1).check()
     await page.getByRole('button', { name: 'Create account', exact: true }).click()
     await expect(page.getByText('Synthetic verification only.')).toBeVisible()
     for (const kind of ['privacy', 'terms']) {
       await page.goto(`/${kind}`)
-      await expect(page.getByText(`UNPUBLISHED ${kind} synthetic review content`)).toBeVisible()
+      await expect(page.getByText(`Published ${kind} synthetic content`)).toBeVisible()
     }
   })
 }

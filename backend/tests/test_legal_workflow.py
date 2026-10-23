@@ -172,11 +172,13 @@ def acceptance(*purposes):
 def published_legal_settings(tmp_path):
     privacy = "ENTER Candidate Privacy Policy v1.0\nEffective 2026-10-22."
     terms = "ENTER Candidate Terms of Use v1.0\nEffective 2026-10-22."
-    (tmp_path / "PRIVACY_POLICY_FINAL_REVIEW.txt").write_text(
-        f"INTERNAL REVIEW\nPROPOSED PUBLIC COPY\n{privacy}\nEND OF PROPOSED PUBLIC COPY\n"
+    (tmp_path / "PRIVACY_POLICY_PUBLICATION.txt").write_text(
+        "PUBLICATION STATUS: APPROVED\n"
+        f"PROPOSED PUBLIC COPY\n{privacy}\nEND OF PROPOSED PUBLIC COPY\n"
     )
-    (tmp_path / "TERMS_FINAL_REVIEW.txt").write_text(
-        f"INTERNAL REVIEW\nPROPOSED PUBLIC COPY\n{terms}\nEND OF PROPOSED PUBLIC COPY\n"
+    (tmp_path / "TERMS_PUBLICATION.txt").write_text(
+        "PUBLICATION STATUS: APPROVED\n"
+        f"PROPOSED PUBLIC COPY\n{terms}\nEND OF PROPOSED PUBLIC COPY\n"
     )
     privacy = f"{privacy}\n"
     terms = f"{terms}\n"
@@ -269,12 +271,19 @@ def test_india_first_signup_is_enforced_server_side(client):
         assert CandidateProfile.objects.get().registration_country_code == "IN"
 
 
-@pytest.mark.parametrize("failure", ["placeholder", "hash"])
+@pytest.mark.parametrize("failure", ["status", "placeholder", "hash"])
 def test_published_documents_fail_closed(client, tmp_path, failure):
     configured = published_legal_settings(tmp_path)
-    if failure == "placeholder":
+    if failure == "status":
+        path = tmp_path / "PRIVACY_POLICY_PUBLICATION.txt"
+        path.write_text(path.read_text().replace(
+            "PUBLICATION STATUS: APPROVED",
+            "PUBLICATION STATUS: PENDING — QUALIFIED REVIEW REQUIRED",
+        ))
+    elif failure == "placeholder":
         text = "ENTER Privacy\n[D3: unresolved legal clause]\n"
-        (tmp_path / "PRIVACY_POLICY_FINAL_REVIEW.txt").write_text(
+        (tmp_path / "PRIVACY_POLICY_PUBLICATION.txt").write_text(
+            "PUBLICATION STATUS: APPROVED\n"
             f"PROPOSED PUBLIC COPY\n{text}END OF PROPOSED PUBLIC COPY\n"
         )
         configured["LEGAL_PRIVACY_SHA256"] = hashlib.sha256(text.encode()).hexdigest()

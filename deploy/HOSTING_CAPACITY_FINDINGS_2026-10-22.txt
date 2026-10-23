@@ -1,0 +1,142 @@
+ENTER HOSTING DECISION — MEASURED COMPONENT TESTS, NOT LIGHTSAIL CERTIFICATION
+22 October 2026. Read-only AWS observation plus isolated LOCAL synthetic tests.
+No infrastructure change, application restart, candidate-data access or migration.
+No historical backup downloaded/restored; its separate time gate remains intact.
+
+DECISION
+USD30–40 remains an unproven deployment budget, not a safe current guarantee.
+The unchanged4GB option fails the practical backup-headroom requirement.8GB
+Lightsail already exceeds USD40 at its published base price. Retain the existing
+cutover plan; do not replace the working EC2 with a smaller host on this evidence.
+
+ACTUAL STAGING BASELINE — 2026-10-22 07:25:22 UTC
+Read-only docker stats, no stress placed on EC2:
+frontend3.477MiB / limit128MiB
+backend145.8MiB / limit1GiB
+worker95.13MiB / limit1GiB
+PostgreSQL39.59MiB / limit1GiB
+Caddy12.21MiB / limit128MiB
+ClamAV1.033GiB / limit3GiB
+Host total8153968640bytes; available5899325440bytes; swap0.
+Container stats are a snapshot, not a peak, reservation or sum of all kernel use.
+Actual scanner image79690dbbff25303e861c6b4a93f3dd6bd19a883896403e89c1aae01ceaabb19e.
+Current backup guards unchanged: >3GiB available RAM, >5GiB free disk, DB<50MiB;
+restore0.5CPU/768MiB/no swap allowance/384MiB tmpfs/no network/no published ports.
+ClamAV alone exceeds1GiB: on a4GiB machine less than3GiB remains even before
+other services/OS. The unchanged guard therefore cannot be assumed to pass.
+
+SYNTHETIC PARSER TEST — PASS, LIMITED SCOPE
+Exact approved backend972aef09a5e95b740c0947ea90352de6b0443816, linux/amd64,
+network none, one CPU,768MiB memory and swap cap, read-only root, temporary storage.
+100 parses:25 each of2-pagePDF,40-pagePDF,shortDOCX,900-paragraphDOCX.
+Fixture            Bytes       Median sec    p95 sec    Maximum sec
+short PDF           1712          .0033       .0039       .0327
+40-page PDF        26756          .0540       .0631       .0672
+short DOCX         36772          .0130       .0556       .1080
+long DOCX          37120          .0956       .1988       .2361
+Peak process RSS133008KiB (~129.9MiB). Fixture outputs validated as parser dicts;
+this is not an extraction-quality assessment. Small text-heavy files, not worst-case
+5MiB images, hostile documents or a full HTTP/S3/SQS/worker benchmark.
+Mac Docker amd64 execution is not Sydney CPU-credit/IO performance; do not convert
+these times to guaranteed production resumes/hour. No external AI or email calls.
+
+LOCAL SYNTHETIC SCANNER RESOURCE TEST — PASS WITH SIGNATURE CAVEAT
+Four generated PDF/DOCX fixtures, including100-pagePDF, scanned successfully.
+No network,1CPU,3GiB ceiling, unchanged scanner options; peak1176178688bytes
+(~1.095GiB). Image enter-scanner:scanner-review-20261014 has digest
+5ee58942a41326075a9935fe5879cc6a610e0dd4aae8f7c417c574bf1ac64a4d.
+This is NOT the live scanner digest. Its bundled signatures warned older than7days.
+Result is resource evidence only, NOT current-malware-protection certification.
+No signature-refresh overlap or full clamd+freshclam peak was tested. Do not use
+this offline image as a substitute for the working updated production scanner.
+
+LOCAL SYNTHETIC DATABASE RESTORE — PASS, LIMITED SCOPE
+Existing local enter-postgres:stack-review-20261015; no downloads. Same reviewed
+scratch limits; no network, published ports, live mounts or persistent volumes.
+1000 synthetic rows,25600bytes payload each, plus database storage/index overhead.
+Database34772659bytes (~33.16MiB), custom dump14605704bytes (~13.93MiB).
+Dump2.332sec; restore2.688sec; cgroup peak255909888bytes (~244.1MiB), no OOM.
+Restored row count and payload-length sum match; pg_amcheck PASS.
+The first harness run omitted --install-missing for amcheck and failed that step;
+the rerun used the approved option and passed. Both labelled scratch containers
+and scratch storage were removed. No broad Docker cleanup or live data touched.
+This is an isolated synthetic table, not application-schema or historical recovery
+certification. Both source and restored test DB lived in one scratch container.
+The production script, its thresholds and schedules were not changed or executed.
+
+WHAT IS / IS NOT PROVEN
+Proven: small-document parsing fits its memory limit; synthetic restore fits the
+reviewed scratch limits; measured scanner baseline conflicts with4GiB/3GiB guard.
+Not proven: simultaneous parser+scanner refresh+DB+backup peak under4GiB;
+8GB Lightsail end-to-end behavior; current signature update peak; SQS/S3 latency,
+malicious/maximum-size files; sustained CPU credits; real jobs/hour or1000 burst SLA.
+The two local parser/restore processes overlapped in the Docker VM but shared no
+4GiB parent cgroup; that is NOT a4GiB whole-host simulation. Scanner ran separately.
+Do not lower backup headroom or remove scanner protection to manufacture a pass.
+
+CAPACITY EXPECTATION
+1000 submissions/month averages33/day;1000 at once is not the same workload.
+One worker serializes bounded processing. Service capacity must be measured with
+full pipeline p95/p99, retries, scan updates and sustained CPU-credit behavior.
+1000 files at2MB = ~2GB new originals/month; at12months up to24GB before versions,
+replacement cleanup and recovery copies. File bytes are not DB bytes.
+Existing DB reference9.72MiB leaves30.28MiB to40MiB review threshold (~31KiB per
+additional profile at1000); actual extracted text/index/job growth must be measured.
+No claim of1000-user capacity is made from1000 synthetic table rows.
+
+MONTHLY COST MODEL — USD,730H, NO CREDIT SUBTRACTION
+Assumptions:1000 submissions/month, average2MB, <=3transactional emails/submission,
+modest site traffic within transfer allowance, existing domain/S3/SQS retained,
+one external probe/5min, bounded logs, no NAT/load balancer/RDS/paid AI.
+Component                         Existing EC2       Lightsail4GB     Lightsail8GB
+Host/disk/IPv4/transfer bundle     existing usage     24.00            44.00
+S3 originals/recovery/DB backups                      .20–1.50         .20–1.50
+S3+SQS requests                                      .05–.50          .05–.50
+Transactional email                                 .30–1.00         .30–1.00
+Monitor/metrics/alarm/logs/SNS                        .75–3.00         .75–3.00
+Snapshot allowance (policy undecided)                .50–2.00         .50–2.00
+Usage uncertainty reserve                           3.00–4.00        3.00–4.00
+Modeled total                                       28.80–36.00      48.80–56.00
+Existing EC2 historical usage~3.09/day (~93/month); use90–105 before any new
+operational spend not already included, ~92–110 with modest additions. Not a fresh
+bill or verified per-service breakdown: do not double-count included services.
+Non-host rows are planning allowances, NOT fixed AWS quotes or hard caps. They
+depend on confirmed retention, region pricing and actual requests/egress. Confirm
+tax/FX and domain renewal allocation; a strict all-in40 ceiling needs these included.
+Excess egress, snapshots, logs, retries, abuse and CPU surcharges can exceed ranges.
+No free-tier discount assumed. Twelve-month retention is proposed, not activated.
+Without approved lifecycle expiry backups grow indefinitely; bounded estimates then
+do not apply. No public-cloud usage budget alarm is a guaranteed spending ceiling.
+Lightsail4GB:80GB SSD/publicIPv4/included transfer;8GB:160GB. Do not charge a second
+EC2 IPv4 line for those bundles. Confirm Sydney availability/Free-plan eligibility
+before approval. Existing credits dated22Oct are not a current guaranteed balance.
+
+TRADEOFFS AND SAFEST CONDITIONAL MIGRATION
+4GB: nominal budget fit, currently rejected as drop-in due backup headroom; not
+worth compromising malware scanning/data protection.8GB: plausible capacity
+candidate, not validated, exceeds budget before ancillary services. Both remain
+single-host outage risks and require credential/recovery redesign.
+No migration recommended under the current strict40 ceiling without new evidence.
+If management approves further evaluation/budget, first resolve a supported
+temporary-credential method for Lightsail S3/SQS/SNS; existing EC2 role/IMDS and
+hard-pinned backup instance guards do not automatically transfer. No embedded keys.
+Then separately approve an isolated full-stack benchmark with exact scanner image,
+fresh signatures and updates, realistic max-size resumes, protected backup overlap,
+CPU-credit/queue saturation and recovery. Preserve safeguards; stop on failed guards.
+Only after tests and full tax-inclusive costing: approve temporary parallel host
+and overlap cost, encrypted backup+isolated verification, intake pause/job drain,
+single-writer migration, object/queue mapping and controls, private smoke tests,
+DNS/TLS cutover, read-only retained source and later approved retirement. Keep the
+existing production-cutover plan intact until an alternative is explicitly approved.
+Rollback cannot reactivate stale source DB after new writes without reconciliation;
+never maintain two active workers against shared jobs or restore an old DB casually.
+No data/queue/region move or new credentials/resources have been authorized.
+
+OFFICIAL SOURCES CHECKED22OCT2026
+https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-bundles.html
+https://aws.amazon.com/lightsail/pricing/
+https://aws.amazon.com/s3/pricing/
+https://aws.amazon.com/cloudwatch/pricing/
+https://docs.aws.amazon.com/lightsail/latest/userguide/security_iam.html
+Sources confirm bundle prices and usage billing; totals above are explicitly a
+scenario estimate, not a fresh authenticated AWS Calculator quote.

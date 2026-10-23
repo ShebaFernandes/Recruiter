@@ -20,8 +20,8 @@ import CareerJourney from './components/CareerJourney'
 import './components/auth.css'
 import EnterBrandText from './components/EnterBrandText'
 import './components/onboarding.css'
-import { LegalChecks, LegalRetry, UnpublishedLegalPage } from './components/LegalReview'
-import { legalWorkflow, useLegalDocumentState } from './legalReview'
+import { LegalChecks, LegalPage, LegalRetry } from './components/LegalReview'
+import { legalPublished, useLegalDocumentState } from './legalReview'
 
 type SpeechRecognitionLike = {
   lang: string
@@ -205,10 +205,10 @@ function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
         </div>
         <InlineError value={error} />
         {message && <div className="success" role="status"><Check size={17} aria-hidden="true" />{message}</div>}
-        {mode === 'signup' && legalWorkflow && (legalDocuments ? <LegalChecks key={legalDocuments.terms.version} documents={legalDocuments} /> : <div role={legalError ? 'alert' : 'status'}>{legalLoading ? 'Loading legal documents…' : legalError || 'Legal documents unavailable. Registration is disabled.'}<LegalRetry /></div>)}
-        {mode === 'signup' && legalWorkflow && legalDocuments && <LegalRetry />}
+        {mode === 'signup' && legalPublished && (legalDocuments ? <LegalChecks key={legalDocuments.terms.version} documents={legalDocuments} /> : <div role={legalError ? 'alert' : 'status'}>{legalLoading ? 'Loading legal documents…' : legalError || 'Legal documents unavailable. Registration is disabled.'}<LegalRetry /></div>)}
+        {mode === 'signup' && legalPublished && legalDocuments && <LegalRetry />}
         {mode === 'signup' && <p><a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a> · <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Use</a></p>}
-        <Button size="large" fullWidth disabled={busy || (mode === 'signup' && legalWorkflow && !legalDocuments)}>{busy ? 'Please wait…' : mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send reset link' : 'Log in'}</Button>
+        <Button size="large" fullWidth disabled={busy || (mode === 'signup' && legalPublished && !legalDocuments)}>{busy ? 'Please wait…' : mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send reset link' : 'Log in'}</Button>
         {mode === 'login' && <Button type="button" variant="ghost" fullWidth onClick={() => { setMode('forgot'); setError(''); setMessage('') }}>Forgot password?</Button>}
         {(role === 'candidate' || mode === 'forgot') && <Button type="button" variant="ghost" fullWidth onClick={() => { setMode(mode === 'signup' ? 'login' : mode === 'login' ? 'signup' : 'login'); setError(''); setMessage('') }}>
           {mode === 'signup' ? 'Already have an account? Log in' : mode === 'login' ? 'New here? Create an account' : 'Back to login'}
@@ -260,12 +260,11 @@ function PasswordResetScreen({ token, done }: { token: string; done: (role: 'can
 }
 
 function LegalPlaceholder({ kind }: { kind: 'privacy' | 'terms' }) {
-  if (legalWorkflow) return <UnpublishedLegalPage kind={kind} />
+  if (legalPublished) return <LegalPage kind={kind} />
   const title = kind === 'privacy' ? 'Privacy Policy' : 'Terms'
   return <main className="legal-page"><nav><Brand /><a href="/">Back to Enter</a></nav><article>
-    <span>LEGAL REVIEW REQUIRED</span><h1>{title} placeholder</h1>
-    <p>This page is intentionally a placeholder. It is not a legal policy and must be replaced with counsel-reviewed {title.toLowerCase()} before public launch.</p>
-    <div><ShieldCheck /><p>Enter’s implemented product controls currently include private resume delivery, candidate-controlled visibility, backend authorization, account deletion, email verification, and recorded submission consent.</p></div>
+    <h1>{title} unavailable</h1>
+    <p>The approved publication is not available. Registration remains disabled.</p>
   </article></main>
 }
 

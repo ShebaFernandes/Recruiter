@@ -1,0 +1,132 @@
+ENTER CANDIDATE PRIVACY NOTICE — UNPUBLISHED MANAGEMENT/LEGAL DRAFT
+Version: proposed privacy-candidate-v1; effective date: NOT SET.
+This draft supersedes earlier drafting assumptions only. It is not approved,
+published, or a representation that proposed retention is already implemented.
+
+1. Who operates the platform
+ENTER Candidate is operated by ENTER Recruitment Private Limited. Contact
+sheba@enterrecruitment.com for privacy requests and platform support.
+[APPROVAL REQUIRED: registered office address, incorporation jurisdiction,
+registration/CIN information as applicable, responsible privacy officer, backup
+contact and mailbox coverage. Company name/contact supplied by management;
+corporate registration has not been independently verified.]
+The initial service is intended for candidates aged 18 or over in India, the
+United States and the United Kingdom. [LEGAL REVIEW: applicable laws, regional
+rights, any required representative and processing/transfer legal bases.]
+
+2. Information we use
+We use registration and contact details, verification/authentication records,
+resumes and optional profile photographs, employment and education history,
+skills, career preferences, profile edits, visibility choices, submission records,
+support correspondence and necessary service/security records. Some profile
+information is extracted from your resume; other information is entered by you.
+Please avoid unnecessary sensitive information, identity documents and third-party
+references/contact details in uploads. [DECIDE treatment of unsolicited sensitive
+information and a safe removal process; do not promise automatic redaction.]
+
+3. Purposes and account operation
+We use this information to verify and secure your account, provide password
+recovery, store and process your resume, let you review/edit/save your profile,
+respond to requests and operate the service. [LEGAL REVIEW: map each purpose to
+the relevant lawful basis; do not present blanket consent as the basis for all use.]
+Authentication uses necessary cookies/tokens. [VERIFY the production cookie,
+storage, telemetry and external-asset inventory before publishing specific claims.]
+
+4. Resume processing
+Uploaded PDF/DOCX files are privately stored and scanned by ClamAV. A queued worker
+uses rule-based processing to extract profile information. External resume AI is
+disabled: the pilot does not send resumes to an external AI extraction service.
+Extraction can be incomplete or incorrect. Review and correct the information
+before submitting. No automated hiring or employment decision is promised.
+Any future external AI processing requires a separately approved privacy/provider
+and consent review; these Terms/notice do not authorize it in advance.
+
+5. Candidate-only visibility and later recruiter access
+Recruiter access is disabled during this pilot. Draft and paused profiles are not
+available for recruiter discovery. Submitting does not publish your profile on the
+open web and does not, by itself, authorize future recruiter sharing.
+Before recruiter access launches, we will request a separate explicit opt-in that
+identifies the sharing purpose, approved recipients, information accessible,
+resume-download permissions and how to withdraw. Declining sharing will not be
+treated as consent. [DECIDE service consequences, if any, of declining.]
+Necessary authorized operations/support access is separate from recruiter access.
+[APPROVE which personnel may access data, from which countries, and for what tasks.]
+
+6. Providers and international handling
+The current deployment uses Amazon Web Services in Sydney, Australia: EC2 hosts
+the application and PostgreSQL, S3 holds private files/database backups, and SQS
+queues processing. Operational alerts use SNS and are designed not to contain
+candidate personal information. ClamAV scanning runs in the deployed stack.
+Namecheap provides domain/DNS services. Transactional email uses configured SMTP;
+SES DKIM records alone do not establish the full email processing arrangement.
+[VERIFY SMTP provider and legal entity, sender, processing regions, contracts,
+subprocessors, email logs/retention, operational access and external media providers.]
+Data may be processed outside a candidate's home country. Do not claim all data
+stays in Australia, adequacy, approved safeguards or regulatory compliance until
+legal review identifies the actual flows and necessary arrangements.
+
+7. Proposed retention — not yet implemented or finally approved
+The proposed policy is to retain candidate profiles and resumes for 12 months
+after the last meaningful activity, unless earlier deletion is requested or a
+documented lawful exception applies. [APPROVE the definition and operation below.]
+Recommended activity definition: an intentional authenticated profile edit,
+resume upload, submission, or explicit confirmation to retain the profile.
+Decide whether login counts. Automated processing, backups, monitoring, marketing
+email opens and recruiter views should not silently extend retention.
+[DECIDE calendar-month calculation, pre-expiry notice/grace period, whether the
+account also closes, treatment of paused/draft profiles and initial timestamps
+for existing accounts. Do not backfill invented activity dates.]
+Separate periods are required for unverified accounts, replaced/failed/quarantined
+files, security/job logs, support correspondence, acceptance evidence and legal
+holds. Twelve-month retention is not permission to retain every historical resume
+or log for that period, nor to keep deleted data active for twelve months.
+
+8. Requests and deletion — proposed service targets
+Contact sheba@enterrecruitment.com. We propose acknowledging requests within two
+business days and targeting active-data deletion within seven days after necessary
+verification. We aim to complete or respond to verified requests within 30 days,
+subject to the applicable legal deadline, including any earlier deadline. For UK
+requests, use the applicable one-calendar-month rule rather than assuming 30 days
+is equivalent. Extensions/exceptions require a lawful basis and timely explanation.
+[APPROVE business-day calendar, reasonable identity checks, receipt/deadline
+tracking, responsible owner, escalation and jurisdiction-specific rights wording.]
+The existing authenticated deletion flow requires password confirmation and typing
+DELETE. It revokes account access and queues associated storage cleanup; outages
+can delay file removal. Manual requests need a documented, verified workflow.
+Explain any justified refusal/partial retention and applicable complaint route.
+Do not require excessive identification or claim a verified request always resets
+every statutory clock. Access/correction/export and appeals must be reviewed for
+the candidate's jurisdiction; self-service export is not currently verified.
+
+9. Backups and recovery copies
+Restricted encrypted backups may retain historical information until approved
+expiry. Proposed backup retention is seven days for hourly and 30 days for daily
+copies; neither is approved or enabled by this draft. Older backups need separate
+disposition. Backups are not used to reactivate deleted profiles or for recruiter
+discovery. Deletion decisions must be reapplied before a restored system reopens.
+Private resume recovery/version retention is still awaiting approval. Database
+backups do not recover deleted S3 files. [APPROVE bounded recovery-copy retention,
+all-version erasure, deletion ledger, legal-hold process and owner.]
+Do not promise immediate erasure of immutable/recovery copies or a fixed maximum
+until the actual lifecycle and older-copy inventory support that promise.
+
+10. Security, changes and complaints
+Private storage, access controls and encrypted transport reduce risk; no absolute
+security or uptime guarantee is made. [APPROVE incident response/escalation and
+applicable notification obligations.] Contact the address above for questions.
+[LEGAL REVIEW: add applicable complaint/regulator details and rights disclosures.]
+We will publish dated versions and communicate material changes. Future recruiter
+sharing requires its own explicit opt-in, not acceptance inferred from continued use.
+
+PUBLICATION GATE
+Resolve all bracketed decisions, approve final text with legal reviewer, implement
+the promised acceptance/retention/deletion workflow, and test with synthetic data.
+Keep LEGAL_CONTENT_APPROVED=false until separately authorized after publication.
+
+REVIEW SOURCES (not a compliance opinion)
+ICO erasure: https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/individual-rights/individual-rights/right-to-erasure/
+ICO transfers: https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/international-transfers/a-brief-guide-to-international-transfers/
+India rules/commencement documents: https://www.meity.gov.in/documents/act-and-policies/digital-personal-data-protection-rules-2025-gDOxUjMtQWa?pageTitle=Digit
+California applicability: https://cppa.ca.gov/pdf/business_comply.pdf
+Counsel must assess phased Indian commencement, UK applicability/representation
+and relevant US state laws; India/US/UK are not a single legal regime.
