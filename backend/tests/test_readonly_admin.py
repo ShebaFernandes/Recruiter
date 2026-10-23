@@ -3,14 +3,14 @@ from unittest.mock import patch
 import pytest
 from django.contrib import admin
 from django.contrib.auth.models import Group, Permission, User
-from django.core.management import call_command
+from django.core.management import CommandError, call_command
 from django.test import Client, RequestFactory
 from django.utils import timezone
 from talent.admin_access import (
     READ_ONLY_MANAGEMENT_GROUP_NAME,
     READ_ONLY_MANAGEMENT_PERMISSIONS,
 )
-from talent.models import CandidateProfile, Resume, UserRole, WorkExperience
+from talent.models import AccountActionToken, CandidateProfile, Resume, UserRole, WorkExperience
 
 pytestmark = pytest.mark.django_db
 PASSWORD = "Read-only-manager-password-123!"
@@ -102,6 +102,127 @@ def test_provision_command_creates_named_non_superuser_with_no_direct_permission
     assert not user.user_permissions.exists()
     assert list(user.groups.values_list("name", flat=True)) == [READ_ONLY_MANAGEMENT_GROUP_NAME]
     assert permission_labels(user.groups.get()) == READ_ONLY_MANAGEMENT_PERMISSIONS
+
+
+def test_shared_inactive_candidate_email_uses_distinct_admin_identity_without_ambiguity(
+    settings,
+):
+    use_plain_static_storage(settings)
+    settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+    email = "existing-candidate@example.com"
+    management_username = "management-existing-candidate"
+    candidate = User.objects.create_user(
+        email,
+        email=email,
+        password="Candidate-password-456!",
+        is_active=False,
+    )
+    UserRole.objects.create(user=candidate, role=UserRole.Role.CANDIDATE)
+    profile = CandidateProfile.objects.create(
+        user=candidate,
+        full_name="Existing Candidate",
+        email=email,
+    )
+    experience = WorkExperience.objects.create(
+        candidate=profile,
+        company="Preserved Employer",
+        role="Preserved Role",
+    )
+
+    with patch(
+        "talent.management.commands.provision_readonly_manager.getpass.getpass",
+        side_effect=[PASSWORD, PASSWORD],
+    ):
+        call_command(
+            "provision_readonly_manager",
+            email=email,
+            username=management_username,
+            name="Named Manager",
+            allow_shared_inactive_candidate_email=True,
+        )
+
+    candidate.refresh_from_db()
+    profile.refresh_from_db()
+    manager = User.objects.get(username=management_username)
+    assert not candidate.is_active and not candidate.is_staff and not candidate.is_superuser
+    assert candidate.email == manager.email == email
+    assert candidate.candidate_profile == profile
+    assert profile.full_name == "Existing Candidate"
+    assert WorkExperience.objects.get(pk=experience.pk).role == "Preserved Role"
+    assert manager.is_active and manager.is_staff and not manager.is_superuser
+    assert not manager.user_permissions.exists()
+    assert list(manager.groups.values_list("name", flat=True)) == [
+        READ_ONLY_MANAGEMENT_GROUP_NAME
+    ]
+    assert permission_labels(manager.groups.get()) == READ_ONLY_MANAGEMENT_PERMISSIONS
+
+    public = Client()
+    assert public.post(
+        "/api/v1/auth/login/", {"email": email, "password": PASSWORD}
+    ).status_code == 400
+    reset = public.post("/api/v1/auth/password-reset/request/", {"email": email})
+    assert reset.status_code == 200
+    assert not AccountActionToken.objects.filter(
+        purpose=AccountActionToken.Purpose.RESET_PASSWORD
+    ).exists()
+    assert public.post("/api/v1/auth/resend-verification/", {"email": email}).status_code == 200
+    verification = AccountActionToken.objects.get(
+        purpose=AccountActionToken.Purpose.VERIFY_EMAIL
+    )
+    assert verification.user == candidate
+    assert not AccountActionToken.objects.filter(user=manager).exists()
+    candidate.refresh_from_db()
+    assert not candidate.is_active
+
+    admin_client = Client()
+    logged_in = admin_client.post(
+        "/admin/login/",
+        {"username": management_username, "password": PASSWORD, "next": "/admin/"},
+    )
+    assert logged_in.status_code == 302
+    assert logged_in.url == "/admin/"
+    assert admin_client.get("/admin/password_change/").status_code == 200
+    assert (
+        admin_client.get(f"/admin/talent/candidateprofile/{profile.pk}/change/").status_code
+        == 200
+    )
+    assert admin_client.post(
+        f"/admin/talent/candidateprofile/{profile.pk}/change/", {"_save": "Save"}
+    ).status_code == 403
+
+    ambiguous_login = Client().post(
+        "/admin/login/",
+        {"username": email, "password": PASSWORD, "next": "/admin/"},
+    )
+    assert ambiguous_login.status_code == 200
+    candidate.refresh_from_db()
+    assert not candidate.is_active
+
+
+def test_shared_email_provisioning_fails_closed_without_explicit_distinct_identity():
+    email = "existing-candidate@example.com"
+    candidate = User.objects.create_user(email, email=email, is_active=False)
+    UserRole.objects.create(user=candidate, role=UserRole.Role.CANDIDATE)
+    CandidateProfile.objects.create(user=candidate, full_name="Existing Candidate", email=email)
+
+    with pytest.raises(CommandError, match="account with this username already exists"):
+        call_command(
+            "provision_readonly_manager",
+            email=email,
+            name="Named Manager",
+        )
+    with pytest.raises(CommandError, match="distinct management username"):
+        call_command(
+            "provision_readonly_manager",
+            email=email,
+            username=email.upper(),
+            name="Named Manager",
+            allow_shared_inactive_candidate_email=True,
+        )
+
+    assert User.objects.filter(email__iexact=email).count() == 1
+    candidate.refresh_from_db()
+    assert not candidate.is_active and not candidate.is_staff
 
 
 def test_management_admin_is_view_only_and_never_links_private_resume(settings):
