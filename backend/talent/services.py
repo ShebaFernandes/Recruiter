@@ -50,6 +50,8 @@ SECTION_HEADINGS = {
     "professional experience",
     "employment history",
     "work history",
+    "career history",
+    "employment experience",
     "education",
     "academic background",
     "qualifications",
@@ -68,6 +70,8 @@ EXPERIENCE_HEADINGS = {
     "professional experience",
     "employment history",
     "work history",
+    "career history",
+    "employment experience",
 }
 EDUCATION_HEADINGS = {"education", "academic background", "qualifications"}
 MONTH_PATTERN = (
@@ -75,7 +79,10 @@ MONTH_PATTERN = (
     r"Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|"
     r"Dec(?:ember)?)"
 )
-DATE_VALUE_PATTERN = rf"(?:{MONTH_PATTERN}\.?\s+\d{{4}}|\d{{1,2}}/\d{{4}}|\d{{4}})"
+DATE_VALUE_PATTERN = (
+    rf"(?:{MONTH_PATTERN}\.?\s+\d{{4}}|\d{{1,2}}[/-]\d{{4}}|"
+    rf"\d{{4}}[/-]\d{{1,2}}|\d{{4}})"
+)
 DATE_RANGE_PATTERN = re.compile(
     rf"(?P<start>{DATE_VALUE_PATTERN})\s*(?:-|–|—|to)\s*"
     rf"(?P<end>present|current|now|{DATE_VALUE_PATTERN}|\d{{2}})(?!\d)",
@@ -97,6 +104,32 @@ def read_docx(file_obj):
     return Document(file_obj)
 
 
+def _append_right_column_sections(text):
+    """Add a reading-order view when a PDF places career history in a right column."""
+    lines = text.splitlines()
+    additions = []
+    heading_pattern = re.compile(
+        r"(?i)\b(professional experience|employment history|work experience|work history)\b"
+    )
+    for index, line in enumerate(lines):
+        match = heading_pattern.search(line)
+        if not match or not line[: match.start()].strip():
+            continue
+        column = match.start()
+        section = [match.group(1)]
+        for following in lines[index + 1 :]:
+            value = following[column:].strip() if len(following) > column else ""
+            if not value:
+                continue
+            heading, _ = _heading_and_tail(value)
+            if heading and heading not in EXPERIENCE_HEADINGS:
+                break
+            section.append(value)
+        if len(section) > 1:
+            additions.extend(section)
+    return text + ("\n" + "\n".join(additions) if additions else "")
+
+
 def extract_text(file_obj, filename):
     extension = Path(filename).suffix.lower()
     file_obj.seek(0)
@@ -106,7 +139,16 @@ def extract_text(file_obj, filename):
             raise ValueError("Resume exceeds the safe page limit.")
         parts, characters = [], 0
         for page in reader.pages:
-            text = page.extract_text() or ""
+            # Layout mode keeps columns separated and makes employer/title/date
+            # associations materially less ambiguous. Some older or malformed
+            # PDFs cannot use it, so retain the bounded plain-text fallback.
+            try:
+                text = page.extract_text(
+                    extraction_mode="layout", layout_mode_space_vertically=False
+                ) or ""
+            except (TypeError, ValueError, KeyError, IndexError):
+                text = page.extract_text() or ""
+            text = _append_right_column_sections(text)
             characters += len(text)
             if characters > 500_000:
                 raise ValueError("Resume exceeds the safe text limit.")
@@ -114,12 +156,17 @@ def extract_text(file_obj, filename):
         return "\n".join(parts)
     if extension == ".docx":
         document = read_docx(file_obj)
-        return "\n".join(
-            block.text
-            if hasattr(block, "text")
-            else "\n".join(" | ".join(cell.text for cell in row.cells) for row in block.rows)
-            for block in document.iter_inner_content()
-        )
+        lines = []
+        for block in document.iter_inner_content():
+            if hasattr(block, "text"):
+                lines.extend(block.text.splitlines())
+                continue
+            for row in block.rows:
+                cells = [" ".join(cell.text.split()) for cell in row.cells]
+                populated = [cell for cell in cells if cell]
+                if populated:
+                    lines.append(" | ".join(populated))
+        return "\n".join(lines)
     return file_obj.read().decode("utf-8", errors="ignore")
 
 
@@ -137,16 +184,28 @@ def _profile_url(text, host):
 
 
 def _heading(value):
-    return re.sub(r"[^a-z ]", "", value.lower()).strip()
+    return " ".join(re.sub(r"[^a-z ]", " ", value.lower()).split())
+
+
+def _heading_and_tail(value):
+    """Return an exact section heading plus content sharing its table/PDF row."""
+    stripped = value.strip()
+    for heading in sorted(SECTION_HEADINGS, key=len, reverse=True):
+        match = re.match(rf"(?i)^\s*{re.escape(heading)}\s*(?:[:|]\s*(.*))?$", stripped)
+        if match:
+            return heading, (match.group(1) or "").strip()
+    return "", ""
 
 
 def _section_lines(lines, headings):
     for index, line in enumerate(lines):
-        if _heading(line) not in headings:
+        heading, tail = _heading_and_tail(line)
+        if heading not in headings:
             continue
-        section = []
+        section = [tail] if tail else []
         for value in lines[index + 1 :]:
-            if _heading(value) in SECTION_HEADINGS:
+            next_heading, _ = _heading_and_tail(value)
+            if next_heading:
                 break
             section.append(value)
         return section
@@ -155,7 +214,7 @@ def _section_lines(lines, headings):
 
 def _resume_date(value):
     normalized = re.sub(r"(?i)^sept", "Sep", value.strip().replace(".", ""))
-    for date_format in ("%b %Y", "%B %Y", "%m/%Y", "%Y"):
+    for date_format in ("%b %Y", "%B %Y", "%m/%Y", "%m-%Y", "%Y-%m", "%Y/%m", "%Y"):
         try:
             return datetime.strptime(normalized, date_format).date().replace(day=1).isoformat()
         except ValueError:
@@ -218,8 +277,50 @@ def _range_dates(match):
     )
 
 
+def _table_date_range(line):
+    """Turn separate DOCX table date cells into the same explicit range grammar."""
+    cells = [cell.strip() for cell in line.split("|")]
+    if len(cells) < 4:
+        return line
+    for index in range(1, len(cells) - 1):
+        start, end = cells[index], cells[index + 1]
+        if re.fullmatch(DATE_VALUE_PATTERN, start, re.I) and re.fullmatch(
+            rf"(?:present|current|now|{DATE_VALUE_PATTERN}|\d{{2}})", end, re.I
+        ):
+            return " | ".join(cells[:index] + [f"{start} - {end}"] + cells[index + 2 :])
+    return line
+
+
+def _employment_details(value):
+    employment_type = next(
+        (
+            label
+            for label, pattern in (
+                ("Full-time", r"\bfull[ -]?time\b"),
+                ("Part-time", r"\bpart[ -]?time\b"),
+                ("Contract", r"\bcontract(?:or)?\b"),
+                ("Internship", r"\binternship\b"),
+                ("Freelance", r"\bfreelance\b"),
+            )
+            if re.search(pattern, value, re.I)
+        ),
+        "",
+    )
+    location = ""
+    location_match = re.search(
+        r"(?i)(?:\||·)\s*([^|·]{2,80}(?:,\s*[A-Za-z]{2,40})?)\s*$", value
+    )
+    if location_match and not DATE_RANGE_PATTERN.search(location_match.group(1)):
+        candidate = location_match.group(1).strip()
+        if any(re.search(rf"(?i)\b{re.escape(place)}\b", candidate) for place in LOCATIONS) or (
+            "," in candidate and len(candidate.split()) <= 5
+        ):
+            location = candidate
+    return employment_type, location
+
+
 def _standard_experiences(lines):
-    section = _section_lines(lines, EXPERIENCE_HEADINGS)
+    section = [_table_date_range(line) for line in _section_lines(lines, EXPERIENCE_HEADINGS)]
     experiences = []
     employer = ""
     for index, line in enumerate(section):
@@ -282,14 +383,24 @@ def _standard_experiences(lines):
                 remainder = role_line[len(role) :].strip(" |•-–—.")
                 if remainder:
                     description.insert(0, remainder)
+            evidence_lines = [line]
+            if description_start == index + 2:
+                evidence_lines.append(section[index + 1])
+            evidence_lines.extend(description)
+            employment_type, role_location = _employment_details(" | ".join(evidence_lines[:2]))
             experiences.append(
                 {
                     "role": role,
                     "company": company[:180],
                     "start_date": start_date,
                     "end_date": end_date,
+                    "is_current": match.group("end").lower() in {"present", "current", "now"},
                     "date_label": match.group(0),
+                    "employment_type": employment_type,
+                    "location": role_location,
                     "description": " ".join(description)[:1000],
+                    "source_evidence": "\n".join(evidence_lines)[:2000],
+                    "confidence_status": "supported",
                 }
             )
     return experiences
@@ -304,6 +415,8 @@ def _education_rows(text, lines):
     for raw_value in _section_lines(lines, EDUCATION_HEADINGS):
         value = raw_value.strip(" |•-–—")
         if not value or len(value) > 240:
+            continue
+        if rows and value.casefold() == rows[-1].casefold():
             continue
         if rows and DATE_RANGE_PATTERN.fullmatch(value):
             rows[-1] = f"{rows[-1]} · {value}"
@@ -354,8 +467,13 @@ def parse_resume(file_obj, filename):
                 "company": match.group(2).strip()[:180],
                 "start_date": match.group(3),
                 "end_date": None if end_value.lower() in {"present", "current"} else end_value,
+                "is_current": end_value.lower() in {"present", "current", "now"},
                 "date_label": f"{match.group(3)} — {end_value}",
+                "employment_type": "",
+                "location": "",
                 "description": (match.group(5) or "").strip(),
+                "source_evidence": match.group(0)[:2000],
+                "confidence_status": "supported",
             }
         )
     for item in _standard_experiences(lines):
@@ -382,8 +500,13 @@ def parse_resume(file_obj, filename):
                         "company": employer[:180],
                         "start_date": None,
                         "end_date": None,
+                        "is_current": False,
                         "date_label": "Dates not specified",
+                        "employment_type": _employment_details(line)[0],
+                        "location": _employment_details(line)[1],
                         "description": "",
+                        "source_evidence": line[:2000],
+                        "confidence_status": "partial",
                     }
                 )
     education_rows = _education_rows(text, lines)
@@ -459,6 +582,17 @@ def parse_resume(file_obj, filename):
         "skills": skills,
         "education": education_rows,
         "work_experiences": experience_rows,
+        "_employment_parse": {
+            "reliable": bool(experience_rows) and (
+                sum(
+                    len(DATE_RANGE_PATTERN.findall(_table_date_range(line)))
+                    for line in _section_lines(lines, EXPERIENCE_HEADINGS)
+                )
+                <= sum(bool(row.get("start_date")) for row in experience_rows)
+                + len({row["company"].casefold() for row in experience_rows})
+            ),
+            "recognized_roles": len(experience_rows),
+        },
         "notice_period_days": int(notice_match.group(1)) if notice_match else None,
         "current_salary_lpa": float(current_salary.group(1)) if current_salary else None,
         "expected_salary_lpa": float(expected_salary.group(1)) if expected_salary else None,

@@ -1,6 +1,7 @@
 """All provider responses and documents are synthetic; network calls are mocked."""
 
 from copy import deepcopy
+from decimal import Decimal
 from unittest.mock import Mock
 
 import pytest
@@ -42,11 +43,13 @@ def response():
         "location": fact("Pune", "Location: Pune"),
         "work_experiences": [
             {"company": "Example Studio", "role": "Engineer", "start": "Jan 2020",
-             "end": "Dec 2021", "details": "Built a Python service used by 12 teams.",
+             "end": "Dec 2021", "employment_type": None, "location": None,
+             "details": "Built a Python service used by 12 teams.",
              "evidence": "Engineer | Example Studio | Jan 2020 - Dec 2021\n"
                          "Built a Python service used by 12 teams."},
             {"company": "Example Studio", "role": "Senior Engineer", "start": "Jan 2022",
-             "end": "Present", "details": "Shipped a Python and Kafka platform.",
+             "end": "Present", "employment_type": None, "location": None,
+             "details": "Shipped a Python and Kafka platform.",
              "evidence": "Senior Engineer | Example Studio | Jan 2022 - Present\n"
                          "Shipped a Python and Kafka platform."},
         ],
@@ -167,6 +170,28 @@ def test_malformed_response_budget_and_no_retry_after_exhaustion(enabled, monkey
     provider.generate.assert_not_called()
 
 
+def test_reliable_deterministic_history_skips_ai_call(enabled, monkeypatch):
+    provider = Mock()
+    monkeypatch.setattr("talent.resume_understanding.resume_provider", lambda: provider)
+    data = rules() | {
+        "work_experiences": [
+            {
+                "company": "Example Studio",
+                "role": "Engineer",
+                "start_date": "2020-01-01",
+                "end_date": "2021-01-01",
+            }
+        ],
+        "_employment_parse": {"reliable": True},
+    }
+    result = understand_resume(data, lambda: True)
+    assert result["_interpretation"] == {
+        "source": "rules",
+        "reason": "deterministic_reliable",
+    }
+    provider.generate.assert_not_called()
+
+
 def test_free_provider_routing_enforces_privacy_and_zero_cost(enabled, settings, monkeypatch):
     settings.OPENROUTER_API_KEY = "synthetic-secret"
     post = Mock(return_value={"choices": [{"finish_reason": "stop", "message": {"content": {}}}]})
@@ -179,7 +204,7 @@ def test_free_provider_routing_enforces_privacy_and_zero_cost(enabled, settings,
                                 "zdr": True, "allow_fallbacks": False,
                                 "max_price": {"prompt": 0, "completion": 0, "request": 0}}
     assert timeout <= 60
-    assert body["max_tokens"] == 6000
+    assert body["max_tokens"] == 4000
     settings.RESUME_AI_MODEL = "paid-model"
     post.reset_mock()
     assert understand_resume(rules(), lambda: True)["_interpretation"]["source"] == "rules"
@@ -231,7 +256,68 @@ def test_openai_requires_explicit_cost_and_zdr_approval(enabled, settings, monke
     monkeypatch.setattr("talent.ai_providers._post_json", post)
     resume_provider().generate("instruction", {}, SCHEMA, "resume")
     assert post.call_args.args[1]["store"] is False
-    assert post.call_args.args[1]["max_output_tokens"] == 6000
+    assert post.call_args.args[1]["max_output_tokens"] == 4000
+
+
+def test_gemini_uses_exact_model_structured_output_and_usage(enabled, settings, monkeypatch):
+    settings.RESUME_AI_PROVIDER = "gemini"
+    settings.RESUME_AI_MODEL = "gemini-3.5-flash-lite"
+    settings.RESUME_AI_API_KEY = "synthetic-generic-key"
+    settings.RESUME_AI_GEMINI_FREE_TIER_APPROVED = True
+    post = Mock(return_value={
+        "responseId": "synthetic-response",
+        "candidates": [{
+            "finishReason": "STOP",
+            "content": {"parts": [{"text": "{}"}]},
+        }],
+        "usageMetadata": {
+            "promptTokenCount": 321,
+            "candidatesTokenCount": 45,
+            "thoughtsTokenCount": 6,
+        },
+    })
+    monkeypatch.setattr("talent.ai_providers._post_json", post)
+    result = resume_provider().generate("instruction", {}, SCHEMA, "resume")
+    url, body, headers, timeout = post.call_args.args
+    assert url.endswith("/models/gemini-3.5-flash-lite:generateContent")
+    assert headers["x-goog-api-key"] == "synthetic-generic-key"
+    assert body["generationConfig"]["responseMimeType"] == "application/json"
+    assert body["generationConfig"]["responseJsonSchema"] == SCHEMA
+    assert body["generationConfig"]["maxOutputTokens"] == 4000
+    assert timeout <= 60
+    assert result.input_tokens == 321
+    assert result.output_tokens == 51
+
+
+@pytest.mark.django_db
+def test_paid_budget_exhaustion_falls_back_without_call_or_usage(
+    enabled, settings, tmp_path, client, candidate_account, monkeypatch,
+):
+    from .test_candidate_experience import upload
+    from .test_candidate_flow import resume_pdf
+
+    settings.MEDIA_ROOT = tmp_path
+    settings.RESUME_AI_ALLOW_PAID = True
+    settings.RESUME_AI_MODEL = "synthetic-paid-model"
+    settings.RESUME_AI_DAILY_BUDGET_USD = Decimal("0.001")
+    settings.RESUME_AI_MONTHLY_BUDGET_USD = Decimal("0.001")
+    settings.RESUME_AI_INPUT_USD_PER_MILLION = Decimal("100")
+    settings.RESUME_AI_OUTPUT_USD_PER_MILLION = Decimal("100")
+    provider = Mock()
+    monkeypatch.setattr("talent.resume_understanding.resume_provider", lambda: provider)
+    result = upload(
+        client,
+        resume_pdf(["Name: Asha Rao", "Career details available on request."]),
+        "synthetic.pdf",
+    ).data
+    provider.generate.assert_not_called()
+    assert result["work_experiences"] == []
+    stored = result["latest_resume"]["id"]
+    from talent.models import Resume, ResumeAIUsage
+
+    resume = Resume.objects.get(pk=stored)
+    assert resume.extracted_data["_interpretation"]["reason"] == "budget_exhausted"
+    assert not ResumeAIUsage.objects.filter(resume=resume).exists()
 
 
 @pytest.mark.django_db
@@ -242,7 +328,7 @@ def test_worker_persists_mocked_ai_interpretation_and_private_evidence(
     from io import BytesIO
 
     from docx import Document
-    from talent.models import Resume
+    from talent.models import Resume, ResumeAIUsage
 
     from .test_candidate_experience import upload
     from .test_candidate_flow import resume_pdf
@@ -273,6 +359,14 @@ def test_worker_persists_mocked_ai_interpretation_and_private_evidence(
     stored = Resume.objects.get(pk=result["latest_resume"]["id"])
     assert stored.extracted_data["_ai_requests"] == 1
     assert stored.extracted_data["_interpretation"]["source"] == "ai"
+    usage = ResumeAIUsage.objects.get(resume=stored)
+    assert usage.outcome == ResumeAIUsage.Outcome.SUCCEEDED
+    assert usage.provider == "openrouter"
+    assert usage.estimated_cost_usd == 0
     assert "_evidence" in stored.extracted_data
     assert "_evidence" not in str(result) and "raw_text" not in str(result)
     assert "Asha Rao" not in provider.generate.call_args.args[1]["document_text"]
+    from talent.resume_processing import process_resume_job
+
+    assert process_resume_job(stored.processing_job.pk) == "duplicate"
+    assert ResumeAIUsage.objects.filter(resume=stored).count() == 1

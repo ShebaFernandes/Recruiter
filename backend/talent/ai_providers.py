@@ -1,6 +1,7 @@
 import json
 import socket
 import urllib.error
+import urllib.parse
 import urllib.request
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -38,6 +39,8 @@ class AIProviderResult:
     provider: str
     model: str
     request_id: str = ""
+    input_tokens: int = 0
+    output_tokens: int = 0
 
 
 def _retry_after(headers):
@@ -162,6 +165,8 @@ class OpenAIResponsesProvider(StructuredAIProvider):
             provider=self.name,
             model=str(payload.get("model") or self.model),
             request_id=str(payload.get("id") or ""),
+            input_tokens=int((payload.get("usage") or {}).get("input_tokens") or 0),
+            output_tokens=int((payload.get("usage") or {}).get("output_tokens") or 0),
         )
 
 
@@ -234,11 +239,72 @@ class OpenRouterChatProvider(StructuredAIProvider):
             provider=self.name,
             model=str(payload.get("model") or self.model),
             request_id=str(payload.get("id") or ""),
+            input_tokens=int((payload.get("usage") or {}).get("prompt_tokens") or 0),
+            output_tokens=int((payload.get("usage") or {}).get("completion_tokens") or 0),
+        )
+
+
+class GeminiGenerateContentProvider(StructuredAIProvider):
+    name = "gemini"
+
+    def __init__(self, *, model=None, timeout=None, request_options=None):
+        self.api_key = settings.RESUME_AI_API_KEY or settings.GEMINI_API_KEY
+        self.model = model or settings.RESUME_AI_MODEL
+        self.base_url = settings.GEMINI_API_BASE_URL.rstrip("/")
+        self.timeout = timeout or settings.AI_REQUEST_TIMEOUT_SECONDS
+        self.request_options = request_options or {}
+
+    def generate(self, instructions, input_payload, schema, schema_name):
+        del schema_name
+        if not self.api_key:
+            raise AIProviderUnavailable("Gemini is not configured.")
+        model = urllib.parse.quote(self.model, safe="-._")
+        payload = _post_json(
+            f"{self.base_url}/models/{model}:generateContent",
+            {
+                "systemInstruction": {"parts": [{"text": instructions}]},
+                "contents": [
+                    {
+                        "role": "user",
+                        "parts": [
+                            {"text": json.dumps(input_payload, ensure_ascii=False)}
+                        ],
+                    }
+                ],
+                "generationConfig": {
+                    "responseMimeType": "application/json",
+                    "responseJsonSchema": schema,
+                    **self.request_options,
+                },
+            },
+            {"x-goog-api-key": self.api_key, "Content-Type": "application/json"},
+            self.timeout,
+        )
+        try:
+            candidate = payload["candidates"][0]
+            parts = candidate["content"]["parts"]
+            content = "".join(part.get("text", "") for part in parts)
+        except (KeyError, IndexError, TypeError) as exc:
+            raise AIProviderMalformedResponse() from exc
+        if candidate.get("finishReason") not in {None, "STOP"}:
+            raise AIProviderMalformedResponse()
+        usage = payload.get("usageMetadata") or {}
+        return AIProviderResult(
+            data=_json_content(content),
+            provider=self.name,
+            model=self.model,
+            request_id=str(payload.get("responseId") or ""),
+            input_tokens=int(usage.get("promptTokenCount") or 0),
+            output_tokens=int(
+                (usage.get("candidatesTokenCount") or 0)
+                + (usage.get("thoughtsTokenCount") or 0)
+            ),
         )
 
 
 def get_ai_provider(name):
     providers = {
+        "gemini": GeminiGenerateContentProvider,
         "openai": OpenAIResponsesProvider,
         "openrouter": OpenRouterChatProvider,
     }

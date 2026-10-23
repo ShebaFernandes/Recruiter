@@ -61,6 +61,8 @@ class WorkExperienceSerializer(serializers.ModelSerializer):
         if attrs.get("start_date") and attrs.get("end_date"):
             if attrs["end_date"] < attrs["start_date"]:
                 raise serializers.ValidationError("End date must not be before start date.")
+        if attrs.get("is_current") and attrs.get("end_date"):
+            raise serializers.ValidationError("A current role cannot have an end date.")
         return attrs
 
     class Meta:
@@ -71,10 +73,16 @@ class WorkExperienceSerializer(serializers.ModelSerializer):
             "role",
             "start_date",
             "end_date",
+            "is_current",
             "date_label",
+            "employment_type",
+            "location",
             "description",
+            "source_evidence",
+            "confidence_status",
             "gap_reason",
         ]
+        extra_kwargs = {"source_evidence": {"write_only": True}}
 
 
 class ResumeSerializer(serializers.ModelSerializer):
@@ -544,6 +552,8 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
         instance = super().update(instance, validated_data)
         if experiences is not None:
             instance.work_experiences.all().delete()
+            for item in experiences:
+                item["confidence_status"] = WorkExperience.ConfidenceStatus.CANDIDATE_CONFIRMED
             WorkExperience.objects.bulk_create(
                 [WorkExperience(candidate=instance, **item) for item in experiences]
             )

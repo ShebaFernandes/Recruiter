@@ -8,7 +8,9 @@ import './career-journey.css'
 
 const month = 2629800000
 const time = (value: string | null) => value ? new Date(value).getTime() : NaN
-const ongoing = (item: WorkExperience) => !item.end_date && Boolean(item.start_date) && (!item.date_label || /present|current|now/i.test(item.date_label))
+const ongoing = (item: WorkExperience) => !item.end_date && Boolean(item.start_date) && (
+  item.is_current === true || (item.is_current === undefined && (!item.date_label || /present|current|now/i.test(item.date_label)))
+)
 const endTime = (item: WorkExperience) => ongoing(item) ? Date.now() : time(item.end_date)
 const coarseDates = (item: WorkExperience) => Boolean(item.date_label && /(?:^|\()\d{4}\s*[–—-]\s*\d{2,4}(?:$|\))/.test(item.date_label))
 const duration = (months: number) => months >= 12 ? `${(months / 12).toFixed(months % 12 ? 1 : 0)} yrs` : `${months} mo`

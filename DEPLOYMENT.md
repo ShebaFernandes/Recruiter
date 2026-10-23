@@ -25,15 +25,23 @@ fictional document, not the development database containing real candidates.
 RESUME_AI_ENABLED=false
 RESUME_AI_EXTERNAL_PROCESSING_APPROVED=false
 RESUME_AI_PROVIDER=openrouter
-RESUME_AI_MODEL=openrouter/free
+RESUME_AI_MODEL=
+RESUME_AI_API_KEY=
 RESUME_AI_ALLOW_PAID=false
 RESUME_AI_OPENAI_ZDR_APPROVED=false
+RESUME_AI_GEMINI_FREE_TIER_APPROVED=false
 RESUME_AI_FALLBACK=rules
 RESUME_AI_MAX_ATTEMPTS=2
 RESUME_AI_TIMEOUT_SECONDS=60
+RESUME_AI_MAX_INPUT_TOKENS=4000
+RESUME_AI_MAX_OUTPUT_TOKENS=4000
+RESUME_AI_DAILY_BUDGET_USD=0
+RESUME_AI_MONTHLY_BUDGET_USD=0
+RESUME_AI_INPUT_USD_PER_MILLION=0
+RESUME_AI_OUTPUT_USD_PER_MILLION=0
 ```
 
-The existing server-only `OPENROUTER_API_KEY` is reused. Do not change
+Use the server-only `RESUME_AI_API_KEY`, or the provider-specific existing key. Do not change
 `AI_PROVIDER` or `OPENROUTER_SEARCH_MODEL` to configure resume interpretation.
 No frontend environment variables or public document URLs are needed.
 Restart Django and the resume worker after configuration changes.
@@ -67,14 +75,23 @@ See [free routing](https://openrouter.ai/openrouter/free),
 and [ZDR](https://openrouter.ai/docs/guides/features/zdr). No live inference request
 was made during implementation; compatibility is documented, not account-tested.
 
+Deterministic history that passes the completeness heuristic makes no model call.
 At most two model requests are reserved durably per resume across worker retries.
 Only malformed output is retried immediately; rate limits, outages and timeouts
-fall back without a retry storm. Output is capped at 6,000 tokens; input over the
-15,000-character interpretation limit uses rules rather than silently sending a
+fall back without a retry storm. Input and output are capped at the configured
+token limits; oversized input uses rules rather than silently sending a
 truncated document. Failed/expired attempt owners cannot update or fail a newer
 attempt. Lease recovery respects the job attempt cap. SQS busy/superseded receipts
 are not acknowledged prematurely. Socket timeouts are not a hard CPU limit on
 local PDF parsing; container/process supervision is still needed in production.
+
+`ResumeAIUsage` records provider, exact returned model, token counts, latency,
+estimated cost, outcome and failure category, but never resume text. Paid calls
+reserve their maximum configured cost under a database lock before sending and
+are refused when either budget would be exceeded. A validated result is cached
+durably before the worker merge, so a process/SQS retry can reuse it without a
+second charge. Paid mode refuses to start unless both budgets and current token
+prices are configured.
 
 Inspect `Resume.extracted_data['_interpretation']` locally for `source=ai` with
 provider/model, or `source=rules` with the fallback reason. `_ai_requests` is the
@@ -99,6 +116,14 @@ then set `RESUME_AI_OPENAI_ZDR_APPROVED=true` and the external-processing approv
 flag. Requests use Responses with `store=false`; that flag alone is **not** ZDR.
 Review [OpenAI data controls](https://developers.openai.com/api/docs/guides/your-data)
 and current model pricing before approving paid requests. No pipeline rebuild is needed.
+
+Gemini uses the same pipeline with `RESUME_AI_PROVIDER=gemini`, an exact verified
+model ID and either `RESUME_AI_API_KEY` or `GEMINI_API_KEY`. Unpaid Gemini use is
+blocked unless `RESUME_AI_GEMINI_FREE_TIER_APPROVED=true`; Google's published
+terms say unpaid inputs/outputs may be used to improve products and may be human
+reviewed, so this gate is for synthetic/redacted testing only. Paid credentials
+still require the explicit paid flag, budgets and current prices. Never attach
+billing or upgrade automatically.
 
 Limitations: evidence checks prove text support, not the truth of a CV or perfect
 employer association. Complex columns, scanned/image-only documents (no OCR),

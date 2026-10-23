@@ -136,21 +136,40 @@ def test_resume_parser_extracts_company_date_then_role_layout():
         {
             "role": "AI Full-Stack Developer",
             "company": "Enter Recruitment",
-            "start_date": "2026-09-01",
-            "end_date": None,
-            "date_label": "Sep 2026 - Present",
-            "description": (
-                "Developing a production recruitment platform. "
-                "Building resume extraction and candidate search workflows."
-            ),
+                "start_date": "2026-09-01",
+                "end_date": None,
+                "is_current": True,
+                "date_label": "Sep 2026 - Present",
+                "employment_type": "",
+                "location": "",
+                "description": (
+                    "Developing a production recruitment platform. "
+                    "Building resume extraction and candidate search workflows."
+                ),
+                "source_evidence": (
+                    "Enter Recruitment    Sep 2026 - Present\n"
+                    "AI Full-Stack Developer\n"
+                    "Developing a production recruitment platform.\n"
+                    "Building resume extraction and candidate search workflows."
+                ),
+                "confidence_status": "supported",
         },
         {
             "role": "AI Intern / SDE Intern - AI",
             "company": "NewSpace Research and Technologies",
-            "start_date": "2026-01-01",
-            "end_date": "2026-07-01",
-            "date_label": "Jan 2026 - Jul 2026",
-            "description": "Built a LangGraph-based product requirements agent.",
+                "start_date": "2026-01-01",
+                "end_date": "2026-07-01",
+                "is_current": False,
+                "date_label": "Jan 2026 - Jul 2026",
+                "employment_type": "",
+                "location": "Bengaluru, India",
+                "description": "Built a LangGraph-based product requirements agent.",
+                "source_evidence": (
+                    "NewSpace Research and Technologies    Jan 2026 - Jul 2026\n"
+                    "AI Intern / SDE Intern - AI | Bengaluru, India\n"
+                    "Built a LangGraph-based product requirements agent."
+                ),
+                "confidence_status": "supported",
         },
     ]
 

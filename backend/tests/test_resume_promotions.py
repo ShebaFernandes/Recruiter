@@ -157,3 +157,37 @@ def test_undated_employer_followed_by_dated_role_is_preserved(extension):
         ("Example Systems", "Senior Platform Engineer"),
         ("Earlier Works", "Software Engineer"),
     ]
+
+
+def test_docx_table_heading_and_separate_date_cells_are_preserved():
+    document = Document()
+    heading = document.add_table(rows=1, cols=4).rows[0].cells
+    heading[0].text = "WORK HISTORY"
+    row = document.tables[0].add_row().cells
+    for cell, value in zip(
+        row,
+        ["Example Labs", "Senior Engineer", "2020-02", "Present"],
+        strict=True,
+    ):
+        cell.text = value
+    row = document.tables[0].add_row().cells
+    for cell, value in zip(
+        row,
+        ["Earlier Studio", "Software Developer", "06/2017", "01-2020"],
+        strict=True,
+    ):
+        cell.text = value
+    parsed = parse_resume(BytesIO(_document_bytes(document)), "table.docx")
+    assert [(row["company"], row["role"]) for row in parsed["work_experiences"]] == [
+        ("Example Labs", "Senior Engineer"),
+        ("Earlier Studio", "Software Developer"),
+    ]
+    assert parsed["work_experiences"][0]["is_current"] is True
+    assert parsed["work_experiences"][1]["start_date"] == "2017-06-01"
+    assert parsed["work_experiences"][1]["end_date"] == "2020-01-01"
+
+
+def _document_bytes(document):
+    content = BytesIO()
+    document.save(content)
+    return content.getvalue()

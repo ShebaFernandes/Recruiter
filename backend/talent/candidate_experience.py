@@ -68,7 +68,9 @@ def comparable(field, value):
         for item in value:
             row = {key: item.get(key) or "" for key in (
                 "company", "role", "description", "date_label", "gap_reason",
+                "employment_type", "location",
             )}
+            row["is_current"] = bool(item.get("is_current"))
             for key in ("start_date", "end_date"):
                 date = item.get(key)
                 parsed = parse_date(str(date)) if date else None

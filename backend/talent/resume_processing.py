@@ -3,7 +3,8 @@ import logging
 import socket
 import struct
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
+from decimal import Decimal
 from pathlib import Path
 
 import boto3
@@ -11,7 +12,7 @@ from botocore.config import Config
 from django.conf import settings
 from django.core.files.base import File
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.utils import timezone
 from django.utils.module_loading import import_string
 
@@ -22,7 +23,15 @@ from .candidate_experience import (
     proposed_fields,
     resume_identity_issue,
 )
-from .models import CandidateProfile, FileCleanupJob, Resume, ResumeProcessingJob, WorkExperience
+from .models import (
+    CandidateProfile,
+    FileCleanupJob,
+    RateLimitBucket,
+    Resume,
+    ResumeAIUsage,
+    ResumeProcessingJob,
+    WorkExperience,
+)
 from .resume_understanding import understand_resume
 from .services import parse_date, parse_resume
 from .storage_cleanup import schedule_cleanup
@@ -313,10 +322,15 @@ def _apply_extracted_resume(resume, extracted):
                     role=item["role"],
                     start_date=parse_date(item["start_date"]) if item.get("start_date") else None,
                     end_date=parse_date(item["end_date"]) if item.get("end_date") else None,
+                    is_current=bool(item.get("is_current")),
                     date_label=item.get("date_label", ""),
+                    employment_type=item.get("employment_type", ""),
+                    location=item.get("location", ""),
                     description=item.get("description", ""),
+                    source_evidence=item.get("source_evidence", ""),
+                    confidence_status=item.get("confidence_status", "partial"),
                 )
-                for item in comparable("work_experiences", safe["work_experiences"])
+                for item in safe["work_experiences"]
             ]
         )
     current = profile_values(profile)
@@ -340,16 +354,92 @@ def _owns_attempt(current, claimed):
 
 def _reserve_ai_attempt(claimed):
     with transaction.atomic():
+        lock, _ = RateLimitBucket.objects.get_or_create(
+            key="resume-ai-budget",
+            defaults={"window_started_at": timezone.now(), "count": 0},
+        )
+        RateLimitBucket.objects.select_for_update().get(pk=lock.pk)
         current = ResumeProcessingJob.objects.select_for_update().get(pk=claimed.pk)
         if not _owns_attempt(current, claimed):
             return False
         resume = Resume.objects.select_for_update().get(pk=current.resume_id)
-        used = resume.extracted_data.get("_ai_requests", 0)
+        used = max(
+            resume.extracted_data.get("_ai_requests", 0),
+            resume.ai_usage.count(),
+        )
         if used >= settings.RESUME_AI_MAX_ATTEMPTS:
             return False
+        reserved_cost = Decimal("0")
+        if settings.RESUME_AI_ALLOW_PAID:
+            reserved_cost = (
+                Decimal(settings.RESUME_AI_MAX_INPUT_TOKENS)
+                * settings.RESUME_AI_INPUT_USD_PER_MILLION
+                + Decimal(settings.RESUME_AI_MAX_OUTPUT_TOKENS)
+                * settings.RESUME_AI_OUTPUT_USD_PER_MILLION
+            ) / Decimal("1000000")
+            now = timezone.now()
+            day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            month_start = datetime(now.year, now.month, 1, tzinfo=now.tzinfo)
+            daily = ResumeAIUsage.objects.filter(created_at__gte=day_start).aggregate(
+                value=Sum("estimated_cost_usd")
+            )["value"] or Decimal("0")
+            monthly = ResumeAIUsage.objects.filter(created_at__gte=month_start).aggregate(
+                value=Sum("estimated_cost_usd")
+            )["value"] or Decimal("0")
+            if (
+                daily + reserved_cost > settings.RESUME_AI_DAILY_BUDGET_USD
+                or monthly + reserved_cost > settings.RESUME_AI_MONTHLY_BUDGET_USD
+            ):
+                return False
+        usage = ResumeAIUsage.objects.create(
+            resume=resume,
+            attempt=used + 1,
+            provider=settings.RESUME_AI_PROVIDER,
+            model=settings.RESUME_AI_MODEL,
+            outcome=ResumeAIUsage.Outcome.RESERVED,
+            estimated_cost_usd=reserved_cost,
+        )
         resume.extracted_data["_ai_requests"] = used + 1
         resume.save(update_fields=["extracted_data"])
-        return True
+        return usage.pk
+
+
+def _record_ai_attempt(usage_id, response, failure_category, latency_ms):
+    with transaction.atomic():
+        usage = ResumeAIUsage.objects.select_for_update().get(pk=usage_id)
+        if usage.outcome != ResumeAIUsage.Outcome.RESERVED:
+            return
+        usage.latency_ms = max(0, latency_ms)
+        usage.completed_at = timezone.now()
+        if response:
+            usage.provider = response.provider
+            usage.model = response.model
+            usage.request_id = response.request_id[:180]
+            usage.input_tokens = response.input_tokens
+            usage.output_tokens = response.output_tokens
+            usage.estimated_cost_usd = (
+                Decimal(response.input_tokens) * settings.RESUME_AI_INPUT_USD_PER_MILLION
+                + Decimal(response.output_tokens) * settings.RESUME_AI_OUTPUT_USD_PER_MILLION
+            ) / Decimal("1000000")
+            usage.outcome = ResumeAIUsage.Outcome.SUCCEEDED
+        else:
+            usage.failure_category = (failure_category or "unavailable")[:40]
+            usage.outcome = ResumeAIUsage.Outcome.FAILED
+        usage.save()
+
+
+def _cache_ai_result(claimed, usage_id, interpreted, response, latency_ms):
+    with transaction.atomic():
+        _record_ai_attempt(usage_id, response, None, latency_ms)
+        resume = Resume.objects.select_for_update().get(pk=claimed.resume_id)
+        data = dict(resume.extracted_data)
+        data["_ai_cached_result"] = interpreted
+        data["_ai_cached_provider"] = {
+            "provider": response.provider,
+            "model": response.model,
+        }
+        resume.extracted_data = data
+        resume.save(update_fields=["extracted_data"])
 
 
 def _retry_or_fail(job_id, message, scan_failed=False, claimed=None, recover_stale=False):
@@ -435,9 +525,19 @@ def process_resume_job(job_id, idempotency_key=None, claimed=None):
             extracted = parse_resume(file_object, resume.original_name)
         if not extracted.get("raw_text", "").strip():
             raise ValueError("No readable text was found in this resume.")
+        previous_private = resume.extracted_data
+        if previous_private.get("_ai_cached_result"):
+            extracted["_ai_cached_result"] = previous_private["_ai_cached_result"]
         resume.extracted_data = extracted
         if not resume_identity_issue(resume, resume.candidate):
-            extracted = understand_resume(extracted, lambda: _reserve_ai_attempt(job))
+            extracted = understand_resume(
+                extracted,
+                lambda: _reserve_ai_attempt(job),
+                _record_ai_attempt,
+                lambda usage_id, result, response, latency_ms: _cache_ai_result(
+                    job, usage_id, result, response, latency_ms
+                ),
+            )
         else:
             extracted["_interpretation"] = {"source": "rules", "reason": "identity_check"}
         with transaction.atomic():

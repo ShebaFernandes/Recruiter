@@ -149,7 +149,7 @@ function ProfileEditor({ profile, save, cancel, busy }: { profile: Candidate; sa
       full_name: get('full_name'), headline: get('headline'), current_company: get('current_company'),
       location: get('location'), total_experience: get('total_experience') || '0',
       summary: get('summary'), skills: list(get('skills')), education: get('education').split('\n').map(s => s.trim()).filter(Boolean),
-      work_experiences: rows.map(row => ({ ...row, start_date: row.start_date || null, end_date: row.end_date || null, date_label: row.date_label || (!row.end_date ? `${row.start_date || 'Start not specified'} — End not specified` : '') })),
+      work_experiences: rows.map(row => ({ ...row, start_date: row.start_date || null, end_date: row.end_date || null, date_label: row.date_label || (!row.end_date ? `${row.start_date || 'Start not specified'} — ${row.is_current ? 'Present' : 'End not specified'}` : '') })),
       career_preferences: { strongest_skills: list(get('strongest_skills')), standout_signal: get('standout_signal'), likely_directions: profile.career_preferences?.likely_directions ?? [] },
     }
     if (await save(patch)) cancel()
@@ -174,9 +174,9 @@ function ProfileEditor({ profile, save, cancel, busy }: { profile: Candidate; sa
       return <details className="cp-work-edit" key={i}><summary><span><strong>{row.role || 'Role not specified'}</strong><small>{row.company || 'Employer not specified'} · {period}</small></span><span className="cp-role-edit"><Pencil aria-hidden="true" />Edit</span></summary><div className="cp-work-edit-fields">
         <label>Company<input required value={row.company} onChange={e => update(i, { company: e.target.value })} /></label>
         <label>Job title<input required value={row.role} onChange={e => update(i, { role: e.target.value })} /></label>
-        <label>Start date<input type="date" value={row.start_date || ''} onChange={e => update(i, { start_date: e.target.value || null, date_label: /present|current|now/i.test(row.date_label || '') ? `${e.target.value || 'Start not specified'} — Present` : '' })} /></label>
-        <label>End date<input type="date" value={row.end_date || ''} onChange={e => update(i, { end_date: e.target.value || null, date_label: '' })} /></label>
-        <label className="cp-check"><input type="checkbox" checked={/present|current|now/i.test(row.date_label || '') && !row.end_date} onChange={e => update(i, { end_date: e.target.checked ? null : row.end_date, date_label: e.target.checked ? `${row.start_date || 'Start not specified'} — Present` : '' })} />Current role</label>
+        <label>Start date<input type="date" value={row.start_date || ''} onChange={e => update(i, { start_date: e.target.value || null, date_label: row.is_current || /present|current|now/i.test(row.date_label || '') ? `${e.target.value || 'Start not specified'} — Present` : '' })} /></label>
+        <label>End date<input type="date" value={row.end_date || ''} onChange={e => update(i, { end_date: e.target.value || null, is_current: false, date_label: '' })} /></label>
+        <label className="cp-check"><input type="checkbox" checked={Boolean(row.is_current ?? (/present|current|now/i.test(row.date_label || '') && !row.end_date))} onChange={e => update(i, { end_date: e.target.checked ? null : row.end_date, is_current: e.target.checked, date_label: e.target.checked ? `${row.start_date || 'Start not specified'} — Present` : '' })} />Current role</label>
         <label>Career gap context<input value={row.gap_reason} onChange={e => update(i, { gap_reason: e.target.value })} /></label>
         <label className="cp-field-wide">Role details<textarea value={row.description} onChange={e => update(i, { description: e.target.value })} /></label>
       </div></details>

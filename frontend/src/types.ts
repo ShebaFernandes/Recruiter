@@ -5,8 +5,12 @@ export type WorkExperience = {
   role: string
   start_date: string | null
   end_date: string | null
+  is_current?: boolean
   date_label?: string
+  employment_type?: string
+  location?: string
   description: string
+  confidence_status?: 'supported' | 'partial' | 'candidate_confirmed'
   gap_reason: string
 }
 export type Resume = {

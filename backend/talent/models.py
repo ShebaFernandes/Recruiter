@@ -215,6 +215,11 @@ def delete_candidate_photo_file(sender, instance, **kwargs):
 
 
 class WorkExperience(models.Model):
+    class ConfidenceStatus(models.TextChoices):
+        SUPPORTED = "supported", "Supported by resume evidence"
+        PARTIAL = "partial", "Some fields need candidate review"
+        CANDIDATE_CONFIRMED = "candidate_confirmed", "Confirmed by candidate"
+
     candidate = models.ForeignKey(
         CandidateProfile, on_delete=models.CASCADE, related_name="work_experiences"
     )
@@ -222,8 +227,17 @@ class WorkExperience(models.Model):
     role = models.CharField(max_length=180)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
+    is_current = models.BooleanField(default=False)
     date_label = models.CharField(max_length=100, blank=True)
+    employment_type = models.CharField(max_length=80, blank=True)
+    location = models.CharField(max_length=180, blank=True)
     description = models.TextField(blank=True)
+    source_evidence = models.TextField(blank=True)
+    confidence_status = models.CharField(
+        max_length=30,
+        choices=ConfidenceStatus.choices,
+        default=ConfidenceStatus.PARTIAL,
+    )
     gap_reason = models.CharField(max_length=240, blank=True)
 
     class Meta:
@@ -303,6 +317,39 @@ class ResumeProcessingJob(models.Model):
 
     class Meta:
         indexes = [models.Index(fields=["state", "available_at"])]
+
+
+class ResumeAIUsage(models.Model):
+    class Outcome(models.TextChoices):
+        RESERVED = "reserved", "Reserved"
+        SUCCEEDED = "succeeded", "Succeeded"
+        FAILED = "failed", "Failed"
+
+    resume = models.ForeignKey(Resume, on_delete=models.CASCADE, related_name="ai_usage")
+    attempt = models.PositiveSmallIntegerField()
+    provider = models.CharField(max_length=40)
+    model = models.CharField(max_length=120)
+    outcome = models.CharField(max_length=20, choices=Outcome.choices)
+    failure_category = models.CharField(max_length=40, blank=True)
+    request_id = models.CharField(max_length=180, blank=True)
+    input_tokens = models.PositiveIntegerField(default=0)
+    output_tokens = models.PositiveIntegerField(default=0)
+    estimated_cost_usd = models.DecimalField(max_digits=12, decimal_places=6, default=0)
+    latency_ms = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["resume", "attempt"], name="unique_resume_ai_attempt"
+            )
+        ]
+        indexes = [
+            models.Index(
+                fields=["created_at", "outcome"], name="resume_ai_created_outcome_idx"
+            )
+        ]
 
 
 @receiver(post_delete, sender=Resume)

@@ -1,6 +1,7 @@
 import os
 import sys
 from datetime import date
+from decimal import Decimal
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -329,19 +330,55 @@ RESUME_AI_ALLOW_PAID = os.getenv("RESUME_AI_ALLOW_PAID", "false").lower() == "tr
 RESUME_AI_OPENAI_ZDR_APPROVED = (
     os.getenv("RESUME_AI_OPENAI_ZDR_APPROVED", "false").lower() == "true"
 )
+RESUME_AI_GEMINI_FREE_TIER_APPROVED = (
+    os.getenv("RESUME_AI_GEMINI_FREE_TIER_APPROVED", "false").lower() == "true"
+)
 RESUME_AI_PROVIDER = os.getenv("RESUME_AI_PROVIDER", "openrouter")
-RESUME_AI_MODEL = os.getenv("RESUME_AI_MODEL", "openrouter/free")
+RESUME_AI_MODEL = os.getenv("RESUME_AI_MODEL", "")
+RESUME_AI_API_KEY = os.getenv("RESUME_AI_API_KEY", "")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_API_BASE_URL = os.getenv(
+    "GEMINI_API_BASE_URL", "https://generativelanguage.googleapis.com/v1beta"
+)
 RESUME_AI_FALLBACK = os.getenv("RESUME_AI_FALLBACK", "rules")
 RESUME_AI_MAX_ATTEMPTS = int(os.getenv("RESUME_AI_MAX_ATTEMPTS", "2"))
 RESUME_AI_TIMEOUT_SECONDS = float(os.getenv("RESUME_AI_TIMEOUT_SECONDS", "60"))
-RESUME_AI_MAX_INPUT_CHARS = 15000
-RESUME_AI_MAX_OUTPUT_TOKENS = 6000
+RESUME_AI_MAX_INPUT_TOKENS = int(os.getenv("RESUME_AI_MAX_INPUT_TOKENS", "4000"))
+RESUME_AI_MAX_INPUT_CHARS = RESUME_AI_MAX_INPUT_TOKENS * 4
+RESUME_AI_MAX_OUTPUT_TOKENS = int(os.getenv("RESUME_AI_MAX_OUTPUT_TOKENS", "4000"))
+RESUME_AI_DAILY_BUDGET_USD = Decimal(os.getenv("RESUME_AI_DAILY_BUDGET_USD", "0"))
+RESUME_AI_MONTHLY_BUDGET_USD = Decimal(os.getenv("RESUME_AI_MONTHLY_BUDGET_USD", "0"))
+RESUME_AI_INPUT_USD_PER_MILLION = Decimal(
+    os.getenv("RESUME_AI_INPUT_USD_PER_MILLION", "0")
+)
+RESUME_AI_OUTPUT_USD_PER_MILLION = Decimal(
+    os.getenv("RESUME_AI_OUTPUT_USD_PER_MILLION", "0")
+)
 if (
     RESUME_AI_FALLBACK not in {"rules", "fail"}
+    or RESUME_AI_PROVIDER not in {"openai", "openrouter", "gemini"}
     or not 1 <= RESUME_AI_MAX_ATTEMPTS <= 2
     or not 1 <= RESUME_AI_TIMEOUT_SECONDS <= 60
+    or not 256 <= RESUME_AI_MAX_INPUT_TOKENS <= 100_000
+    or not 256 <= RESUME_AI_MAX_OUTPUT_TOKENS <= 20_000
+    or min(
+        RESUME_AI_DAILY_BUDGET_USD,
+        RESUME_AI_MONTHLY_BUDGET_USD,
+        RESUME_AI_INPUT_USD_PER_MILLION,
+        RESUME_AI_OUTPUT_USD_PER_MILLION,
+    ) < 0
 ):
     raise ImproperlyConfigured("Invalid bounded resume AI configuration.")
+if RESUME_AI_ENABLED and RESUME_AI_ALLOW_PAID and (
+    not RESUME_AI_DAILY_BUDGET_USD
+    or not RESUME_AI_MONTHLY_BUDGET_USD
+    or not (RESUME_AI_INPUT_USD_PER_MILLION or RESUME_AI_OUTPUT_USD_PER_MILLION)
+):
+    raise ImproperlyConfigured(
+        "Paid resume AI requires daily/monthly budgets and configured token prices."
+    )
+if RESUME_AI_ENABLED and not RESUME_AI_MODEL:
+    raise ImproperlyConfigured("RESUME_AI_MODEL must be an explicitly verified model ID.")
 if RESUME_AI_ENABLED and (
     RESUME_AI_MAX_ATTEMPTS * RESUME_AI_TIMEOUT_SECONDS + RESUME_SCAN_TIMEOUT_SECONDS + 30
     >= RESUME_PROCESSING_TIMEOUT_SECONDS
