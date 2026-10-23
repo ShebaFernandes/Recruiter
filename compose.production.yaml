@@ -22,6 +22,7 @@ x-app: &app
     RESUME_SCANNER_BACKEND: clamav
     CLAMAV_HOST: scanner
     RATE_LIMIT_TRUST_X_FORWARDED_FOR: "true"
+    PRIVATE_ADMIN_ORIGIN: https://${ENTER_DOMAIN}:8443
     SECURE_SSL_REDIRECT: "true"
     AUTH_COOKIE_SECURE: "true"
     EMAIL_BACKEND: django.core.mail.backends.smtp.EmailBackend
@@ -150,7 +151,7 @@ services:
     environment:
       ENTER_DOMAIN: ${ENTER_DOMAIN:?Set the public domain}
       ACME_EMAIL: ${ACME_EMAIL:?Set a real certificate contact email}
-    ports: ["80:80", "443:443"]
+    ports: ["80:80", "443:443", "127.0.0.1:8443:8443"]
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ${ENTER_DATA_DIR}/caddy-data:/data

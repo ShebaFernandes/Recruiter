@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import GroupAdmin, UserAdmin
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_protect
@@ -51,6 +52,27 @@ class SuperuserOnlyAdminMixin:
     has_add_permission = has_view_permission
     has_change_permission = has_view_permission
     has_delete_permission = has_view_permission
+
+
+class ReadOnlyForStaffAdminMixin:
+    """Allow delegated staff to view records, while reserving mutations for superusers."""
+
+    def has_add_permission(self, request):
+        return request.user.is_superuser and super().has_add_permission(request)
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser and super().has_change_permission(request, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser and super().has_delete_permission(request, obj)
+
+    def get_actions(self, request):
+        return super().get_actions(request) if request.user.is_superuser else {}
+
+    def history_view(self, request, object_id, extra_context=None):
+        if not request.user.is_superuser:
+            raise PermissionDenied
+        return super().history_view(request, object_id, extra_context)
 
 
 class RecruiterAdminForm(forms.ModelForm):
@@ -145,8 +167,41 @@ admin.site.unregister(Group)
 
 
 @admin.register(User)
-class EnterUserAdmin(SuperuserOnlyAdminMixin, UserAdmin):
-    pass
+class EnterUserAdmin(ReadOnlyForStaffAdminMixin, UserAdmin):
+    list_display = ["username", "email", "is_active", "date_joined", "last_login"]
+    list_filter = ["is_active", "date_joined"]
+    search_fields = ["username", "email"]
+
+    management_fields = (
+        "username",
+        "email",
+        "first_name",
+        "last_name",
+        "is_active",
+        "date_joined",
+        "last_login",
+    )
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        if request.user.is_superuser:
+            return queryset
+        return queryset.filter(role_profile__role=UserRole.Role.CANDIDATE)
+
+    def get_fields(self, request, obj=None):
+        if request.user.is_superuser:
+            return super().get_fields(request, obj)
+        return self.management_fields
+
+    def get_fieldsets(self, request, obj=None):
+        if request.user.is_superuser:
+            return super().get_fieldsets(request, obj)
+        return ((None, {"fields": self.management_fields}),)
+
+    def get_readonly_fields(self, request, obj=None):
+        if request.user.is_superuser:
+            return super().get_readonly_fields(request, obj)
+        return self.management_fields
 
 
 @admin.register(Group)
@@ -155,7 +210,7 @@ class EnterGroupAdmin(SuperuserOnlyAdminMixin, GroupAdmin):
 
 
 @admin.register(CandidateProfile)
-class CandidateProfileAdmin(admin.ModelAdmin):
+class CandidateProfileAdmin(ReadOnlyForStaffAdminMixin, admin.ModelAdmin):
     list_display = [
         "full_name",
         "profile_status",
@@ -166,13 +221,73 @@ class CandidateProfileAdmin(admin.ModelAdmin):
         "profile_updated_at",
     ]
     list_filter = ["profile_status", "visibility"]
-    search_fields = ["full_name", "email", "headline"]
+    search_fields = ["full_name", "email", "user__email", "headline"]
+
+
+@admin.register(WorkExperience)
+class WorkExperienceAdmin(ReadOnlyForStaffAdminMixin, admin.ModelAdmin):
+    list_display = [
+        "candidate",
+        "company",
+        "role",
+        "date_label",
+        "is_current",
+        "confidence_status",
+    ]
+    list_filter = ["is_current", "confidence_status"]
+    search_fields = ["candidate__full_name", "candidate__user__email", "company", "role"]
+    management_fields = (
+        "candidate",
+        "company",
+        "role",
+        "start_date",
+        "end_date",
+        "is_current",
+        "date_label",
+        "employment_type",
+        "location",
+        "description",
+        "confidence_status",
+        "gap_reason",
+    )
+
+    def get_fields(self, request, obj=None):
+        if request.user.is_superuser:
+            return super().get_fields(request, obj)
+        return self.management_fields
+
+
+@admin.register(Resume)
+class ResumeAdmin(ReadOnlyForStaffAdminMixin, admin.ModelAdmin):
+    list_display = [
+        "candidate",
+        "original_name",
+        "version",
+        "processing_status",
+        "scan_status",
+        "uploaded_at",
+        "processing_updated_at",
+    ]
+    list_filter = ["processing_status", "scan_status", "uploaded_at"]
+    search_fields = ["candidate__full_name", "candidate__user__email", "original_name"]
+    management_fields = (
+        "candidate",
+        "original_name",
+        "version",
+        "processing_status",
+        "scan_status",
+        "uploaded_at",
+        "processing_updated_at",
+    )
+
+    def get_fields(self, request, obj=None):
+        if request.user.is_superuser:
+            return super().get_fields(request, obj)
+        return self.management_fields
 
 
 admin.site.register(
     [
-        WorkExperience,
-        Resume,
         Project,
         Search,
         ProfileView,

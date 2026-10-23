@@ -31,3 +31,27 @@
         reverse_proxy frontend:80
     }
 }
+
+# Private management listener. The production Compose file publishes this port
+# to EC2 loopback only; operators reach it through an authenticated SSH tunnel.
+https://{$ENTER_DOMAIN}:8443 {
+    tls {$ACME_EMAIL}
+    header {
+        X-Content-Type-Options nosniff
+        Referrer-Policy no-referrer
+        X-Frame-Options DENY
+        Permissions-Policy "camera=(), geolocation=(), payment=()"
+    }
+    handle /admin* {
+        request_body {
+            max_size 1MB
+        }
+        reverse_proxy backend:8000
+    }
+    handle /static/admin/* {
+        reverse_proxy backend:8000
+    }
+    handle {
+        respond "Not found" 404
+    }
+}

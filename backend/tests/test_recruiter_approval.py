@@ -144,7 +144,11 @@ def test_resume_visibility_helper_requires_current_approval(client, candidate_ac
     assert not _recruiter_can_access_candidate(recruiter, candidate)
 
 
-def test_non_superuser_cannot_manage_approval_even_with_all_model_permissions():
+def test_non_superuser_cannot_manage_approval_even_with_all_model_permissions(settings):
+    settings.STORAGES = {
+        **settings.STORAGES,
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    }
     staff = User.objects.create_user("staff", password=PASSWORD, is_staff=True)
     staff.user_permissions.set(Permission.objects.all())
     client = Client()
@@ -153,11 +157,12 @@ def test_non_superuser_cannot_manage_approval_even_with_all_model_permissions():
         "talent/recruiterprofile/",
         "talent/recruiterprofile/add/",
         "talent/userrole/",
-        "auth/user/",
         "auth/group/",
     ]:
         assert client.get("/admin/" + path).status_code == 403
         assert client.post("/admin/" + path, {"is_approved": True}).status_code == 403
+    assert client.get("/admin/auth/user/").status_code == 200
+    assert client.get("/admin/auth/user/add/").status_code == 403
 
 
 def test_admin_add_and_change_pages_render_and_record_approval(settings):
