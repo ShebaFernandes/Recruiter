@@ -57,6 +57,10 @@ describe('Enter Talent landing', () => {
     fireEvent.click(await screen.findByTestId('for-candidates'))
     expect(screen.getByRole('heading', { name: 'Create your account' })).toBeVisible()
     expect(screen.queryByText('CANDIDATE PLATFORM')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Country')).not.toBeInTheDocument()
+    expect(document.querySelector('input[name="country_code"]')).toHaveValue('IN')
+    expect(screen.queryByRole('link', { name: 'Privacy Policy' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Terms of Use' })).not.toBeInTheDocument()
   })
 
   it('fails closed when approved legal publication is unavailable', () => {

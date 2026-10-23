@@ -200,7 +200,7 @@ function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
         <p>{mode === 'forgot' ? 'Enter your email. If an account exists, we’ll send a secure reset link.' : role === 'recruiter' ? 'Search real candidate profiles and build a thoughtful shortlist.' : 'Turn your resume into a profile you control.'}</p>
         <div className="auth-fields">
           {mode === 'signup' && <FormField label="Full name" name="full_name" required autoComplete="name" />}
-          {mode === 'signup' && <label className="auth-country-field"><span>Country</span><select name="country_code" defaultValue="IN" required><option value="IN">India</option></select><small>Candidate registration is currently available in India.</small></label>}
+          {mode === 'signup' && <input type="hidden" name="country_code" value="IN" />}
           <FormField label="Email" name="email" type="email" required autoComplete="email" />
           {mode !== 'forgot' && <FormField label="Password" name="password" type="password" minLength={8} required autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} hint={mode === 'signup' ? 'Use at least 8 characters.' : undefined} />}
         </div>
@@ -208,7 +208,6 @@ function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
         {message && <div className="success" role="status"><Check size={17} aria-hidden="true" />{message}</div>}
         {mode === 'signup' && legalPublished && (legalDocuments ? <LegalChecks key={legalDocuments.terms.version} documents={legalDocuments} /> : <div role={legalError ? 'alert' : 'status'}>{legalLoading ? 'Loading legal documents…' : legalError || 'Legal documents unavailable. Registration is disabled.'}<LegalRetry /></div>)}
         {mode === 'signup' && legalPublished && legalDocuments && <LegalRetry />}
-        {mode === 'signup' && <p><a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a> · <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Use</a></p>}
         <Button size="large" fullWidth disabled={busy || (mode === 'signup' && legalPublished && !legalDocuments)}>{busy ? 'Please wait…' : mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send reset link' : 'Log in'}</Button>
         {mode === 'login' && <Button type="button" variant="ghost" fullWidth onClick={() => { setMode('forgot'); setError(''); setMessage('') }}>Forgot password?</Button>}
         {(role === 'candidate' || mode === 'forgot') && <Button type="button" variant="ghost" fullWidth onClick={() => { setMode(mode === 'signup' ? 'login' : mode === 'login' ? 'signup' : 'login'); setError(''); setMessage('') }}>
