@@ -20,10 +20,11 @@ const documents = Object.fromEntries(['terms', 'privacy', 'age', 'submission'].m
 
 afterEach(() => { cleanup(); vi.restoreAllMocks() })
 
-it('presents separate production confirmations without recruiter-sharing consent', () => {
+it('presents one explicit 18+ and Terms confirmation without recruiter-sharing consent', () => {
   render(<form><LegalChecks documents={documents} /></form>)
   expect(screen.getByRole('group', { name: 'Required confirmations' })).toBeInTheDocument()
-  expect(screen.getAllByRole('checkbox')).toHaveLength(2)
+  expect(screen.getAllByRole('checkbox')).toHaveLength(1)
+  expect(screen.getByText(/age v1.0/)).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Terms of Use' })).toHaveAttribute('href', '/terms')
   expect(screen.getByText(/does not authorize recruiter sharing/)).toBeInTheDocument()
 })
@@ -46,6 +47,18 @@ it('fails closed when an existing account has a stale Terms version', async () =
   expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
 })
 
+it('hides the legal review when current signup confirmations are already recorded', async () => {
+  vi.spyOn(api, 'legalDocuments').mockResolvedValue({ enabled: true, documents })
+  const status = vi.spyOn(api, 'legalStatus').mockResolvedValue({
+    accepted: { age: true, terms: true },
+    versions: { age: documents.age.version, terms: documents.terms.version },
+  })
+  render(<ExistingLegalReview />)
+  await waitFor(() => expect(status).toHaveBeenCalledOnce())
+  expect(screen.queryByRole('heading', { name: /current Terms/ })).not.toBeInTheDocument()
+  expect(screen.queryByText(/Current confirmations recorded/)).not.toBeInTheDocument()
+})
+
 it('retries a failed published-document request without exposing review content', async () => {
   const load = vi.spyOn(api, 'legalDocuments').mockRejectedValueOnce(new Error('offline'))
     .mockResolvedValue({ enabled: true, documents })
@@ -59,12 +72,25 @@ it('retries a failed published-document request without exposing review content'
 
 it('requires an existing account to accept the current published versions', async () => {
   vi.spyOn(api, 'legalDocuments').mockResolvedValue({ enabled: true, documents })
-  vi.spyOn(api, 'legalStatus').mockResolvedValue({
-    accepted: { age: false, terms: false },
-    versions: { age: documents.age.version, terms: documents.terms.version },
-  })
+  vi.spyOn(api, 'legalStatus')
+    .mockResolvedValueOnce({
+      accepted: { age: false, terms: false },
+      versions: { age: documents.age.version, terms: documents.terms.version },
+    })
+    .mockResolvedValue({
+      accepted: { age: true, terms: true },
+      versions: { age: documents.age.version, terms: documents.terms.version },
+    })
+  const accept = vi.spyOn(api, 'acceptLegal').mockResolvedValue({})
   render(<ExistingLegalReview />)
-  expect(await screen.findByRole('heading', { name: 'Review current Terms' })).toBeInTheDocument()
-  expect(await screen.findAllByRole('checkbox')).toHaveLength(2)
+  expect(await screen.findByRole('heading', { name: 'Accept current Terms' })).toBeInTheDocument()
+  expect(await screen.findAllByRole('checkbox')).toHaveLength(1)
   expect(screen.getByText(/Existing accounts are not assumed/)).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('checkbox'))
+  fireEvent.click(screen.getByRole('button', { name: 'Confirm and continue' }))
+  await waitFor(() => expect(accept).toHaveBeenCalledWith(expect.objectContaining({
+    age_accepted: true,
+    terms_accepted: true,
+  })))
+  await waitFor(() => expect(screen.queryByRole('heading', { name: 'Accept current Terms' })).not.toBeInTheDocument())
 })

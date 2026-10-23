@@ -64,11 +64,12 @@ test('real isolated signup, verification and returning candidate reach resume up
   await page.getByLabel('Email', { exact: true }).fill(email)
   await page.getByLabel('Password', { exact: true }).fill(password)
   await page.getByRole('checkbox').nth(0).check()
-  await page.getByRole('checkbox').nth(1).check()
   await page.getByRole('button', { name: 'Create account', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible({ timeout: 15_000 })
   await page.goto(`/?verify-email=${issueLocalAccountToken(email, 'verify_email')}`)
   await expect(page.getByRole('heading', { name: 'Start with your resume' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Accept current Terms' })).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: "Here's how we'll remember you" })).toHaveCount(0)
   // A valid existing session survives initialization and public document loading.
   await page.reload()
   await expect(page.getByRole('heading', { name: 'Start with your resume' })).toBeVisible()

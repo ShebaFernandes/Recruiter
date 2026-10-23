@@ -154,8 +154,9 @@ function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
         setMessage(response.detail)
         return
       }
+      const termsAccepted = data.terms_accepted === 'on'
       const payload = mode === 'signup'
-        ? await api.signup({ ...data, role, age_accepted: data.age_accepted === 'on', terms_accepted: data.terms_accepted === 'on' })
+        ? await api.signup({ ...data, role, age_accepted: termsAccepted, terms_accepted: termsAccepted })
         : await api.login({ email: data.email, password: data.password })
       if ('requires_email_verification' in payload) {
         setPendingEmail(data.email)

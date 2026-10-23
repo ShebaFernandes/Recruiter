@@ -17,12 +17,12 @@ test('unavailable documents block signup until explicit retry succeeds', async (
   await expect(page.getByRole('alert')).toContainText('could not load')
   available = true
   await page.getByRole('button', { name: 'Retry / review current legal documents' }).click()
-  await expect(page.getByRole('checkbox')).toHaveCount(2)
+  await expect(page.getByRole('checkbox')).toHaveCount(1)
   await expect(page.getByRole('button', { name: 'Create account', exact: true })).toBeEnabled()
 })
 
 for (const width of [390, 768, 1440]) {
-  test(`published documents and independent confirmations at ${width}`, async ({ page }, info) => {
+  test(`published documents and combined explicit confirmation at ${width}`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 1000 })
     await page.route('**/*.mp4', route => route.abort())
     await page.route('**/api/v1/auth/me/', route => route.fulfill({ status: 401, json: {} }))
@@ -45,17 +45,13 @@ for (const width of [390, 768, 1440]) {
     await page.getByLabel('Email', { exact: true }).fill('synthetic@example.test')
     await page.getByLabel('Password', { exact: true }).fill('Synthetic-password-123!')
     const checks = page.getByRole('checkbox')
-    await expect(checks).toHaveCount(2)
+    await expect(checks).toHaveCount(1)
     await expect(checks.nth(0)).not.toBeChecked()
-    await expect(checks.nth(1)).not.toBeChecked()
     await page.getByRole('button', { name: 'Create account', exact: true }).click()
     expect(posted).toBe(false)
     await checks.nth(0).check()
-    await page.getByRole('button', { name: 'Create account', exact: true }).click()
-    expect(posted).toBe(false)
     await page.screenshot({ path: info.outputPath(`legal-published-${width}.png`), fullPage: true })
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-    await checks.nth(1).check()
     await page.getByRole('button', { name: 'Create account', exact: true }).click()
     await expect(page.getByText('Synthetic verification only.')).toBeVisible()
     for (const kind of ['privacy', 'terms']) {

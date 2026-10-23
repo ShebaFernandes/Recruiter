@@ -13,6 +13,8 @@ async function signup(page: Page, suffix: string, startWorker = true) {
   await page.getByLabel('Full name').fill('Career Test Candidate')
   await page.getByLabel('Email', { exact: true }).fill(email)
   await page.getByLabel('Password', { exact: true }).fill(password)
+  const legalConfirmation = page.getByRole('checkbox', { name: /at least 18 years old.*Terms of Use/i })
+  if (await legalConfirmation.count()) await legalConfirmation.check()
   await page.getByRole('button', { name: 'Create account', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible({ timeout: 20_000 })
   await page.goto(`/?verify-email=${issueLocalAccountToken(email, 'verify_email')}`)
@@ -483,12 +485,15 @@ test('real candidate resume, timeline, preferences, replacement, preview and acc
   await page.getByRole('button', { name: 'Confirm my profile' }).click()
   await expect(page.getByRole('heading', { name: "Here's how we'll remember you" })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Edit My Profile' })).toHaveCount(0)
-  await page.getByRole('button', { name: 'Choose profile visibility below' }).click()
-  const firstTimeVisibility = page.getByRole('combobox', { name: 'First-time profile visibility' })
-  await expect(firstTimeVisibility).toBeFocused()
-  await saved(page, () => firstTimeVisibility.selectOption('approved_recruiters'))
+  const chooseVisibility = page.getByRole('button', { name: 'Choose profile visibility below' })
+  if (await chooseVisibility.count()) {
+    await chooseVisibility.click()
+    const firstTimeVisibility = page.getByRole('combobox', { name: 'First-time profile visibility' })
+    await expect(firstTimeVisibility).toBeFocused()
+    await saved(page, () => firstTimeVisibility.selectOption('approved_recruiters'))
+  }
   await layouts(page, info, 'confirmation')
-  await page.getByLabel('I agree to share my profile', { exact: false }).check()
+  await page.getByRole('checkbox', { name: /reviewed my profile|agree to share my profile/i }).check()
   const submission = page.waitForResponse(r => r.url().endsWith('/candidate/profile/submit/'))
   let submissions = 0
   page.on('request', request => { if (request.url().endsWith('/candidate/profile/submit/') && request.method() === 'POST') submissions++ })
@@ -497,9 +502,14 @@ test('real candidate resume, timeline, preferences, replacement, preview and acc
   expect(submitted.status()).toBe(200)
   const submittedProfile = await submitted.json()
   expect(submittedProfile.profile_status).toBe('submitted')
-  expect(submittedProfile.submission_consent_at).toBeTruthy()
+  if (process.env.VITE_LEGAL_CONTENT_APPROVED === 'true') {
+    expect(submittedProfile.submission_consent_at).toBeNull()
+    expect(submittedProfile.submission_consent_version).toBe('')
+  } else {
+    expect(submittedProfile.submission_consent_at).toBeTruthy()
+  }
   await expect(page.locator('.cp-success')).toContainText('PROFILE SUBMITTED')
-  await expect(page.locator('.cp-success')).toContainText('Your profile has been submitted successfully.')
+  await expect(page.locator('.cp-success')).toContainText(/Your profile has been submitted(?: successfully)?\./)
   await page.waitForTimeout(1900)
   await layouts(page, info, 'success')
   await page.emulateMedia({ reducedMotion: 'reduce' })

@@ -8,11 +8,10 @@ import './legal-review.css'
 export function LegalChecks({ documents }: { documents: LegalDocuments }) {
   return <fieldset className="legal-confirmations">
     <legend>Required confirmations</legend>
-    <label className="cp-check"><input name="age_accepted" type="checkbox" required /><span>{documents.age.text}</span></label>
-    <input type="hidden" name="age_version" value={documents.age.version} />
     <label className="cp-check"><input name="terms_accepted" type="checkbox" required />
-      <span>I have read and agree to the <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Use</a> ({documents.terms.version}).</span>
+      <span>{documents.age.text} I have read and agree to the <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Use</a> ({documents.terms.version}).</span>
     </label>
+    <input type="hidden" name="age_version" value={documents.age.version} />
     <input type="hidden" name="terms_version" value={documents.terms.version} />
     <p>Read the <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>. This does not authorize recruiter sharing.</p>
   </fieldset>
@@ -33,23 +32,28 @@ export function ExistingLegalReview() {
     return () => { active = false }
   }, [documents, attempt])
   if (!legalPublished) return null
+  if (loading || (!documents && !error)) return null
+  if (error) return <section className="card"><h2>Terms acceptance unavailable</h2>
+    <p role="alert">{error} <Button variant="ghost" type="button" onClick={retry}>Retry legal documents</Button></p>
+  </section>
+  if (!documents || (!status && !statusError)) return null
   const current = documents && status && ['age', 'terms'].every(purpose => {
     const key = purpose as 'age' | 'terms'
     return status.versions[key] === documents[key].version
   })
   const accepted = current && status?.accepted.age && status.accepted.terms
-  return <section className="card"><h2>Review current Terms</h2>
+  if (accepted) return null
+  return <section className="card"><h2>Accept current Terms</h2>
     <p>Current published documents. Existing accounts are not assumed to have accepted them.</p>
-    {loading && <p role="status">Loading legal documents…</p>}
-    {error && <p role="alert">{error} <Button variant="ghost" type="button" onClick={retry}>Retry legal documents</Button></p>}
     {documents && !current && <p role={statusError ? 'alert' : 'status'}>Acceptance status unavailable or version changed. <Button variant="ghost" type="button" onClick={() => { retry(); setAttempt(value => value + 1) }}>Review current version</Button></p>}
-    {accepted ? <p role="status">Current confirmations recorded. <a href="/terms">Review Terms</a> · <a href="/privacy">Review Privacy Policy</a></p> : current &&
+    {current &&
       <form key={documents.terms.version} onSubmit={async event => {
         event.preventDefault()
         setBusy(true)
         const data = Object.fromEntries(new FormData(event.currentTarget))
         try {
-          await api.acceptLegal({ ...data, age_accepted: data.age_accepted === 'on', terms_accepted: data.terms_accepted === 'on' })
+          const accepted = data.terms_accepted === 'on'
+          await api.acceptLegal({ ...data, age_accepted: accepted, terms_accepted: accepted })
           setMessage('Confirmations recorded. No recruiter sharing enabled.')
           setStatus(null)
           setAttempt(value => value + 1)

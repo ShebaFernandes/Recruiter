@@ -31,9 +31,8 @@ test('published documents gate registration without granting recruiter sharing',
   await page.getByLabel('Email', { exact: true }).fill('published@example.test')
   await page.getByLabel('Password', { exact: true }).fill('Synthetic-password-123!')
   const checks = page.getByRole('checkbox')
-  await expect(checks).toHaveCount(2)
+  await expect(checks).toHaveCount(1)
   await checks.nth(0).check()
-  await checks.nth(1).check()
   await page.getByRole('button', { name: 'Create account', exact: true }).click()
   await expect(page.getByText('Synthetic verification only.')).toBeVisible()
   expect(signupBody).toMatchObject({
