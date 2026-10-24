@@ -1,7 +1,7 @@
 import type { WorkExperience } from '../types'
+import { careerStartYear } from '../careerHistory'
 
 /** Compact visible milestones; full saved dates remain in the detail popover. */
 export function candidateMilestoneDate(item: WorkExperience) {
-  if (!item.start_date) return 'Date unknown'
-  return item.start_date.slice(0, 4)
+  return careerStartYear(item) || 'Date unknown'
 }

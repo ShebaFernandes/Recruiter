@@ -1,18 +1,25 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { WorkExperience } from '../types'
-import { sortCareerHistory } from '../careerHistory'
+import { careerStartYear, sortCareerHistory } from '../careerHistory'
 import { CandidateMilestoneIcon } from './CandidateMilestoneIcon'
 import { candidateMilestoneDate } from './candidateMilestoneDate'
 import './career-journey.css'
 
 const month = 2629800000
 const time = (value: string | null) => value ? new Date(value).getTime() : NaN
-const ongoing = (item: WorkExperience) => !item.end_date && Boolean(item.start_date) && (
-  item.is_current === true || (item.is_current === undefined && (!item.date_label || /present|current|now/i.test(item.date_label)))
+const ongoing = (item: WorkExperience) => !item.end_date && (
+  item.is_current === true || (
+    item.is_current === undefined && (
+      Boolean(item.start_date && !item.date_label) || /present|current|now/i.test(item.date_label || '')
+    )
+  )
 )
 const endTime = (item: WorkExperience) => ongoing(item) ? Date.now() : time(item.end_date)
-const coarseDates = (item: WorkExperience) => Boolean(item.date_label && /(?:^|\()\d{4}\s*[–—-]\s*\d{2,4}(?:$|\))/.test(item.date_label))
+const coarseDates = (item: WorkExperience) => Boolean(item.date_label && (
+  /(?:^|\()\d{4}\s*[–—-]\s*\d{2,4}(?:$|\))/.test(item.date_label) ||
+  (!item.start_date && /^\s*\d{4}\s*[–—-]\s*(?:present|current|now)/i.test(item.date_label))
+))
 const duration = (months: number) => months >= 12 ? `${(months / 12).toFixed(months % 12 ? 1 : 0)} yrs` : `${months} mo`
 const shortCompany = (name: string) => name
   .replace(/\s+(?:private\s+limited|pvt\.?\s+ltd\.?|limited|ltd\.?|llp|incorporated|inc\.?|corporation|corp\.?)$/i, '')
@@ -62,6 +69,10 @@ export default function CareerJourney({ items, detailed = false, showCompanyLabe
       {reverse && sorted.some(ongoing) && <div className="career-present" role="presentation"><span>Present</span><i aria-hidden="true" /></div>}
       {displayed.map((item, displayIndex) => {
         const index = sorted.indexOf(item)
+        const milestoneYear = careerStartYear(item)
+        const previousMilestoneYear = displayed[displayIndex - 1]
+          ? careerStartYear(displayed[displayIndex - 1])
+          : null
         const start = time(item.start_date), end = endTime(item)
         const earlier = sorted.slice(0, index).filter(row => Number.isFinite(time(row.start_date)))
         // Use the union of earlier employment, not just the preceding row: nested jobs
@@ -86,7 +97,7 @@ export default function CareerJourney({ items, detailed = false, showCompanyLabe
               onFocus={e => show(e.currentTarget, data)} onBlur={close}
               onClick={e => { if (pinned.current === key) close(); else { pinned.current = key; show(e.currentTarget, data) } }}>
               {displayCompanyLabel && <b>{minimal ? companyLabel(item.company) : item.company}</b>}<span className="career-period-line"><span className="career-marker-icon" aria-hidden="true"><CandidateMilestoneIcon /></span>{!compactMarkers && <><i /><i /></>}</span>
-              <small><span>{candidateMilestones ? candidateMilestoneDate(item) : (reverse || minimal) && item.start_date && displayed[displayIndex - 1]?.start_date?.slice(0, 4) === item.start_date.slice(0, 4) ? '' : item.start_date?.slice(0, 4) || '?'}</span>{!compactMarkers && <i>{item.end_date?.slice(0, 4) || (ongoing(item) ? 'Now' : '?')}</i>}</small>
+              <small><span>{candidateMilestones ? candidateMilestoneDate(item) : (reverse || minimal) && milestoneYear && previousMilestoneYear === milestoneYear ? '' : milestoneYear || '?'}</span>{!compactMarkers && <i>{item.end_date?.slice(0, 4) || (ongoing(item) ? 'Now' : '?')}</i>}</small>
               {detailed && <em>{item.role}</em>}
               {profilePresentation && <span className="career-role-summary"><span className="career-initial" aria-hidden="true">{item.company.trim().charAt(0).toLocaleUpperCase() || '·'}</span><strong>{item.company || 'Employer not specified'}</strong><span>{item.role || 'Role not specified'}</span><span className="career-role-dates">{period}</span></span>}
             </button>

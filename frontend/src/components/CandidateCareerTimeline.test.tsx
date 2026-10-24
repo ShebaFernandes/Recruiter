@@ -5,6 +5,7 @@ import type { WorkExperience } from '../types'
 import CandidateCareerTimeline from './CandidateCareerTimeline'
 import CareerJourney from './CareerJourney'
 import { candidateMilestoneDate } from './candidateMilestoneDate'
+import { sortCareerHistory } from '../careerHistory'
 
 afterEach(cleanup)
 const role = (overrides: Partial<WorkExperience> = {}): WorkExperience => ({ company: 'Example', role: 'Engineer', start_date: '2018-03-01', end_date: '2019-01-01', description: 'Built reliable tools.', gap_reason: '', ...overrides })
@@ -13,7 +14,37 @@ it('respects month precision, year-only extraction and unknown starts', () => {
   expect(candidateMilestoneDate(role({ date_label: '2018 – 2019' }))).toBe('2018')
   expect(candidateMilestoneDate(role({ date_label: '2018 - Present' }))).toBe('2018')
   expect(candidateMilestoneDate(role({ start_date: '2018' }))).toBe('2018')
+  expect(candidateMilestoneDate(role({ start_date: null, date_label: '2018 — 19' }))).toBe('2018')
   expect(candidateMilestoneDate(role({ start_date: null }))).toBe('Date unknown')
+})
+it('sorts year-only promotions chronologically without inventing database dates', () => {
+  const items = [
+    role({ company: 'PeopleStrong', role: 'Current', start_date: '2024-04-01', end_date: null, is_current: true, date_label: 'Apr 2024 — Present' }),
+    role({ company: 'CoCubes.com', role: 'Senior Software Engineer', start_date: null, end_date: null, date_label: '2014 — 15' }),
+    role({ company: 'Altran', role: 'Software Engineer', start_date: '2010-01-01', end_date: '2012-04-01' }),
+    role({ company: 'CoCubes.com', role: 'Software Engineer', start_date: null, end_date: null, date_label: '2012 — 14' }),
+  ]
+  expect(sortCareerHistory(items).map(item => item.role)).toEqual([
+    'Software Engineer',
+    'Software Engineer',
+    'Senior Software Engineer',
+    'Current',
+  ])
+  expect(items[1].start_date).toBeNull()
+  const { container } = render(<CandidateCareerTimeline items={items} />)
+  expect([...container.querySelectorAll('.career-period small')].map(el => el.textContent)).toEqual(['2010', '2012', '2014', '2024'])
+  expect(container.querySelector('.career-present-end')).toHaveTextContent('Present')
+})
+it('keeps a year-only current role current without creating a January date', () => {
+  const item = role({ start_date: null, end_date: null, is_current: true, date_label: '2024 — Present' })
+  const { container } = render(<CandidateCareerTimeline items={[item]} />)
+  expect(container.querySelector('.career-period small')).toHaveTextContent('2024')
+  expect(container.querySelector('.career-present-end')).toHaveTextContent('Present')
+})
+it('shows a supported year-only start in the shared career journey', () => {
+  const item = role({ start_date: null, end_date: null, date_label: '2012 — 14' })
+  const { container } = render(<CareerJourney items={[item]} />)
+  expect(container.querySelector('.career-period small span')).toHaveTextContent('2012')
 })
 it('retains every role, promotion, overlap, gap, unknown date and keyboard details', () => {
   const items = [role({ role: 'Unknown dates', start_date: null, end_date: null }), role({ role: 'Lead', start_date: '2018-08-01', end_date: '2020-01-01' }), role(), role({ company: 'Next', role: 'Current', start_date: '2021-05-01', end_date: null, gap_reason: 'Study break' })]
