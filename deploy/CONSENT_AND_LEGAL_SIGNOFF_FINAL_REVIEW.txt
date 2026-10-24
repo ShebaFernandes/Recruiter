@@ -1019,3 +1019,76 @@ The existing confirmed requirement for separate recruiter opt-in is preserved.
 This sign-off does not authorize AWS deployment, legal-gate activation or public
 registration. Those remain separate decisions after local implementation/testing.
 LEGAL_CONTENT_APPROVED must remain false. No policy is published by this register.
+
+GEMINI PUBLICATION PACKAGE — MANAGEMENT EXACT-COPY APPROVAL RECORDED
+
+Evidence supplied by ENTER's authorized management approver identifies the
+following completed public copies by version and immutable public-text SHA-256:
+
+- Privacy Policy `enter-candidate-privacy-v1.2`:
+  `6549ab6514b940459b8b853ee63643fc97c91f9dfc2d62aac511083c6b1bf574`
+- Terms of Use `enter-candidate-terms-v1.2`:
+  `c545340b49350c664d0073e081dd4314a6464238adc6a61f9fc8a87b5647dd53`
+- Gemini resume-AI consent `enter-resume-ai-consent-v1.1`:
+  `e9ba89892b3b29aa738ef7dc7ff2913149be87c44080a058ddfa3cc677041040`
+
+Management approver: Dikshita Verma, CEO, ENTER Recruitment Private Limited.
+Management decision: APPROVED for the three exact public copies and hashes above.
+Approval timestamp: `2026-10-24T20:00:00+05:30` (24 October 2026, 8:00 PM IST),
+as supplied by management for Dikshita Verma's exact-copy approval.
+Publication/effective date: NOT YET SET — it must be the actual future
+publication date and must not be backdated to the approval timestamp.
+
+This management approval does not itself establish qualified legal clearance of
+Gemini processing, overseas transfers, Google's applicable Data Processing
+Addendum and subprocessors, paid-service abuse-monitoring/retention, or the Terms
+liability and jurisdiction wording. No such qualified-review evidence is present
+in this register. The three publication files therefore remain PENDING REVIEW,
+their hashes remain proposed public-copy hashes, and the production legal gate
+must remain disabled until the qualified reviewer, review reference/date, and
+actual effective date are recorded.
+
+GEMINI PRODUCTION API-KEY USE — MANAGEMENT AUTHORIZATION RECORDED
+
+Authorization received and recorded at `2026-10-24T15:55:52Z`
+(`2026-10-24T21:25:52+05:30`, Asia/Kolkata). The authorizing project
+administrator confirmed authority to administer Google AI Studio project `enter`
+on behalf of ENTER Recruitment Private Limited and authorized that project's
+Gemini API key for ENTER's production resume-extraction service, subject to
+approved candidate consent and data-processing arrangements.
+
+Management-reported account controls at the authorization time: Paid Tier 1,
+INR 500 prepaid balance, INR 100 monthly project spending cap, and automatic
+credit reload disabled. This entry records management authorization and reported
+facts only. It is not independent verification of Google's contractual terms,
+billing terms, Data Processing Addendum, balance, spend controls, or model access.
+It does not authorize a Gemini request before the candidate-consent,
+qualified-legal, publication, canary, and per-call gates are separately satisfied.
+
+GEMINI QUALIFIED-LEGAL CLEARANCE — MANAGEMENT CONFIRMATION RECORDED
+
+Management confirmed that qualified legal clearance has been obtained for Gemini
+data processing, overseas transfers, Google's Data Processing Addendum and the
+Terms liability/jurisdiction wording. The existing review evidence contains no
+completed legal-reviewer identity, role, review reference, or actual approval
+date. Those evidence fields remain unrecorded; management's confirmation is not
+represented as a reviewer signature or independent legal evidence. Publication
+status and the production legal gate must remain unchanged until the attributable
+review details are supplied and recorded.
+
+Management further reported that Dikshita Verma personally conducted that review
+and approved Privacy Policy `enter-candidate-privacy-v1.2`, Terms of Use
+`enter-candidate-terms-v1.2`, and Gemini resume-AI consent
+`enter-resume-ai-consent-v1.1` at `2026-10-24T20:00:00+05:30`, using the exact
+public-copy hashes recorded above. This is recorded as management-reported review
+and approval. The existing records establish her role as CEO and privacy owner;
+they do not establish a legal qualification or contain an attributable legal-
+review reference. Neither fact is inferred from her management role.
+
+GOOGLE OPTIONAL STORAGE — VERIFIED DISABLED
+
+The authenticated Google AI Studio settings for project `enter` showed both
+GenerateContent API storage and Interactions API storage disabled. This verifies
+the optional project logging/storage switches only; Google's mandatory
+paid-service security, abuse-prevention, legal, or regulatory processing remains
+subject to the applicable terms and qualified legal review.

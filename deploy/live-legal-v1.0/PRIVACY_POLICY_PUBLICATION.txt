@@ -1,0 +1,183 @@
+git: error: couldn't create cache file '/var/folders/zz/zyxvpxvq6csfxvn_n00001yr0000gp/T/xcrun_db-TxHMjqwU' (errno=Operation not permitted)
+git: error: couldn't create cache file '/var/folders/zz/zyxvpxvq6csfxvn_n00001yr0000gp/T/xcrun_db-VTAUXFCN' (errno=Operation not permitted)
+ENTER CANDIDATE PLATFORM — PRIVACY POLICY
+Document identifier: enter-candidate-privacy-v1.0
+Effective date: 22 October 2026.
+PUBLICATION STATUS: APPROVED
+
+This is the concise India-first publication copy prepared from the preserved legal
+review record. Historical D1–D16 evidence remains in Git and is not a release
+checklist.
+
+EXACT CLAUSES REQUIRING QUALIFIED REVIEW
+
+1. Section 3, final paragraph: confirm the description of India's phased Digital
+   Personal Data Protection Act, 2023 and Rules, 2025 commencement and the legal
+   basis/consent treatment for the described processing at the effective date.
+2. Section 5, final paragraph: confirm whether the disclosed Australia/overseas
+   processing needs any additional transfer wording or safeguard before launch.
+
+No AWS invoice, exhaustive support-location map, legacy-backup deletion, or
+UK/US expansion work is a separate publication condition unless the reviewer
+finds that its absence makes one of those exact clauses inaccurate or unlawful.
+After those clauses are settled and this exact copy is authorized, replace the
+single PUBLICATION STATUS line with exactly “PUBLICATION STATUS: APPROVED”, set
+the actual effective date, generate the immutable hashes, and keep the hash-pinned
+application gate enabled. Do not change the status merely because a deployment is
+technically ready.
+
+PROPOSED PUBLIC COPY
+ENTER Candidate Platform Privacy Policy
+
+1. Who we are and who this service is for
+
+ENTER Recruitment Private Limited (“ENTER”, “we”, “us”) operates the ENTER
+Candidate Platform at https://enter.careers.
+
+Registered address: Regent Insignia, KHB Block Koramangala, 5th Block,
+Koramangala, Bengaluru, Karnataka 560034, India.
+Corporate Identity Number: U74999DL2020PTC370862.
+
+Dikshita Verma, CEO, is ENTER's privacy owner. Contact
+sheba@enterrecruitment.com for privacy questions, requests, complaints, or
+support.
+
+New registration is limited to people aged 18 or over who select India as their
+registration country. The country selection is not proof of physical location.
+Recruiter access and sharing are disabled. This policy does not authorize public
+profiles, recruiter access, advertising use, sale of candidate information, or
+external resume-AI processing.
+
+2. Information we handle
+
+We handle the information needed to provide and protect your candidate account:
+
+- your name, email address, India registration selection, email-verification and
+  authentication records;
+- your PDF or DOCX resume, optional profile photograph, work and education
+  history, skills, achievements, career preferences, and settings;
+- rule-based resume-extraction results and the corrections you make;
+- draft, paused, and submitted profile state, and records of age confirmation,
+  Terms acceptance, and profile-submission consent;
+- support, privacy, complaint, and deletion correspondence; and
+- limited security, audit, processing, backup, and service-operation records.
+
+The information comes from you, the files you upload, and your use of the
+service. Please do not upload identity documents, unnecessary sensitive
+information, or another person's private details. If a resume nevertheless
+contains sensitive information, it may remain in the private file and pass
+through malware scanning and rule-based parsing. We do not use it for recruiter
+matching during the candidate-only launch. You may ask us to correct or delete it.
+
+3. Why we use information
+
+We use candidate information to create, verify, authenticate, and secure your
+account; receive, scan, store, and process your resume; let you review, correct,
+save, preview, and submit your profile; provide password recovery and support;
+honour privacy and deletion requests; prevent abuse and investigate incidents;
+maintain and recover the service; and meet applicable legal obligations.
+
+Resume extraction is rule based and can be incomplete or wrong. Review the
+result before submission. ENTER does not use this processing to make a solely
+automated hiring decision and does not guarantee an interview, placement, or job.
+
+India's Digital Personal Data Protection Act, 2023 and Digital Personal Data
+Protection Rules, 2025 are being brought into force in phases. ENTER applies the
+commitments in this policy from its effective date and will review the platform
+before later phases take effect. Where consent is the applicable basis, you may
+withdraw it through sheba@enterrecruitment.com as easily as you gave it, without
+affecting processing that was lawful before withdrawal. Withdrawal may mean that
+ENTER can no longer provide the affected part of the service.
+
+4. Candidate control and recruiter sharing
+
+Your account is private. Recruiter login, search, candidate-profile access, and
+resume downloads are disabled. A submitted profile is not published on the open
+web and submission is not permission for recruiter sharing.
+
+Before any recruiter feature is enabled, ENTER will ask for a separate, unchecked
+opt-in that identifies the approved recipients, purpose, visible information,
+download access, and withdrawal process. Declining that future opt-in does not
+prevent you from maintaining or deleting your candidate account.
+
+Only specifically authorized operations, support, security, or administrative
+personnel may access candidate information when necessary for a defined task.
+
+5. Storage, providers, cookies, and security
+
+Resumes are stored privately, encrypted at rest, and scanned with ClamAV. The
+platform uses encrypted HTTPS transport, access controls, malware scanning,
+monitoring, and protected backups. No system can guarantee absolute security or
+uninterrupted availability. ENTER will investigate incidents and notify affected
+people or authorities when applicable law requires.
+
+The platform uses a Secure, HttpOnly, SameSite=Lax authentication cookie and a
+CSRF-protection cookie. Browser session storage temporarily holds unsaved answers
+and an intro-animation setting. The reviewed candidate launch has no advertising
+or analytics SDK. A background video delivered from an Amazon CloudFront hostname
+causes ordinary connection information, such as IP address, browser details, and
+request time, to be sent to that delivery service.
+
+The service uses Amazon Web Services in Sydney, Australia for application and
+database hosting, private file storage, queues, transactional email, operational
+alerts, and encrypted database backups; ClamAV in ENTER's deployment for malware
+scanning; Namecheap for domain, DNS, and inbound email forwarding; and Amazon
+CloudFront for the background video. These services may process technical or
+candidate information outside India. ENTER limits them to the service they
+provide and will use any safeguard required by applicable law.
+
+6. Retention, deletion, and recovery
+
+ENTER retains your current candidate profile and resume for 12 calendar months
+after meaningful activity, unless you request earlier deletion or a documented
+legal requirement applies. Meaningful activity is a candidate-initiated saved
+profile or career-setting change, accepted resume upload, profile submission, or
+explicit renewal. Passive login, email opening, background processing, and
+administrative activity do not reset the period. ENTER sends reminders about 30
+days and seven days before inactivity expiry.
+
+Unverified registrations are retained for 30 days. Replaced resumes and failed
+non-malicious uploads are retained for up to seven days after safe replacement or
+final failure; malware-quarantined files for up to 30 days; security and
+processing logs and closed support correspondence for 12 months; and acceptance
+evidence while the account is active and for 12 months after closure, unless a
+documented claim or legal obligation requires longer.
+
+You may delete your account through the authenticated account flow or contact
+sheba@enterrecruitment.com. ENTER's service target is to acknowledge a verified
+deletion request within two business days and delete active account, profile, and
+resume data within seven days. A business day is Monday to Friday excluding the
+approved Karnataka public-holiday calendar. We may request proportionate evidence
+of account control and will explain a lawful exception or delay.
+
+Routine encrypted hourly database backups expire after seven days and daily
+backups after 30 days; storage expiration may take additional time. Three older,
+access-restricted database backups remain under a documented recovery hold. They
+are not used for ordinary service or recruiter access. If a backup is restored,
+verified deletion records are reapplied before accounts can be enabled. Database
+backups do not restore deleted resume objects.
+
+7. Your choices and requests
+
+You may ask to access, correct, delete, or receive information about your data,
+withdraw an applicable consent, or exercise another right available under law.
+Contact sheba@enterrecruitment.com. You may also raise a grievance or complaint
+through that address and, when applicable, with the competent authority.
+
+You must separately confirm that you are at least 18 and accept the displayed
+Terms version. The Privacy Policy is a notice, not blanket consent. Profile
+submission requires its own confirmation. Existing accounts are not treated as
+having accepted a new document merely because they used the service before.
+
+8. Changes and contact
+
+ENTER keeps dated versions and a hash of the exact legal text presented for
+acceptance. We will communicate material changes before the changed use begins
+and obtain a new acceptance or consent where required. A policy change cannot be
+used to infer permission for recruiter sharing.
+
+Privacy owner: Dikshita Verma, CEO
+Email: sheba@enterrecruitment.com
+Postal address: ENTER Recruitment Private Limited, Regent Insignia, KHB Block
+Koramangala, 5th Block, Koramangala, Bengaluru, Karnataka 560034, India.
+END OF PROPOSED PUBLIC COPY

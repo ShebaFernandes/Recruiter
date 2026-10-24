@@ -1,0 +1,29 @@
+# Application-only production release overlay. Combine with compose.production.yaml.
+# Never use this file to recreate db, scanner, or edge.
+x-ai-disabled: &ai-disabled
+  AI_PROVIDER: disabled
+  ANTHROPIC_API_KEY: ""
+  OPENAI_API_KEY: ""
+  OPENROUTER_API_KEY: ""
+  GEMINI_API_KEY: ""
+  RESUME_AI_API_KEY: ""
+  RESUME_AI_ENABLED: "false"
+  RESUME_AI_EXTERNAL_PROCESSING_APPROVED: "false"
+  RESUME_AI_ALLOW_PAID: "false"
+  RESUME_AI_GEMINI_FREE_TIER_APPROVED: "false"
+
+services:
+  migrate:
+    image: enter-backend:${ENTER_RELEASE:?Set the reviewed release tag}
+    environment: *ai-disabled
+
+  backend:
+    image: enter-backend:${ENTER_RELEASE:?Set the reviewed release tag}
+    environment: *ai-disabled
+
+  worker:
+    image: enter-backend:${ENTER_RELEASE:?Set the reviewed release tag}
+    environment: *ai-disabled
+
+  frontend:
+    image: enter-frontend:${ENTER_RELEASE:?Set the reviewed release tag}
