@@ -48,11 +48,13 @@ migration with both files, then recreate only `backend worker frontend` with
 `--no-deps --no-build --pull never`. Never run a full-stack `up` or `down` for
 this release.
 
-## Single remaining legal-review evidence requirement
+## Single remaining release-decision evidence requirement
 
-Record one attributable qualified-review entry containing the reviewer's name,
-legal qualification or authority, review reference, and actual review date. The
-entry must expressly cover the exact three recorded versions and hashes and the
-Gemini processing/overseas transfer/DPA and Terms liability/jurisdiction issues.
-This is a publication requirement for the pending documents, not a blocker to
-local AI-disabled build and release preparation.
+Record one attributable decision containing the reviewer's name, actual authority,
+review reference, and actual review date. It may be genuine qualified legal
+clearance or explicit management privacy/legal risk acceptance, but must not
+confuse the two. The decision must expressly cover the exact three recorded
+versions and hashes and the Gemini processing/overseas transfer/DPA and Terms
+liability/jurisdiction issues. This is ENTER's publication control for the pending
+documents, not an identified statutory lawyer-signature requirement and not a
+blocker to local AI-disabled build and release preparation.

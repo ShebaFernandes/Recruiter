@@ -1,9 +1,11 @@
 """Offline, fail-closed checks for Gemini activation preparation.
 
 Preparation mode confirms that the current production release remains AI-disabled
-and that the future activation artifacts are internally consistent. Activation
-mode additionally requires approved publication statuses and a completed evidence
-record. This script never reads a secret's contents and never makes a network call.
+and that the future activation artifacts are internally consistent. Publication
+and activation additionally require approved publication statuses and one completed
+accountable release-approval record. The record may document genuine qualified
+legal clearance or management privacy/legal risk acceptance, but must never confuse
+the two. This script never reads a secret's contents and never makes a network call.
 """
 
 from __future__ import annotations
@@ -193,16 +195,36 @@ def verify_evidence(path: Path) -> dict:
         "Example evidence is not approval",
     )
     evidence = json.loads(path.read_text())
+    require(evidence.get("status") == "APPROVED", "Release decision is not approved")
     date.fromisoformat(
         completed_string(evidence.get("publication_effective_date"), "effective date")
     )
 
-    review = evidence.get("qualified_legal_review", {})
-    for field in ("reviewer_name", "qualification_or_authority", "review_reference", "review_date"):
-        completed_string(review.get(field), f"qualified legal {field}")
-    date.fromisoformat(review["review_date"])
-    scope = review.get("scope_confirmed", {})
-    require(scope and all(scope.values()), "Qualified-review scope is incomplete")
+    approval = evidence.get("release_approval", {})
+    basis = completed_string(approval.get("basis"), "release approval basis")
+    require(
+        basis in {"qualified_legal_clearance", "management_risk_acceptance"},
+        "Release approval basis must be qualified legal clearance or management risk acceptance",
+    )
+    for field in ("reviewer_name", "authority", "review_reference", "review_date"):
+        completed_string(approval.get(field), f"release approval {field}")
+    date.fromisoformat(approval["review_date"])
+    if basis == "qualified_legal_clearance":
+        require(
+            approval.get("independent_qualified_legal_clearance") is True,
+            "Qualified legal clearance must be expressly recorded",
+        )
+    else:
+        require(
+            approval.get("independent_qualified_legal_clearance") is False,
+            "Management risk acceptance must not be labelled qualified legal clearance",
+        )
+        require(
+            approval.get("management_risk_accepted") is True,
+            "Management privacy/legal risk acceptance must be explicit",
+        )
+    scope = approval.get("scope_confirmed", {})
+    require(scope and all(scope.values()), "Release-approval scope is incomplete")
 
     approved = evidence.get("approved_documents", {})
     for purpose, expected in DOCUMENTS.items():
@@ -211,7 +233,14 @@ def verify_evidence(path: Path) -> dict:
         require(actual.get("sha256") == expected["sha256"], f"Wrong {purpose} hash")
 
     controls = evidence.get("provider_controls", {})
+    require(controls.get("google_project") == "enter", "Wrong Google project")
+    require(controls.get("paid_tier") == "Paid Tier 1", "Paid Tier 1 is not recorded")
     require(controls.get("paid_service_verified") is True, "Paid service is not verified")
+    require(controls.get("auto_reload_enabled") is False, "Google Auto-reload must remain off")
+    require(
+        Decimal(str(controls.get("google_monthly_cap_inr"))) == Decimal("100"),
+        "Google monthly project cap must remain INR 100",
+    )
     for field in (
         "dpa_reference",
         "logging_and_retention_review_reference",
@@ -225,6 +254,22 @@ def verify_evidence(path: Path) -> dict:
         "output_usd_per_million",
     ):
         positive_decimal(controls.get(field), f"provider control {field}")
+    require(
+        Decimal(str(controls.get("input_usd_per_million"))) == Decimal("0.30"),
+        "Gemini input price does not match the reviewed price",
+    )
+    require(
+        Decimal(str(controls.get("output_usd_per_million"))) == Decimal("2.50"),
+        "Gemini output price does not match the reviewed price",
+    )
+
+    limits = evidence.get("activation_limits", {})
+    require(limits.get("model") == "gemini-3.5-flash-lite", "Wrong Gemini model")
+    require(limits.get("paid_attempts") == 1, "Canary must allow one paid attempt")
+    require(limits.get("paid_retries") == 0, "Paid retries must remain disabled")
+    require(limits.get("historical_reprocessing") is False, "Historical processing is forbidden")
+    for field in ("rule_fallback", "manual_edit_protection", "worker_only_secret"):
+        require(limits.get(field) is True, f"Activation control missing: {field}")
     return evidence
 
 
@@ -257,7 +302,7 @@ def main() -> None:
         "gemini_technical_preparation": "PASS",
         "current_production": "AI-disabled and live-v1.0 legal preserved",
         "ceo_approval": "recorded and complete",
-        "qualified_legal_evidence": "pending separate attributable record",
+        "release_approval_evidence": "pending one attributable release decision",
         "external_requests": 0,
     }
     if args.phase in {"publication", "activation"}:
@@ -265,7 +310,7 @@ def main() -> None:
         verify_evidence(args.evidence_file)
         result.update(
             {
-                "qualified_legal_evidence": "verified structurally",
+                "release_approval_evidence": "verified structurally",
                 "publication_gate": "PASS",
             }
         )

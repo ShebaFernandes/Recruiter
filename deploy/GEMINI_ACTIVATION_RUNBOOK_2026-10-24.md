@@ -1,16 +1,19 @@
 # ENTER paid-Gemini activation runbook
 
-Status: **TECHNICALLY PREPARED — NOT AUTHORIZED FOR PUBLICATION OR ACTIVATION**
+Status: **MANAGEMENT-AUTHORIZED FOR CONTROLLED PUBLICATION AND ACTIVATION**
 
 The current production release stays operational with live v1.0 Privacy and
 Terms, rule-based resume extraction, and every Gemini/external-AI switch off.
 Dikshita Verma's approval of the exact v1.2 Privacy, v1.2 Terms, and v1.1
-resume-AI consent copies is complete in her role as CEO. It is not qualified
-legal evidence. `sheba@enterrecruitment.com` is a contact address, not a legal
-review reference.
+resume-AI consent copies is complete in her role as CEO. It is management
+exact-copy approval, not qualified legal clearance. Her 24 October 2026 release
+decision also expressly records management privacy/legal risk acceptance for the
+full release checklist.
+`sheba@enterrecruitment.com` is a contact address, not a review reference.
 
-This runbook does not authorize a provider call. It separates future legal
-publication, one fictional paid-Gemini canary, and any later consenting rollout.
+The recorded decision authorizes legal publication, one fictional paid-Gemini
+canary, and—only after that canary passes—the consenting rollout. The phases must
+remain separate.
 
 ## Prepared artifacts
 
@@ -25,8 +28,10 @@ publication, one fictional paid-Gemini canary, and any later consenting rollout.
   one explicit fictional resume ID, with one attempt and rule fallback.
 - `deploy/compose.gemini-consenting.yaml` is a separate post-canary step. It must
   never be combined during the first canary.
-- `deploy/GEMINI_ACTIVATION_EVIDENCE.example.json` defines the existing evidence
-  fields without inventing reviewer details or provider references.
+- `deploy/GEMINI_ACTIVATION_EVIDENCE.example.json` defines one accountable
+  release-decision record without inventing reviewer details or provider references.
+- `deploy/GEMINI_ACTIVATION_EVIDENCE.json` records the actual production decision
+  made by the named authorized approver.
 
 ## Phase 0 — keep the current release locked
 
@@ -38,17 +43,21 @@ uv run python scripts/check_gemini_activation_readiness.py
 ```
 
 Both checks must pass. The second must report zero external requests, completed
-CEO approval, and separately pending qualified legal evidence. Do not install a
+CEO approval, and one pending attributable release decision. Do not install a
 Gemini key, change publication statuses, or restart production for this phase.
 
 ## Phase 1 — evidence and legal publication
 
-Proceed only after the actual reviewer evidence is available. Create a completed
-evidence JSON from the example and record the reviewer's name, legal
-qualification or authority, review reference, actual review date, full scope,
-the three exact versions and hashes, paid-project/DPA verification, logging and
-retention review, key-owner authorization reference, verified token prices, and
-approved daily/monthly budgets. Do not put an API key in that file.
+Proceed only after one accountable release decision is available. The reviewed
+law does not prescribe a lawyer signature for this release; ENTER's earlier
+qualified-review requirement was internal policy. Complete
+`deploy/GEMINI_ACTIVATION_EVIDENCE.json` using either `qualified_legal_clearance` or
+`management_risk_acceptance`. Record the reviewer's name, actual authority,
+review reference, actual review date, full scope, the three exact versions and
+hashes, paid-project/DPA verification, logging and retention review, key-owner
+authorization reference, verified token prices, and approved daily/monthly
+budgets. A management decision must expressly state that it is not independent
+qualified legal clearance. Do not put an API key in that file.
 
 Then:
 
@@ -121,9 +130,8 @@ destructive database rollback.
 
 ## Phase 3 — consenting rollout
 
-Do not promote automatically after the canary. A separate explicit activation
-decision is required. Recheck backup, worker health, budget values, key mount,
-legal hashes, and canary evidence. Only then combine
+Promotion is authorized only if every canary check passes. Recheck backup, worker
+health, budget values, key mount, legal hashes, and canary evidence. Only then combine
 `deploy/compose.gemini-consenting.yaml` after the canary overlay and recreate the
 worker. The candidate checkbox remains optional and unchecked, rules remain the
 fallback, non-consenting and historical resumes remain ineligible, and recruiter

@@ -1,7 +1,7 @@
 ENTER CANDIDATE PLATFORM — PRIVACY POLICY
 Document identifier: enter-candidate-privacy-v1.2
-Proposed effective date: 24 October 2026.
-PUBLICATION STATUS: PENDING REVIEW
+Effective date: 24 October 2026.
+PUBLICATION STATUS: APPROVED
 
 This is the concise India-first publication copy prepared from the preserved legal
 review record. Historical D1–D16 evidence remains in Git and is not a release

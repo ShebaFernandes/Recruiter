@@ -1,0 +1,60 @@
+{
+  "status": "APPROVED",
+  "publication_effective_date": "2026-10-24",
+  "release_approval": {
+    "basis": "management_risk_acceptance",
+    "reviewer_name": "Dikshita Verma",
+    "authority": "CEO and privacy owner, ENTER Recruitment Private Limited",
+    "independent_qualified_legal_clearance": false,
+    "management_risk_accepted": true,
+    "review_reference": "ENTER-GEMINI-MANAGEMENT-RELEASE-2026-10-24",
+    "review_date": "2026-10-24",
+    "scope_confirmed": {
+      "gemini_processing": true,
+      "overseas_transfers_and_subprocessors": true,
+      "google_dpa_and_retention": true,
+      "terms_liability_and_jurisdiction": true,
+      "candidate_opt_in_and_withdrawal": true,
+      "existing_legal_and_privacy_risks": true
+    }
+  },
+  "approved_documents": {
+    "privacy": {
+      "version": "enter-candidate-privacy-v1.2",
+      "sha256": "6549ab6514b940459b8b853ee63643fc97c91f9dfc2d62aac511083c6b1bf574"
+    },
+    "terms": {
+      "version": "enter-candidate-terms-v1.2",
+      "sha256": "c545340b49350c664d0073e081dd4314a6464238adc6a61f9fc8a87b5647dd53"
+    },
+    "resume_ai": {
+      "version": "enter-resume-ai-consent-v1.1",
+      "sha256": "e9ba89892b3b29aa738ef7dc7ff2913149be87c44080a058ddfa3cc677041040"
+    }
+  },
+  "provider_controls": {
+    "google_project": "enter",
+    "paid_tier": "Paid Tier 1",
+    "paid_service_verified": true,
+    "auto_reload_enabled": false,
+    "google_monthly_cap_inr": "100",
+    "dpa_reference": "https://ai.google.dev/gemini-api/terms#paid-services",
+    "logging_and_retention_review_reference": "https://ai.google.dev/gemini-api/terms#how-google-uses-your-data-1",
+    "api_key_owner_authorization_reference": "CONSENT_AND_LEGAL_SIGNOFF_FINAL_REVIEW.txt — GEMINI PRODUCTION API-KEY USE",
+    "daily_budget_usd": "1",
+    "monthly_budget_usd": "5",
+    "input_usd_per_million": "0.30",
+    "output_usd_per_million": "2.50"
+  },
+  "activation_limits": {
+    "model": "gemini-3.5-flash-lite",
+    "first_rollout": "one fictional resume ID",
+    "paid_attempts": 1,
+    "paid_retries": 0,
+    "eligible_resumes": "new uploads with explicit versioned consent only",
+    "historical_reprocessing": false,
+    "rule_fallback": true,
+    "manual_edit_protection": true,
+    "worker_only_secret": true
+  }
+}

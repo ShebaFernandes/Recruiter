@@ -1,8 +1,12 @@
 {
+  "status": "PENDING_EXPLICIT_MANAGEMENT_DECISION",
   "publication_effective_date": "",
-  "qualified_legal_review": {
+  "release_approval": {
+    "basis": "",
     "reviewer_name": "",
-    "qualification_or_authority": "",
+    "authority": "",
+    "independent_qualified_legal_clearance": false,
+    "management_risk_accepted": false,
     "review_reference": "",
     "review_date": "",
     "scope_confirmed": {
@@ -27,13 +31,28 @@
     }
   },
   "provider_controls": {
+    "google_project": "enter",
+    "paid_tier": "Paid Tier 1",
     "paid_service_verified": false,
+    "auto_reload_enabled": false,
+    "google_monthly_cap_inr": "100",
     "dpa_reference": "",
     "logging_and_retention_review_reference": "",
     "api_key_owner_authorization_reference": "",
     "daily_budget_usd": "",
     "monthly_budget_usd": "",
-    "input_usd_per_million": "",
-    "output_usd_per_million": ""
+    "input_usd_per_million": "0.30",
+    "output_usd_per_million": "2.50"
+  },
+  "activation_limits": {
+    "model": "gemini-3.5-flash-lite",
+    "first_rollout": "one fictional resume ID",
+    "paid_attempts": 1,
+    "paid_retries": 0,
+    "eligible_resumes": "new uploads with explicit versioned consent only",
+    "historical_reprocessing": false,
+    "rule_fallback": true,
+    "manual_edit_protection": true,
+    "worker_only_secret": true
   }
 }
