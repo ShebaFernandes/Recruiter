@@ -24,8 +24,8 @@ fictional document, not the development database containing real candidates.
 ```dotenv
 RESUME_AI_ENABLED=false
 RESUME_AI_EXTERNAL_PROCESSING_APPROVED=false
-RESUME_AI_PROVIDER=openrouter
-RESUME_AI_MODEL=
+RESUME_AI_PROVIDER=anthropic
+RESUME_AI_MODEL=claude-sonnet-5-5
 RESUME_AI_API_KEY=
 RESUME_AI_ALLOW_PAID=false
 RESUME_AI_OPENAI_ZDR_APPROVED=false
@@ -34,7 +34,7 @@ RESUME_AI_FALLBACK=rules
 RESUME_AI_MAX_ATTEMPTS=2
 RESUME_AI_TIMEOUT_SECONDS=60
 RESUME_AI_MAX_INPUT_TOKENS=4000
-RESUME_AI_MAX_OUTPUT_TOKENS=4000
+RESUME_AI_MAX_OUTPUT_TOKENS=8000
 RESUME_AI_DAILY_BUDGET_USD=0
 RESUME_AI_MONTHLY_BUDGET_USD=0
 RESUME_AI_INPUT_USD_PER_MILLION=0
@@ -42,7 +42,7 @@ RESUME_AI_OUTPUT_USD_PER_MILLION=0
 ```
 
 Use the server-only `RESUME_AI_API_KEY`, or the provider-specific existing key. Do not change
-`AI_PROVIDER` or `OPENROUTER_SEARCH_MODEL` to configure resume interpretation.
+`AI_PROVIDER` or `ANTHROPIC_SEARCH_MODEL` to configure resume interpretation.
 No frontend environment variables or public document URLs are needed.
 Restart Django and the resume worker after configuration changes.
 
@@ -64,16 +64,13 @@ Likely directions are conservative local suggestions from supported roles, not
 confirmed preferences. Salary, notice and future work setup are never inferred
 by AI; the local parser accepts only explicit preference labels.
 
-OpenRouter requests require `json_schema`, `require_parameters=true`,
-`data_collection=deny`, `zdr=true`, `allow_fallbacks=false`, no model fallback list,
-and zero maximum prompt/completion/request prices while paid access is disabled.
-Only `openrouter/free` or a `:free` model is accepted in that mode. Availability of
-a free endpoint satisfying all these requirements is **not guaranteed**. If none
-is available, use rules; never relax privacy or select a paid model automatically.
-See [free routing](https://openrouter.ai/openrouter/free),
-[provider controls](https://openrouter.ai/docs/guides/routing/provider-selection),
-and [ZDR](https://openrouter.ai/docs/guides/features/zdr). No live inference request
-was made during implementation; compatibility is documented, not account-tested.
+Anthropic requests use the first-party Messages API with native JSON-schema output.
+Anthropic documents structured outputs as zero-data-retention eligible; the schema itself may
+be cached for compilation, so schema property names remain generic and never contain resume
+data. Resume calls additionally require `RESUME_AI_ALLOW_PAID=true`, non-zero daily/monthly
+budgets, and current input/output token prices. No model fallback is selected automatically.
+Implementation and regression tests never make inference requests. Any account-level live test
+must be separately authorized, budget-capped, and recorded through `ResumeAIUsage`.
 
 Deterministic history that passes the completeness heuristic makes no model call.
 At most two model requests are reserved durably per resume across worker retries.
@@ -196,19 +193,20 @@ Start from `.env.example`; inject values at runtime, never into images or fronte
 - `AUTH_COOKIE_SECURE=true`, `AUTH_COOKIE_SAMESITE=Lax`, `SECURE_SSL_REDIRECT=true`, and HSTS after HTTPS is verified.
 - `RATE_LIMIT_TRUST_X_FORWARDED_FOR=true` only when the ALB is configured in append mode; the application uses the right-most observed address and ignores spoofable left-most values.
 - SMTP/SES variables and a verified `DEFAULT_FROM_EMAIL`; production signup depends on email delivery.
-- `AI_PROVIDER=openai|openrouter`, the selected provider's API key, and an approved
+- `AI_PROVIDER=anthropic|openai`, the selected provider's API key, and an approved
   structured-output-capable model. Store the key in Secrets Manager/SSM, never the frontend.
 - OpenAI uses `OPENAI_API_KEY`, `OPENAI_SEARCH_MODEL`, and `OPENAI_API_BASE_URL`.
-- OpenRouter uses `OPENROUTER_API_KEY`, `OPENROUTER_SEARCH_MODEL`,
-  `OPENROUTER_API_BASE_URL`, `OPENROUTER_HTTP_REFERER`, and `OPENROUTER_APP_TITLE`.
+- Anthropic uses `ANTHROPIC_API_KEY`, `ANTHROPIC_SEARCH_MODEL`,
+  `ANTHROPIC_API_BASE_URL`, `ANTHROPIC_API_VERSION`, and
+  `ANTHROPIC_SEARCH_MAX_OUTPUT_TOKENS`.
 - `AI_ALLOW_DETERMINISTIC_FALLBACK=false`: staging/production fails clearly when the
   selected provider is unavailable instead of silently presenting deterministic parsing as AI.
 
 Keep S3 Block Public Access enabled, use SSE-S3 or SSE-KMS, disable ACLs, and grant web read only if downloads remain web-served. Grant workers quarantine read/delete and promoted-object read/write. Add a reviewed lifecycle rule only after the retention policy exists. RDS backups, point-in-time recovery, backup retention, restore testing, and deletion protection are product decisions, not repository defaults.
 
 Recruiter queries are interpreted server-side through a provider adapter. OpenAI uses the
-Responses API; OpenRouter uses Chat Completions with `response_format=json_schema` and
-`require_parameters=true`. Both responses pass through the same strict application validator
+Responses API; Anthropic uses Messages with `output_config.format=json_schema`. Both responses
+pass through the same strict application validator
 before reaching Django search logic. Only the recruiter's search sentence and clarification
 context are sent; candidate profiles and resumes are not sent to either integration. Restrict
 and rotate provider keys, monitor latency/error/cost, and give ECS tasks controlled outbound
@@ -218,8 +216,8 @@ Production configuration rejects fallback mode so the product never presents fix
 as AI.
 
 Successful real requests emit a redacted log event such as
-`ai_search_provider_success provider=openrouter model=<model> request_id=<id>`. Fallbacks emit
-`ai_search_provider_fallback provider=openrouter error=<category>`. No prompt, candidate data,
+`ai_search_provider_success provider=anthropic model=<model> request_id=<id>`. Fallbacks emit
+`ai_search_provider_fallback provider=anthropic error=<category>`. No prompt, candidate data,
 or API key is included in either event.
 
 ## Health, logging, and monitoring

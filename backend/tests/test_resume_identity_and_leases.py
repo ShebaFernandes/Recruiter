@@ -158,12 +158,12 @@ def test_stale_attempt_budget_is_bounded(client, candidate_account):
 def test_ai_request_budget_survives_attempt_recovery(client, candidate_account):
     job = queued(client)
     claimed, _ = _claim_job(job.pk)
-    assert _reserve_ai_attempt(claimed)
-    assert _reserve_ai_attempt(claimed)
-    assert not _reserve_ai_attempt(claimed)
+    assert _reserve_ai_attempt(claimed, 1000)
+    assert _reserve_ai_attempt(claimed, 1000)
+    assert not _reserve_ai_attempt(claimed, 1000)
     ResumeProcessingJob.objects.filter(pk=job.pk).update(
         locked_at=timezone.now() - timedelta(hours=1),
     )
     newer, _ = _claim_job(job.pk)
-    assert not _reserve_ai_attempt(claimed)
-    assert not _reserve_ai_attempt(newer)
+    assert not _reserve_ai_attempt(claimed, 1000)
+    assert not _reserve_ai_attempt(newer, 1000)

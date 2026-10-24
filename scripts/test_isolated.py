@@ -8,7 +8,7 @@ from pathlib import Path
 os.environ.update({
     "DJANGO_SETTINGS_MODULE": "config.settings", "APP_ENV": "test", "DEBUG": "true",
     "TESTING": "true", "AI_PROVIDER": "deterministic", "OPENAI_API_KEY": "",
-    "OPENROUTER_API_KEY": "", "RESUME_AI_ENABLED": "false",
+    "ANTHROPIC_API_KEY": "", "RESUME_AI_ENABLED": "false",
     "RESUME_AI_EXTERNAL_PROCESSING_APPROVED": "false",
     "EMAIL_BACKEND": "django.core.mail.backends.locmem.EmailBackend",
     "RESUME_QUEUE_BACKEND": "database", "RESUME_SCANNER_BACKEND": "development",

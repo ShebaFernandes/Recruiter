@@ -12,8 +12,8 @@ x-app: &app
     DEBUG: "false"
     TESTING: "false"
     AI_PROVIDER: disabled
+    ANTHROPIC_API_KEY: ""
     OPENAI_API_KEY: ""
-    OPENROUTER_API_KEY: ""
     AI_ALLOW_DETERMINISTIC_FALLBACK: "false"
     RESUME_AI_ENABLED: "false"
     RESUME_AI_EXTERNAL_PROCESSING_APPROVED: "false"

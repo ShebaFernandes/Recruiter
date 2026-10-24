@@ -109,7 +109,7 @@ export type Search = {
   state: 'needs_clarification' | 'complete'
   follow_up_question: string
   follow_up_options: string[]
-  understanding_source: 'openai' | 'openrouter' | 'deterministic' | 'deterministic_fallback'
+  understanding_source: 'anthropic' | 'openai' | 'deterministic' | 'deterministic_fallback'
   understanding_model: string
   created_at: string
 }

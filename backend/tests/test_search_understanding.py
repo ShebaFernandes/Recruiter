@@ -5,12 +5,16 @@ import urllib.error
 import pytest
 from django.test import override_settings
 from talent.ai_providers import (
+    AnthropicMessagesProvider,
     OpenAIResponsesProvider,
-    OpenRouterChatProvider,
     get_ai_provider,
 )
 from talent.models import Search
-from talent.search_understanding import SearchUnderstandingUnavailable, understand_search
+from talent.search_understanding import (
+    INTERPRETATION_SCHEMA,
+    SearchUnderstandingUnavailable,
+    understand_search,
+)
 
 VALID_INTERPRETATION = {
     "criteria": {
@@ -76,11 +80,11 @@ def test_missing_role_does_not_offer_a_hardcoded_job_title_list(client, recruite
 
 def test_provider_selection_is_explicit():
     with override_settings(
+        ANTHROPIC_API_KEY="test-anthropic-key",
         OPENAI_API_KEY="test-openai-key",
-        OPENROUTER_API_KEY="test-openrouter-key",
     ):
         assert isinstance(get_ai_provider("openai"), OpenAIResponsesProvider)
-        assert isinstance(get_ai_provider("openrouter"), OpenRouterChatProvider)
+        assert isinstance(get_ai_provider("anthropic"), AnthropicMessagesProvider)
 
 
 def test_openai_responses_adapter_uses_strict_structured_output(monkeypatch):
@@ -127,7 +131,9 @@ def test_openai_responses_adapter_uses_strict_structured_output(monkeypatch):
     assert captured["timeout"] == 7
 
 
-def test_openrouter_adapter_uses_chat_structured_output_and_safe_headers(monkeypatch, caplog):
+def test_anthropic_adapter_uses_messages_structured_output_and_safe_headers(
+    monkeypatch, caplog
+):
     captured = {}
 
     def fake_urlopen(request, timeout):
@@ -137,68 +143,66 @@ def test_openrouter_adapter_uses_chat_structured_output_and_safe_headers(monkeyp
         captured["timeout"] = timeout
         return FakeProviderResponse(
             {
-                "id": "gen_test_openrouter",
-                "model": "openai/gpt-4o-mini",
-                "choices": [
-                    {
-                        "finish_reason": "stop",
-                        "message": {"content": json.dumps(VALID_INTERPRETATION)},
-                    }
+                "id": "msg_test_anthropic",
+                "model": "claude-sonnet-5-5",
+                "content": [
+                    {"type": "text", "text": json.dumps(VALID_INTERPRETATION)}
                 ],
+                "stop_reason": "end_turn",
+                "usage": {"input_tokens": 123, "output_tokens": 45},
             }
         )
 
     monkeypatch.setattr("talent.ai_providers.urllib.request.urlopen", fake_urlopen)
     with override_settings(
-        AI_PROVIDER="openrouter",
-        OPENROUTER_API_KEY="test-openrouter-key",
-        OPENROUTER_SEARCH_MODEL="openai/gpt-4o-mini",
-        OPENROUTER_HTTP_REFERER="http://127.0.0.1:5173",
-        OPENROUTER_APP_TITLE="Enter Talent Platform",
+        AI_PROVIDER="anthropic",
+        ANTHROPIC_API_KEY="test-anthropic-key",
+        ANTHROPIC_SEARCH_MODEL="claude-sonnet-5-5",
+        ANTHROPIC_API_VERSION="2023-06-01",
+        ANTHROPIC_SEARCH_MAX_OUTPUT_TOKENS=2048,
         AI_ALLOW_DETERMINISTIC_FALLBACK=False,
         AI_REQUEST_TIMEOUT_SECONDS=9,
     ):
         result = understand_search("AI Full-Stack Developer with 3 years of exp remote")
 
-    assert result.source == "openrouter"
-    assert result.model == "openai/gpt-4o-mini"
-    assert result.request_id == "gen_test_openrouter"
+    assert result.source == "anthropic"
+    assert result.model == "claude-sonnet-5-5"
+    assert result.request_id == "msg_test_anthropic"
     assert result.criteria["role"] == "AI Full-Stack Developer"
-    assert captured["url"].endswith("/chat/completions")
-    response_format = captured["body"]["response_format"]
-    assert response_format["type"] == "json_schema"
-    assert response_format["json_schema"]["strict"] is True
-    assert captured["body"]["provider"]["require_parameters"] is True
-    assert captured["headers"]["Http-referer"] == "http://127.0.0.1:5173"
-    assert captured["headers"]["X-openrouter-title"] == "Enter Talent Platform"
+    assert captured["url"] == "https://api.anthropic.com/v1/messages"
+    output_format = captured["body"]["output_config"]["format"]
+    assert output_format["type"] == "json_schema"
+    assert output_format["schema"] == INTERPRETATION_SCHEMA
+    assert captured["body"]["system"]
+    assert captured["body"]["max_tokens"] == 2048
+    assert captured["headers"]["Authorization"] == "Bearer test-anthropic-key"
+    assert captured["headers"]["Anthropic-version"] == "2023-06-01"
     assert captured["timeout"] == 9
-    assert "ai_search_provider_success provider=openrouter" in caplog.text
-    assert "test-openrouter-key" not in caplog.text
+    assert "ai_search_provider_success provider=anthropic" in caplog.text
+    assert "test-anthropic-key" not in caplog.text
     assert "AI Full-Stack Developer with 3 years of exp remote" not in caplog.text
 
 
 @pytest.mark.django_db
-def test_openrouter_result_flows_through_api_and_is_persisted(
+def test_anthropic_result_flows_through_api_and_is_persisted(
     client, recruiter_account, monkeypatch
 ):
     def fake_urlopen(request, timeout):
         return FakeProviderResponse(
             {
-                "id": "gen_persisted",
-                "model": "openai/gpt-4o-mini",
-                "choices": [
-                    {
-                        "finish_reason": "stop",
-                        "message": {"content": json.dumps(VALID_INTERPRETATION)},
-                    }
+                "id": "msg_persisted",
+                "model": "claude-sonnet-5-5",
+                "content": [
+                    {"type": "text", "text": json.dumps(VALID_INTERPRETATION)}
                 ],
+                "stop_reason": "end_turn",
             }
         )
 
     monkeypatch.setattr("talent.ai_providers.urllib.request.urlopen", fake_urlopen)
     with override_settings(
-        AI_PROVIDER="openrouter",
-        OPENROUTER_API_KEY="test-key",
+        AI_PROVIDER="anthropic",
+        ANTHROPIC_API_KEY="test-key",
         AI_ALLOW_DETERMINISTIC_FALLBACK=False,
     ):
         response = client.post(
@@ -208,10 +212,10 @@ def test_openrouter_result_flows_through_api_and_is_persisted(
         )
 
     assert response.status_code == 201
-    assert response.data["understanding_source"] == "openrouter"
-    assert response.data["understanding_model"] == "openai/gpt-4o-mini"
+    assert response.data["understanding_source"] == "anthropic"
+    assert response.data["understanding_model"] == "claude-sonnet-5-5"
     search = Search.objects.get(pk=response.data["id"])
-    assert search.understanding_source == "openrouter"
+    assert search.understanding_source == "anthropic"
     assert search.criteria["role"] == "AI Full-Stack Developer"
 
 
@@ -221,20 +225,16 @@ def test_malformed_provider_response_is_rejected_before_search(monkeypatch):
     def fake_urlopen(request, timeout):
         return FakeProviderResponse(
             {
-                "id": "gen_malformed",
-                "choices": [
-                    {
-                        "finish_reason": "stop",
-                        "message": {"content": json.dumps(malformed)},
-                    }
-                ],
+                "id": "msg_malformed",
+                "content": [{"type": "text", "text": json.dumps(malformed)}],
+                "stop_reason": "end_turn",
             }
         )
 
     monkeypatch.setattr("talent.ai_providers.urllib.request.urlopen", fake_urlopen)
     with override_settings(
-        AI_PROVIDER="openrouter",
-        OPENROUTER_API_KEY="test-key",
+        AI_PROVIDER="anthropic",
+        ANTHROPIC_API_KEY="test-key",
         AI_ALLOW_DETERMINISTIC_FALLBACK=False,
     ):
         with pytest.raises(SearchUnderstandingUnavailable) as exc_info:
@@ -245,12 +245,12 @@ def test_malformed_provider_response_is_rejected_before_search(monkeypatch):
 
 
 @pytest.mark.django_db
-def test_openrouter_rate_limit_returns_429_and_retry_after(
+def test_anthropic_rate_limit_returns_429_and_retry_after(
     client, recruiter_account, monkeypatch
 ):
     def rate_limited(*args, **kwargs):
         raise urllib.error.HTTPError(
-            "https://openrouter.ai/api/v1/chat/completions",
+            "https://api.anthropic.com/v1/messages",
             429,
             "Too Many Requests",
             {"Retry-After": "17"},
@@ -259,8 +259,8 @@ def test_openrouter_rate_limit_returns_429_and_retry_after(
 
     monkeypatch.setattr("talent.ai_providers.urllib.request.urlopen", rate_limited)
     with override_settings(
-        AI_PROVIDER="openrouter",
-        OPENROUTER_API_KEY="test-key",
+        AI_PROVIDER="anthropic",
+        ANTHROPIC_API_KEY="test-key",
         AI_ALLOW_DETERMINISTIC_FALLBACK=False,
     ):
         response = client.post(
@@ -287,8 +287,8 @@ def test_provider_timeout_and_unavailable_are_distinguished(
 
     monkeypatch.setattr("talent.ai_providers.urllib.request.urlopen", unavailable)
     with override_settings(
-        AI_PROVIDER="openrouter",
-        OPENROUTER_API_KEY="test-key",
+        AI_PROVIDER="anthropic",
+        ANTHROPIC_API_KEY="test-key",
         AI_ALLOW_DETERMINISTIC_FALLBACK=False,
     ):
         with pytest.raises(SearchUnderstandingUnavailable) as exc_info:
@@ -300,12 +300,12 @@ def test_provider_timeout_and_unavailable_are_distinguished(
 
 def test_development_fallback_is_explicitly_identified(caplog):
     with override_settings(
-        AI_PROVIDER="openrouter",
-        OPENROUTER_API_KEY="",
+        AI_PROVIDER="anthropic",
+        ANTHROPIC_API_KEY="",
         AI_ALLOW_DETERMINISTIC_FALLBACK=True,
     ):
         result = understand_search("Backend engineer remote")
 
     assert result.source == "deterministic_fallback"
     assert result.model == ""
-    assert "ai_search_provider_fallback provider=openrouter error=unavailable" in caplog.text
+    assert "ai_search_provider_fallback provider=anthropic error=unavailable" in caplog.text

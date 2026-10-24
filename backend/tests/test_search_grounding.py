@@ -30,12 +30,12 @@ def provider(monkeypatch):
 
     def generate(self, instructions, input_payload, schema, schema_name):
         calls.append(input_payload)
-        return AIProviderResult(deepcopy(response), "openrouter", "test-free-model")
+        return AIProviderResult(deepcopy(response), "anthropic", "claude-sonnet-5-5")
 
-    monkeypatch.setattr("talent.ai_providers.OpenRouterChatProvider.generate", generate)
+    monkeypatch.setattr("talent.ai_providers.AnthropicMessagesProvider.generate", generate)
     with override_settings(
-        AI_PROVIDER="openrouter",
-        OPENROUTER_API_KEY="test-key",
+        AI_PROVIDER="anthropic",
+        ANTHROPIC_API_KEY="test-key",
         AI_ALLOW_DETERMINISTIC_FALLBACK=False,
     ):
         yield response, calls
@@ -53,7 +53,7 @@ def test_exact_live_hallucination_is_neutralized(provider):
         employment_type="Full-time",
     )
     result = understand_search("Backend engineer with 3 years of experience, remote")
-    assert result.source == "openrouter"
+    assert result.source == "anthropic"
     assert result.follow_up_question == ""
     for key in ("max_experience", "max_salary_lpa", "notice_period_days"):
         assert result.criteria[key] is None

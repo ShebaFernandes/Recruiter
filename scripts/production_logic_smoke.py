@@ -18,7 +18,7 @@ if not os.environ.get("DATABASE_URL", "").startswith("postgresql://"):
 os.environ.update({
     "DJANGO_SETTINGS_MODULE": "config.settings", "APP_ENV": "staging",
     "DEBUG": "false", "TESTING": "false", "AI_PROVIDER": "disabled",
-    "OPENAI_API_KEY": "", "OPENROUTER_API_KEY": "", "RESUME_AI_ENABLED": "false",
+    "ANTHROPIC_API_KEY": "", "OPENAI_API_KEY": "", "RESUME_AI_ENABLED": "false",
     "RESUME_AI_EXTERNAL_PROCESSING_APPROVED": "false",
     "DJANGO_SECRET_KEY": "fictional-local-smoke-never-use-in-production-" * 2,
     "ALLOWED_HOSTS": "app.example.test", "FRONTEND_URL": "https://app.example.test",

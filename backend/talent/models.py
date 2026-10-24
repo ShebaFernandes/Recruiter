@@ -331,10 +331,19 @@ class ResumeAIUsage(models.Model):
     model = models.CharField(max_length=120)
     outcome = models.CharField(max_length=20, choices=Outcome.choices)
     failure_category = models.CharField(max_length=40, blank=True)
+    failure_stage = models.CharField(max_length=40, blank=True)
+    stop_reason = models.CharField(max_length=60, blank=True)
     request_id = models.CharField(max_length=180, blank=True)
+    reserved_input_tokens = models.PositiveIntegerField(default=0)
     input_tokens = models.PositiveIntegerField(default=0)
     output_tokens = models.PositiveIntegerField(default=0)
+    validation_rejections = models.JSONField(default=list)
+    # This is the maximum request reservation used by the application budget gate.
     estimated_cost_usd = models.DecimalField(max_digits=12, decimal_places=6, default=0)
+    # Null means Anthropic billing was not confirmed by a response with token usage.
+    actual_cost_usd = models.DecimalField(
+        max_digits=12, decimal_places=6, null=True, blank=True
+    )
     latency_ms = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)

@@ -1,6 +1,7 @@
 .DS_Store
 .env
 .env.production
+frontend/.env.local
 *.dump
 backups/
 .venv/
@@ -15,6 +16,7 @@ frontend/vite.config.js
 frontend/vite.config.d.ts
 test-results/
 playwright-report/
+.local-benchmark/
 .pytest_cache/
 .ruff_cache/
 *.mov

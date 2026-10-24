@@ -33,6 +33,7 @@ RESUME_SKILLS = [
     "Machine Learning",
     *KNOWN_SKILLS,
 ]
+RESUME_RAW_TEXT_LIMIT = 50_000
 LOCATIONS = [
     "Bengaluru",
     "Pune",
@@ -213,7 +214,9 @@ def _section_lines(lines, headings):
 
 
 def _resume_date(value):
-    normalized = re.sub(r"(?i)^sept", "Sep", value.strip().replace(".", ""))
+    # Normalize the optional four-letter abbreviation without corrupting
+    # the full month name ("September" previously became "Sepember").
+    normalized = re.sub(r"(?i)^sept(?=\s)", "Sep", value.strip().replace(".", ""))
     for date_format in ("%b %Y", "%B %Y", "%m/%Y", "%m-%Y", "%Y-%m", "%Y/%m", "%Y"):
         try:
             return datetime.strptime(normalized, date_format).date().replace(day=1).isoformat()
@@ -597,8 +600,8 @@ def parse_resume(file_obj, filename):
         "current_salary_lpa": float(current_salary.group(1)) if current_salary else None,
         "expected_salary_lpa": float(expected_salary.group(1)) if expected_salary else None,
         "summary": _value_after_label(text, "Summary"),
-        "raw_text": text[:15000],
-        "_text_truncated": len(text) > 15000,
+        "raw_text": text[:RESUME_RAW_TEXT_LIMIT],
+        "_text_truncated": len(text) > RESUME_RAW_TEXT_LIMIT,
         "standout_signal": standout[:1000],
     }
 

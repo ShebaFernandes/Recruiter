@@ -10,6 +10,40 @@ from botocore.config import Config
 from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def _load_local_env(path):
+    """Load simple local dotenv values without executing them or overriding the shell."""
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return
+    for raw_line in lines:
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[7:].lstrip()
+        key, separator, value = line.partition("=")
+        key = key.strip()
+        if (
+            not separator
+            or not key
+            or key[0].isdigit()
+            or not key.replace("_", "").isalnum()
+        ):
+            continue
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+            value = value[1:-1]
+        os.environ.setdefault(key, value)
+
+
+_testing_boot = "pytest" in sys.modules or os.getenv("TESTING", "false").lower() == "true"
+_explicit_app_env = os.getenv("APP_ENV", "").lower()
+if not _testing_boot and _explicit_app_env not in {"staging", "production"}:
+    _load_local_env(BASE_DIR.parent / ".env")
+
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "enter-local-development-key")
 DEBUG = os.getenv("DEBUG", "true").lower() == "true"
 TESTING = "pytest" in sys.modules or os.getenv("TESTING", "false").lower() == "true"
@@ -317,13 +351,13 @@ AI_PROVIDER = os.getenv(
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_SEARCH_MODEL = os.getenv("OPENAI_SEARCH_MODEL", "gpt-4o-mini")
 OPENAI_API_BASE_URL = os.getenv("OPENAI_API_BASE_URL", "https://api.openai.com/v1")
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-OPENROUTER_SEARCH_MODEL = os.getenv("OPENROUTER_SEARCH_MODEL", "openai/gpt-4o-mini")
-OPENROUTER_API_BASE_URL = os.getenv(
-    "OPENROUTER_API_BASE_URL", "https://openrouter.ai/api/v1"
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+ANTHROPIC_SEARCH_MODEL = os.getenv("ANTHROPIC_SEARCH_MODEL", "claude-sonnet-5-5")
+ANTHROPIC_API_BASE_URL = os.getenv("ANTHROPIC_API_BASE_URL", "https://api.anthropic.com/v1")
+ANTHROPIC_API_VERSION = os.getenv("ANTHROPIC_API_VERSION", "2023-06-01")
+ANTHROPIC_SEARCH_MAX_OUTPUT_TOKENS = int(
+    os.getenv("ANTHROPIC_SEARCH_MAX_OUTPUT_TOKENS", "2048")
 )
-OPENROUTER_HTTP_REFERER = os.getenv("OPENROUTER_HTTP_REFERER", FRONTEND_URL)
-OPENROUTER_APP_TITLE = os.getenv("OPENROUTER_APP_TITLE", "Enter Talent Platform")
 # Resume interpretation is independent of recruiter search and requires explicit approval.
 RESUME_AI_ENABLED = os.getenv("RESUME_AI_ENABLED", "false").lower() == "true"
 RESUME_AI_EXTERNAL_PROCESSING_APPROVED = (
@@ -336,7 +370,7 @@ RESUME_AI_OPENAI_ZDR_APPROVED = (
 RESUME_AI_GEMINI_FREE_TIER_APPROVED = (
     os.getenv("RESUME_AI_GEMINI_FREE_TIER_APPROVED", "false").lower() == "true"
 )
-RESUME_AI_PROVIDER = os.getenv("RESUME_AI_PROVIDER", "openrouter")
+RESUME_AI_PROVIDER = os.getenv("RESUME_AI_PROVIDER", "anthropic")
 RESUME_AI_MODEL = os.getenv("RESUME_AI_MODEL", "")
 RESUME_AI_API_KEY = os.getenv("RESUME_AI_API_KEY", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
@@ -348,7 +382,7 @@ RESUME_AI_MAX_ATTEMPTS = int(os.getenv("RESUME_AI_MAX_ATTEMPTS", "2"))
 RESUME_AI_TIMEOUT_SECONDS = float(os.getenv("RESUME_AI_TIMEOUT_SECONDS", "60"))
 RESUME_AI_MAX_INPUT_TOKENS = int(os.getenv("RESUME_AI_MAX_INPUT_TOKENS", "4000"))
 RESUME_AI_MAX_INPUT_CHARS = RESUME_AI_MAX_INPUT_TOKENS * 4
-RESUME_AI_MAX_OUTPUT_TOKENS = int(os.getenv("RESUME_AI_MAX_OUTPUT_TOKENS", "4000"))
+RESUME_AI_MAX_OUTPUT_TOKENS = int(os.getenv("RESUME_AI_MAX_OUTPUT_TOKENS", "8000"))
 RESUME_AI_DAILY_BUDGET_USD = Decimal(os.getenv("RESUME_AI_DAILY_BUDGET_USD", "0"))
 RESUME_AI_MONTHLY_BUDGET_USD = Decimal(os.getenv("RESUME_AI_MONTHLY_BUDGET_USD", "0"))
 RESUME_AI_INPUT_USD_PER_MILLION = Decimal(
@@ -359,7 +393,8 @@ RESUME_AI_OUTPUT_USD_PER_MILLION = Decimal(
 )
 if (
     RESUME_AI_FALLBACK not in {"rules", "fail"}
-    or RESUME_AI_PROVIDER not in {"openai", "openrouter", "gemini"}
+    or RESUME_AI_PROVIDER not in {"anthropic", "openai", "gemini"}
+    or not 256 <= ANTHROPIC_SEARCH_MAX_OUTPUT_TOKENS <= 20_000
     or not 1 <= RESUME_AI_MAX_ATTEMPTS <= 2
     or not 1 <= RESUME_AI_TIMEOUT_SECONDS <= 60
     or not 256 <= RESUME_AI_MAX_INPUT_TOKENS <= 100_000
@@ -399,9 +434,9 @@ AI_ALLOW_DETERMINISTIC_FALLBACK = (
 )
 
 if not DEBUG:
-    if AI_PROVIDER not in {"disabled", "openai", "openrouter"}:
-        raise ImproperlyConfigured("Production AI_PROVIDER must be disabled, openai or openrouter.")
-    provider_key = OPENAI_API_KEY if AI_PROVIDER == "openai" else OPENROUTER_API_KEY
+    if AI_PROVIDER not in {"anthropic", "disabled", "openai"}:
+        raise ImproperlyConfigured("Production AI_PROVIDER must be disabled, anthropic or openai.")
+    provider_key = OPENAI_API_KEY if AI_PROVIDER == "openai" else ANTHROPIC_API_KEY
     if AI_PROVIDER != "disabled" and not provider_key:
         raise ImproperlyConfigured(
             f"Production AI_PROVIDER={AI_PROVIDER} requires its server-side API key."

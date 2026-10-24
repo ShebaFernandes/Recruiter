@@ -13,6 +13,9 @@ DATABASE_URL=postgresql://enter:enter@127.0.0.1:5433/enter uv run python backend
 DATABASE_URL=postgresql://enter:enter@127.0.0.1:5433/enter uv run python backend/manage.py runserver 127.0.0.1:8010
 ```
 
+Direct local Django and worker commands load the repository `.env` without overriding values
+already exported by the shell. Tests and staging/production do not load this local file.
+
 Run the durable local resume worker in another terminal:
 
 ```bash

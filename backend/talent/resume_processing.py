@@ -352,7 +352,7 @@ def _owns_attempt(current, claimed):
     )
 
 
-def _reserve_ai_attempt(claimed):
+def _reserve_ai_attempt(claimed, reserved_input_tokens):
     with transaction.atomic():
         lock, _ = RateLimitBucket.objects.get_or_create(
             key="resume-ai-budget",
@@ -370,9 +370,10 @@ def _reserve_ai_attempt(claimed):
         if used >= settings.RESUME_AI_MAX_ATTEMPTS:
             return False
         reserved_cost = Decimal("0")
+        reserved_input_tokens = max(0, int(reserved_input_tokens))
         if settings.RESUME_AI_ALLOW_PAID:
             reserved_cost = (
-                Decimal(settings.RESUME_AI_MAX_INPUT_TOKENS)
+                Decimal(reserved_input_tokens)
                 * settings.RESUME_AI_INPUT_USD_PER_MILLION
                 + Decimal(settings.RESUME_AI_MAX_OUTPUT_TOKENS)
                 * settings.RESUME_AI_OUTPUT_USD_PER_MILLION
@@ -380,12 +381,28 @@ def _reserve_ai_attempt(claimed):
             now = timezone.now()
             day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
             month_start = datetime(now.year, now.month, 1, tzinfo=now.tzinfo)
-            daily = ResumeAIUsage.objects.filter(created_at__gte=day_start).aggregate(
-                value=Sum("estimated_cost_usd")
-            )["value"] or Decimal("0")
-            monthly = ResumeAIUsage.objects.filter(created_at__gte=month_start).aggregate(
-                value=Sum("estimated_cost_usd")
-            )["value"] or Decimal("0")
+            daily_values = ResumeAIUsage.objects.filter(created_at__gte=day_start).aggregate(
+                actual=Sum("actual_cost_usd"),
+                reserved=Sum(
+                    "estimated_cost_usd",
+                    filter=Q(outcome=ResumeAIUsage.Outcome.RESERVED),
+                ),
+            )
+            monthly_values = ResumeAIUsage.objects.filter(
+                created_at__gte=month_start
+            ).aggregate(
+                actual=Sum("actual_cost_usd"),
+                reserved=Sum(
+                    "estimated_cost_usd",
+                    filter=Q(outcome=ResumeAIUsage.Outcome.RESERVED),
+                ),
+            )
+            daily = (daily_values["actual"] or Decimal("0")) + (
+                daily_values["reserved"] or Decimal("0")
+            )
+            monthly = (monthly_values["actual"] or Decimal("0")) + (
+                monthly_values["reserved"] or Decimal("0")
+            )
             if (
                 daily + reserved_cost > settings.RESUME_AI_DAILY_BUDGET_USD
                 or monthly + reserved_cost > settings.RESUME_AI_MONTHLY_BUDGET_USD
@@ -397,6 +414,7 @@ def _reserve_ai_attempt(claimed):
             provider=settings.RESUME_AI_PROVIDER,
             model=settings.RESUME_AI_MODEL,
             outcome=ResumeAIUsage.Outcome.RESERVED,
+            reserved_input_tokens=reserved_input_tokens,
             estimated_cost_usd=reserved_cost,
         )
         resume.extracted_data["_ai_requests"] = used + 1
@@ -404,33 +422,52 @@ def _reserve_ai_attempt(claimed):
         return usage.pk
 
 
-def _record_ai_attempt(usage_id, response, failure_category, latency_ms):
+def _record_ai_attempt(
+    usage_id,
+    response,
+    failure_category,
+    latency_ms,
+    error=None,
+    validation_rejections=None,
+):
     with transaction.atomic():
         usage = ResumeAIUsage.objects.select_for_update().get(pk=usage_id)
         if usage.outcome != ResumeAIUsage.Outcome.RESERVED:
             return
         usage.latency_ms = max(0, latency_ms)
         usage.completed_at = timezone.now()
-        if response:
-            usage.provider = response.provider
-            usage.model = response.model
-            usage.request_id = response.request_id[:180]
-            usage.input_tokens = response.input_tokens
-            usage.output_tokens = response.output_tokens
-            usage.estimated_cost_usd = (
-                Decimal(response.input_tokens) * settings.RESUME_AI_INPUT_USD_PER_MILLION
-                + Decimal(response.output_tokens) * settings.RESUME_AI_OUTPUT_USD_PER_MILLION
+        metadata = response or error
+        if metadata:
+            usage.provider = getattr(metadata, "provider", "") or usage.provider
+            usage.model = getattr(metadata, "model", "") or usage.model
+            usage.request_id = str(getattr(metadata, "request_id", "") or "")[:180]
+            usage.input_tokens = max(0, int(getattr(metadata, "input_tokens", 0) or 0))
+            usage.output_tokens = max(0, int(getattr(metadata, "output_tokens", 0) or 0))
+            usage.stop_reason = str(getattr(metadata, "stop_reason", "") or "")[:60]
+        usage.failure_stage = str(getattr(error, "stage", "") or "")[:40]
+        usage.validation_rejections = list(validation_rejections or [])
+        if response or getattr(error, "usage_confirmed", False):
+            usage.actual_cost_usd = (
+                Decimal(usage.input_tokens) * settings.RESUME_AI_INPUT_USD_PER_MILLION
+                + Decimal(usage.output_tokens) * settings.RESUME_AI_OUTPUT_USD_PER_MILLION
             ) / Decimal("1000000")
-            usage.outcome = ResumeAIUsage.Outcome.SUCCEEDED
-        else:
-            usage.failure_category = (failure_category or "unavailable")[:40]
+        if failure_category:
+            usage.failure_category = failure_category[:40]
             usage.outcome = ResumeAIUsage.Outcome.FAILED
+        else:
+            usage.outcome = ResumeAIUsage.Outcome.SUCCEEDED
         usage.save()
 
 
 def _cache_ai_result(claimed, usage_id, interpreted, response, latency_ms):
     with transaction.atomic():
-        _record_ai_attempt(usage_id, response, None, latency_ms)
+        _record_ai_attempt(
+            usage_id,
+            response,
+            None,
+            latency_ms,
+            validation_rejections=interpreted.get("_validation_rejections", []),
+        )
         resume = Resume.objects.select_for_update().get(pk=claimed.resume_id)
         data = dict(resume.extracted_data)
         data["_ai_cached_result"] = interpreted
@@ -532,7 +569,9 @@ def process_resume_job(job_id, idempotency_key=None, claimed=None):
         if not resume_identity_issue(resume, resume.candidate):
             extracted = understand_resume(
                 extracted,
-                lambda: _reserve_ai_attempt(job),
+                lambda reserved_input_tokens: _reserve_ai_attempt(
+                    job, reserved_input_tokens
+                ),
                 _record_ai_attempt,
                 lambda usage_id, result, response, latency_ms: _cache_ai_result(
                     job, usage_id, result, response, latency_ms

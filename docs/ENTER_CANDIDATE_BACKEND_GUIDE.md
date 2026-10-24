@@ -273,7 +273,7 @@ If the feature gates were removed, current code implements these filters:
 
 Natural-language recruiter query interpretation has both deterministic and provider-backed code,
 but production sets `AI_PROVIDER=disabled`. A new AI-interpreted search therefore cannot call
-OpenAI/OpenRouter in current production. Even if recruiter routing were enabled, provider use
+OpenAI/Anthropic in current production. Even if recruiter routing were enabled, provider use
 would need an explicit configuration change. `backend/config/settings.py:309-374`;
 `compose.production.yaml:14-20`; `backend/talent/services.py:472-584`.
 
@@ -284,7 +284,7 @@ would need an explicit configuration change. `backend/config/settings.py:309-374
 | Question | Answer |
 | --- | --- |
 | Is AI processing production resumes? | No. Production Compose hard-codes `RESUME_AI_ENABLED=false` and external processing approval false. Published production legal text also described rule-based extraction with external resume AI disabled at review time. |
-| Is OpenRouter/OpenAI called? | Not by the production configuration. API keys are blanked in Compose and `AI_PROVIDER=disabled`. |
+| Is Anthropic/OpenAI called? | Not by the production configuration. Provider access is disabled in Compose with `AI_PROVIDER=disabled`. |
 | What actually parses a CV? | `parse_resume()` using `pypdf`, `python-docx`, regexes, fixed headings, date patterns, keyword lists and deterministic calculations. |
 | Is any language-model code present? | Yes, optional evidence-bound resume interpretation and recruiter search providers exist. They require explicit enablement, approval and credentials. This is capability, not active behavior. |
 | Is there an AI confidence score? | No. There is no parser confidence value. Recruiter `match_score` is a hand-written relevance formula, not confidence. |
