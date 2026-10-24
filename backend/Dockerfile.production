@@ -16,7 +16,8 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 COPY backend ./backend
-COPY deploy/PRIVACY_POLICY_PUBLICATION.txt deploy/TERMS_PUBLICATION.txt ./deploy/
+COPY deploy/PRIVACY_POLICY_PUBLICATION.txt deploy/TERMS_PUBLICATION.txt \
+    deploy/RESUME_AI_CONSENT_PUBLICATION.txt ./deploy/
 WORKDIR /app/backend
 RUN mkdir -p media staticfiles \
     && python manage.py collectstatic --noinput \

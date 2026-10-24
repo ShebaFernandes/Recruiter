@@ -16,6 +16,7 @@ import { UserRound, GraduationCap, BriefcaseBusiness, MapPin, Camera, Trash2, Cl
 import './candidate-experience.css'
 import { ExistingLegalReview, LegalRetry } from './LegalReview'
 import { legalPublished, useLegalDocuments } from '../legalReview'
+import type { LegalDocument } from '../legalReview'
 
 const motivators = ['Exceptional team', 'Harder problems', 'More ownership', 'Compensation', 'Founding team', 'Leadership', 'Product', 'Global exposure', 'Founder']
 const exclusions = ['5-day WFO', 'Services companies', 'Pure management', 'Java roles', 'Below ₹50L', 'Large companies']
@@ -23,6 +24,10 @@ const noticePeriods = [0, 15, 30, 45, 60, 90]
 const employmentTypes = ['Full-time', 'Part-time', 'Contract', 'Internship']
 const workSetups = ['Hybrid', 'On-site', 'Remote']
 const contactMethods = ['Email', 'WhatsApp', 'Phone']
+
+export function ResumeAIConsent({ document, checked, disabled, change }: { document: LegalDocument; checked: boolean; disabled: boolean; change: (checked: boolean) => void }) {
+  return <label className="cp-check cp-ai-consent"><input type="checkbox" checked={checked} disabled={disabled} onChange={event => change(event.target.checked)} /><span>{document.text.trim()}</span></label>
+}
 const jobStatuses = [
   { value: 'Actively looking', label: 'Actively Looking' },
   { value: 'Open to the right opportunity', label: 'Open to Opportunities' },
@@ -220,6 +225,7 @@ export default function CandidateExperience({ beforeLeaveRef }: { accountDeleted
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   const [uploadingName, setUploadingName] = useState('')
+  const [resumeAiConsent, setResumeAiConsent] = useState(false)
   const busyRef = useRef(false)
   const [editing, setEditingState] = useState(false)
   function setEditing(value: boolean) {
@@ -418,9 +424,9 @@ export default function CandidateExperience({ beforeLeaveRef }: { accountDeleted
     if (!/\.(pdf|docx)$/i.test(file.name) || file.size > 5 * 1024 * 1024) { setError('Choose a PDF or DOCX, up to 5 MB.'); return }
     setUploadingName(file.name)
     let accepted
-    try { accepted = await run(async () => { const data = await api.uploadResume(file); focusUpload.current = true; return data }, '') }
+    try { accepted = await run(async () => { const data = await api.uploadResume(file, resumeAiConsent ? legalDocuments?.resume_ai : undefined); focusUpload.current = true; return data }, '') }
     finally { setUploadingName('') }
-    if (accepted) { setReview(false); setSuccess(false); setEditing(false); setShowBeyond(false); setPollError('') }
+    if (accepted) { setResumeAiConsent(false); setReview(false); setSuccess(false); setEditing(false); setShowBeyond(false); setPollError('') }
   }
   async function uploadPhoto(file: File) {
     if (!/^image\/(jpeg|png|webp)$/i.test(file.type) || file.size > 4 * 1024 * 1024) {
@@ -465,11 +471,12 @@ export default function CandidateExperience({ beforeLeaveRef }: { accountDeleted
     focusControl(`.cp-editor [name="${field}"]`)
   }
   const uploadControl = <label className="cp-file"><span className="onboarding-choose">{busy ? 'Uploading…' : 'Choose your resume ↗'}</span><input aria-label="Choose PDF or DOCX resume" data-testid="resume-input" type="file" accept=".pdf,.docx" disabled={busy || processing} onChange={e => { void upload(e.target.files?.[0]); e.target.value = '' }} /><small>PDF or DOCX · Max 5 MB</small></label>
+  const aiConsentControl = legalDocuments?.resume_ai ? <ResumeAIConsent document={legalDocuments.resume_ai} checked={resumeAiConsent} disabled={busy || processing} change={setResumeAiConsent} /> : null
   const resumeUpdated = resume?.uploaded_at && !Number.isNaN(Date.parse(resume.uploaded_at)) ? new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(resume.uploaded_at)) : null
   const replaceControl = <label className="cp-replace-control"><UploadCloud aria-hidden="true" /><span>Update your resume</span><small>{resumeUpdated ? `Last uploaded ${resumeUpdated}` : 'No upload date available'}</small><input aria-label="Update Resume" data-testid="resume-input" type="file" accept=".pdf,.docx" disabled={busy || processing} onChange={e => { void upload(e.target.files?.[0]); e.target.value = '' }} /></label>
   // Transient presentation metadata only; never persisted or used by the job poller.
   const displayResume: Resume | null = uploadingName ? { id: -1, original_name: uploadingName, version: 0, uploaded_at: '', processing_status: 'uploaded', scan_status: 'quarantined', processing_error: '', can_retry: false, url: null } : p.latest_resume
-  const processingView = displayResume && (focusedProcessing || status === 'failed') ? <CandidateProcessing key={displayResume.id} resume={displayResume} transferring={Boolean(uploadingName)} uploading={busy} retry={() => void run(() => api.retryResume(p.latest_resume!.id), '')} upload={file => void upload(file)} error={uploadingName ? '' : pollError} refresh={() => void refreshProcessing()} /> : null
+  const processingView = displayResume && (focusedProcessing || status === 'failed') ? <CandidateProcessing key={displayResume.id} resume={displayResume} transferring={Boolean(uploadingName)} uploading={busy} retry={() => void run(() => api.retryResume(p.latest_resume!.id), '')} upload={file => void upload(file)} error={uploadingName ? '' : pollError} refresh={() => void refreshProcessing()} aiConsent={aiConsentControl} /> : null
   async function saveSettings(data: FormData) {
     const get = (key: string) => String(data.get(key) || '').trim()
     const number = (key: string) => get(key) === '' ? null : get(key)
@@ -519,7 +526,7 @@ export default function CandidateExperience({ beforeLeaveRef }: { accountDeleted
       {settingsEditor('email')}
       <button type="button" className="cp-setting-row" data-setting="linkedin" disabled={busy} aria-expanded={editingSettings && editingSettingsField === 'linkedin'} aria-controls="settings-editor-linkedin" onClick={() => settingsAction('linkedin')}><span><Link2 aria-hidden="true" /></span><div><strong>Professional links</strong><p>{[p.linkedin_url, p.github_url, preferences.portfolio_url].filter(Boolean).join(' · ') || 'Not specified yet'}</p></div><span className="cp-setting-edit"><Pencil aria-hidden="true" />Edit</span></button>
       {settingsEditor('linkedin')}
-      <div className="cp-setting-row cp-setting-resume">{replaceControl}</div>
+      <div className="cp-setting-row cp-setting-resume"><div>{replaceControl}{aiConsentControl}</div></div>
     </div>
     </section></aside>
   return <main className={`candidate-experience ${focusedProcessing ? 'is-processing' : ''}`} ref={mainRef}>
@@ -533,7 +540,7 @@ export default function CandidateExperience({ beforeLeaveRef }: { accountDeleted
     {!focusedProcessing && <div className={`cp-profile-workspace ${resume ? 'with-preferences' : ''}`}><div className="cp-profile-main">{(!p.latest_resume ? <section className="onboarding-upload upload-chapter">
       <div className="onboarding-upload-copy"><h1>ENTER what’s next?</h1><p>Somewhere, there’s something worth building.</p></div>
       <section className="upload-chapter-panel" aria-labelledby="upload-panel-title"><header><FileText aria-hidden="true" /><div><h2 id="upload-panel-title">Start with your resume</h2><p>Your experience deserves to be understood.</p></div></header>
-        <div className={`cp-section cp-upload ${dragging ? 'dragging' : ''}`} onDragOver={e => { e.preventDefault(); setDragging(true) }} onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false) }} onDrop={e => { e.preventDefault(); setDragging(false); if (!busy) void upload(e.dataTransfer.files[0]) }}><UploadCloud aria-hidden="true" className="onboarding-file-icon" /><h3>Drop your resume here</h3>{uploadControl}</div>
+        <div className={`cp-section cp-upload ${dragging ? 'dragging' : ''}`} onDragOver={e => { e.preventDefault(); setDragging(true) }} onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false) }} onDrop={e => { e.preventDefault(); setDragging(false); if (!busy) void upload(e.dataTransfer.files[0]) }}><UploadCloud aria-hidden="true" className="onboarding-file-icon" /><h3>Drop your resume here</h3>{uploadControl}{aiConsentControl}</div>
         <p className="upload-privacy"><LockKeyhole aria-hidden="true" />Private upload · Review your profile before submitting</p>
       </section>
     </section> : (processing || !resume) && processingView ? null : <>

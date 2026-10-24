@@ -58,6 +58,9 @@ def isolated_benchmark(settings, tmp_path):
     settings.RESUME_AI_MAX_ATTEMPTS = 1
     settings.RESUME_AI_INPUT_USD_PER_MILLION = Decimal("2")
     settings.RESUME_AI_OUTPUT_USD_PER_MILLION = Decimal("10")
+    settings.RESUME_AI_ROLLOUT_MODE = "consenting"
+    settings.LEGAL_RESUME_AI_VERSION = "enter-resume-ai-consent-test-v1"
+    settings.LEGAL_RESUME_AI_SHA256 = "1" * 64
 
 
 def authenticate_fictional_candidate(client, full_name, suffix):
@@ -109,7 +112,13 @@ def upload_and_process(client, case, provider, content=None):
         format="multipart",
     )
     assert response.status_code == 202, response.data
-    job = ResumeProcessingJob.objects.get(resume_id=response.data["latest_resume"]["id"])
+    resume_id = response.data["latest_resume"]["id"]
+    Resume.objects.filter(pk=resume_id).update(
+        ai_processing_consent_at=timezone.now(),
+        ai_processing_consent_version="enter-resume-ai-consent-test-v1",
+        ai_processing_consent_sha256="1" * 64,
+    )
+    job = ResumeProcessingJob.objects.get(resume_id=resume_id)
     assert process_resume_job(job.pk, str(job.idempotency_key)) == "completed"
     return client.get("/api/v1/candidate/profile/").data
 

@@ -389,6 +389,17 @@ def _rejection(category, item_index=None, field=None):
     return rejection
 
 
+NON_EMPLOYMENT_ROLE = re.compile(
+    r"(?i)^(?:career|employment|study)\s+(?:break|gap)|"
+    r"^(?:parental|maternity|paternity)\s+leave$|^sabbatical$|^unemployed$"
+)
+
+
+def _is_non_employment_role(value):
+    """Recognize explicit gap labels without turning them into employment records."""
+    return bool(value and NON_EMPLOYMENT_ROLE.fullmatch(" ".join(value.split())))
+
+
 def evidence_belongs_to_role(evidence, fact, facts, text):
     evidence_positions = _evidence_positions(evidence, text)
     role_positions = _evidence_positions(fact["role_evidence"], text)
@@ -487,6 +498,11 @@ def validate_interpretation(data, text):
         if not supported(fact["company"], employer_evidence, text):
             rejections.append(
                 _rejection("work_experience.employer_association", index, "company")
+            )
+            continue
+        if _is_non_employment_role(fact["role"]):
+            rejections.append(
+                _rejection("work_experience.non_employment", index, "role")
             )
             continue
         if (
@@ -710,7 +726,15 @@ def _needs_ai(rules):
     return not history or not quality.get("reliable", bool(history))
 
 
-def understand_resume(rules, reserve_attempt, record_attempt=None, cache_result=None):
+def understand_resume(
+    rules,
+    reserve_attempt,
+    record_attempt=None,
+    cache_result=None,
+    *,
+    ai_allowed=True,
+    candidate_requested_ai=False,
+):
     """reserve_attempt fences the lease and enforces a durable per-resume request cap."""
     result = dict(rules)
     rows = result.get("work_experiences", [])
@@ -722,9 +746,9 @@ def understand_resume(rules, reserve_attempt, record_attempt=None, cache_result=
         result.update(cached)
         result["_interpretation"] = {"source": "ai_cached"}
         return result
-    if settings.RESUME_AI_ENABLED:
+    if settings.RESUME_AI_ENABLED and ai_allowed:
         reason = "deterministic_reliable"
-        if not _needs_ai(rules):
+        if not candidate_requested_ai and not _needs_ai(rules):
             result["_interpretation"] = {"source": "rules", "reason": reason}
             return result
         reason = "external_processing_not_approved"
@@ -793,7 +817,9 @@ def understand_resume(rules, reserve_attempt, record_attempt=None, cache_result=
                         # No immediate retries for rate limits, outages or timeouts.
                         if reason != "malformed_response":
                             break
+    if settings.RESUME_AI_ENABLED and not ai_allowed:
+        reason = "candidate_permission_or_rollout_gate"
     result["_interpretation"] = {"source": "rules", "reason": reason}
-    if settings.RESUME_AI_ENABLED and settings.RESUME_AI_FALLBACK == "fail":
+    if settings.RESUME_AI_ENABLED and ai_allowed and settings.RESUME_AI_FALLBACK == "fail":
         raise AIProviderUnavailable()
     return result

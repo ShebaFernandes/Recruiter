@@ -1,0 +1,11 @@
+ENTER RESUME AI PROCESSING CONSENT
+Document identifier: enter-resume-ai-consent-v1.1
+PUBLICATION STATUS: PENDING REVIEW
+
+This document is not approved or published. The exact public copy below requires
+authorization from ENTER's privacy owner and qualified legal review before its
+status, version, and SHA-256 may be loaded into production.
+
+PROPOSED PUBLIC COPY
+Use AI to help extract my resume. I agree that the text extracted from this resume will be sent to Google's paid Gemini API, which may process it outside India, to create suggestions for my professional profile. I can leave this unchecked and use ENTER's rule-based extraction.
+END OF PROPOSED PUBLIC COPY

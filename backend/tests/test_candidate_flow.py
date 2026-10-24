@@ -411,6 +411,109 @@ def test_resume_upload_rejects_unsupported_file(client, candidate_account):
 
 
 @pytest.mark.django_db
+def test_resume_ai_permission_is_optional_versioned_and_scoped_to_uploaded_resume(
+    client, candidate_account, monkeypatch, tmp_path
+):
+    from talent import legal
+
+    consent = {
+        "text": (
+            "Use AI to help extract my resume. I agree that the text extracted from this "
+            "resume will be sent to Google's paid Gemini API, which may process it outside "
+            "India, to create suggestions for my professional profile. I can leave this "
+            "unchecked and use ENTER's rule-based extraction.\n"
+        ),
+        "version": "enter-resume-ai-consent-v1.1",
+        "sha256": "a" * 64,
+        "effective_date": "2026-10-24",
+        "unpublished": False,
+    }
+    original_documents = legal.documents
+
+    def documents():
+        return {**original_documents(), "resume_ai": consent}
+
+    monkeypatch.setattr(legal, "documents", documents)
+    with override_settings(MEDIA_ROOT=tmp_path):
+        unchecked = client.post(
+            "/api/v1/candidate/resumes/",
+            {"file": SimpleUploadedFile("rules.docx", resume_docx())},
+            format="multipart",
+        )
+        assert unchecked.status_code == 202
+        rules_resume = Resume.objects.get(pk=unchecked.data["latest_resume"]["id"])
+        assert rules_resume.ai_processing_consent_at is None
+        assert rules_resume.ai_processing_consent_version == ""
+
+        checked = client.post(
+            "/api/v1/candidate/resumes/",
+            {
+                "file": SimpleUploadedFile("ai.docx", resume_docx()),
+                "resume_ai_accepted": "true",
+                "resume_ai_version": consent["version"],
+            },
+            format="multipart",
+        )
+        assert checked.status_code == 202
+        ai_resume = Resume.objects.get(pk=checked.data["latest_resume"]["id"])
+        assert ai_resume.ai_processing_consent_at is not None
+        assert ai_resume.ai_processing_consent_version == consent["version"]
+        assert ai_resume.ai_processing_consent_sha256 == consent["sha256"]
+        assert rules_resume.pk != ai_resume.pk
+
+
+@pytest.mark.django_db
+def test_resume_ai_rejects_stale_consent_and_canary_gate_is_exact(
+    client, candidate_account, monkeypatch, settings, tmp_path
+):
+    from talent import legal
+    from talent.resume_processing import _resume_ai_allowed
+
+    consent = {
+        "text": "Synthetic approved AI consent.\n",
+        "version": "enter-resume-ai-consent-v1.1",
+        "sha256": "b" * 64,
+        "effective_date": "2026-10-24",
+        "unpublished": False,
+    }
+    original_documents = legal.documents
+    monkeypatch.setattr(
+        legal,
+        "documents",
+        lambda: {**original_documents(), "resume_ai": consent},
+    )
+    with override_settings(MEDIA_ROOT=tmp_path):
+        stale = client.post(
+            "/api/v1/candidate/resumes/",
+            {
+                "file": SimpleUploadedFile("stale.docx", resume_docx()),
+                "resume_ai_accepted": "true",
+                "resume_ai_version": "stale-version",
+            },
+            format="multipart",
+        )
+        assert stale.status_code == 400
+
+        accepted = client.post(
+            "/api/v1/candidate/resumes/",
+            {
+                "file": SimpleUploadedFile("canary.docx", resume_docx()),
+                "resume_ai_accepted": "true",
+                "resume_ai_version": consent["version"],
+            },
+            format="multipart",
+        )
+    resume = Resume.objects.get(pk=accepted.data["latest_resume"]["id"])
+    settings.LEGAL_RESUME_AI_VERSION = consent["version"]
+    settings.LEGAL_RESUME_AI_SHA256 = consent["sha256"]
+    settings.RESUME_AI_ROLLOUT_MODE = "canary"
+    settings.RESUME_AI_CANARY_RESUME_IDS = {resume.pk + 1}
+    assert not _resume_ai_allowed(resume)
+    settings.RESUME_AI_CANARY_RESUME_IDS = {resume.pk}
+    assert _resume_ai_allowed(resume)
+
+
+@pytest.mark.django_db
 def test_real_pdf_is_extracted(client, candidate_account, tmp_path):
     with override_settings(MEDIA_ROOT=tmp_path):
         upload = SimpleUploadedFile(

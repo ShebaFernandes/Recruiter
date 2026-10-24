@@ -19,6 +19,11 @@ class Command(BaseCommand):
         try:
             privacy = legal._published_text(root / "PRIVACY_POLICY_PUBLICATION.txt")
             terms = legal._published_text(root / "TERMS_PUBLICATION.txt")
+            resume_ai = (
+                legal._published_text(root / "RESUME_AI_CONSENT_PUBLICATION.txt")
+                if settings.LEGAL_RESUME_AI_APPROVED
+                else None
+            )
         except (OSError, ValidationError) as error:
             raise CommandError("Legal documents are not publication-ready.") from error
 
@@ -32,6 +37,8 @@ class Command(BaseCommand):
             ),
         }
         texts = {"privacy": privacy, "terms": terms, **fixed}
+        if resume_ai is not None:
+            texts["resume_ai"] = resume_ai
         versions = {
             purpose: getattr(settings, f"LEGAL_{purpose.upper()}_VERSION")
             for purpose in texts

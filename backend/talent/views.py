@@ -562,6 +562,26 @@ def resume_upload(request):
     from . import legal
 
     legal.require_terms(request.user)
+    ai_consent = str(request.data.get("resume_ai_accepted", "")).lower() == "true"
+    ai_consent_document = None
+    if ai_consent:
+        try:
+            ai_consent_document = legal.documents().get("resume_ai")
+        except OSError:
+            ai_consent_document = None
+        if not ai_consent_document:
+            return Response(
+                {"detail": "AI resume processing consent is not currently available."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        legal.validate_acceptance(
+            {
+                "resume_ai_accepted": True,
+                "resume_ai_version": request.data.get("resume_ai_version"),
+            },
+            "resume_ai",
+            ai_consent_document,
+        )
     uploaded = request.FILES.get("file")
     if not uploaded:
         return Response({"detail": "Choose a resume file."}, status=status.HTTP_400_BAD_REQUEST)
@@ -598,6 +618,13 @@ def resume_upload(request):
             version=version,
             processing_status=Resume.ProcessingStatus.UPLOADED,
             scan_status=Resume.ScanStatus.QUARANTINED,
+            ai_processing_consent_at=timezone.now() if ai_consent else None,
+            ai_processing_consent_version=(
+                ai_consent_document["version"] if ai_consent_document else ""
+            ),
+            ai_processing_consent_sha256=(
+                ai_consent_document["sha256"] if ai_consent_document else ""
+            ),
         )
         job = ResumeProcessingJob.objects.create(
             resume=resume,

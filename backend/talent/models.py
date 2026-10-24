@@ -277,6 +277,9 @@ class Resume(models.Model):
         default=ScanStatus.QUARANTINED,
     )
     processing_error = models.CharField(max_length=255, blank=True)
+    ai_processing_consent_at = models.DateTimeField(null=True, blank=True)
+    ai_processing_consent_version = models.CharField(max_length=100, blank=True)
+    ai_processing_consent_sha256 = models.CharField(max_length=64, blank=True)
     processing_updated_at = models.DateTimeField(auto_now=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
@@ -332,6 +335,9 @@ class ResumeAIUsage(models.Model):
     outcome = models.CharField(max_length=20, choices=Outcome.choices)
     failure_category = models.CharField(max_length=40, blank=True)
     failure_stage = models.CharField(max_length=40, blank=True)
+    http_status = models.PositiveSmallIntegerField(null=True, blank=True)
+    provider_error_code = models.CharField(max_length=80, blank=True)
+    provider_error_status = models.CharField(max_length=80, blank=True)
     stop_reason = models.CharField(max_length=60, blank=True)
     request_id = models.CharField(max_length=180, blank=True)
     reserved_input_tokens = models.PositiveIntegerField(default=0)
@@ -340,7 +346,7 @@ class ResumeAIUsage(models.Model):
     validation_rejections = models.JSONField(default=list)
     # This is the maximum request reservation used by the application budget gate.
     estimated_cost_usd = models.DecimalField(max_digits=12, decimal_places=6, default=0)
-    # Null means Anthropic billing was not confirmed by a response with token usage.
+    # Null means provider billing was not confirmed by a response with token usage.
     actual_cost_usd = models.DecimalField(
         max_digits=12, decimal_places=6, null=True, blank=True
     )

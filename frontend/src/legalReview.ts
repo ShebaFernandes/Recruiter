@@ -3,7 +3,7 @@ import { api } from './api'
 
 export const legalPublished = import.meta.env.VITE_LEGAL_CONTENT_APPROVED === 'true'
 export type LegalDocument = { text: string; version: string; sha256: string; effective_date?: string | null; unpublished: boolean }
-export type LegalDocuments = Record<'terms' | 'privacy' | 'age' | 'submission', LegalDocument>
+export type LegalDocuments = Record<'terms' | 'privacy' | 'age' | 'submission', LegalDocument> & { resume_ai?: LegalDocument }
 
 export function useLegalDocuments() {
   return useLegalDocumentState().documents

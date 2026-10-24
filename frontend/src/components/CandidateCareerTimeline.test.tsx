@@ -41,6 +41,21 @@ it('keeps a year-only current role current without creating a January date', () 
   expect(container.querySelector('.career-period small')).toHaveTextContent('2024')
   expect(container.querySelector('.career-present-end')).toHaveTextContent('Present')
 })
+it('renders recalled researcher and writer roles while keeping the career break out of employment', () => {
+  const items = [
+    role({ company: 'Quartz Product Studio', role: 'UX Researcher', start_date: '2017-03-01', end_date: '2020-11-01', date_label: 'March 2017 — November 2020' }),
+    role({ company: 'Violet API Works', role: 'Technical Writer', start_date: null, end_date: '2020-06-01', date_label: 'Unknown — June 2020' }),
+    role({ company: 'Willow Developer Tools', role: 'Senior Technical Writer', start_date: '2020-08-01', end_date: null, is_current: true, date_label: 'August 2020 — Present' }),
+  ]
+  const { container } = render(<CandidateCareerTimeline items={items} />)
+  expect(container.querySelectorAll('.career-period')).toHaveLength(3)
+  expect(screen.getByRole('button', { name: /UX Researcher at Quartz Product Studio/ })).toBeVisible()
+  expect(screen.getByRole('button', { name: /Technical Writer at Violet API Works/ })).toBeVisible()
+  expect(screen.getByRole('button', { name: /Senior Technical Writer at Willow Developer Tools/ })).toBeVisible()
+  expect(screen.queryByRole('button', { name: /Career break at/ })).toBeNull()
+  expect([...container.querySelectorAll('.career-period small')].map(el => el.textContent)).toContain('Date unknown')
+  expect(container.querySelector('.career-present-end')).toHaveTextContent('Present')
+})
 it('shows a supported year-only start in the shared career journey', () => {
   const item = role({ start_date: null, end_date: null, date_label: '2012 — 14' })
   const { container } = render(<CareerJourney items={[item]} />)

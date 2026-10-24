@@ -1,7 +1,7 @@
 ENTER CANDIDATE PLATFORM — TERMS OF USE
-Document identifier: enter-candidate-terms-v1.0
-Effective date: 22 October 2026.
-PUBLICATION STATUS: APPROVED
+Document identifier: enter-candidate-terms-v1.2
+Proposed effective date: 24 October 2026.
+PUBLICATION STATUS: PENDING REVIEW
 
 This is the concise India-first publication copy prepared from the preserved legal
 review record. Historical D1–D16 evidence remains in Git and is not a release
@@ -54,15 +54,20 @@ deletion requests remain available during a restriction.
 3. The candidate service
 
 The service lets you upload a supported resume, receive rule-based extraction,
-review and edit your information, preview a resume, and save or submit a profile.
-Review extracted information because it may be incomplete or wrong. ENTER does
-not guarantee an interview, response, placement, job, or uninterrupted service.
+and optionally request AI-assisted extraction for a specific upload using a
+separate, unchecked permission. It lets you review and edit your information,
+preview a resume, and save or submit a profile. Review extracted information
+because either method may be incomplete or wrong. ENTER does not guarantee an
+interview, response, placement, job, or uninterrupted service.
 
-The candidate service is free under this version. External resume AI is disabled.
-Recruiter login, search, candidate access, and resume downloads are disabled.
-Submission does not authorize recruiter access. Before any future recruiter
-sharing, ENTER will request a separate, explicit opt-in describing the approved
-recipients, purpose, visible information, downloads, and withdrawal process.
+The candidate service is free under this version. If you select the optional AI
+permission, ENTER may send the text extracted from that resume to Google's paid Gemini API
+solely to produce structured suggestions for your professional profile. If you do
+not select it, ENTER uses the rule-based parser. Recruiter login, search,
+candidate access, and resume downloads remain disabled. Submission does not
+authorize recruiter access. Before any future recruiter sharing, ENTER will
+request a separate, explicit opt-in describing the approved recipients, purpose,
+visible information, downloads, and withdrawal process.
 
 4. Your content
 
@@ -77,6 +82,10 @@ and make protected backup copies of Candidate Content solely to operate, secure,
 support, and recover the candidate service. The permission ends when the content
 is deleted, subject to the limited backup and legal-retention treatment in the
 Privacy Policy.
+
+For a resume whose optional AI permission you select, that limited permission
+includes transmitting its extracted text to Google's paid Gemini API and receiving a
+structured extraction solely to create suggestions for your profile.
 
 This permission does not authorize public publication, advertising, sale,
 external AI training, or recruiter sharing.

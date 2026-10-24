@@ -62,6 +62,18 @@ def env_list(name, default=""):
     return [item.strip() for item in os.getenv(name, default).split(",") if item.strip()]
 
 
+def secret_value(name, file_name):
+    """Read a secret from a mounted file without exposing it in container metadata."""
+    path = os.getenv(file_name, "").strip()
+    if not path:
+        return os.getenv(name, "")
+    try:
+        return Path(path).read_text(encoding="utf-8").strip()
+    except OSError as error:
+        message = f"Unable to read configured secret file: {file_name}."
+        raise ImproperlyConfigured(message) from error
+
+
 ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "127.0.0.1,localhost,testserver")
 
 INSTALLED_APPS = [
@@ -372,7 +384,7 @@ RESUME_AI_GEMINI_FREE_TIER_APPROVED = (
 )
 RESUME_AI_PROVIDER = os.getenv("RESUME_AI_PROVIDER", "anthropic")
 RESUME_AI_MODEL = os.getenv("RESUME_AI_MODEL", "")
-RESUME_AI_API_KEY = os.getenv("RESUME_AI_API_KEY", "")
+RESUME_AI_API_KEY = secret_value("RESUME_AI_API_KEY", "RESUME_AI_API_KEY_FILE")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_API_BASE_URL = os.getenv(
     "GEMINI_API_BASE_URL", "https://generativelanguage.googleapis.com/v1beta"
@@ -391,9 +403,17 @@ RESUME_AI_INPUT_USD_PER_MILLION = Decimal(
 RESUME_AI_OUTPUT_USD_PER_MILLION = Decimal(
     os.getenv("RESUME_AI_OUTPUT_USD_PER_MILLION", "0")
 )
+RESUME_AI_ROLLOUT_MODE = os.getenv("RESUME_AI_ROLLOUT_MODE", "disabled").lower()
+try:
+    RESUME_AI_CANARY_RESUME_IDS = {
+        int(value) for value in env_list("RESUME_AI_CANARY_RESUME_IDS")
+    }
+except ValueError as error:
+    raise ImproperlyConfigured("RESUME_AI_CANARY_RESUME_IDS must contain integers.") from error
 if (
     RESUME_AI_FALLBACK not in {"rules", "fail"}
     or RESUME_AI_PROVIDER not in {"anthropic", "openai", "gemini"}
+    or RESUME_AI_ROLLOUT_MODE not in {"disabled", "canary", "consenting"}
     or not 256 <= ANTHROPIC_SEARCH_MAX_OUTPUT_TOKENS <= 20_000
     or not 1 <= RESUME_AI_MAX_ATTEMPTS <= 2
     or not 1 <= RESUME_AI_TIMEOUT_SECONDS <= 60
@@ -407,13 +427,29 @@ if (
     ) < 0
 ):
     raise ImproperlyConfigured("Invalid bounded resume AI configuration.")
-if RESUME_AI_ENABLED and RESUME_AI_ALLOW_PAID and (
+RESUME_AI_BUDGET_ENFORCED = RESUME_AI_ALLOW_PAID or (
+    RESUME_AI_PROVIDER == "gemini" and RESUME_AI_GEMINI_FREE_TIER_APPROVED
+)
+if APP_ENV == "production" and RESUME_AI_GEMINI_FREE_TIER_APPROVED:
+    raise ImproperlyConfigured(
+        "Production candidate resumes must never use Gemini unpaid services."
+    )
+if (
+    APP_ENV == "production"
+    and RESUME_AI_ENABLED
+    and RESUME_AI_PROVIDER == "gemini"
+    and not RESUME_AI_ALLOW_PAID
+):
+    raise ImproperlyConfigured(
+        "Production Gemini resume AI requires an approved paid service account."
+    )
+if RESUME_AI_ENABLED and RESUME_AI_BUDGET_ENFORCED and (
     not RESUME_AI_DAILY_BUDGET_USD
     or not RESUME_AI_MONTHLY_BUDGET_USD
     or not (RESUME_AI_INPUT_USD_PER_MILLION or RESUME_AI_OUTPUT_USD_PER_MILLION)
 ):
     raise ImproperlyConfigured(
-        "Paid resume AI requires daily/monthly budgets and configured token prices."
+        "Resume AI requires daily/monthly budgets and configured token prices."
     )
 if RESUME_AI_ENABLED and not RESUME_AI_MODEL:
     raise ImproperlyConfigured("RESUME_AI_MODEL must be an explicitly verified model ID.")
@@ -503,11 +539,26 @@ LEGAL_AGE_VERSION = os.getenv("LEGAL_AGE_VERSION", "enter-candidate-age-v1.0")
 LEGAL_SUBMISSION_VERSION = os.getenv(
     "LEGAL_SUBMISSION_VERSION", "enter-candidate-submission-v1.0"
 )
+LEGAL_RESUME_AI_APPROVED = (
+    os.getenv("LEGAL_RESUME_AI_APPROVED", "false").lower() == "true"
+)
+LEGAL_RESUME_AI_VERSION = os.getenv(
+    "LEGAL_RESUME_AI_VERSION", "enter-resume-ai-consent-v1.0"
+)
 LEGAL_EFFECTIVE_DATE = os.getenv("LEGAL_EFFECTIVE_DATE", "")
 LEGAL_PRIVACY_SHA256 = os.getenv("LEGAL_PRIVACY_SHA256", "")
 LEGAL_TERMS_SHA256 = os.getenv("LEGAL_TERMS_SHA256", "")
 LEGAL_AGE_SHA256 = os.getenv("LEGAL_AGE_SHA256", "")
 LEGAL_SUBMISSION_SHA256 = os.getenv("LEGAL_SUBMISSION_SHA256", "")
+LEGAL_RESUME_AI_SHA256 = os.getenv("LEGAL_RESUME_AI_SHA256", "")
+if RESUME_AI_ENABLED and (
+    not LEGAL_RESUME_AI_APPROVED
+    or not LEGAL_RESUME_AI_VERSION
+    or not LEGAL_RESUME_AI_SHA256
+):
+    raise ImproperlyConfigured(
+        "Resume AI requires an approved, hash-pinned candidate consent document."
+    )
 if LEGAL_WORKFLOW_PREVIEW and (not DEBUG or APP_ENV not in {"local", "test"}):
     raise ImproperlyConfigured("Unpublished legal workflow requires local development/test.")
 if LEGAL_WORKFLOW_PREVIEW:

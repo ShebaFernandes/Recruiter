@@ -8,8 +8,13 @@ from io import BytesIO
 from unittest.mock import Mock
 
 import pytest
+from django.utils import timezone
 from talent.ai_providers import (
+    AIProviderAuthenticationError,
+    AIProviderInvalidRequest,
     AIProviderMalformedResponse,
+    AIProviderNotFound,
+    AIProviderPermissionDenied,
     AIProviderRateLimited,
     AIProviderResult,
     AIProviderTimeout,
@@ -56,6 +61,24 @@ Delivered supported outcome two.
 Associate Vice President — AI & Experience (Head of AI Engineering) | Apr 2024–Present
 Delivered supported outcome three.
 Skills: Python, AI, Engineering Leadership
+"""
+
+RECALL_TEXT = """Title: Documentation and Research Lead
+Summary: Creates evidence-led products and documentation.
+Quartz Product Studio
+UX Researcher | March 2017 - November 2020
+Completed 62 moderated research sessions.
+Career break | December 2020 - August 2021 | Family care
+Riverstone Health Tech
+UX Research Lead | September 2021 - Present
+Raised research adoption across six teams.
+Violet API Works
+Technical Writer | Start date not stated - June 2020
+Documented 48 public endpoints.
+Willow Developer Tools
+Senior Technical Writer | August 2020 - Present
+Reduced support tickets by 29%.
+Skills: Research, Figma, Analytics, Documentation, Git, APIs
 """
 
 
@@ -199,6 +222,65 @@ def work_response(experiences):
     }
 
 
+def recall_response():
+    def work(company, role, start, end, role_evidence, achievement):
+        return {
+            "company": company,
+            "role": role,
+            "start": start,
+            "end": end,
+            "employment_type": None,
+            "location": None,
+            "employer_evidence": company,
+            "role_evidence": role_evidence,
+            "details": achievement,
+            "achievements": [fact(achievement)] if achievement else [],
+        }
+
+    return work_response([
+        work(
+            "Quartz Product Studio",
+            "UX Researcher",
+            "March 2017",
+            "November 2020",
+            "UX Researcher | March 2017 - November 2020",
+            "Completed 62 moderated research sessions.",
+        ),
+        work(
+            "Quartz Product Studio",
+            "Career break",
+            "December 2020",
+            "August 2021",
+            "Career break | December 2020 - August 2021 | Family care",
+            "",
+        ),
+        work(
+            "Riverstone Health Tech",
+            "UX Research Lead",
+            "September 2021",
+            "Present",
+            "UX Research Lead | September 2021 - Present",
+            "Raised research adoption across six teams.",
+        ),
+        work(
+            "Violet API Works",
+            "Technical Writer",
+            None,
+            "June 2020",
+            "Technical Writer | Start date not stated - June 2020",
+            "Documented 48 public endpoints.",
+        ),
+        work(
+            "Willow Developer Tools",
+            "Senior Technical Writer",
+            "August 2020",
+            "Present",
+            "Senior Technical Writer | August 2020 - Present",
+            "Reduced support tickets by 29%.",
+        ),
+    ])
+
+
 def rules():
     return {"raw_text": TEXT, "skills": ["Java", "Python"], "work_experiences": [],
             "headline": "Engineer"}
@@ -229,6 +311,9 @@ def enabled(settings):
     settings.RESUME_AI_ALLOW_PAID = False
     settings.RESUME_AI_PROVIDER = "anthropic"
     settings.RESUME_AI_MODEL = "claude-sonnet-5-5"
+    settings.RESUME_AI_ROLLOUT_MODE = "consenting"
+    settings.LEGAL_RESUME_AI_VERSION = "enter-resume-ai-consent-test-v1"
+    settings.LEGAL_RESUME_AI_SHA256 = "1" * 64
 
 
 def test_valid_evidence_promotions_dedup_and_backend_computation():
@@ -533,6 +618,63 @@ def test_wrong_employer_association_and_invented_title_are_rejected_per_role():
     }
 
 
+def test_researcher_role_survives_explicit_career_break_without_making_break_a_job():
+    parsed = validate_interpretation(recall_response(), RECALL_TEXT)
+    rows = parsed["work_experiences"]
+
+    assert [(row["company"], row["role"]) for row in rows[:2]] == [
+        ("Quartz Product Studio", "UX Researcher"),
+        ("Riverstone Health Tech", "UX Research Lead"),
+    ]
+    researcher = rows[0]
+    assert researcher["start_date"] == "2017-03-01"
+    assert researcher["end_date"] == "2020-11-01"
+    assert researcher["description"] == "Completed 62 moderated research sessions."
+    assert all(row["role"] != "Career break" for row in rows)
+    assert {
+        "category": "work_experience.non_employment",
+        "item_index": 1,
+        "field": "role",
+    } in parsed["_validation_rejections"]
+
+
+def test_technical_writer_roles_preserve_unknown_start_and_explicit_current_status():
+    parsed = validate_interpretation(recall_response(), RECALL_TEXT)
+    rows = {row["role"]: row for row in parsed["work_experiences"]}
+
+    unknown_start = rows["Technical Writer"]
+    assert unknown_start["company"] == "Violet API Works"
+    assert unknown_start["start_date"] is None
+    assert unknown_start["end_date"] == "2020-06-01"
+    assert unknown_start["date_label"] == "Unknown — June 2020"
+    assert unknown_start["is_current"] is False
+
+    current = rows["Senior Technical Writer"]
+    assert current["company"] == "Willow Developer Tools"
+    assert current["start_date"] == "2020-08-01"
+    assert current["end_date"] is None
+    assert current["date_label"] == "August 2020 — Present"
+    assert current["is_current"] is True
+
+
+def test_writer_role_cannot_borrow_an_unrelated_employer_heading():
+    data = recall_response()
+    data["work_experiences"][3].update(
+        company="Quartz Product Studio",
+        employer_evidence="Quartz Product Studio",
+    )
+
+    parsed = validate_interpretation(data, RECALL_TEXT)
+
+    assert "Technical Writer" not in {
+        row["role"] for row in parsed["work_experiences"]
+    }
+    assert {
+        "category": "work_experience.employer_association",
+        "item_index": 3,
+    } in parsed["_validation_rejections"]
+
+
 def test_unsupported_dates_and_achievements_are_removed_without_losing_role():
     data = response()
     data["work_experiences"][0].update(
@@ -672,6 +814,27 @@ def test_reliable_deterministic_history_skips_ai_call(enabled, monkeypatch):
         "reason": "deterministic_reliable",
     }
     provider.generate.assert_not_called()
+
+
+def test_explicit_candidate_permission_uses_ai_even_when_rules_look_reliable(
+    enabled, monkeypatch
+):
+    provider = Mock()
+    provider.generate.return_value = AIProviderResult(
+        response(), "anthropic", "claude-sonnet-5-5", stop_reason="end_turn"
+    )
+    monkeypatch.setattr("talent.resume_understanding.resume_provider", lambda: provider)
+    data = rules() | {
+        "work_experiences": [{"company": "Rules Co", "role": "Rules Engineer"}],
+        "_employment_parse": {"reliable": True},
+    }
+    result = understand_resume(
+        data,
+        lambda _tokens: True,
+        candidate_requested_ai=True,
+    )
+    assert result["_interpretation"]["source"] == "ai"
+    provider.generate.assert_called_once()
 
 
 def test_anthropic_uses_exact_model_structured_output_and_usage(
@@ -841,9 +1004,14 @@ def test_openai_requires_explicit_cost_and_zdr_approval(enabled, settings, monke
     assert post.call_args.args[1]["max_output_tokens"] == 8000
 
 
-def test_gemini_uses_exact_model_structured_output_and_usage(enabled, settings, monkeypatch):
+@pytest.mark.parametrize(
+    "model", ["gemini-3.1-flash-lite", "gemini-3.5-flash-lite"]
+)
+def test_gemini_uses_exact_model_structured_output_and_usage(
+    enabled, settings, monkeypatch, model
+):
     settings.RESUME_AI_PROVIDER = "gemini"
-    settings.RESUME_AI_MODEL = "gemini-3.5-flash-lite"
+    settings.RESUME_AI_MODEL = model
     settings.RESUME_AI_API_KEY = "synthetic-generic-key"
     settings.RESUME_AI_GEMINI_FREE_TIER_APPROVED = True
     post = Mock(return_value={
@@ -861,14 +1029,134 @@ def test_gemini_uses_exact_model_structured_output_and_usage(enabled, settings, 
     monkeypatch.setattr("talent.ai_providers._post_json", post)
     result = resume_provider().generate("instruction", {}, SCHEMA, "resume")
     url, body, headers, timeout = post.call_args.args
-    assert url.endswith("/models/gemini-3.5-flash-lite:generateContent")
+    assert url == (
+        "https://generativelanguage.googleapis.com/v1beta/"
+        f"models/{model}:generateContent"
+    )
     assert headers["x-goog-api-key"] == "synthetic-generic-key"
     assert body["generationConfig"]["responseMimeType"] == "application/json"
-    assert body["generationConfig"]["responseJsonSchema"] == SCHEMA
+    provider_schema = body["generationConfig"]["responseJsonSchema"]
+    assert provider_schema != SCHEMA
+    assert "maxLength" not in json.dumps(provider_schema)
+    assert "maxItems" not in json.dumps(provider_schema)
+    assert "additionalProperties" not in json.dumps(provider_schema)
+    assert "maxLength" in json.dumps(SCHEMA)
+    assert "maxItems" in json.dumps(SCHEMA)
+    assert "additionalProperties" in json.dumps(SCHEMA)
+    schema_keywords = set()
+
+    def collect_schema_keywords(node):
+        if not isinstance(node, dict):
+            return
+        for key, value in node.items():
+            if key == "properties":
+                schema_keywords.add(key)
+                for child in value.values():
+                    collect_schema_keywords(child)
+            else:
+                schema_keywords.add(key)
+                if key == "items":
+                    collect_schema_keywords(value)
+
+    collect_schema_keywords(provider_schema)
+    assert schema_keywords <= {"type", "properties", "required", "items"}
     assert body["generationConfig"]["maxOutputTokens"] == 8000
     assert timeout <= 60
     assert result.input_tokens == 321
     assert result.output_tokens == 51
+    assert result.stop_reason == "STOP"
+
+
+@pytest.mark.parametrize(
+    ("http_status", "google_status", "error_type", "failure_category"),
+    [
+        (400, "INVALID_ARGUMENT", AIProviderInvalidRequest, "invalid_request"),
+        (401, "UNAUTHENTICATED", AIProviderAuthenticationError, "authentication_error"),
+        (403, "PERMISSION_DENIED", AIProviderPermissionDenied, "permission_denied"),
+        (404, "NOT_FOUND", AIProviderNotFound, "not_found"),
+        (429, "RESOURCE_EXHAUSTED", AIProviderRateLimited, "rate_limited"),
+        (503, "UNAVAILABLE", AIProviderUnavailable, "unavailable"),
+    ],
+)
+def test_gemini_http_errors_retain_only_safe_diagnostics(
+    enabled,
+    settings,
+    monkeypatch,
+    http_status,
+    google_status,
+    error_type,
+    failure_category,
+):
+    settings.RESUME_AI_PROVIDER = "gemini"
+    settings.RESUME_AI_MODEL = "gemini-3.1-flash-lite"
+    settings.RESUME_AI_API_KEY = "synthetic-secret"
+    settings.RESUME_AI_GEMINI_FREE_TIER_APPROVED = True
+    body = BytesIO(json.dumps({
+        "error": {
+            "code": http_status,
+            "status": google_status,
+            "message": "private provider detail containing document data",
+        }
+    }).encode())
+
+    def rejected(*args, **kwargs):
+        raise urllib.error.HTTPError(
+            "https://generativelanguage.googleapis.com/v1beta/"
+            "models/gemini-3.1-flash-lite:generateContent",
+            http_status,
+            "provider error",
+            {"x-goog-request-id": "safe-request-id", "Retry-After": "7"},
+            body,
+        )
+
+    monkeypatch.setattr("talent.ai_providers.urllib.request.urlopen", rejected)
+    monkeypatch.setattr(
+        "talent.ai_providers.time.monotonic", Mock(side_effect=[10.0, 10.125])
+    )
+    with pytest.raises(error_type) as exc_info:
+        resume_provider().generate("instruction", {}, SCHEMA, "resume")
+
+    error = exc_info.value
+    assert error.kind == failure_category
+    assert error.stage == "http_error"
+    assert error.http_status == http_status
+    assert error.provider_error_code == str(http_status)
+    assert error.provider_error_status == google_status
+    assert error.request_id == "safe-request-id"
+    assert error.latency_ms == 125
+    assert "private provider detail" not in str(error)
+
+
+def test_gemini_provider_generated_json_and_safe_metadata(enabled, settings, monkeypatch):
+    from talent.ai_providers import _HTTPPayload
+
+    settings.RESUME_AI_PROVIDER = "gemini"
+    settings.RESUME_AI_MODEL = "gemini-3.1-flash-lite"
+    settings.RESUME_AI_API_KEY = "synthetic-secret"
+    settings.RESUME_AI_GEMINI_FREE_TIER_APPROVED = True
+    payload = _HTTPPayload(
+        {
+            "responseId": "synthetic-response",
+            "candidates": [{
+                "finishReason": "STOP",
+                "content": {"parts": [{"text": json.dumps(response())}]},
+            }],
+            "usageMetadata": {"promptTokenCount": 700, "candidatesTokenCount": 300},
+        },
+        request_id="safe-transport-id",
+        http_status=200,
+        latency_ms=432,
+    )
+    monkeypatch.setattr("talent.ai_providers._post_json", Mock(return_value=payload))
+
+    result = resume_provider().generate("instruction", {}, SCHEMA, "resume")
+
+    assert result.data == response()
+    assert result.request_id == "synthetic-response"
+    assert result.http_status == 200
+    assert result.latency_ms == 432
+    assert result.input_tokens == 700
+    assert result.output_tokens == 300
 
 
 @pytest.mark.django_db
@@ -900,6 +1188,84 @@ def test_paid_budget_exhaustion_falls_back_without_call_or_usage(
     resume = Resume.objects.get(pk=stored)
     assert resume.extracted_data["_interpretation"]["reason"] == "budget_exhausted"
     assert not ResumeAIUsage.objects.filter(resume=resume).exists()
+
+
+@pytest.mark.django_db
+def test_free_tier_gemini_still_enforces_paid_rate_reservation(
+    enabled, settings, tmp_path, client, candidate_account, monkeypatch,
+):
+    from .test_candidate_experience import upload
+    from .test_candidate_flow import resume_pdf
+
+    settings.MEDIA_ROOT = tmp_path
+    settings.RESUME_AI_PROVIDER = "gemini"
+    settings.RESUME_AI_MODEL = "gemini-3.1-flash-lite"
+    settings.RESUME_AI_GEMINI_FREE_TIER_APPROVED = True
+    settings.RESUME_AI_DAILY_BUDGET_USD = Decimal("0.001")
+    settings.RESUME_AI_MONTHLY_BUDGET_USD = Decimal("0.001")
+    settings.RESUME_AI_INPUT_USD_PER_MILLION = Decimal("0.25")
+    settings.RESUME_AI_OUTPUT_USD_PER_MILLION = Decimal("1.50")
+    provider = Mock()
+    monkeypatch.setattr("talent.resume_understanding.resume_provider", lambda: provider)
+
+    result = upload(
+        client,
+        resume_pdf(["Name: Asha Rao", "Career details available on request."]),
+        "synthetic-gemini.pdf",
+    ).data
+
+    provider.generate.assert_not_called()
+    assert result["work_experiences"] == []
+    from talent.models import Resume, ResumeAIUsage
+
+    resume = Resume.objects.get(pk=result["latest_resume"]["id"])
+    assert resume.extracted_data["_interpretation"]["reason"] == "budget_exhausted"
+    assert not ResumeAIUsage.objects.filter(resume=resume).exists()
+
+
+@pytest.mark.django_db
+def test_free_tier_gemini_records_zero_billed_cost_not_reserved_price(
+    settings, candidate_account,
+):
+    from django.contrib.auth.models import User
+    from talent.models import Resume, ResumeAIUsage
+    from talent.resume_processing import _record_ai_attempt
+
+    settings.RESUME_AI_PROVIDER = "gemini"
+    settings.RESUME_AI_GEMINI_FREE_TIER_APPROVED = True
+    settings.RESUME_AI_ALLOW_PAID = False
+    settings.RESUME_AI_INPUT_USD_PER_MILLION = Decimal("0.25")
+    settings.RESUME_AI_OUTPUT_USD_PER_MILLION = Decimal("1.50")
+    profile = User.objects.get(pk=candidate_account["user"]["id"]).candidate_profile
+    resume = Resume.objects.create(
+        candidate=profile,
+        file="quarantine/synthetic-gemini.pdf",
+        original_name="synthetic-gemini.pdf",
+    )
+    usage = ResumeAIUsage.objects.create(
+        resume=resume,
+        attempt=1,
+        provider="gemini",
+        model="gemini-3.1-flash-lite",
+        outcome=ResumeAIUsage.Outcome.RESERVED,
+        reserved_input_tokens=2932,
+        estimated_cost_usd=Decimal("0.009733"),
+    )
+    response = AIProviderResult(
+        {},
+        "gemini",
+        "gemini-3.1-flash-lite",
+        request_id="synthetic-response",
+        input_tokens=900,
+        output_tokens=400,
+        stop_reason="STOP",
+    )
+
+    _record_ai_attempt(usage.pk, response, None, 125)
+
+    usage.refresh_from_db()
+    assert usage.estimated_cost_usd == Decimal("0.009733")
+    assert usage.actual_cost_usd == Decimal("0")
 
 
 @pytest.mark.django_db
@@ -1006,6 +1372,11 @@ def test_seven_role_ai_history_reaches_profile_api_and_work_experience(
         },
         format="multipart",
     )
+    Resume.objects.filter(pk=response.data["latest_resume"]["id"]).update(
+        ai_processing_consent_at=timezone.now(),
+        ai_processing_consent_version=settings.LEGAL_RESUME_AI_VERSION,
+        ai_processing_consent_sha256=settings.LEGAL_RESUME_AI_SHA256,
+    )
     profile = complete_resume_upload(client, response).data
 
     assert len(profile["work_experiences"]) == 7
@@ -1042,6 +1413,87 @@ def test_seven_role_ai_history_reaches_profile_api_and_work_experience(
     usage = ResumeAIUsage.objects.get(resume=stored)
     assert usage.outcome == ResumeAIUsage.Outcome.SUCCEEDED
     assert usage.validation_rejections == []
+
+
+@pytest.mark.django_db
+def test_recalled_researcher_and_writer_roles_reach_profile_without_career_break_job(
+    enabled, settings, tmp_path, client, candidate_account, monkeypatch
+):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from talent.models import Resume, ResumeAIUsage, WorkExperience
+
+    from .test_candidate_flow import complete_resume_upload, resume_pdf
+
+    settings.MEDIA_ROOT = tmp_path
+    settings.RESUME_AI_MAX_ATTEMPTS = 1
+    provider = Mock()
+    provider.generate.return_value = AIProviderResult(
+        recall_response(),
+        "gemini",
+        "gemini-3.5-flash-lite",
+        request_id="req_recall_regression",
+        input_tokens=500,
+        output_tokens=700,
+        stop_reason="STOP",
+    )
+    monkeypatch.setattr("talent.resume_understanding.resume_provider", lambda: provider)
+    monkeypatch.setattr("talent.resume_understanding._needs_ai", lambda _rules: True)
+    content = resume_pdf(["Name: Asha Rao", *RECALL_TEXT.splitlines()])
+
+    response = client.post(
+        "/api/v1/candidate/resumes/",
+        {
+            "file": SimpleUploadedFile(
+                "fictional-research-writer-history.pdf",
+                content,
+                content_type="application/pdf",
+            )
+        },
+        format="multipart",
+    )
+    Resume.objects.filter(pk=response.data["latest_resume"]["id"]).update(
+        ai_processing_consent_at=timezone.now(),
+        ai_processing_consent_version=settings.LEGAL_RESUME_AI_VERSION,
+        ai_processing_consent_sha256=settings.LEGAL_RESUME_AI_SHA256,
+    )
+    profile = complete_resume_upload(client, response).data
+
+    roles = {(row["company"], row["role"]): row for row in profile["work_experiences"]}
+    assert len(roles) == 4
+    assert ("Quartz Product Studio", "UX Researcher") in roles
+    assert ("Violet API Works", "Technical Writer") in roles
+    assert ("Willow Developer Tools", "Senior Technical Writer") in roles
+    assert all(role != "Career break" for _company, role in roles)
+    assert roles[("Violet API Works", "Technical Writer")]["start_date"] is None
+    assert roles[("Violet API Works", "Technical Writer")]["date_label"] == (
+        "Unknown — June 2020"
+    )
+    assert roles[("Willow Developer Tools", "Senior Technical Writer")][
+        "is_current"
+    ] is True
+    stored = Resume.objects.get(pk=profile["latest_resume"]["id"])
+    assert WorkExperience.objects.filter(candidate=stored.candidate).count() == 4
+    usage = ResumeAIUsage.objects.get(resume=stored)
+    assert {
+        (
+            rejection["category"],
+            rejection.get("item_index"),
+            rejection.get("field"),
+        )
+        for rejection in usage.validation_rejections
+        if rejection["category"] != "work_experience.detail_evidence"
+    } == {
+        (
+            "work_experience.non_employment",
+            1,
+            "role",
+        )
+    }
+    assert {
+        "category": "work_experience.non_employment",
+        "item_index": 1,
+        "field": "role",
+    } in usage.validation_rejections
 
 
 @pytest.mark.django_db
@@ -1107,15 +1559,25 @@ def test_worker_records_evidence_rejection_and_confirmed_cost_separately(
         }
     ]
 
-    provider.generate.side_effect = AIProviderUnavailable(
-        stage="http_error", request_id="req_http_rejected"
+    provider.generate.side_effect = AIProviderInvalidRequest(
+        stage="http_error",
+        request_id="req_http_rejected",
+        http_status=400,
+        provider_error_code="400",
+        provider_error_status="INVALID_ARGUMENT",
+        latency_ms=217,
     )
     second = upload(client, content, "fictional-provider-error.pdf").data
     second_usage = ResumeAIUsage.objects.get(
         resume_id=second["latest_resume"]["id"]
     )
     assert second_usage.outcome == ResumeAIUsage.Outcome.FAILED
+    assert second_usage.failure_category == "invalid_request"
     assert second_usage.failure_stage == "http_error"
     assert second_usage.request_id == "req_http_rejected"
+    assert second_usage.http_status == 400
+    assert second_usage.provider_error_code == "400"
+    assert second_usage.provider_error_status == "INVALID_ARGUMENT"
+    assert second_usage.latency_ms == 217
     assert second_usage.reserved_input_tokens > 0
     assert second_usage.actual_cost_usd is None

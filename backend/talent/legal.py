@@ -79,17 +79,23 @@ def documents():
             "permission before sharing my profile or resume with approved recruiters."
         ),
     }
+    if settings.LEGAL_RESUME_AI_APPROVED:
+        texts["resume_ai"] = _published_text(
+            root / "RESUME_AI_CONSENT_PUBLICATION.txt"
+        )
     versions = {
         "terms": settings.LEGAL_TERMS_VERSION,
         "privacy": settings.LEGAL_PRIVACY_VERSION,
         "age": settings.LEGAL_AGE_VERSION,
         "submission": settings.LEGAL_SUBMISSION_VERSION,
+        "resume_ai": settings.LEGAL_RESUME_AI_VERSION,
     }
     expected_hashes = {
         "terms": settings.LEGAL_TERMS_SHA256,
         "privacy": settings.LEGAL_PRIVACY_SHA256,
         "age": settings.LEGAL_AGE_SHA256,
         "submission": settings.LEGAL_SUBMISSION_SHA256,
+        "resume_ai": settings.LEGAL_RESUME_AI_SHA256,
     }
     result = {}
     for purpose, text in texts.items():

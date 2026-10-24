@@ -24,27 +24,27 @@ fictional document, not the development database containing real candidates.
 ```dotenv
 RESUME_AI_ENABLED=false
 RESUME_AI_EXTERNAL_PROCESSING_APPROVED=false
-RESUME_AI_PROVIDER=anthropic
-RESUME_AI_MODEL=claude-sonnet-5-5
-RESUME_AI_API_KEY=
+RESUME_AI_PROVIDER=gemini
+RESUME_AI_MODEL=gemini-3.5-flash-lite
+RESUME_AI_API_KEY_FILE=
 RESUME_AI_ALLOW_PAID=false
 RESUME_AI_OPENAI_ZDR_APPROVED=false
 RESUME_AI_GEMINI_FREE_TIER_APPROVED=false
 RESUME_AI_FALLBACK=rules
-RESUME_AI_MAX_ATTEMPTS=2
+RESUME_AI_MAX_ATTEMPTS=1
 RESUME_AI_TIMEOUT_SECONDS=60
 RESUME_AI_MAX_INPUT_TOKENS=4000
-RESUME_AI_MAX_OUTPUT_TOKENS=8000
+RESUME_AI_MAX_OUTPUT_TOKENS=6000
 RESUME_AI_DAILY_BUDGET_USD=0
 RESUME_AI_MONTHLY_BUDGET_USD=0
-RESUME_AI_INPUT_USD_PER_MILLION=0
-RESUME_AI_OUTPUT_USD_PER_MILLION=0
+RESUME_AI_INPUT_USD_PER_MILLION=0.30
+RESUME_AI_OUTPUT_USD_PER_MILLION=2.50
 ```
 
-Use the server-only `RESUME_AI_API_KEY`, or the provider-specific existing key. Do not change
-`AI_PROVIDER` or `ANTHROPIC_SEARCH_MODEL` to configure resume interpretation.
-No frontend environment variables or public document URLs are needed.
-Restart Django and the resume worker after configuration changes.
+Mount the server-only key through `RESUME_AI_API_KEY_FILE` on the worker service using
+`compose.resume-ai.yaml`. Do not put it in `.env.production`, the web/backend container,
+frontend variables, an image layer, or Git. Recruiter search configuration is separate.
+Restart only the resume worker after an approved resume-AI configuration change.
 
 Pipeline: private upload → scan → existing pypdf/python-docx parser → optional
 structured interpretation → shape/evidence/date validation → identity check and
@@ -53,9 +53,10 @@ parsed and redacted from model input. Work history still identifies people: this
 is data minimization, **not anonymization**. Raw text, evidence and provenance stay
 in private resume metadata, not recruiter/candidate API responses or logs.
 
-AI facts require verbatim contiguous evidence; employment quotes must keep employer,
-role and date expressions nearby. Unsupported output falls back as a whole, never
-partially applies unchecked facts. Dates preserve their original precision in
+AI facts require document evidence. Employment validation keeps employer evidence
+separate from role/date evidence and uses document structure to associate promotions
+without borrowing facts from unrelated employers. Unsupported individual fields or
+roles are rejected while supported history remains reviewable. Dates preserve their original precision in
 `date_label`; normalized month/year dates use the first day for graph placement,
 not a claim of exact start day. Experience uses the union of known intervals, so
 concurrent roles do not double-count. Incomplete history yields unknown experience.
@@ -64,18 +65,20 @@ Likely directions are conservative local suggestions from supported roles, not
 confirmed preferences. Salary, notice and future work setup are never inferred
 by AI; the local parser accepts only explicit preference labels.
 
-Anthropic requests use the first-party Messages API with native JSON-schema output.
-Anthropic documents structured outputs as zero-data-retention eligible; the schema itself may
-be cached for compilation, so schema property names remain generic and never contain resume
-data. Resume calls additionally require `RESUME_AI_ALLOW_PAID=true`, non-zero daily/monthly
-budgets, and current input/output token prices. No model fallback is selected automatically.
-Implementation and regression tests never make inference requests. Any account-level live test
-must be separately authorized, budget-capped, and recorded through `ResumeAIUsage`.
+Gemini resume requests use Google's `v1beta` `generateContent` endpoint with structured JSON
+output and the same strict application-side evidence validator. Production requires an active
+paid Gemini project, `RESUME_AI_ALLOW_PAID=true`, non-zero daily/monthly budgets, and current
+input/output prices. Production startup rejects the Free-tier approval flag because Google's
+unpaid-service terms permit product improvement and human review and instruct customers not to
+submit personal information. Generate Content request logging/storage must remain disabled,
+and no feedback or datasets may be contributed. Implementation and regression tests never make
+inference requests. Every live test requires separate authorization, a selected synthetic or
+consented resume, a per-call reservation, and a `ResumeAIUsage` record.
 
 Deterministic history that passes the completeness heuristic makes no model call.
-At most two model requests are reserved durably per resume across worker retries.
-Only malformed output is retried immediately; rate limits, outages and timeouts
-fall back without a retry storm. Input and output are capped at the configured
+The durable per-resume attempt cap applies across worker retries; this prepared Gemini
+release sets it to one, so no provider failure triggers another paid request. Rate limits,
+outages, timeouts and malformed output fall back to rules. Input and output are capped at the configured
 token limits; oversized input uses rules rather than silently sending a
 truncated document. Failed/expired attempt owners cannot update or fail a newer
 attempt. Lease recovery respects the job attempt cap. SQS busy/superseded receipts
@@ -114,13 +117,13 @@ flag. Requests use Responses with `store=false`; that flag alone is **not** ZDR.
 Review [OpenAI data controls](https://developers.openai.com/api/docs/guides/your-data)
 and current model pricing before approving paid requests. No pipeline rebuild is needed.
 
-Gemini uses the same pipeline with `RESUME_AI_PROVIDER=gemini`, an exact verified
-model ID and either `RESUME_AI_API_KEY` or `GEMINI_API_KEY`. Unpaid Gemini use is
-blocked unless `RESUME_AI_GEMINI_FREE_TIER_APPROVED=true`; Google's published
-terms say unpaid inputs/outputs may be used to improve products and may be human
-reviewed, so this gate is for synthetic/redacted testing only. Paid credentials
-still require the explicit paid flag, budgets and current prices. Never attach
-billing or upgrade automatically.
+Gemini uses the same pipeline with `RESUME_AI_PROVIDER=gemini`, the exact verified
+`gemini-3.5-flash-lite` model ID, and a worker-only `RESUME_AI_API_KEY_FILE`.
+`RESUME_AI_GEMINI_FREE_TIER_APPROVED=true` is limited to explicitly authorized
+synthetic local tests and is rejected when `APP_ENV=production`. Real candidate
+resumes require separately approved paid-service data handling, legal text, the
+explicit paid flag, budgets, and rechecked current prices. Never attach billing or
+upgrade automatically.
 
 Limitations: evidence checks prove text support, not the truth of a CV or perfect
 employer association. Complex columns, scanned/image-only documents (no OCR),
@@ -199,6 +202,9 @@ Start from `.env.example`; inject values at runtime, never into images or fronte
 - Anthropic uses `ANTHROPIC_API_KEY`, `ANTHROPIC_SEARCH_MODEL`,
   `ANTHROPIC_API_BASE_URL`, `ANTHROPIC_API_VERSION`, and
   `ANTHROPIC_SEARCH_MAX_OUTPUT_TOKENS`.
+- Resume extraction uses a Docker secret mounted only into the worker at
+  `RESUME_AI_API_KEY_FILE`; for the prepared Gemini release, the secret source is
+  `ENTER_GEMINI_SECRET_FILE` outside the repository.
 - `AI_ALLOW_DETERMINISTIC_FALLBACK=false`: staging/production fails clearly when the
   selected provider is unavailable instead of silently presenting deterministic parsing as AI.
 

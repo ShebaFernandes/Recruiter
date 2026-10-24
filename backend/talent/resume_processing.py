@@ -352,6 +352,26 @@ def _owns_attempt(current, claimed):
     )
 
 
+def _resume_ai_allowed(resume):
+    """Require current per-resume permission and the configured rollout boundary."""
+    if (
+        not resume.ai_processing_consent_at
+        or resume.ai_processing_consent_version != settings.LEGAL_RESUME_AI_VERSION
+        or resume.ai_processing_consent_sha256 != settings.LEGAL_RESUME_AI_SHA256
+    ):
+        return False
+    if settings.RESUME_AI_ROLLOUT_MODE == "canary":
+        return resume.pk in settings.RESUME_AI_CANARY_RESUME_IDS
+    return settings.RESUME_AI_ROLLOUT_MODE == "consenting"
+
+
+def _resume_ai_budget_enforced():
+    return settings.RESUME_AI_ALLOW_PAID or (
+        settings.RESUME_AI_PROVIDER == "gemini"
+        and settings.RESUME_AI_GEMINI_FREE_TIER_APPROVED
+    )
+
+
 def _reserve_ai_attempt(claimed, reserved_input_tokens):
     with transaction.atomic():
         lock, _ = RateLimitBucket.objects.get_or_create(
@@ -371,7 +391,7 @@ def _reserve_ai_attempt(claimed, reserved_input_tokens):
             return False
         reserved_cost = Decimal("0")
         reserved_input_tokens = max(0, int(reserved_input_tokens))
-        if settings.RESUME_AI_ALLOW_PAID:
+        if _resume_ai_budget_enforced():
             reserved_cost = (
                 Decimal(reserved_input_tokens)
                 * settings.RESUME_AI_INPUT_USD_PER_MILLION
@@ -434,23 +454,41 @@ def _record_ai_attempt(
         usage = ResumeAIUsage.objects.select_for_update().get(pk=usage_id)
         if usage.outcome != ResumeAIUsage.Outcome.RESERVED:
             return
-        usage.latency_ms = max(0, latency_ms)
-        usage.completed_at = timezone.now()
         metadata = response or error
+        provider_latency_ms = getattr(metadata, "latency_ms", 0) if metadata else 0
+        usage.latency_ms = max(0, int(provider_latency_ms or latency_ms))
+        usage.completed_at = timezone.now()
         if metadata:
             usage.provider = getattr(metadata, "provider", "") or usage.provider
             usage.model = getattr(metadata, "model", "") or usage.model
             usage.request_id = str(getattr(metadata, "request_id", "") or "")[:180]
+            http_status = getattr(metadata, "http_status", None)
+            usage.http_status = int(http_status) if http_status is not None else None
+            usage.provider_error_code = str(
+                getattr(metadata, "provider_error_code", "") or ""
+            )[:80]
+            usage.provider_error_status = str(
+                getattr(metadata, "provider_error_status", "") or ""
+            )[:80]
             usage.input_tokens = max(0, int(getattr(metadata, "input_tokens", 0) or 0))
             usage.output_tokens = max(0, int(getattr(metadata, "output_tokens", 0) or 0))
             usage.stop_reason = str(getattr(metadata, "stop_reason", "") or "")[:60]
         usage.failure_stage = str(getattr(error, "stage", "") or "")[:40]
         usage.validation_rejections = list(validation_rejections or [])
         if response or getattr(error, "usage_confirmed", False):
-            usage.actual_cost_usd = (
-                Decimal(usage.input_tokens) * settings.RESUME_AI_INPUT_USD_PER_MILLION
-                + Decimal(usage.output_tokens) * settings.RESUME_AI_OUTPUT_USD_PER_MILLION
-            ) / Decimal("1000000")
+            if (
+                usage.provider == "gemini"
+                and settings.RESUME_AI_GEMINI_FREE_TIER_APPROVED
+                and not settings.RESUME_AI_ALLOW_PAID
+            ):
+                # Reserve against current paid rates even on the Free tier, but do not
+                # report that conservative reservation as provider-billed spend.
+                usage.actual_cost_usd = Decimal("0")
+            else:
+                usage.actual_cost_usd = (
+                    Decimal(usage.input_tokens) * settings.RESUME_AI_INPUT_USD_PER_MILLION
+                    + Decimal(usage.output_tokens) * settings.RESUME_AI_OUTPUT_USD_PER_MILLION
+                ) / Decimal("1000000")
         if failure_category:
             usage.failure_category = failure_category[:40]
             usage.outcome = ResumeAIUsage.Outcome.FAILED
@@ -538,6 +576,7 @@ def process_resume_job(job_id, idempotency_key=None, claimed=None):
     if not job:
         return outcome
     resume = Resume.objects.select_related("candidate").get(pk=job.resume_id)
+    resume_ai_allowed = _resume_ai_allowed(resume)
     try:
         if resume.scan_status != Resume.ScanStatus.CLEAN:
             with resume.file.open("rb") as file_object:
@@ -576,6 +615,8 @@ def process_resume_job(job_id, idempotency_key=None, claimed=None):
                 lambda usage_id, result, response, latency_ms: _cache_ai_result(
                     job, usage_id, result, response, latency_ms
                 ),
+                ai_allowed=resume_ai_allowed,
+                candidate_requested_ai=resume_ai_allowed,
             )
         else:
             extracted["_interpretation"] = {"source": "rules", "reason": "identity_check"}

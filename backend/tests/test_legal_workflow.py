@@ -223,6 +223,45 @@ def test_published_documents_and_existing_account_acceptance(client, candidate_a
         }
 
 
+def test_resume_ai_consent_is_published_only_with_explicit_hash_pinned_approval(
+    client, tmp_path
+):
+    configured = published_legal_settings(tmp_path)
+    consent = (
+        "Use AI to help extract my resume. I agree that the text extracted from this "
+        "resume will be sent to Google's paid Gemini API, which may process it outside "
+        "India, to create suggestions for my professional profile. I can leave this "
+        "unchecked and use ENTER's rule-based extraction.\n"
+    )
+    source = tmp_path / "RESUME_AI_CONSENT_PUBLICATION.txt"
+    source.write_text(
+        "PUBLICATION STATUS: PENDING REVIEW\n"
+        f"PROPOSED PUBLIC COPY\n{consent}END OF PROPOSED PUBLIC COPY\n"
+    )
+    configured.update({
+        "LEGAL_RESUME_AI_APPROVED": True,
+        "LEGAL_RESUME_AI_VERSION": "enter-resume-ai-consent-v1.1",
+        "LEGAL_RESUME_AI_SHA256": hashlib.sha256(consent.encode()).hexdigest(),
+    })
+    with override_settings(**configured):
+        assert client.get("/api/v1/legal/documents/").status_code == 503
+
+    source.write_text(
+        "PUBLICATION STATUS: APPROVED\n"
+        f"PROPOSED PUBLIC COPY\n{consent}END OF PROPOSED PUBLIC COPY\n"
+    )
+    with override_settings(**configured):
+        response = client.get("/api/v1/legal/documents/")
+        assert response.status_code == 200
+        assert response.data["documents"]["resume_ai"] == {
+            "text": consent,
+            "sha256": hashlib.sha256(consent.encode()).hexdigest(),
+            "version": "enter-resume-ai-consent-v1.1",
+            "effective_date": "2026-10-22",
+            "unpublished": False,
+        }
+
+
 def test_published_signup_records_exact_version_without_backfill(client, tmp_path):
     with override_settings(**published_legal_settings(tmp_path)):
         payload = {
@@ -697,12 +736,28 @@ def test_acceptance_evidence_survives_account_deletion(client, candidate_account
 
 def test_legal_release_manifest_uses_exact_public_copy(tmp_path):
     configured = published_legal_settings(tmp_path)
+    consent = "Synthetic approved Gemini resume consent.\n"
+    (tmp_path / "RESUME_AI_CONSENT_PUBLICATION.txt").write_text(
+        "PUBLICATION STATUS: APPROVED\n"
+        f"PROPOSED PUBLIC COPY\n{consent}END OF PROPOSED PUBLIC COPY\n"
+    )
+    configured.update(
+        {
+            "LEGAL_RESUME_AI_APPROVED": True,
+            "LEGAL_RESUME_AI_VERSION": "enter-resume-ai-consent-v1.1",
+            "LEGAL_RESUME_AI_SHA256": hashlib.sha256(consent.encode()).hexdigest(),
+        }
+    )
     output = StringIO()
     with override_settings(**configured):
         call_command("legal_release_manifest", stdout=output)
     manifest = json.loads(output.getvalue())
     assert manifest["privacy"]["sha256"] == configured["LEGAL_PRIVACY_SHA256"]
     assert manifest["submission"]["sha256"] == configured["LEGAL_SUBMISSION_SHA256"]
+    assert manifest["resume_ai"] == {
+        "version": configured["LEGAL_RESUME_AI_VERSION"],
+        "sha256": configured["LEGAL_RESUME_AI_SHA256"],
+    }
 
 
 def test_retention_enforcement_is_dry_run_and_fail_closed(candidate_account):

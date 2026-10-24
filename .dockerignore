@@ -8,6 +8,7 @@ design-references/prepared/trusted-by-review/*
 deploy/*
 !deploy/PRIVACY_POLICY_PUBLICATION.txt
 !deploy/TERMS_PUBLICATION.txt
+!deploy/RESUME_AI_CONSENT_PUBLICATION.txt
 .env.production
 .venv
 .env

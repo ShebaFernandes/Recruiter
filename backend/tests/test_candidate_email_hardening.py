@@ -220,6 +220,27 @@ def load_settings(overrides):
     ({"CORS_ALLOWED_ORIGINS": "https://*.example.com"}, "exact HTTPS origins"),
     ({"SECURE_SSL_REDIRECT": "false"}, "must enforce HTTPS"),
     ({"AI_PROVIDER": "openai", "OPENAI_API_KEY": ""}, "server-side API key"),
+    (
+        {
+            "RESUME_AI_PROVIDER": "gemini",
+            "RESUME_AI_MODEL": "gemini-3.5-flash-lite",
+            "RESUME_AI_GEMINI_FREE_TIER_APPROVED": "true",
+        },
+        "must never use Gemini unpaid services",
+    ),
+    (
+        {
+            "RESUME_AI_ENABLED": "true",
+            "RESUME_AI_EXTERNAL_PROCESSING_APPROVED": "true",
+            "RESUME_AI_PROVIDER": "gemini",
+            "RESUME_AI_MODEL": "gemini-3.5-flash-lite",
+            "RESUME_AI_ALLOW_PAID": "false",
+            "LEGAL_RESUME_AI_APPROVED": "true",
+            "LEGAL_RESUME_AI_VERSION": "synthetic-production-test-v1",
+            "LEGAL_RESUME_AI_SHA256": "5" * 64,
+        },
+        "requires an approved paid service account",
+    ),
     ({"AI_ALLOW_DETERMINISTIC_FALLBACK": "true"}, "silently using"),
     ({"RESUME_SCANNER_BACKEND": "development"}, "real malware scanner"),
     ({"RESUME_PROCESS_HARD_TIMEOUT_SECONDS": "400"}, "shorter than its lease"),

@@ -1,10 +1,12 @@
 from io import BytesIO
 
 import pytest
+from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.utils import timezone
 from docx import Document
 from rest_framework.test import APIClient
-from talent.models import CandidateProfile, ResumeProcessingJob
+from talent.models import CandidateProfile, Resume, ResumeProcessingJob
 from talent.resume_processing import process_resume_job
 from talent.services import parse_resume
 
@@ -19,14 +21,18 @@ def private_test_storage(settings, tmp_path):
 
 
 def upload(client, content=None, name="resume.docx"):
-    return complete_resume_upload(
-        client,
-        client.post(
-            "/api/v1/candidate/resumes/",
-            {"file": SimpleUploadedFile(name, content or resume_docx())},
-            format="multipart",
-        ),
+    response = client.post(
+        "/api/v1/candidate/resumes/",
+        {"file": SimpleUploadedFile(name, content or resume_docx())},
+        format="multipart",
     )
+    if settings.RESUME_AI_ENABLED and response.status_code == 202:
+        Resume.objects.filter(pk=response.data["latest_resume"]["id"]).update(
+            ai_processing_consent_at=timezone.now(),
+            ai_processing_consent_version=settings.LEGAL_RESUME_AI_VERSION,
+            ai_processing_consent_sha256=settings.LEGAL_RESUME_AI_SHA256,
+        )
+    return complete_resume_upload(client, response)
 
 
 def test_separate_portfolio_and_multiple_work_modes(client, candidate_account):

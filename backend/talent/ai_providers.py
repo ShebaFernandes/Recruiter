@@ -1,5 +1,6 @@
 import json
 import socket
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -25,6 +26,10 @@ class AIProviderError(Exception):
         output_tokens=0,
         stop_reason="",
         usage_confirmed=False,
+        http_status=None,
+        provider_error_code="",
+        provider_error_status="",
+        latency_ms=0,
     ):
         super().__init__(message)
         self.retry_after = retry_after
@@ -38,6 +43,10 @@ class AIProviderError(Exception):
         self.output_tokens = output_tokens
         self.stop_reason = stop_reason
         self.usage_confirmed = usage_confirmed
+        self.http_status = http_status
+        self.provider_error_code = provider_error_code
+        self.provider_error_status = provider_error_status
+        self.latency_ms = latency_ms
 
 
 class AIProviderRateLimited(AIProviderError):
@@ -56,6 +65,22 @@ class AIProviderUnavailable(AIProviderError):
     kind = "unavailable"
 
 
+class AIProviderInvalidRequest(AIProviderUnavailable):
+    kind = "invalid_request"
+
+
+class AIProviderAuthenticationError(AIProviderUnavailable):
+    kind = "authentication_error"
+
+
+class AIProviderPermissionDenied(AIProviderUnavailable):
+    kind = "permission_denied"
+
+
+class AIProviderNotFound(AIProviderUnavailable):
+    kind = "not_found"
+
+
 @dataclass(frozen=True)
 class AIProviderResult:
     data: dict
@@ -65,14 +90,18 @@ class AIProviderResult:
     input_tokens: int = 0
     output_tokens: int = 0
     stop_reason: str = ""
+    http_status: int | None = None
+    latency_ms: int = 0
 
 
 class _HTTPPayload(dict):
     """JSON object plus non-sensitive transport metadata."""
 
-    def __init__(self, value, request_id=""):
+    def __init__(self, value, request_id="", http_status=200, latency_ms=0):
         super().__init__(value)
         self.request_id = request_id
+        self.http_status = http_status
+        self.latency_ms = latency_ms
 
 
 def _retry_after(headers):
@@ -83,6 +112,29 @@ def _retry_after(headers):
         return 30
 
 
+def _request_id(payload, headers):
+    if isinstance(payload, dict) and payload.get("request_id"):
+        return str(payload["request_id"])
+    if headers:
+        for name in ("request-id", "x-request-id", "x-goog-request-id"):
+            value = headers.get(name)
+            if value:
+                return str(value)
+    return ""
+
+
+def _safe_provider_error(payload):
+    """Return only non-sensitive machine-readable provider error identifiers."""
+    error = payload.get("error") if isinstance(payload, dict) else None
+    if not isinstance(error, dict):
+        return "", ""
+    code = error.get("code")
+    status = error.get("status")
+    safe_code = str(code) if isinstance(code, (str, int)) else ""
+    safe_status = str(status) if isinstance(status, str) else ""
+    return safe_code[:80], safe_status[:80]
+
+
 def _post_json(url, body, headers, timeout):
     request = urllib.request.Request(
         url,
@@ -90,49 +142,78 @@ def _post_json(url, body, headers, timeout):
         headers=headers,
         method="POST",
     )
+    started = time.monotonic()
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
             payload = json.loads(response.read().decode("utf-8"))
             response_headers = getattr(response, "headers", None)
-            request_id = response_headers.get("request-id", "") if response_headers else ""
+            request_id = _request_id(payload, response_headers)
+            http_status = int(getattr(response, "status", 200) or 200)
     except urllib.error.HTTPError as exc:
         error_payload = {}
         try:
             error_payload = json.loads(exc.read().decode("utf-8"))
         except (AttributeError, OSError, UnicodeDecodeError, json.JSONDecodeError):
             pass
-        response_request_id = (
-            str(error_payload.get("request_id") or "")
-            if isinstance(error_payload, dict)
-            else ""
-        )
-        if not response_request_id and exc.headers:
-            response_request_id = str(exc.headers.get("request-id") or "")
-        metadata = {"stage": "http_error", "request_id": response_request_id}
+        provider_error_code, provider_error_status = _safe_provider_error(error_payload)
+        metadata = {
+            "stage": "http_error",
+            "request_id": _request_id(error_payload, exc.headers),
+            "http_status": int(exc.code),
+            "provider_error_code": provider_error_code,
+            "provider_error_status": provider_error_status,
+            "latency_ms": round((time.monotonic() - started) * 1000),
+        }
         if exc.code == 429:
             raise AIProviderRateLimited(
                 retry_after=_retry_after(exc.headers), **metadata
             ) from exc
         if exc.code in {408, 504}:
             raise AIProviderTimeout(**metadata) from exc
-        raise AIProviderUnavailable(**metadata) from exc
+        error_class = {
+            400: AIProviderInvalidRequest,
+            401: AIProviderAuthenticationError,
+            403: AIProviderPermissionDenied,
+            404: AIProviderNotFound,
+        }.get(exc.code, AIProviderUnavailable)
+        raise error_class(**metadata) from exc
     except (TimeoutError, socket.timeout) as exc:
-        raise AIProviderTimeout() from exc
+        raise AIProviderTimeout(
+            latency_ms=round((time.monotonic() - started) * 1000)
+        ) from exc
     except urllib.error.URLError as exc:
         if isinstance(exc.reason, (TimeoutError, socket.timeout)):
-            raise AIProviderTimeout() from exc
-        raise AIProviderUnavailable() from exc
+            raise AIProviderTimeout(
+                latency_ms=round((time.monotonic() - started) * 1000)
+            ) from exc
+        raise AIProviderUnavailable(
+            latency_ms=round((time.monotonic() - started) * 1000)
+        ) from exc
     except OSError as exc:
-        raise AIProviderUnavailable() from exc
+        raise AIProviderUnavailable(
+            latency_ms=round((time.monotonic() - started) * 1000)
+        ) from exc
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         response_headers = getattr(locals().get("response"), "headers", None)
-        request_id = response_headers.get("request-id", "") if response_headers else ""
         raise AIProviderMalformedResponse(
-            stage="http_response_json", request_id=request_id
+            stage="http_response_json",
+            request_id=_request_id({}, response_headers),
+            http_status=int(getattr(locals().get("response"), "status", 200) or 200),
+            latency_ms=round((time.monotonic() - started) * 1000),
         ) from exc
     if not isinstance(payload, dict):
-        raise AIProviderMalformedResponse(stage="http_response_json", request_id=request_id)
-    return _HTTPPayload(payload, request_id=request_id)
+        raise AIProviderMalformedResponse(
+            stage="http_response_json",
+            request_id=request_id,
+            http_status=http_status,
+            latency_ms=round((time.monotonic() - started) * 1000),
+        )
+    return _HTTPPayload(
+        payload,
+        request_id=request_id,
+        http_status=http_status,
+        latency_ms=round((time.monotonic() - started) * 1000),
+    )
 
 
 def _json_content(value):
@@ -163,6 +244,42 @@ def _anthropic_schema(schema):
         }
     if isinstance(schema, list):
         return [_anthropic_schema(value) for value in schema]
+    return schema
+
+
+def _gemini_schema(schema):
+    """Build a low-complexity Gemini responseJsonSchema.
+
+    Gemini documents these keywords as supported, but also rejects schemas whose
+    constrained-decoding grammar has too many states. Array bounds and closed-object
+    constraints add no trust boundary here because ENTER validates the complete original
+    schema after JSON decoding, so omit them from the provider-side grammar.
+    """
+    omitted_constraints = {
+        "additionalProperties",
+        "contains",
+        "default",
+        "example",
+        "examples",
+        "maxContains",
+        "maxItems",
+        "maxLength",
+        "maxProperties",
+        "minContains",
+        "minItems",
+        "minLength",
+        "minProperties",
+        "pattern",
+        "uniqueItems",
+    }
+    if isinstance(schema, dict):
+        return {
+            key: _gemini_schema(value)
+            for key, value in schema.items()
+            if key not in omitted_constraints
+        }
+    if isinstance(schema, list):
+        return [_gemini_schema(value) for value in schema]
     return schema
 
 
@@ -382,32 +499,85 @@ class GeminiGenerateContentProvider(StructuredAIProvider):
                 ],
                 "generationConfig": {
                     "responseMimeType": "application/json",
-                    "responseJsonSchema": schema,
+                    "responseJsonSchema": _gemini_schema(schema),
                     **self.request_options,
                 },
             },
             {"x-goog-api-key": self.api_key, "Content-Type": "application/json"},
             self.timeout,
         )
+        usage = payload.get("usageMetadata") or {}
+        try:
+            input_tokens = int(usage.get("promptTokenCount") or 0)
+            output_tokens = int(
+                (usage.get("candidatesTokenCount") or 0)
+                + (usage.get("thoughtsTokenCount") or 0)
+            )
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise AIProviderMalformedResponse(
+                stage="provider_response",
+                request_id=str(
+                    payload.get("responseId") or getattr(payload, "request_id", "") or ""
+                ),
+                provider=self.name,
+                model=self.model,
+                http_status=getattr(payload, "http_status", 200),
+                latency_ms=getattr(payload, "latency_ms", 0),
+            ) from exc
+        metadata = {
+            "request_id": str(
+                payload.get("responseId") or getattr(payload, "request_id", "") or ""
+            ),
+            "provider": self.name,
+            "model": self.model,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "usage_confirmed": bool(payload.get("usageMetadata")),
+            "http_status": getattr(payload, "http_status", 200),
+            "latency_ms": getattr(payload, "latency_ms", 0),
+        }
+        if payload.get("error"):
+            provider_error_code, provider_error_status = _safe_provider_error(payload)
+            error_class = {
+                "INVALID_ARGUMENT": AIProviderInvalidRequest,
+                "UNAUTHENTICATED": AIProviderAuthenticationError,
+                "PERMISSION_DENIED": AIProviderPermissionDenied,
+                "NOT_FOUND": AIProviderNotFound,
+                "RESOURCE_EXHAUSTED": AIProviderRateLimited,
+            }.get(provider_error_status, AIProviderUnavailable)
+            raise error_class(
+                stage="api_error",
+                provider_error_code=provider_error_code,
+                provider_error_status=provider_error_status,
+                **metadata,
+            )
         try:
             candidate = payload["candidates"][0]
             parts = candidate["content"]["parts"]
             content = "".join(part.get("text", "") for part in parts)
         except (KeyError, IndexError, TypeError) as exc:
-            raise AIProviderMalformedResponse() from exc
-        if candidate.get("finishReason") not in {None, "STOP"}:
-            raise AIProviderMalformedResponse()
-        usage = payload.get("usageMetadata") or {}
+            raise AIProviderMalformedResponse(
+                stage="provider_response", **metadata
+            ) from exc
+        stop_reason = str(candidate.get("finishReason") or "")
+        metadata["stop_reason"] = stop_reason
+        if stop_reason not in {"", "STOP"}:
+            stage = "truncated_output" if stop_reason == "MAX_TOKENS" else "finish_reason"
+            raise AIProviderMalformedResponse(stage=stage, **metadata)
+        try:
+            data = _json_content(content)
+        except AIProviderMalformedResponse as exc:
+            raise AIProviderMalformedResponse(stage="json_decode", **metadata) from exc
         return AIProviderResult(
-            data=_json_content(content),
+            data=data,
             provider=self.name,
             model=self.model,
-            request_id=str(payload.get("responseId") or ""),
-            input_tokens=int(usage.get("promptTokenCount") or 0),
-            output_tokens=int(
-                (usage.get("candidatesTokenCount") or 0)
-                + (usage.get("thoughtsTokenCount") or 0)
-            ),
+            request_id=metadata["request_id"],
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            stop_reason=stop_reason,
+            http_status=metadata["http_status"],
+            latency_ms=metadata["latency_ms"],
         )
 
 

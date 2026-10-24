@@ -1,7 +1,7 @@
 ENTER CANDIDATE PLATFORM — PRIVACY POLICY
-Document identifier: enter-candidate-privacy-v1.0
-Effective date: 22 October 2026.
-PUBLICATION STATUS: APPROVED
+Document identifier: enter-candidate-privacy-v1.2
+Proposed effective date: 24 October 2026.
+PUBLICATION STATUS: PENDING REVIEW
 
 This is the concise India-first publication copy prepared from the preserved legal
 review record. Historical D1–D16 evidence remains in Git and is not a release
@@ -14,6 +14,9 @@ EXACT CLAUSES REQUIRING QUALIFIED REVIEW
    basis/consent treatment for the described processing at the effective date.
 2. Section 5, final paragraph: confirm whether the disclosed Australia/overseas
    processing needs any additional transfer wording or safeguard before launch.
+3. Section 5, Gemini paragraph: confirm the paid-service, Data Processing
+   Addendum, overseas-processing, abuse-monitoring, logging, and retention
+   description before any candidate resume is sent to Google.
 
 No AWS invoice, exhaustive support-location map, legacy-backup deletion, or
 UK/US expansion work is a separate publication condition unless the reviewer
@@ -42,9 +45,11 @@ support.
 
 New registration is limited to people aged 18 or over who select India as their
 registration country. The country selection is not proof of physical location.
-Recruiter access and sharing are disabled. This policy does not authorize public
-profiles, recruiter access, advertising use, sale of candidate information, or
-external resume-AI processing.
+Recruiter access and sharing remain disabled. Optional external resume-AI
+processing is available only when a candidate selects the separate, unchecked
+permission shown with that specific resume upload. This policy does not authorize
+public profiles, recruiter access, advertising use, or sale of candidate
+information.
 
 2. Information we handle
 
@@ -54,7 +59,9 @@ We handle the information needed to provide and protect your candidate account:
   authentication records;
 - your PDF or DOCX resume, optional profile photograph, work and education
   history, skills, achievements, career preferences, and settings;
-- rule-based resume-extraction results and the corrections you make;
+- rule-based resume-extraction results and, when you separately choose it for a
+  specific upload, the resume text sent to Google Gemini and the structured
+  extraction returned to ENTER;
 - draft, paused, and submitted profile state, and records of age confirmation,
   Terms acceptance, and profile-submission consent;
 - support, privacy, complaint, and deletion correspondence; and
@@ -75,9 +82,16 @@ save, preview, and submit your profile; provide password recovery and support;
 honour privacy and deletion requests; prevent abuse and investigate incidents;
 maintain and recover the service; and meet applicable legal obligations.
 
-Resume extraction is rule based and can be incomplete or wrong. Review the
-result before submission. ENTER does not use this processing to make a solely
-automated hiring decision and does not guarantee an interview, placement, or job.
+Resume extraction uses ENTER's rule-based parser by default. If you select the
+optional AI permission for a specific upload, ENTER sends the text extracted from
+that resume to Google's paid Gemini API to identify professional titles, summaries,
+employers, roles, employment dates, skills, and evidence-backed achievements for
+your profile. ENTER removes recognized direct contact details before sending the
+text where practical, but employment history and other personal information
+contained in the resume may remain. Gemini's suggestions are evidence-validated,
+may still be incomplete or wrong, and must remain reviewable and correctable by
+the candidate. ENTER does not use this processing to make a solely automated
+hiring decision and does not guarantee an interview, placement, or job.
 
 India's Digital Personal Data Protection Act, 2023 and Digital Personal Data
 Protection Rules, 2025 are being brought into force in phases. ENTER applies the
@@ -124,6 +138,20 @@ CloudFront for the background video. These services may process technical or
 candidate information outside India. ENTER limits them to the service they
 provide and will use any safeguard required by applicable law.
 
+For a resume whose candidate selected the optional AI permission, ENTER uses
+Google's paid Gemini API as an external processing provider. The extracted resume
+text and Gemini's structured response may be processed outside India in locations
+used by Google and its subprocessors. ENTER does not send candidate resumes through
+Gemini's unpaid services: Google's terms say unpaid inputs and outputs may be used
+to improve its products and may be reviewed by people. Google states that, for its
+Paid Services, prompts and responses are not used to improve its products and are
+processed under Google's applicable Data Processing Addendum. ENTER disables
+optional request logging and storage, does not contribute prompts, responses,
+feedback, or datasets to Google, and applies Google's then-current paid-service,
+abuse-monitoring, retention, and data-processing terms. Limited processing or
+retention required for security, abuse prevention, law, or an agreed service
+feature may still apply.
+
 6. Retention, deletion, and recovery
 
 ENTER retains your current candidate profile and resume for 12 calendar months
@@ -161,6 +189,13 @@ You may ask to access, correct, delete, or receive information about your data,
 withdraw an applicable consent, or exercise another right available under law.
 Contact sheba@enterrecruitment.com. You may also raise a grievance or complaint
 through that address and, when applicable, with the competent authority.
+
+AI-assisted extraction is optional. Declining it does not prevent resume upload
+or rule-based extraction. You may withdraw permission for future external
+processing by leaving the checkbox unchecked on later uploads or by contacting
+ENTER. Withdrawal cannot recall a resume request already sent to Google or
+undo processing that was lawful before withdrawal. Deleting the resume or
+account remains subject to the deletion and backup periods above.
 
 You must separately confirm that you are at least 18 and accept the displayed
 Terms version. The Privacy Policy is a notice, not blanket consent. Profile

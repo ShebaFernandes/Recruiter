@@ -229,7 +229,8 @@ def _looks_like_role(value):
     return bool(
         re.search(
             r"(?i)\b(engineer|developer|manager|designer|analyst|consultant|architect|"
-            r"lead|specialist|intern|director|officer|scientist|administrator|associate|advisor)\b",
+            r"lead|specialist|intern|director|officer|scientist|researcher|writer|"
+            r"administrator|associate|advisor)\b",
             value,
         )
     )

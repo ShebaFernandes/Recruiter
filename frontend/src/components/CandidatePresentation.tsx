@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import { UploadCloud } from 'lucide-react'
 import type { Resume } from '../types'
 import EnterBrandText from './EnterBrandText'
@@ -15,8 +16,8 @@ export function CandidateWelcome() {
 /** Presentation only: processing, scanning and retry eligibility come from Django. */
 const activities = ['Reading your experience', 'Mapping your career journey', 'Identifying your strongest skills', "Understanding what you've built", 'Building your ENTER profile']
 
-export function CandidateProcessing({ resume, uploading, retry, upload, error, refresh, transferring = false }: {
-  resume: Resume; uploading: boolean; retry: () => void; upload: (file?: File) => void; error: string; refresh?: () => void; transferring?: boolean
+export function CandidateProcessing({ resume, uploading, retry, upload, error, refresh, transferring = false, aiConsent }: {
+  resume: Resume; uploading: boolean; retry: () => void; upload: (file?: File) => void; error: string; refresh?: () => void; transferring?: boolean; aiConsent?: ReactNode
 }) {
   const failed = resume.processing_status === 'failed'
   const active = ['uploaded', 'queued', 'processing'].includes(resume.processing_status)
@@ -49,6 +50,7 @@ export function CandidateProcessing({ resume, uploading, retry, upload, error, r
         <p className="cp-processing-status" role="status">{error === 'worker_delayed' ? 'Processing is temporarily delayed. Your upload is saved; we’ll keep checking automatically.' : error ? 'Unable to check the latest status. Your upload is saved; we’ll keep checking.' : stateLabel}</p>
         {error && active && refresh && <div className="processing-actions"><button onClick={refresh} disabled={uploading}>Check status again</button></div>}
         {failed && <p role="alert">{error || resume.processing_error || 'Your profile was not changed. Please retry.'}</p>}
+        {failed && aiConsent}
         {failed && <div className="processing-actions">
           {resume.can_retry && <button className="primary" onClick={retry} disabled={uploading}>{uploading ? 'Queueing…' : 'Retry processing'}</button>}
           <label className="cv-file-button"><input type="file" aria-label="Upload a replacement resume" accept=".pdf,.docx" onChange={event => upload(event.target.files?.[0])} disabled={uploading} data-testid="resume-input" /><UploadCloud size={18} /><span>Upload a different resume</span></label>
