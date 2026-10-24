@@ -1,0 +1,23 @@
+# Future-only legal publication overlay. Do not use while any Gemini-aware legal
+# file is PENDING REVIEW. This updates only the backend legal package and keeps
+# all resume AI execution disabled.
+services:
+  backend:
+    image: enter-backend:${ENTER_GEMINI_RELEASE:?Set the reviewed Gemini release tag}
+    environment:
+      LEGAL_PRIVACY_VERSION: enter-candidate-privacy-v1.2
+      LEGAL_TERMS_VERSION: enter-candidate-terms-v1.2
+      LEGAL_RESUME_AI_APPROVED: "true"
+      LEGAL_RESUME_AI_VERSION: enter-resume-ai-consent-v1.1
+      LEGAL_PRIVACY_SHA256: 6549ab6514b940459b8b853ee63643fc97c91f9dfc2d62aac511083c6b1bf574
+      LEGAL_TERMS_SHA256: c545340b49350c664d0073e081dd4314a6464238adc6a61f9fc8a87b5647dd53
+      LEGAL_RESUME_AI_SHA256: e9ba89892b3b29aa738ef7dc7ff2913149be87c44080a058ddfa3cc677041040
+      LEGAL_EFFECTIVE_DATE: ${ENTER_GEMINI_LEGAL_EFFECTIVE_DATE:?Set the actual publication date}
+      AI_PROVIDER: disabled
+      GEMINI_API_KEY: ""
+      RESUME_AI_API_KEY: ""
+      RESUME_AI_API_KEY_FILE: ""
+      RESUME_AI_ENABLED: "false"
+      RESUME_AI_EXTERNAL_PROCESSING_APPROVED: "false"
+      RESUME_AI_ALLOW_PAID: "false"
+      RESUME_AI_GEMINI_FREE_TIER_APPROVED: "false"

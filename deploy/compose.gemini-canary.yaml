@@ -1,0 +1,41 @@
+# Future-only worker canary overlay. Combine with compose.production.yaml only
+# after legal publication succeeds and a single fictional production canary
+# resume ID has been recorded. The Gemini key is mounted only into the worker.
+services:
+  worker:
+    image: enter-backend:${ENTER_GEMINI_RELEASE:?Set the reviewed Gemini release tag}
+    environment:
+      LEGAL_PRIVACY_VERSION: enter-candidate-privacy-v1.2
+      LEGAL_TERMS_VERSION: enter-candidate-terms-v1.2
+      LEGAL_RESUME_AI_APPROVED: "true"
+      LEGAL_RESUME_AI_VERSION: enter-resume-ai-consent-v1.1
+      LEGAL_PRIVACY_SHA256: 6549ab6514b940459b8b853ee63643fc97c91f9dfc2d62aac511083c6b1bf574
+      LEGAL_TERMS_SHA256: c545340b49350c664d0073e081dd4314a6464238adc6a61f9fc8a87b5647dd53
+      LEGAL_RESUME_AI_SHA256: e9ba89892b3b29aa738ef7dc7ff2913149be87c44080a058ddfa3cc677041040
+      LEGAL_EFFECTIVE_DATE: ${ENTER_GEMINI_LEGAL_EFFECTIVE_DATE:?Set the actual publication date}
+      AI_PROVIDER: disabled
+      GEMINI_API_KEY: ""
+      RESUME_AI_API_KEY: ""
+      RESUME_AI_API_KEY_FILE: /run/secrets/gemini_resume_api_key
+      RESUME_AI_ENABLED: "true"
+      RESUME_AI_EXTERNAL_PROCESSING_APPROVED: "true"
+      RESUME_AI_PROVIDER: gemini
+      RESUME_AI_MODEL: gemini-3.5-flash-lite
+      RESUME_AI_ALLOW_PAID: "true"
+      RESUME_AI_GEMINI_FREE_TIER_APPROVED: "false"
+      RESUME_AI_FALLBACK: rules
+      RESUME_AI_MAX_ATTEMPTS: "1"
+      RESUME_AI_TIMEOUT_SECONDS: "60"
+      RESUME_AI_MAX_OUTPUT_TOKENS: "3000"
+      RESUME_AI_DAILY_BUDGET_USD: ${ENTER_GEMINI_DAILY_BUDGET_USD:?Set the approved daily budget}
+      RESUME_AI_MONTHLY_BUDGET_USD: ${ENTER_GEMINI_MONTHLY_BUDGET_USD:?Set the approved monthly budget}
+      RESUME_AI_INPUT_USD_PER_MILLION: ${ENTER_GEMINI_INPUT_USD_PER_MILLION:?Set the verified input price}
+      RESUME_AI_OUTPUT_USD_PER_MILLION: ${ENTER_GEMINI_OUTPUT_USD_PER_MILLION:?Set the verified output price}
+      RESUME_AI_ROLLOUT_MODE: canary
+      RESUME_AI_CANARY_RESUME_IDS: ${ENTER_GEMINI_CANARY_RESUME_ID:?Set one fictional canary resume ID}
+    secrets:
+      - gemini_resume_api_key
+
+secrets:
+  gemini_resume_api_key:
+    file: ${ENTER_GEMINI_API_KEY_FILE:?Set the root-owned worker-only key file}

@@ -1,0 +1,7 @@
+# Apply only after the single-ID paid Gemini canary passes and activation is
+# explicitly authorized. Combine after compose.gemini-canary.yaml.
+services:
+  worker:
+    environment:
+      RESUME_AI_ROLLOUT_MODE: consenting
+      RESUME_AI_CANARY_RESUME_IDS: ""

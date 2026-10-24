@@ -1,0 +1,39 @@
+{
+  "publication_effective_date": "",
+  "qualified_legal_review": {
+    "reviewer_name": "",
+    "qualification_or_authority": "",
+    "review_reference": "",
+    "review_date": "",
+    "scope_confirmed": {
+      "gemini_processing": false,
+      "overseas_transfers_and_subprocessors": false,
+      "google_dpa_and_retention": false,
+      "terms_liability_and_jurisdiction": false
+    }
+  },
+  "approved_documents": {
+    "privacy": {
+      "version": "enter-candidate-privacy-v1.2",
+      "sha256": "6549ab6514b940459b8b853ee63643fc97c91f9dfc2d62aac511083c6b1bf574"
+    },
+    "terms": {
+      "version": "enter-candidate-terms-v1.2",
+      "sha256": "c545340b49350c664d0073e081dd4314a6464238adc6a61f9fc8a87b5647dd53"
+    },
+    "resume_ai": {
+      "version": "enter-resume-ai-consent-v1.1",
+      "sha256": "e9ba89892b3b29aa738ef7dc7ff2913149be87c44080a058ddfa3cc677041040"
+    }
+  },
+  "provider_controls": {
+    "paid_service_verified": false,
+    "dpa_reference": "",
+    "logging_and_retention_review_reference": "",
+    "api_key_owner_authorization_reference": "",
+    "daily_budget_usd": "",
+    "monthly_budget_usd": "",
+    "input_usd_per_million": "",
+    "output_usd_per_million": ""
+  }
+}

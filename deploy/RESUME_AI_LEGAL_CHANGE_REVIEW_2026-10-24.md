@@ -1,6 +1,13 @@
-# ENTER Gemini resume-AI legal change — approval required
+# ENTER Gemini resume-AI legal change — activation preparation
 
-Status: **PENDING PRIVACY-OWNER AND QUALIFIED LEGAL APPROVAL**
+Status: **CEO APPROVAL RECORDED; PENDING ATTRIBUTABLE QUALIFIED LEGAL EVIDENCE**
+
+Dikshita Verma approved the three exact versions and public-text hashes below in
+her role as CEO of ENTER Recruitment Private Limited on 24 October 2026 at
+8:00 PM IST. That approval is complete and must not be requested again. Her CEO
+role is not represented as a legal qualification, and
+`sheba@enterrecruitment.com` is only a contact address, not a legal-review
+reference.
 
 This draft replaces the earlier unapproved Anthropic-specific proposal. It does
 not change any published document, infer legal approval, activate resume AI, or
@@ -54,7 +61,8 @@ Before activation, verify and record:
 4. Generate Content logging/storage disabled, no shared feedback or datasets,
    and the approved abuse-monitoring/retention position.
 5. The exact initial daily/monthly budgets and current token prices.
-6. Privacy-owner and qualified legal approval of all three exact hashes above.
+6. Attributable qualified legal clearance for all three exact hashes above,
+   recorded separately from the completed CEO approval.
 
 ## Smallest release behavior
 
@@ -67,10 +75,15 @@ Before activation, verify and record:
   resume ID. No other upload or historical resume may invoke Gemini.
 - Keep recruiter access blocked and private S3/SQS behavior unchanged.
 
-## Approval evidence required
+## Remaining activation evidence
 
-Record the approver's name and authority, approval timestamp, approved versions,
-the three exact hashes, qualified legal clearance, paid-project/DPA review,
-overseas-processing decision, logging/retention review, API-key owner approval,
-and approved initial budget. Only then mark the publication files approved and
-load their immutable values into production.
+The completed CEO decision is already recorded in
+`CONSENT_AND_LEGAL_SIGNOFF_FINAL_REVIEW.txt`. Do not duplicate or reinterpret it.
+
+Before publication, record the actual qualified reviewer's name, legal
+qualification or authority, review reference, and actual review date. The entry
+must cover the three exact versions and hashes, Gemini processing and overseas
+transfers, Google's applicable DPA/subprocessors and retention position, and the
+Terms liability/jurisdiction wording. Also record the verified paid-project
+controls and approved initial budget. Only then mark the publication files
+approved and load their immutable values into production.

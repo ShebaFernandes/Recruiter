@@ -1065,7 +1065,7 @@ billing terms, Data Processing Addendum, balance, spend controls, or model acces
 It does not authorize a Gemini request before the candidate-consent,
 qualified-legal, publication, canary, and per-call gates are separately satisfied.
 
-GEMINI QUALIFIED-LEGAL CLEARANCE — MANAGEMENT CONFIRMATION RECORDED
+GEMINI QUALIFIED-LEGAL CLEARANCE — MANAGEMENT REPORT; EVIDENCE PENDING
 
 Management confirmed that qualified legal clearance has been obtained for Gemini
 data processing, overseas transfers, Google's Data Processing Addendum and the
@@ -1076,14 +1076,17 @@ represented as a reviewer signature or independent legal evidence. Publication
 status and the production legal gate must remain unchanged until the attributable
 review details are supplied and recorded.
 
-Management further reported that Dikshita Verma personally conducted that review
-and approved Privacy Policy `enter-candidate-privacy-v1.2`, Terms of Use
+Management further reported that Dikshita Verma personally conducted the
+management and privacy-owner review and approved Privacy Policy
+`enter-candidate-privacy-v1.2`, Terms of Use
 `enter-candidate-terms-v1.2`, and Gemini resume-AI consent
 `enter-resume-ai-consent-v1.1` at `2026-10-24T20:00:00+05:30`, using the exact
-public-copy hashes recorded above. This is recorded as management-reported review
-and approval. The existing records establish her role as CEO and privacy owner;
-they do not establish a legal qualification or contain an attributable legal-
-review reference. Neither fact is inferred from her management role.
+public-copy hashes recorded above. This is recorded as completed CEO approval.
+The existing records establish her role as CEO and privacy owner; they do not
+establish a legal qualification or contain an attributable legal-review
+reference. `sheba@enterrecruitment.com` is a contact address, not a legal-review
+reference. Qualified legal evidence will be recorded separately when the actual
+reviewer details are available.
 
 GOOGLE OPTIONAL STORAGE — VERIFIED DISABLED
 

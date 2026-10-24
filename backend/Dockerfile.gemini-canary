@@ -1,0 +1,16 @@
+# Future Gemini publication image. Build only after the activation readiness
+# check accepts approved, hash-pinned legal files. The base image must be the
+# exact reviewed AI-disabled backend image; this layer changes legal packaging
+# only and cannot add credentials.
+ARG ENTER_BASE_BACKEND_IMAGE=enter-backend:missing-reviewed-base
+FROM ${ENTER_BASE_BACKEND_IMAGE}
+
+USER root
+COPY deploy/PRIVACY_POLICY_PUBLICATION.txt \
+    deploy/TERMS_PUBLICATION.txt \
+    deploy/RESUME_AI_CONSENT_PUBLICATION.txt /app/deploy/
+RUN chmod 0444 \
+    /app/deploy/PRIVACY_POLICY_PUBLICATION.txt \
+    /app/deploy/TERMS_PUBLICATION.txt \
+    /app/deploy/RESUME_AI_CONSENT_PUBLICATION.txt
+USER nobody
