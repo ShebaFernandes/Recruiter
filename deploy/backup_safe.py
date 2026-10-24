@@ -28,6 +28,11 @@ work = None
 scratch = None
 started = time.monotonic()
 historical_key = os.environ.get("ENTER_RESTORE_KEY", "")
+# The 4 GiB capacity rehearsal reserved 1 GiB for the host and constrained all
+# production containers plus the scratch restore to a shared 3 GiB/no-swap cgroup.
+# Its measured peak was about 2.04 GiB. Require 1.25 GiB available before both
+# dump and restore phases; do not reduce the scratch container's own hard limits.
+backup_min_available = 1280 * 1024**2
 
 
 class BackupSafetyError(RuntimeError):
@@ -156,7 +161,10 @@ try:
         line.split(":")[0]: int(line.split()[1]) * 1024
         for line in Path("/proc/meminfo").read_text().splitlines()
     }
-    require(mem["MemAvailable"] > 3 * 1024**3, "Backup safety check failed at check 109")
+    require(
+        mem["MemAvailable"] > backup_min_available,
+        "Backup safety check failed at check 109",
+    )
     require(shutil.disk_usage("/tmp").free > 5 * 1024**3, "Backup safety check failed at check 110")
     size = int(
         output(
@@ -305,7 +313,7 @@ try:
         for line in Path("/proc/meminfo").read_text().splitlines()
         if line.startswith("MemAvailable:")
     )
-    require(available > 3 * 1024**3, "Backup safety check failed at check 223")
+    require(available > backup_min_available, "Backup safety check failed at check 223")
     scratch = "enter-restore-check-" + token
     db = "restore_check_" + token
     stage = "start isolated scratch container"

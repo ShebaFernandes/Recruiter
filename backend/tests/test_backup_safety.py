@@ -35,7 +35,8 @@ SCRIPT = Path(__file__).resolve().parents[2] / "deploy" / "backup_safe.py"
         "restore",
         "schema",
         "cleanup_label",
-        "memory",
+        "memory_preflight",
+        "memory_restore",
         "app_table",
         "key",
         "approved_checksum",
@@ -81,14 +82,24 @@ def test_backup_orchestration_fail_closed(
         ),
     )
     original_read = Path.read_text
+    meminfo_reads = 0
+
+    def read_text(path, *args, **kwargs):
+        nonlocal meminfo_reads
+        if str(path) != "/proc/meminfo":
+            return original_read(path, *args, **kwargs)
+        meminfo_reads += 1
+        at_floor = f"MemAvailable: {1280 * 1024} kB\n"
+        if failure == "memory_preflight" or (
+            failure == "memory_restore" and meminfo_reads == 2
+        ):
+            return at_floor
+        return "MemAvailable: 8000000 kB\n"
+
     monkeypatch.setattr(
         Path,
         "read_text",
-        lambda p, *a, **kw: (
-            ("MemAvailable: 1 kB\n" if failure == "memory" else "MemAvailable: 8000000 kB\n")
-            if str(p) == "/proc/meminfo"
-            else original_read(p, *a, **kw)
-        ),
+        read_text,
     )
     monkeypatch.setattr(
         "shutil.disk_usage",
@@ -240,6 +251,7 @@ def test_backup_orchestration_fail_closed(
             "app_table": "verify restored structure",
             "key": "consistent pg_dump",
             "approved_checksum": "consistent pg_dump",
+            "memory_restore": "isolated restore preflight",
         }.get(failure, "preflight")
         assert "STOPPED_STAGE " + expected_stage + " ERROR_TYPE" in capsys.readouterr().out
         assert not any(c[:2] == ["docker", "rm"] for c in calls)

@@ -138,7 +138,7 @@ unless-stopped; worker and scanner automatic failure recovery were tested separa
 1. Approve a restricted **synthetic-only** staging environment and the maintenance
    obligation for the two scoped image rebuilds. Check AWS account plan, credit
    eligibility/expiry and budgets first. Alerts are not hard spending caps.
-2. Choose one region and x86-64 EC2 (initial 8 GiB evaluation), encrypted EBS,
+2. Choose one region and an x86-64 t3.medium EC2 instance (2 vCPU / 4 GiB), encrypted EBS,
    SSM access and least-privilege instance role. No database/scanner/API ports
    in security-group ingress. Restrict application access to tester IPs or a VPN.
 3. Create private S3 and backup buckets (Block Public Access, encryption,
@@ -262,15 +262,18 @@ Only ports 80 and 443 are published. The Django API, database and scanner are
 private to the Docker network. The public Caddy route explicitly blocks /admin.
 Use SSM and management commands for controlled administration.
 
-Start evaluation at 8 GB RAM (for example t3a.large/t3.large); the configuration
-limits individual containers but requires measurement under campaign load.
+Start the low-traffic launch on t3.medium (2 vCPU / 4 GiB). The production
+Compose limits are tuned for this host and ClamAV uses non-concurrent database
+reloads to avoid briefly loading two signature engines. Measure host memory,
+swap, CPU credits and queue age under campaign load; resize if the host swaps
+persistently, any container is OOM-killed, or resume backlog grows.
 Do not assume a 1 GB server can run a malware scanner alongside the application.
 One server is a single point of failure: accept downtime/recovery responsibility
 or approve a higher-cost managed architecture.
 
 Illustrative monthly budget (730 hours, US pricing baseline, low traffic,
-1,000 initial resumes, no AI, no premium support): 4 GB pilot $45–60 ONLY after
-memory validation; 8 GB beta $75–95; larger workload $130–200+. Recalculate for
+1,000 initial resumes, no AI, no premium support): t3.medium/4 GB pilot $45–60;
+8 GB beta $75–95; larger workload $130–200+. Recalculate for
 Mumbai if most candidates are in India. $100 credits are roughly one month of
 comfortable runway, not a lasting spending limit. Taxes/domain registration,
 credit expiry/exclusions, data transfer, public IPv4, EBS/snapshots, logs and CPU
@@ -774,7 +777,8 @@ future push, not a cached branch comparison, proves remote transport works.
    and [Free Tier terms](https://aws.amazon.com/free/terms/).
 3. Approve region and a current Pricing Calculator estimate. Choose EC2 architecture
    before building final images; backend/frontend evidence now covers linux/amd64
-   for t3/t3a. Evaluate 8 GiB RAM for this combined scanner/database/worker host.
+   for t3/t3a. Start with t3.medium (2 vCPU / 4 GiB) for this low-traffic
+   combined scanner/database/worker host and configure memory/OOM/queue alarms.
 4. Configure root MFA, operator IAM and least-privilege instance role; then EC2,
    encrypted persistent gp3 storage, restricted security groups and SSM access.
 5. Create private ACL-disabled resume S3 and separate backup bucket, encryption,
@@ -876,8 +880,9 @@ Both bases passed the workload; a short rehearsal cannot establish long-term
 reliability. Alpine's smaller image did not demonstrate a material RAM saving:
 observed warmed API approximately 250–271 MiB / worker 97–127 MiB on Alpine;
 Debian approximately 273 MiB / 125 MiB. These are snapshots, not controlled
-peak benchmarks. ClamAV was approximately 940–970 MiB. Keep the 8-GiB host
-evaluation and measure native memory/CPU/backlog before any campaign.
+peak benchmarks. ClamAV was approximately 940–970 MiB. The approved launch host
+is t3.medium/4 GiB with non-concurrent signature reloads; measure native
+memory/CPU/backlog before any campaign and resize when the alarms require it.
 
 **Unresolved scanner blocker:** upstream ClamAV carried zlib CVE-2026-85091,
 pcre2 CVE-2026-103111 and libxml2 CVE-2026-86140. A temporary `apk upgrade`
@@ -978,8 +983,9 @@ size/time-limit overruns alert rather than being silently accepted as clean.
 Persistent signatures stay in `/var/lib/clamav`; the ephemeral socket is in
 `/run/clamav`. New volumes are seeded; existing downloaded databases are not
 overwritten. The production scanner has no published port. Keep its existing
-3-GiB limit under observation: concurrent signature reloads can roughly double
-engine memory. Do not disable database testing to reduce memory.
+2-GiB limit under observation. Concurrent signature reload is disabled for the
+t3.medium profile because it can roughly double engine memory; scans pause while
+the engine reloads. Do not disable database testing to reduce memory.
 
 Fresh Docker Scout high/critical scans, **linux/amd64**:
 
@@ -1064,7 +1070,8 @@ signature-test data and scan reports are temporary local artifacts.
 2. Review/commit/push the verified files yourself. Confirm the feature branch,
    inspect staged diffs and exclude backups, credentials, test output and resumes.
 3. Check AWS account plan, eligible credits/expiry and region. Set billing alerts;
-   they are not a spending cap. Approve the 8-GiB x86 EC2 cost estimate before
+   they are not a spending cap. Approve the t3.medium (2 vCPU / 4-GiB) x86 EC2
+   cost estimate before
    provisioning. Keep staging restricted to named testers with fictional data.
 4. Configure root MFA, SSM/operator permissions and a least-privilege EC2 role.
    Create encrypted EBS and a restricted security group. Keep database, scanner
