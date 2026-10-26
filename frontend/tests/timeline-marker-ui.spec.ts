@@ -22,11 +22,12 @@ for (const width of [390, 1440]) {
       {company:'Example Labs',role:'Lead',start_date:'2019-08-01',end_date:null,description:'Led the platform team.',gap_reason:''}];
       ReactDOM.createRoot(document.getElementById('review')).render(React.createElement('main',{style:{padding:20}},
         React.createElement('h1',null,'Shared timeline visual test'),
-        React.createElement('section',{className:'cp-career'},React.createElement('h2',null,'Candidate'),React.createElement(Journey,{items,minimal:true,compactMarkers:true,candidateMilestones:true,presentAtEnd:true})),
+        React.createElement('section',{className:'cp-career'},React.createElement('h2',null,'Candidate'),React.createElement(Journey,{items,minimal:true,profilePresentation:true,compactMarkers:true,candidateMilestones:true,presentAtEnd:true})),
         React.createElement('section',null,React.createElement('h2',null,'Recruiter'),React.createElement(Journey,{items,detailed:true}))));
       </script></body></html>` }))
     await page.goto('/timeline-review')
     await expect(page.locator('.career-laptop')).toHaveCount(4)
+    await expect(page.locator('.cp-career .career-role-summary')).toHaveCount(2)
     for (const graph of await page.locator('.career-journey').all()) {
       const icon = graph.locator('.career-laptop').first()
       await expect(icon).toHaveCSS('width', '12px')

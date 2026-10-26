@@ -74,6 +74,19 @@
 .cp-career .career-present>span { top:23px; }
 .cp-career .career-present>i { top:14px; }
 
+/* Candidate history uses actual elapsed months instead of equal compressed cells. */
+.cp-career .career-journey.shared.minimal-milestones.profile-presentation { min-height:132px; }
+.cp-career .career-journey.shared.minimal-milestones.profile-presentation .career-sequence { flex:0 0 auto!important; }
+.cp-career .career-journey.shared.minimal-milestones.profile-presentation .career-period { flex:0 0 var(--career-role-span,104px)!important; min-width:104px; }
+.cp-career .career-journey.shared.minimal-milestones.profile-presentation .career-gap-period { flex:0 0 var(--career-gap-span,72px)!important; min-width:72px; }
+.cp-career .career-journey.shared.minimal-milestones.profile-presentation .career-job { height:124px; min-height:124px; }
+.cp-career .profile-presentation .career-role-summary { position:absolute; top:43px; left:4px; right:8px; display:grid; grid-template-columns:24px minmax(0,1fr); gap:1px 7px; text-align:left; line-height:1.25; }
+.cp-career .profile-presentation .career-role-summary .career-initial { grid-row:1/4; display:grid; place-items:center; width:22px; height:22px; border:1px solid var(--enter-border); border-radius:50%; color:var(--enter-primary); background:var(--enter-surface); font-size:10px; font-weight:800; }
+.cp-career .profile-presentation .career-role-summary strong,.cp-career .profile-presentation .career-role-summary>span:not(.career-initial) { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cp-career .profile-presentation .career-role-summary strong { color:var(--enter-text); font-size:11px; }
+.cp-career .profile-presentation .career-role-summary>span:not(.career-initial) { color:var(--enter-text-muted); font-size:10px; }
+.cp-career .profile-presentation .career-role-summary .career-role-dates { margin-top:2px; font-size:9px; }
+
 /* A small visual marker, not a smaller interactive target. */
 .career-journey.shared .career-marker-icon,
 .cp-career .career-journey.shared.minimal-milestones .career-marker-icon {

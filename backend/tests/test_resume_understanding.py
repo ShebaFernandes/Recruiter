@@ -331,12 +331,15 @@ def test_valid_evidence_promotions_dedup_and_backend_computation():
     assert parsed["total_experience"] > 5
 
 
-def test_schema_mismatch_is_rejected():
+def test_unknown_salary_field_is_discarded_and_never_accepted():
     data = response()
     data["expected_salary_lpa"] = 50
-    with pytest.raises(AIProviderMalformedResponse) as exc_info:
-        validate_interpretation(data, TEXT)
-    assert exc_info.value.stage == "schema_validation"
+    parsed = validate_interpretation(data, TEXT)
+    assert "expected_salary_lpa" not in parsed
+    assert parsed["_validation_rejections"] == [{
+        "category": "schema.unknown_property",
+        "count": 1,
+    }]
 
 
 def test_seven_promoted_roles_with_distant_employer_headings_are_supported():
@@ -1177,17 +1180,20 @@ def test_gemini_provider_generated_json_and_safe_metadata(enabled, settings, mon
 
 
 @pytest.mark.parametrize("drift", ["extra_top_level", "extra_nested"])
-def test_sanitized_gemini_shape_drift_fixtures_are_rejected_offline(drift):
+def test_sanitized_gemini_shape_drift_discards_unknown_keys_and_validates_evidence(drift):
     data = response()
     if drift == "extra_top_level":
         data["confidence"] = "high"
     else:
         data["work_experiences"][0]["confidence"] = "high"
 
-    with pytest.raises(AIProviderMalformedResponse) as exc_info:
-        validate_interpretation(data, TEXT)
+    parsed = validate_interpretation(data, TEXT)
 
-    assert exc_info.value.stage == "schema_validation"
+    assert len(parsed["work_experiences"]) == 2
+    assert parsed["_validation_rejections"] == [{
+        "category": "schema.unknown_property",
+        "count": 1,
+    }]
 
 
 @pytest.mark.parametrize(

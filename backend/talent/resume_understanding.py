@@ -105,6 +105,40 @@ def _validate_shape(value, schema):
         raise AIProviderMalformedResponse(stage="schema_validation")
 
 
+def _discard_unknown_properties(value, schema):
+    """Remove provider-only keys while preserving every required schema value.
+
+    Gemini can return harmless descriptive keys even when the constrained-output
+    schema is closed. Unknown values are never application data, so discard them
+    before strict type/required/length validation. Missing fields and wrong types
+    remain unchanged and are still rejected by ``_validate_shape``.
+    """
+    kind = schema["type"]
+    if isinstance(kind, list):
+        if value is None and "null" in kind:
+            return value, 0
+        kind = next(item for item in kind if item != "null")
+    if kind == "object" and isinstance(value, dict):
+        properties = schema["properties"]
+        normalized = {}
+        ignored = len(set(value) - set(properties))
+        for key, child in properties.items():
+            if key not in value:
+                continue
+            normalized[key], child_ignored = _discard_unknown_properties(value[key], child)
+            ignored += child_ignored
+        return normalized, ignored
+    if kind == "array" and isinstance(value, list):
+        normalized = []
+        ignored = 0
+        for item in value:
+            clean, child_ignored = _discard_unknown_properties(item, schema["items"])
+            normalized.append(clean)
+            ignored += child_ignored
+        return normalized, ignored
+    return value, 0
+
+
 def normalized(value):
     return " ".join(value.casefold().split())
 
@@ -469,8 +503,16 @@ def directions(rows):
 
 
 def validate_interpretation(data, text):
+    data, ignored_properties = _discard_unknown_properties(data, SCHEMA)
     _validate_shape(data, SCHEMA)
     result, rejections = {}, []
+    if ignored_properties:
+        # Record only a count. Provider-defined property names could echo resume
+        # content and therefore must not be written to diagnostics.
+        rejections.append({
+            "category": "schema.unknown_property",
+            "count": ignored_properties,
+        })
     for key in (
         "full_name",
         "location",

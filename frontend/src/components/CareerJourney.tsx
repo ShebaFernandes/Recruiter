@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import type { WorkExperience } from '../types'
 import { careerStartYear, sortCareerHistory } from '../careerHistory'
@@ -82,6 +82,11 @@ export default function CareerJourney({ items, detailed = false, showCompanyLabe
         const gap = !uncertain && Number.isFinite(latestEnd) && start - latestEnd > 60 * 86400000 ? Math.round((start - latestEnd) / month) : 0
         const overlaps = !coarseDates(item) && earlier.some(row => !coarseDates(row) && endTime(row) > start)
         const months = !coarseDates(item) && Number.isFinite(end) && end >= start ? Math.max(1, Math.round((end - start) / month)) : 0
+        const duplicateMilestoneYear = Boolean(milestoneYear && displayed.some((row, rowIndex) => rowIndex !== displayIndex && careerStartYear(row) === milestoneYear))
+        const candidateMilestone = candidateMilestoneDate(item, duplicateMilestoneYear)
+        const visibleMilestone = candidateMilestones && previousMilestoneYear === milestoneYear && candidateMilestone === milestoneYear
+          ? 'Same year'
+          : candidateMilestone
         const period = item.date_label || `${item.start_date?.slice(0, 7) || 'Start not specified'} — ${item.end_date?.slice(0, 7) || (ongoing(item) ? 'Present' : 'End not specified')}`
         const key = `${item.id ?? index}-${item.company}-${item.start_date}`
         const firstCompanyMarker = displayed.findIndex(row => row.company.trim().toLocaleLowerCase() === item.company.trim().toLocaleLowerCase()) === displayIndex
@@ -89,15 +94,17 @@ export default function CareerJourney({ items, detailed = false, showCompanyLabe
         const previousRole = sorted.slice(0, index).reverse().find(row => row.company.trim().toLowerCase() === item.company.trim().toLowerCase() && row.role !== item.role)
         const note = [overlaps ? 'Overlapping employment' : '', minimal && previousRole ? `Career progression from ${previousRole.role}` : ''].filter(Boolean).join(' · ')
         const data = { key, title: item.role || 'Role not specified', company: minimal ? companyLabel(item.company) : item.company, period: `${period}${months ? ` · ${duration(months)}` : ''}`, detail: item.description || (minimal ? '' : 'No additional work details provided.'), note: note || undefined }
+        const roleSpan = Math.max(104, Math.min(360, (months || 12) * 4))
+        const gapSpan = Math.max(72, Math.min(260, gap * 4))
         return <div className="career-sequence" key={key} style={{ flexGrow: Math.max(1, months) }}>
-          {gap > 0 && <div className="career-gap-period" role="listitem"><button type="button" className="career-job career-gap-marker" aria-label={`Career gap of approximately ${gap} months`} onMouseEnter={e => show(e.currentTarget, { key: `${key}-gap`, title: 'Career gap', period: `Approximately ${duration(gap)}`, detail: item.gap_reason || 'Reason not provided by the candidate.' })} onMouseLeave={leave} onFocus={e => show(e.currentTarget, { key: `${key}-gap`, title: 'Career gap', period: `Approximately ${duration(gap)}`, detail: item.gap_reason || 'Reason not provided by the candidate.' })} onBlur={close} onClick={e => { pinned.current = `${key}-gap`; show(e.currentTarget, { key: `${key}-gap`, title: 'Career gap', period: `Approximately ${duration(gap)}`, detail: item.gap_reason || 'Reason not provided by the candidate.' }) }}><b>{duration(gap)} gap</b><span className="career-period-line" /><small>{new Date(latestEnd).getFullYear()}<i>{item.start_date?.slice(0, 4)}</i></small></button></div>}
-          <div className="career-period" role="listitem">
+          {gap > 0 && <div className="career-gap-period" role="listitem" style={{ '--career-gap-span': `${gapSpan}px` } as CSSProperties}><button type="button" className="career-job career-gap-marker" aria-label={`Career gap of approximately ${gap} months`} onMouseEnter={e => show(e.currentTarget, { key: `${key}-gap`, title: 'Career gap', period: `Approximately ${duration(gap)}`, detail: item.gap_reason || 'Reason not provided by the candidate.' })} onMouseLeave={leave} onFocus={e => show(e.currentTarget, { key: `${key}-gap`, title: 'Career gap', period: `Approximately ${duration(gap)}`, detail: item.gap_reason || 'Reason not provided by the candidate.' })} onBlur={close} onClick={e => { pinned.current = `${key}-gap`; show(e.currentTarget, { key: `${key}-gap`, title: 'Career gap', period: `Approximately ${duration(gap)}`, detail: item.gap_reason || 'Reason not provided by the candidate.' }) }}><b>{duration(gap)} gap</b><span className="career-period-line" /><small>{new Date(latestEnd).getFullYear()}<i>{item.start_date?.slice(0, 4)}</i></small></button></div>}
+          <div className="career-period" role="listitem" style={{ '--career-role-span': `${roleSpan}px` } as CSSProperties}>
             <button type="button" className={`career-job ${active?.key === key ? 'is-active' : ''}`} aria-label={`${data.title} at ${item.company}, ${data.period}${overlaps ? ', overlapping employment' : ''}`} aria-expanded={active?.key === key} aria-describedby={active?.key === key ? id : undefined}
               onMouseEnter={e => { if (e.buttons === 0) show(e.currentTarget, data) }} onMouseLeave={leave}
               onFocus={e => show(e.currentTarget, data)} onBlur={close}
               onClick={e => { if (pinned.current === key) close(); else { pinned.current = key; show(e.currentTarget, data) } }}>
               {displayCompanyLabel && <b>{minimal ? companyLabel(item.company) : item.company}</b>}<span className="career-period-line"><span className="career-marker-icon" aria-hidden="true"><CandidateMilestoneIcon /></span>{!compactMarkers && <><i /><i /></>}</span>
-              <small><span>{candidateMilestones ? candidateMilestoneDate(item) : (reverse || minimal) && milestoneYear && previousMilestoneYear === milestoneYear ? '' : milestoneYear || '?'}</span>{!compactMarkers && <i>{item.end_date?.slice(0, 4) || (ongoing(item) ? 'Now' : '?')}</i>}</small>
+              <small><span>{candidateMilestones ? visibleMilestone : (reverse || minimal) && milestoneYear && previousMilestoneYear === milestoneYear ? '' : milestoneYear || '?'}</span>{!compactMarkers && <i>{item.end_date?.slice(0, 4) || (ongoing(item) ? 'Now' : '?')}</i>}</small>
               {detailed && <em>{item.role}</em>}
               {profilePresentation && <span className="career-role-summary"><span className="career-initial" aria-hidden="true">{item.company.trim().charAt(0).toLocaleUpperCase() || '·'}</span><strong>{item.company || 'Employer not specified'}</strong><span>{item.role || 'Role not specified'}</span><span className="career-role-dates">{period}</span></span>}
             </button>

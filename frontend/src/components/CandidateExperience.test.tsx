@@ -22,7 +22,7 @@ describe('candidate career experience', () => {
     expect(roles()).toHaveLength(3)
     expect(roles()[0]).toHaveAttribute('aria-label', expect.stringContaining('Engineer at Early company'))
     expect(container.querySelector('.career-present')).toHaveTextContent('Present')
-    expect(roles().map(role => role.querySelector('small')?.textContent)).toEqual(['2010', '2021', '2021'])
+    expect(roles().map(role => role.querySelector('small')?.textContent)).toEqual(['2010', 'Jan 2021', 'Jun 2021'])
     fireEvent.focus(roles()[2])
     expect(screen.getByRole('tooltip')).toHaveTextContent('Recent company')
     expect(screen.getByRole('tooltip')).toHaveTextContent('Lead')

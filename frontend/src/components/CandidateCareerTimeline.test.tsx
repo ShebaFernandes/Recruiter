@@ -41,6 +41,17 @@ it('keeps a year-only current role current without creating a January date', () 
   expect(container.querySelector('.career-period small')).toHaveTextContent('2024')
   expect(container.querySelector('.career-present-end')).toHaveTextContent('Present')
 })
+it('uses month precision for same-year roles and proportional candidate spans', () => {
+  const items = [
+    role({ company: 'Example', role: 'Engineer', start_date: '2021-01-01', end_date: '2021-06-01' }),
+    role({ company: 'Example', role: 'Lead', start_date: '2021-06-01', end_date: '2024-06-01' }),
+  ]
+  const { container } = render(<CandidateCareerTimeline items={items} />)
+  expect([...container.querySelectorAll('.career-period small')].map(el => el.textContent)).toEqual(['Jan 2021', 'Jun 2021'])
+  expect([...container.querySelectorAll<HTMLElement>('.career-period')].map(el => el.style.getPropertyValue('--career-role-span'))).toEqual(['104px', '144px'])
+  expect(container.querySelector('.career-role-summary')).toHaveTextContent('Example')
+  expect(container.querySelector('.career-role-summary')).toHaveTextContent('Engineer')
+})
 it('renders recalled researcher and writer roles while keeping the career break out of employment', () => {
   const items = [
     role({ company: 'Quartz Product Studio', role: 'UX Researcher', start_date: '2017-03-01', end_date: '2020-11-01', date_label: 'March 2017 — November 2020' }),
@@ -66,7 +77,7 @@ it('retains every role, promotion, overlap, gap, unknown date and keyboard detai
   const { container } = render(<CandidateCareerTimeline items={items} />)
   expect(container.querySelectorAll('.career-period')).toHaveLength(4)
   expect(container.querySelectorAll('.career-laptop')).toHaveLength(4)
-  expect([...container.querySelectorAll('.career-period small')].map(el => el.textContent)).toEqual(['2018', '2018', '2021', 'Date unknown'])
+  expect([...container.querySelectorAll('.career-period small')].map(el => el.textContent)).toEqual(['Mar 2018', 'Aug 2018', '2021', 'Date unknown'])
   fireEvent.focus(screen.getByRole('button', { name: /Lead at Example/ }))
   expect(screen.getByRole('tooltip')).toHaveTextContent('Overlapping employment')
   expect(screen.getByRole('tooltip')).toHaveTextContent('Career progression from Engineer')
