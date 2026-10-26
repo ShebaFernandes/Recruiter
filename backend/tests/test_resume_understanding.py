@@ -1034,12 +1034,15 @@ def test_gemini_uses_exact_model_structured_output_and_usage(
         f"models/{model}:generateContent"
     )
     assert headers["x-goog-api-key"] == "synthetic-generic-key"
-    assert body["generationConfig"]["responseMimeType"] == "application/json"
-    provider_schema = body["generationConfig"]["responseJsonSchema"]
+    response_format = body["generationConfig"]["responseFormat"]["text"]
+    assert response_format["mimeType"] == "APPLICATION_JSON"
+    provider_schema = response_format["schema"]
+    assert "responseMimeType" not in body["generationConfig"]
+    assert "responseJsonSchema" not in body["generationConfig"]
     assert provider_schema != SCHEMA
     assert "maxLength" not in json.dumps(provider_schema)
     assert "maxItems" not in json.dumps(provider_schema)
-    assert "additionalProperties" not in json.dumps(provider_schema)
+    assert "additionalProperties" in json.dumps(provider_schema)
     assert "maxLength" in json.dumps(SCHEMA)
     assert "maxItems" in json.dumps(SCHEMA)
     assert "additionalProperties" in json.dumps(SCHEMA)
@@ -1059,7 +1062,21 @@ def test_gemini_uses_exact_model_structured_output_and_usage(
                     collect_schema_keywords(value)
 
     collect_schema_keywords(provider_schema)
-    assert schema_keywords <= {"type", "properties", "required", "items"}
+    assert schema_keywords <= {
+        "type", "properties", "required", "items", "additionalProperties"
+    }
+
+    def assert_closed_objects(node):
+        if not isinstance(node, dict):
+            return
+        if node.get("type") == "object":
+            assert node["additionalProperties"] is False
+            for child in node["properties"].values():
+                assert_closed_objects(child)
+        if "items" in node:
+            assert_closed_objects(node["items"])
+
+    assert_closed_objects(provider_schema)
     assert body["generationConfig"]["maxOutputTokens"] == 8000
     assert timeout <= 60
     assert result.input_tokens == 321
@@ -1157,6 +1174,108 @@ def test_gemini_provider_generated_json_and_safe_metadata(enabled, settings, mon
     assert result.latency_ms == 432
     assert result.input_tokens == 700
     assert result.output_tokens == 300
+
+
+@pytest.mark.parametrize("drift", ["extra_top_level", "extra_nested"])
+def test_sanitized_gemini_shape_drift_fixtures_are_rejected_offline(drift):
+    data = response()
+    if drift == "extra_top_level":
+        data["confidence"] = "high"
+    else:
+        data["work_experiences"][0]["confidence"] = "high"
+
+    with pytest.raises(AIProviderMalformedResponse) as exc_info:
+        validate_interpretation(data, TEXT)
+
+    assert exc_info.value.stage == "schema_validation"
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        lambda data: data.pop("education"),
+        lambda data: data.update(work_experiences={"company": "Example Studio"}),
+    ],
+    ids=["missing_required_field", "wrong_field_type"],
+)
+def test_gemini_missing_fields_and_wrong_types_stay_rejected(mutate):
+    data = response()
+    mutate(data)
+
+    with pytest.raises(AIProviderMalformedResponse) as exc_info:
+        validate_interpretation(data, TEXT)
+
+    assert exc_info.value.stage == "schema_validation"
+
+
+@pytest.mark.parametrize(
+    ("parts", "finish_reason", "stage"),
+    [
+        ([{"text": '{"full_name":'}], "MAX_TOKENS", "truncated_output"),
+        ([{"text": '{"full_name":'}], "STOP", "json_decode"),
+        ([], "STOP", "provider_response"),
+        ([{"text": ""}], "STOP", "provider_response"),
+    ],
+    ids=["token_limit", "truncated_json", "no_parts", "empty_text"],
+)
+def test_gemini_truncated_and_empty_responses_fail_safely(
+    enabled, settings, monkeypatch, parts, finish_reason, stage
+):
+    settings.RESUME_AI_PROVIDER = "gemini"
+    settings.RESUME_AI_MODEL = "gemini-3.5-flash-lite"
+    settings.RESUME_AI_API_KEY = "synthetic-secret"
+    settings.RESUME_AI_GEMINI_FREE_TIER_APPROVED = True
+    payload = {
+        "responseId": "synthetic-malformed-response",
+        "candidates": [{
+            "finishReason": finish_reason,
+            "content": {"parts": parts},
+        }],
+        "usageMetadata": {"promptTokenCount": 100, "candidatesTokenCount": 20},
+    }
+    monkeypatch.setattr("talent.ai_providers._post_json", Mock(return_value=payload))
+
+    with pytest.raises(AIProviderMalformedResponse) as exc_info:
+        resume_provider().generate("instruction", {}, SCHEMA, "resume")
+
+    assert exc_info.value.stage == stage
+    assert exc_info.value.request_id == "synthetic-malformed-response"
+    assert exc_info.value.input_tokens == 100
+    assert exc_info.value.output_tokens == 20
+
+
+def test_gemini_multipart_fictional_promotions_current_role_and_date_precision(
+    enabled, settings, monkeypatch
+):
+    settings.RESUME_AI_PROVIDER = "gemini"
+    settings.RESUME_AI_MODEL = "gemini-3.5-flash-lite"
+    settings.RESUME_AI_API_KEY = "synthetic-secret"
+    settings.RESUME_AI_GEMINI_FREE_TIER_APPROVED = True
+    encoded = json.dumps(promotion_response())
+    payload = {
+        "responseId": "synthetic-promotion-response",
+        "candidates": [{
+            "finishReason": "STOP",
+            "content": {"parts": [
+                {"thought": True, "text": "private synthetic thought summary"},
+                {"text": encoded[: len(encoded) // 2]},
+                {"text": encoded[len(encoded) // 2 :]},
+            ]},
+        }],
+        "usageMetadata": {"promptTokenCount": 600, "candidatesTokenCount": 900},
+    }
+    monkeypatch.setattr("talent.ai_providers._post_json", Mock(return_value=payload))
+
+    generated = resume_provider().generate("instruction", {}, SCHEMA, "resume")
+    parsed = validate_interpretation(generated.data, PROMOTION_TEXT)
+    rows = parsed["work_experiences"]
+
+    assert len(rows) == 7
+    assert rows[1]["date_label"] == "2012 — 2014"
+    assert rows[1]["start_date"] is None
+    assert rows[-1]["date_label"] == "Apr 2024 — Present"
+    assert rows[-1]["is_current"] is True
+    assert parsed["_validation_rejections"] == []
 
 
 @pytest.mark.django_db

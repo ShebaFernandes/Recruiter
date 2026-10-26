@@ -248,15 +248,14 @@ def _anthropic_schema(schema):
 
 
 def _gemini_schema(schema):
-    """Build a low-complexity Gemini responseJsonSchema.
+    """Build a low-complexity Gemini JSON response schema.
 
-    Gemini documents these keywords as supported, but also rejects schemas whose
-    constrained-decoding grammar has too many states. Array bounds and closed-object
-    constraints add no trust boundary here because ENTER validates the complete original
-    schema after JSON decoding, so omit them from the provider-side grammar.
+    Gemini ignores string/property length bounds during constrained decoding and can
+    reject schemas whose grammar has too many states. Keep closed-object constraints,
+    however: without them Gemini is allowed to emit keys that ENTER's strict application
+    schema must reject. ENTER still validates the complete original schema after decoding.
     """
     omitted_constraints = {
-        "additionalProperties",
         "contains",
         "default",
         "example",
@@ -498,8 +497,12 @@ class GeminiGenerateContentProvider(StructuredAIProvider):
                     }
                 ],
                 "generationConfig": {
-                    "responseMimeType": "application/json",
-                    "responseJsonSchema": _gemini_schema(schema),
+                    "responseFormat": {
+                        "text": {
+                            "mimeType": "APPLICATION_JSON",
+                            "schema": _gemini_schema(schema),
+                        }
+                    },
                     **self.request_options,
                 },
             },
@@ -553,8 +556,10 @@ class GeminiGenerateContentProvider(StructuredAIProvider):
             )
         try:
             candidate = payload["candidates"][0]
-            parts = candidate["content"]["parts"]
-            content = "".join(part.get("text", "") for part in parts)
+            if not isinstance(candidate, dict):
+                raise AIProviderMalformedResponse(
+                    stage="provider_response", **metadata
+                )
         except (KeyError, IndexError, TypeError) as exc:
             raise AIProviderMalformedResponse(
                 stage="provider_response", **metadata
@@ -564,6 +569,27 @@ class GeminiGenerateContentProvider(StructuredAIProvider):
         if stop_reason not in {"", "STOP"}:
             stage = "truncated_output" if stop_reason == "MAX_TOKENS" else "finish_reason"
             raise AIProviderMalformedResponse(stage=stage, **metadata)
+        try:
+            parts = candidate["content"]["parts"]
+            if not isinstance(parts, list) or not parts or not all(
+                isinstance(part, dict) for part in parts
+            ):
+                raise AIProviderMalformedResponse(
+                    stage="provider_response", **metadata
+                )
+            output_parts = [part for part in parts if not part.get("thought")]
+            if not output_parts or not all(
+                isinstance(part.get("text"), str) and part["text"]
+                for part in output_parts
+            ):
+                raise AIProviderMalformedResponse(
+                    stage="provider_response", **metadata
+                )
+            content = "".join(part["text"] for part in output_parts)
+        except (KeyError, TypeError) as exc:
+            raise AIProviderMalformedResponse(
+                stage="provider_response", **metadata
+            ) from exc
         try:
             data = _json_content(content)
         except AIProviderMalformedResponse as exc:
