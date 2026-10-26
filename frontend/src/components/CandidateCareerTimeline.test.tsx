@@ -48,9 +48,22 @@ it('uses month precision for same-year roles and proportional candidate spans', 
   ]
   const { container } = render(<CandidateCareerTimeline items={items} />)
   expect([...container.querySelectorAll('.career-period small')].map(el => el.textContent)).toEqual(['Jan 2021', 'Jun 2021'])
-  expect([...container.querySelectorAll<HTMLElement>('.career-period')].map(el => el.style.getPropertyValue('--career-role-span'))).toEqual(['104px', '144px'])
+  expect([...container.querySelectorAll<HTMLElement>('.career-sequence')].map(el => el.style.getPropertyValue('--career-role-span'))).toEqual(['180px', '216px'])
   expect(container.querySelector('.career-role-summary')).toHaveTextContent('Example')
   expect(container.querySelector('.career-role-summary')).toHaveTextContent('Engineer')
+})
+it('keeps long fictional employer, role and month-year labels visible in the profile timeline', () => {
+  const item = role({
+    company: 'Northstar Applied Research and Technology Cooperative',
+    role: 'Machine Learning Platform Engineering Internship Lead',
+    start_date: '2026-01-01',
+    end_date: '2026-09-01',
+  })
+  const { container } = render(<CandidateCareerTimeline items={[item]} />)
+  const summary = container.querySelector('.career-role-summary')
+  expect(summary).toHaveTextContent('Northstar Applied Research and Technology Cooperative')
+  expect(summary).toHaveTextContent('Machine Learning Platform Engineering Internship Lead')
+  expect(summary).toHaveTextContent('Jan 2026 — Sep 2026')
 })
 it('renders recalled researcher and writer roles while keeping the career break out of employment', () => {
   const items = [

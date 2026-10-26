@@ -18,8 +18,8 @@ for (const width of [390, 1440]) {
       window.$RefreshReg$=()=>{}; window.$RefreshSig$=()=>type=>type;
       window.__vite_plugin_react_preamble_installed__=true;
       const {default:Journey}=await import('/src/components/CareerJourney.tsx');
-      const items=[{company:'Example Labs',role:'Engineer',start_date:'2018-03-01',end_date:'2020-01-01',description:'Built reliable tools.',gap_reason:''},
-      {company:'Example Labs',role:'Lead',start_date:'2019-08-01',end_date:null,description:'Led the platform team.',gap_reason:''}];
+      const items=[{company:'Northstar Applied Research and Technology Cooperative',role:'Machine Learning Platform Engineering Intern',start_date:'2018-03-01',end_date:'2020-01-01',description:'Built reliable tools.',gap_reason:''},
+      {company:'Northstar Applied Research and Technology Cooperative',role:'Lead Applied Intelligence Platform Engineer',start_date:'2020-04-01',end_date:null,is_current:true,description:'Led the platform team.',gap_reason:'Training break'}];
       ReactDOM.createRoot(document.getElementById('review')).render(React.createElement('main',{style:{padding:20}},
         React.createElement('h1',null,'Shared timeline visual test'),
         React.createElement('section',{className:'cp-career'},React.createElement('h2',null,'Candidate'),React.createElement(Journey,{items,minimal:true,profilePresentation:true,compactMarkers:true,candidateMilestones:true,presentAtEnd:true})),
@@ -28,12 +28,24 @@ for (const width of [390, 1440]) {
     await page.goto('/timeline-review')
     await expect(page.locator('.career-laptop')).toHaveCount(4)
     await expect(page.locator('.cp-career .career-role-summary')).toHaveCount(2)
+    const candidate = page.locator('.cp-career .career-journey')
+    const summaries = candidate.locator('.career-role-summary')
+    await expect(summaries.first()).toContainText('Northstar Applied Research and Technology Cooperative')
+    await expect(summaries.first()).toContainText('Machine Learning Platform Engineering Intern')
+    await expect(summaries.first()).toContainText('Mar 2018 — Jan 2020')
+    await expect(summaries.first().locator('strong')).toHaveCSS('white-space', 'normal')
+    await expect(summaries.first().locator('strong')).toHaveCSS('text-overflow', 'clip')
+    const candidateBox = await candidate.boundingBox()
+    const finalTimelineBox = await candidate.locator('.career-present-end').boundingBox()
+    expect(candidateBox).not.toBeNull()
+    expect(finalTimelineBox).not.toBeNull()
+    if (width === 1440) expect(finalTimelineBox!.x + finalTimelineBox!.width).toBeGreaterThan(candidateBox!.x + candidateBox!.width - 24)
     for (const graph of await page.locator('.career-journey').all()) {
       const icon = graph.locator('.career-laptop').first()
       await expect(icon).toHaveCSS('width', '12px')
       await expect(icon).toHaveCSS('color', 'rgb(11, 115, 120)')
       await expect(icon).toHaveAttribute('aria-hidden', 'true')
-      const button = graph.getByRole('button', { name:/Lead at Example Labs/ })
+      const button = graph.getByRole('button', { name:/Lead Applied Intelligence Platform Engineer at Northstar/ })
       await button.focus()
       await expect(page.getByRole('tooltip')).toContainText('Led the platform team.')
       await page.keyboard.press('Escape')

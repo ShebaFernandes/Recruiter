@@ -342,6 +342,20 @@ def test_unknown_salary_field_is_discarded_and_never_accepted():
     }]
 
 
+def test_overlong_optional_provider_prose_does_not_discard_supported_roles():
+    data = response()
+    data["work_experiences"][0]["details"] = "synthetic verbose detail " * 100
+
+    parsed = validate_interpretation(data, TEXT)
+
+    assert len(parsed["work_experiences"]) == 2
+    assert "synthetic verbose detail" not in parsed["work_experiences"][0]["description"]
+    assert parsed["_validation_rejections"] == [{
+        "category": "schema.overlong_text_discarded",
+        "count": 1,
+    }]
+
+
 def test_seven_promoted_roles_with_distant_employer_headings_are_supported():
     parsed = validate_interpretation(promotion_response(), PROMOTION_TEXT)
     rows = parsed["work_experiences"]

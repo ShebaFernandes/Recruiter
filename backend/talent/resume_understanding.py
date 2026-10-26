@@ -139,6 +139,46 @@ def _discard_unknown_properties(value, schema):
     return value, 0
 
 
+def _discard_overlong_text(value, schema):
+    """Drop oversized provider prose without weakening structural validation.
+
+    Gemini's constrained decoder does not enforce ``maxLength``. A single verbose
+    details/evidence value must not discard otherwise valid roles, but it also must
+    never bypass ENTER's bounds or evidence checks. Required keys and value types stay
+    intact; nullable values become null and required evidence/prose becomes empty so
+    semantic validation rejects only the affected fact.
+    """
+    declared_kind = schema["type"]
+    kinds = declared_kind if isinstance(declared_kind, list) else [declared_kind]
+    if value is None and "null" in kinds:
+        return value, 0
+    kind = next((item for item in kinds if item != "null"), kinds[0])
+    if kind == "object" and isinstance(value, dict):
+        normalized, discarded = {}, 0
+        for key, child in schema["properties"].items():
+            if key not in value:
+                continue
+            normalized[key], child_discarded = _discard_overlong_text(value[key], child)
+            discarded += child_discarded
+        # Unknown keys were already removed by _discard_unknown_properties.
+        return normalized, discarded
+    if kind == "array" and isinstance(value, list):
+        normalized, discarded = [], 0
+        for item in value:
+            clean, child_discarded = _discard_overlong_text(item, schema["items"])
+            normalized.append(clean)
+            discarded += child_discarded
+        return normalized, discarded
+    if (
+        kind == "string"
+        and isinstance(value, str)
+        and "maxLength" in schema
+        and len(value) > schema["maxLength"]
+    ):
+        return (None if "null" in kinds else ""), 1
+    return value, 0
+
+
 def normalized(value):
     return " ".join(value.casefold().split())
 
@@ -504,6 +544,7 @@ def directions(rows):
 
 def validate_interpretation(data, text):
     data, ignored_properties = _discard_unknown_properties(data, SCHEMA)
+    data, discarded_overlong_text = _discard_overlong_text(data, SCHEMA)
     _validate_shape(data, SCHEMA)
     result, rejections = {}, []
     if ignored_properties:
@@ -512,6 +553,12 @@ def validate_interpretation(data, text):
         rejections.append({
             "category": "schema.unknown_property",
             "count": ignored_properties,
+        })
+    if discarded_overlong_text:
+        # Counts only: field names and provider prose may repeat resume content.
+        rejections.append({
+            "category": "schema.overlong_text_discarded",
+            "count": discarded_overlong_text,
         })
     for key in (
         "full_name",

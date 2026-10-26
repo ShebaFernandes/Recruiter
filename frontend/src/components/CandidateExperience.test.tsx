@@ -41,7 +41,7 @@ describe('candidate career experience', () => {
     expect(container.querySelector('.career-job>b')).toBeNull()
     fireEvent.focus(screen.getByRole('button', { name: /Engineer at Saved Employer/ }))
     expect(screen.getByRole('tooltip')).toHaveTextContent('Saved Employer')
-    expect(screen.getByRole('tooltip')).toHaveTextContent('2020-01 — 2022-01')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Jan 2020 — Jan 2022')
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
   })
