@@ -1,6 +1,8 @@
 import json
+import socket
 import subprocess
 from datetime import timedelta
+from io import StringIO
 from unittest.mock import patch
 
 import pytest
@@ -8,6 +10,8 @@ from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.test import APIClient
@@ -57,6 +61,99 @@ def test_status_never_returns_another_candidates_resume(client, candidate_accoun
     response = client.get("/api/v1/candidate/resume-status/")
     assert response.status_code == 200
     assert response.data["resume"] is None
+
+
+@pytest.mark.django_db
+def test_cleanup_health_uses_due_time_and_still_alerts_on_backlog(settings):
+    settings.RESUME_QUEUE_ALERT_SECONDS = 600
+    WorkerHeartbeat.objects.create(worker_id="test", state="idle")
+    now = timezone.now()
+    job = FileCleanupJob.objects.create(name="resumes/fictional-safety-journal.pdf",
+                                        available_at=now)
+    FileCleanupJob.objects.filter(pk=job.pk).update(created_at=now - timedelta(days=1))
+
+    output = StringIO()
+    call_command("check_resume_operations", stdout=output)
+    report = json.loads(output.getvalue())
+    assert report["cleanup_pending"] == 1
+    assert report["cleanup_overdue"] == 0
+    assert report["overdue"] == 0
+
+    FileCleanupJob.objects.filter(pk=job.pk).update(
+        available_at=now - timedelta(seconds=601))
+    output = StringIO()
+    with pytest.raises(CommandError):
+        call_command("check_resume_operations", stdout=output)
+    assert json.loads(output.getvalue())["cleanup_overdue"] == 1
+
+    FileCleanupJob.objects.filter(pk=job.pk).update(
+        attempts=1, available_at=now + timedelta(hours=1))
+    output = StringIO()
+    with pytest.raises(CommandError):
+        call_command("check_resume_operations", stdout=output)
+    assert json.loads(output.getvalue())["cleanup_overdue"] == 1
+
+
+@pytest.mark.django_db
+def test_resume_job_overdue_is_independent_of_scheduled_cleanup(candidate_account, settings):
+    settings.RESUME_QUEUE_ALERT_SECONDS = 600
+    WorkerHeartbeat.objects.create(worker_id="test", state="idle")
+    profile = User.objects.get(pk=candidate_account["user"]["id"]).candidate_profile
+    resume = Resume.objects.create(candidate=profile, file="resumes/fictional.pdf")
+    job = ResumeProcessingJob.objects.create(resume=resume, state="queued")
+    ResumeProcessingJob.objects.filter(pk=job.pk).update(
+        created_at=timezone.now() - timedelta(seconds=601))
+    FileCleanupJob.objects.create(name="resumes/future-journal.pdf",
+                                  available_at=timezone.now() + timedelta(days=1))
+
+    output = StringIO()
+    with pytest.raises(CommandError):
+        call_command("check_resume_operations", stdout=output)
+    report = json.loads(output.getvalue())
+    assert report["overdue"] == 1
+    assert report["cleanup_overdue"] == 0
+
+
+@pytest.mark.django_db
+def test_local_worker_health_recognizes_restart_scoped_heartbeat(settings):
+    host = socket.gethostname()[:50]
+    heartbeat = WorkerHeartbeat.objects.create(worker_id=f"{host}:123:runone", state="idle")
+    call_command("check_resume_operations", local_worker=True)
+
+    heartbeat.state = "stopped"
+    heartbeat.save(update_fields=["state"])
+    WorkerHeartbeat.objects.create(worker_id=f"{host}-other:123:runtwo", state="idle")
+    with pytest.raises(CommandError, match="Local worker heartbeat unavailable"):
+        call_command("check_resume_operations", local_worker=True)
+
+    WorkerHeartbeat.objects.create(worker_id=host, state="idle")
+    call_command("check_resume_operations", local_worker=True)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_worker_restart_drains_due_journal_without_deleting_live_resume(
+    candidate_account, settings, tmp_path,
+):
+    settings.RESUME_QUEUE_BACKEND = "database"
+    settings.MEDIA_ROOT = tmp_path
+    name = store_private_upload(ContentFile(b"fictional"), "resumes", "example.pdf")
+    profile = User.objects.get(pk=candidate_account["user"]["id"]).candidate_profile
+    resume = Resume.objects.create(candidate=profile, file=name)
+    FileCleanupJob.objects.filter(name=name).update(available_at=timezone.now())
+
+    with patch("talent.management.commands.run_resume_worker.next_database_job_id",
+               return_value=None):
+        call_command("run_resume_worker", once=True)
+        assert not FileCleanupJob.objects.filter(name=name).exists()
+        assert default_storage.exists(name)
+
+        resume.delete()
+        assert FileCleanupJob.objects.filter(name=name).exists()
+        call_command("run_resume_worker", once=True)
+
+    assert not FileCleanupJob.objects.filter(name=name).exists()
+    assert not default_storage.exists(name)
+    assert WorkerHeartbeat.objects.filter(state="stopped").count() == 2
 
 
 @pytest.mark.django_db
