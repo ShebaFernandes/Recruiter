@@ -341,6 +341,15 @@ if not DEBUG and EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend":
             "Production SMTP configuration is missing: " + ", ".join(missing_email_variables)
         )
 RESUME_MAX_BYTES = int(os.getenv("RESUME_MAX_BYTES", str(5 * 1024 * 1024)))
+RESUME_LOCAL_OCR_ENABLED = os.getenv('RESUME_LOCAL_OCR_ENABLED', 'false').lower() == 'true'
+RESUME_LOCAL_OCR_MAX_PAGES = int(os.getenv('RESUME_LOCAL_OCR_MAX_PAGES', '2'))
+RESUME_LOCAL_OCR_MAX_FILE_BYTES = int(os.getenv('RESUME_LOCAL_OCR_MAX_FILE_BYTES',
+                                                 str(5 * 1024 * 1024)))
+RESUME_LOCAL_OCR_TIMEOUT_SECONDS = int(os.getenv('RESUME_LOCAL_OCR_TIMEOUT_SECONDS', '5'))
+if (not 1 <= RESUME_LOCAL_OCR_MAX_PAGES <= 3
+        or not 1 <= RESUME_LOCAL_OCR_MAX_FILE_BYTES <= RESUME_MAX_BYTES
+        or not 1 <= RESUME_LOCAL_OCR_TIMEOUT_SECONDS <= 8):
+    raise ImproperlyConfigured('Local resume OCR resource limits are invalid.')
 PROFILE_PHOTO_MAX_BYTES = int(os.getenv("PROFILE_PHOTO_MAX_BYTES", str(4 * 1024 * 1024)))
 EMAIL_VERIFICATION_TOKEN_TTL_SECONDS = int(
     os.getenv("EMAIL_VERIFICATION_TOKEN_TTL_SECONDS", "86400")

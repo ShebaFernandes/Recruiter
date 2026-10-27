@@ -4,16 +4,23 @@ from uuid import uuid4
 import pytest
 from django.utils import timezone
 from docx import Document
-from talent.employment_reconciliation import complete_employment_history
+from talent.employment_reconciliation import (
+    complete_employment_history,
+    reconcile_employment,
+    trusted_rows,
+)
 from talent.models import CandidateProfile, WorkExperience
+from talent.resume_understanding import interpretation_text, validate_interpretation
+from talent.services import parse_resume
 
 from .test_candidate_experience import upload
+from .test_candidate_flow import resume_pdf
 
 pytestmark = pytest.mark.django_db
 
 
-def upload_resume(client, content):
-    return upload(client, content, name=f'resume-{uuid4().hex}.docx')
+def upload_resume(client, content, *, extension='docx'):
+    return upload(client, content, name=f'resume-{uuid4().hex}.{extension}')
 
 
 def structured_resume(*roles):
@@ -37,6 +44,133 @@ def standard_resume(*lines):
     stream = BytesIO()
     document.save(stream)
     return stream.getvalue()
+
+
+def spaced_pdf_layout_resume(heading, *roles, extra_lines=()):
+    document = Document()
+    for line in ['Asha Rao', heading]:
+        document.add_paragraph(line)
+    for company, dates, title, location in roles:
+        document.add_paragraph(f'{company}                         {dates}')
+        document.add_paragraph(f'{title}                         {location}')
+        document.add_paragraph('• Built fictional systems with Python.')
+    for line in extra_lines:
+        document.add_paragraph(line)
+    document.add_paragraph('SKILLS')
+    document.add_paragraph('Python')
+    stream = BytesIO()
+    document.save(stream)
+    return stream.getvalue()
+
+
+def test_spaced_pdf_layout_one_role_is_complete(client, candidate_account):
+    result = upload_resume(client, spaced_pdf_layout_resume(
+        'PROFESSIONAL EXPERIENCE',
+        ('Harbor Systems', 'Jan 2020 - Present', 'Senior Software Engineer',
+         'Bengaluru, India'),
+    )).data
+    assert [(row['company'], row['role']) for row in result['work_experiences']] == [
+        ('Harbor Systems', 'Senior Software Engineer')
+    ]
+    parsed = CandidateProfile.objects.get().resumes.first().extracted_data
+    assert parsed['_employment_parse']['complete_for_archival']
+    assert parsed['_employment_parse']['recognized_roles'] == 1
+    assert 'Bengaluru, India' not in result['work_experiences'][0]['description']
+
+
+def test_spaced_pdf_file_extracts_complete_role(client, candidate_account):
+    result = upload_resume(client, resume_pdf([
+        'Asha Rao', 'PROFESSIONAL EXPERIENCE',
+        'Harbor Systems                  Jan 2020 - Present',
+        'Senior Software Engineer                  Bengaluru, India',
+        'Built fictional systems.', 'SKILLS', 'Python',
+    ]), extension='pdf').data
+    assert [(row['company'], row['role']) for row in result['work_experiences']] == [
+        ('Harbor Systems', 'Senior Software Engineer')
+    ]
+    assert CandidateProfile.objects.get().resumes.first().extracted_data[
+        '_employment_parse']['complete_for_archival']
+
+
+def test_spaced_pdf_layout_multiple_roles_promotion_and_internship(client, candidate_account):
+    result = upload_resume(client, spaced_pdf_layout_resume(
+        'CAREER HISTORY',
+        ('Blue Lantern Labs', 'Jan 2018 - Jun 2018', 'Engineering Intern', 'Pune, India'),
+        ('Copper Systems', 'Jan 2020 - Jun 2023', 'Software Engineer', 'Pune, India'),
+        ('Copper Systems', 'Jul 2023 - Present', 'Senior Software Engineer', 'Pune, India'),
+    )).data
+    assert len(result['work_experiences']) == 3
+    assert {row['role'] for row in result['work_experiences']} == {
+        'Engineering Intern', 'Software Engineer', 'Senior Software Engineer'
+    }
+    assert CandidateProfile.objects.get().resumes.first().extracted_data[
+        '_employment_parse']['complete_for_archival']
+
+
+def test_spaced_pdf_layout_unknown_role_blocks_archival(client, candidate_account):
+    first = upload_resume(client, structured_resume(INTERN, ENGINEER)).data
+    incomplete = upload_resume(client, spaced_pdf_layout_resume(
+        'PROFESSIONAL EXPERIENCE',
+        ('Blue Lantern Labs', 'Jan 2018 - Jun 2018', 'Engineering Intern', 'Pune, India'),
+        extra_lines=('Unpaired Fictional Company', 'Research Associate'),
+    )).data
+    assert not CandidateProfile.objects.get().resumes.first().extracted_data[
+        '_employment_parse']['complete_for_archival']
+    assert {row['id'] for row in incomplete['work_experiences']} == {
+        row['id'] for row in first['work_experiences']
+    }
+    assert incomplete['archived_work_experiences'] == []
+
+
+def test_selected_experience_extracts_role_without_claiming_complete_history(
+    client, candidate_account
+):
+    first = upload_resume(client, structured_resume(INTERN, ENGINEER)).data
+    selected = upload_resume(client, resume_pdf([
+        'SELECTED EXPERIENCE',
+        'Engineering Intern | Blue Lantern Labs | Jan 2018 - Jun 2018',
+        'SKILLS', 'Python',
+    ]), extension='pdf').data
+    assert CandidateProfile.objects.get().resumes.first().extracted_data[
+        '_employment_parse']['recognized_roles'] == 1
+    assert not CandidateProfile.objects.get().resumes.first().extracted_data[
+        '_employment_parse']['complete_for_archival']
+    assert {row['id'] for row in selected['work_experiences']} == {
+        row['id'] for row in first['work_experiences']
+    }
+    assert selected['archived_work_experiences'] == []
+
+
+def test_validated_gemini_role_can_save_without_deterministic_role(client, candidate_account):
+    document = Document()
+    for line in ('Fictional Candidate', 'Career details', 'Engineer at Fictional Studio'):
+        document.add_paragraph(line)
+    stream = BytesIO()
+    document.save(stream)
+    content = stream.getvalue()
+    rules = parse_resume(BytesIO(content), 'fictional.docx')
+    assert rules['work_experiences'] == []
+    null_fact = {'value': None, 'evidence': ''}
+    payload = {
+        'full_name': null_fact, 'location': null_fact,
+        'professional_title': null_fact, 'professional_summary': null_fact,
+        'standout_signal': null_fact, 'skills': [], 'education': [],
+        'work_experiences': [{
+            'company': 'Fictional Studio', 'role': 'Engineer',
+            'employer_evidence': 'Engineer at Fictional Studio',
+            'role_evidence': 'Engineer at Fictional Studio',
+        }],
+    }
+    validated = validate_interpretation(payload, interpretation_text(rules))
+    assert len(trusted_rows(validated)) == 1
+    validated['_interpretation'] = {'source': 'ai'}
+    validated['_employment_parse'] = rules['_employment_parse']
+    assert not complete_employment_history(validated)
+    profile = CandidateProfile.objects.get()
+    reconcile_employment(profile, trusted_rows(validated))
+    assert list(profile.work_experiences.values_list('company', 'role')) == [
+        ('Fictional Studio', 'Engineer')
+    ]
 
 
 INTERN = ('Engineering Intern', 'Blue Lantern Labs', '2018-01-01', '2018-06-01')
@@ -250,6 +384,14 @@ def test_successful_http_or_incomplete_validation_is_not_archive_proof():
     base['_validation_rejections'] = [{'category': 'schema.overlong_text_discarded',
                                        'count': 1}]
     assert complete_employment_history(base)
+    base['_validation_rejections'] = [
+        {'category': 'schema.overlong_text_discarded', 'count': 1},
+        {'category': 'work_experience.achievement_evidence'},
+        {'category': 'work_experience.detail_evidence'},
+    ]
+    assert complete_employment_history(base)
+    base['_validation_rejections'] = [{'category': 'work_experience.date_evidence'}]
+    assert not complete_employment_history(base)
     base['_validation_rejections'] = []
     base['_interpretation'] = {'source': 'rules', 'reason': 'malformed_response'}
     assert not complete_employment_history(base)

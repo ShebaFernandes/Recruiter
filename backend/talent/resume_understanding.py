@@ -89,6 +89,8 @@ promotions as separate roles, concurrent roles, gaps and unknown or year-only da
 Extract every employment entry in the document; do not shorten the career history.
 Prioritize complete company, role, date and evidence fields over optional prose. Omit
 details, achievements, employment_type and location before omitting any employment entry.
+Keep evidence quotes to the shortest contiguous text that proves each fact. Keep optional
+details under 200 characters and include at most two concise achievements per role.
 employment_type and location must be null unless explicitly stated for that role.
 Use null for missing facts, not zero. end must be the literal 'Present'/'Current'/'Now'
 only when explicitly stated; null means unknown, not current employment.

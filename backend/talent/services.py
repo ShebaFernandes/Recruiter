@@ -1,9 +1,13 @@
 import re
+import shutil
+import subprocess
+import tempfile
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
 from zipfile import BadZipFile, ZipFile
 
+from django.conf import settings
 from docx import Document
 from pypdf import PdfReader
 
@@ -34,6 +38,8 @@ RESUME_SKILLS = [
     *KNOWN_SKILLS,
 ]
 RESUME_RAW_TEXT_LIMIT = 50_000
+OCR_REQUIRED_MARKER = '[LOCAL_OCR_REQUIRED_PAGE]'
+OCR_USED_MARKER = '[LOCAL_OCR_TEXT_PAGE]'
 LOCATIONS = [
     "Bengaluru",
     "Pune",
@@ -56,6 +62,7 @@ SECTION_HEADINGS = {
     "career experience",
     "industry experience",
     "relevant experience",
+    "selected experience",
     "professional background",
     "professional journey",
     "internship experience",
@@ -83,6 +90,7 @@ EXPERIENCE_HEADINGS = {
     "career experience",
     "industry experience",
     "relevant experience",
+    "selected experience",
     "professional background",
     "professional journey",
     "internship experience",
@@ -125,7 +133,8 @@ def _append_right_column_sections(text):
     additions = []
     heading_pattern = re.compile(
         r"(?i)\b(professional experience|employment history|work experience|work history|"
-        r"career experience|industry experience|relevant experience|professional background|"
+        r"career experience|industry experience|relevant experience|selected experience|"
+        r"professional background|"
         r"professional journey|internship experience|internships)\b"
     )
     for index, line in enumerate(lines):
@@ -147,6 +156,47 @@ def _append_right_column_sections(text):
     return text + ("\n" + "\n".join(additions) if additions else "")
 
 
+def _local_ocr_pdf(file_obj, pages):
+    """OCR only textless pages, locally and within fixed resource bounds."""
+    if (not settings.configured or not settings.RESUME_LOCAL_OCR_ENABLED
+            or len(pages) > settings.RESUME_LOCAL_OCR_MAX_PAGES):
+        return {}
+    if not shutil.which('pdftoppm') or not shutil.which('tesseract'):
+        return {}
+    file_obj.seek(0, 2)
+    size = file_obj.tell()
+    if size > settings.RESUME_LOCAL_OCR_MAX_FILE_BYTES:
+        return {}
+    file_obj.seek(0)
+    with tempfile.TemporaryDirectory(prefix='enter-resume-ocr-') as scratch:
+        source = Path(scratch) / 'source.pdf'
+        source.write_bytes(file_obj.read(settings.RESUME_LOCAL_OCR_MAX_FILE_BYTES + 1))
+        if source.stat().st_size != size:
+            return {}
+        results = {}
+        for page_index in pages:
+            target = Path(scratch) / f'page-{page_index + 1}'
+            try:
+                subprocess.run([
+                    'pdftoppm', '-f', str(page_index + 1), '-l', str(page_index + 1),
+                    '-scale-to', '1800', '-png', '-singlefile', str(source), str(target),
+                ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                    timeout=settings.RESUME_LOCAL_OCR_TIMEOUT_SECONDS)
+                image = target.with_suffix('.png')
+                if not image.is_file() or image.stat().st_size > 12_000_000:
+                    continue
+                output = subprocess.run([
+                    'tesseract', str(image), 'stdout', '-l', 'eng', '--psm', '6',
+                ], check=True, capture_output=True,
+                    timeout=settings.RESUME_LOCAL_OCR_TIMEOUT_SECONDS)
+            except (OSError, subprocess.SubprocessError):
+                continue
+            text = output.stdout[:12_000].decode('utf-8', errors='ignore').strip()
+            if text:
+                results[page_index] = text
+        return results
+
+
 def extract_text(file_obj, filename):
     extension = Path(filename).suffix.lower()
     file_obj.seek(0)
@@ -154,8 +204,8 @@ def extract_text(file_obj, filename):
         reader = PdfReader(file_obj)
         if len(reader.pages) > 100:
             raise ValueError("Resume exceeds the safe page limit.")
-        parts, characters = [], 0
-        for page in reader.pages:
+        parts, characters, textless_pages = [], 0, []
+        for index, page in enumerate(reader.pages):
             # Layout mode keeps columns separated and makes employer/title/date
             # associations materially less ambiguous. Some older or malformed
             # PDFs cannot use it, so retain the bounded plain-text fallback.
@@ -165,11 +215,20 @@ def extract_text(file_obj, filename):
                 ) or ""
             except (TypeError, ValueError, KeyError, IndexError):
                 text = page.extract_text() or ""
+            if len(re.sub(r'\W', '', text)) < 40:
+                textless_pages.append(index)
             text = _append_right_column_sections(text)
             characters += len(text)
             if characters > 500_000:
                 raise ValueError("Resume exceeds the safe text limit.")
             parts.append(text)
+        if textless_pages:
+            recognized = _local_ocr_pdf(file_obj, textless_pages)
+            for index in textless_pages:
+                parts[index] = (
+                    recognized[index] + '\n' + OCR_USED_MARKER if index in recognized
+                    else parts[index] + '\n' + OCR_REQUIRED_MARKER
+                )
         return "\n".join(parts)
     if extension == ".docx":
         document = read_docx(file_obj)
@@ -288,6 +347,30 @@ def _concise_role(value):
     return ""
 
 
+def _layout_header_role(line):
+    """Read a title followed by a separate, widely spaced PDF location column."""
+    parts = re.split(r"\s{3,}", line.strip())
+    if len(parts) != 2 or len(parts[1]) > 80 or DATE_RANGE_PATTERN.search(parts[1]):
+        return ""
+    if _looks_like_role(parts[1]):
+        return ""
+    return _concise_role(parts[0])
+
+
+def _plausible_employer_line(value):
+    value = value.strip(' |•-–—')
+    if (not value or len(value) > 180 or DATE_RANGE_PATTERN.search(value)
+            or value.endswith(('.', '!', ':'))):
+        return False
+    if not _looks_like_role(value):
+        return True
+    # Company names can contain title words, such as "Developer Tools".
+    return bool(re.search(
+        r'(?i)\b(?:labs?|systems?|works?|tools?|technolog(?:y|ies)|'
+        r'solutions?|group|studio|analytics|software|services?)\b', value
+    ))
+
+
 def _range_dates(match):
     start_value, end_value = match.group("start", "end")
     if re.fullmatch(r"\d{2}", end_value):
@@ -344,8 +427,9 @@ def _employment_details(value, role=""):
     return employment_type, location
 
 
-def _standard_experiences(lines):
-    original_section = _section_lines(lines, EXPERIENCE_HEADINGS)
+def _standard_experiences(lines, original_section=None):
+    if original_section is None:
+        original_section = _section_lines(lines, EXPERIENCE_HEADINGS)
     section = [_table_date_range(line) for line in original_section]
     # Separate employer/title/date lines belong to the next role, never to the
     # previous role's achievements. Only explicit adjacent dated headers qualify.
@@ -365,6 +449,7 @@ def _standard_experiences(lines):
             continue
         for number, match in enumerate(matches):
             prefix = line[matches[number - 1].end() if number else 0 : match.start()]
+            layout_gap = len(prefix) - len(prefix.rstrip())
             prefix = prefix.lstrip(" |•·-–—)").rstrip(" |•·-–—(")
             start_date, end_date = _range_dates(match)
             description_start = index + 1
@@ -372,6 +457,22 @@ def _standard_experiences(lines):
             if "|" in prefix or re.search(r"\s(?:at|@)\s", prefix, re.I):
                 role, company = _role_and_company(prefix.split("|"))
                 role = _concise_role(role)
+                if not role:
+                    parts = [part.strip() for part in prefix.split('|') if part.strip()]
+                    if len(parts) == 1 and _concise_role(parts[0]):
+                        role = _concise_role(parts[0])
+                        company = employer
+                        if index > 0:
+                            previous = section[index - 1].strip()
+                            if _plausible_employer_line(previous):
+                                company = previous
+                    elif len(parts) == 1:
+                        employer = parts[0]
+            elif prefix and layout_gap >= 3 and index + 1 < len(section):
+                role = _layout_header_role(section[index + 1])
+                if role:
+                    company = prefix
+                    description_start = index + 2
             elif prefix and _concise_role(prefix):
                 role = _concise_role(prefix)
                 company = employer
@@ -380,13 +481,7 @@ def _standard_experiences(lines):
                 # never infer an employer from a description farther away.
                 if index > 0:
                     previous = section[index - 1].strip(" |•-–—")
-                    if (
-                        previous
-                        and len(previous) <= 180
-                        and not DATE_RANGE_PATTERN.search(previous)
-                        and not _looks_like_role(previous)
-                        and not previous.endswith((".", "!", ":"))
-                    ):
+                    if _plausible_employer_line(previous):
                         company = previous
                         employer = previous
             elif prefix:
@@ -397,14 +492,28 @@ def _standard_experiences(lines):
                 if index + 1 < len(section):
                     next_line = section[index + 1]
                     if not DATE_RANGE_PATTERN.search(next_line):
-                        role = _concise_role(next_line.split("|")[0])
+                        role = _concise_role(next_line.split("|")[0]) or _layout_header_role(
+                            next_line
+                        )
                         if role:
                             description_start = index + 2
             else:
                 role, company = _role_and_company(section[max(0, index - 2) : index])
                 role = _concise_role(role)
+                # A promotion often follows an achievement or an undated
+                # progression note. Those lines are not new employers.
+                preceding = section[index - 2].strip() if index >= 2 else ''
+                if employer and (
+                    preceding.endswith(('.', '!', ':'))
+                    or re.search(r'(?i)\b(?:progression|same employer|promotion)\b', preceding)
+                ):
+                    company = employer
             if not role or not company or not start_date:
                 continue
+            role = re.sub(
+                r'(?i)\s*\((?:contract|contractor|full[ -]?time|part[ -]?time|internship)\)$',
+                '', role,
+            ).strip()
             employer = company
             description = []
             for following_index in range(description_start, len(section)):
@@ -417,7 +526,9 @@ def _standard_experiences(lines):
             # Some documents put the role and its work details on the same undated line.
             if description_start == index + 2:
                 role_line = section[index + 1].split("|", 1)[0].strip()
-                remainder = role_line[len(role) :].strip(" |•-–—.")
+                remainder = "" if _layout_header_role(role_line) else role_line[len(role) :].strip(
+                    " |•-–—."
+                )
                 if remainder:
                     description.insert(0, remainder)
             evidence_lines = [line]
@@ -445,6 +556,27 @@ def _standard_experiences(lines):
                 }
             )
     return experiences
+
+
+def _unheaded_employment_lines(lines):
+    """Find an explicit dated-role block when a resume has no history heading.
+
+    These observations can add supported roles, but never prove that the whole
+    career history was enumerated for archival.
+    """
+    start = 0
+    for index, line in enumerate(lines[:12]):
+        if re.match(r'(?i)^(?:name|title|summary|skills|location|email|phone)\s*:', line):
+            start = index + 1
+    end = len(lines)
+    for index in range(start, len(lines)):
+        heading, _ = _heading_and_tail(lines[index])
+        if heading in {
+            'projects', 'education', 'certifications', 'publications talks  recognition'
+        }:
+            end = index
+            break
+    return lines[start:end]
 
 
 def _education_rows(text, lines):
@@ -499,7 +631,9 @@ def parse_resume(file_obj, filename):
         (city for line in lines[:5] for city in LOCATIONS if re.search(rf"(?i)\b{city}\b", line)),
         "",
     )
-    name = _value_after_label(text, "Name") or (lines[0] if lines else "")
+    name = _value_after_label(text, "Name") or (
+        lines[0] if lines and lines[0] != OCR_REQUIRED_MARKER else ""
+    )
     headline = _concise_role(_value_after_label(text, "Role") or _value_after_label(text, "Title"))
     company = _value_after_label(text, "Company")
     experience_rows = []
@@ -520,7 +654,9 @@ def parse_resume(file_obj, filename):
                 "confidence_status": "supported",
             }
         )
-    for item in _standard_experiences(lines):
+    section = _section_lines(lines, EXPERIENCE_HEADINGS)
+    employment_lines = section or _unheaded_employment_lines(lines)
+    for item in _standard_experiences(lines, employment_lines):
         key = (item["role"].lower(), item["company"].lower(), item["start_date"])
         existing = {
             (row["role"].lower(), row["company"].lower(), row["start_date"])
@@ -528,6 +664,25 @@ def parse_resume(file_obj, filename):
         }
         if key not in existing:
             experience_rows.append(item)
+    unknown_start = re.compile(
+        rf'(?i)^(?P<title>[^|]+)\|\s*start date (?:not stated|unknown|unavailable)'
+        rf'\s*[-–—]\s*(?P<end>{DATE_VALUE_PATTERN})\s*$'
+    )
+    for index, line in enumerate(employment_lines):
+        match = unknown_start.fullmatch(line)
+        if not match or index == 0 or not _plausible_employer_line(employment_lines[index - 1]):
+            continue
+        role = _concise_role(match.group('title'))
+        end = _resume_date(match.group('end'))
+        if role and end:
+            experience_rows.append({
+                'role': role, 'company': employment_lines[index - 1].strip(),
+                'start_date': None, 'end_date': end, 'is_current': False,
+                'date_label': f'Start date not stated — {match.group("end")}',
+                'employment_type': '', 'location': '', 'description': '',
+                'source_evidence': '\n'.join(employment_lines[index - 1:index + 1])[:2000],
+                'confidence_status': 'partial',
+            })
     # Preserve explicitly paired undated history without making up employment dates.
     for line in _section_lines(lines, EXPERIENCE_HEADINGS):
         if DATE_RANGE_PATTERN.search(line):
@@ -624,11 +779,18 @@ def parse_resume(file_obj, filename):
     employment_headings = sum(
         _heading_and_tail(line)[0] in EXPERIENCE_HEADINGS for line in lines
     )
+    selective_headings = {
+        'selected experience', 'relevant experience',
+        'internship experience', 'internships',
+    }
+    selective_section = any(
+        _heading_and_tail(line)[0] in selective_headings for line in lines
+    )
     # Archiving needs an independently enumerable, bounded work-history section.
     # A successful model response or the parser's ordinary reliability heuristic
     # cannot prove that a free-form section contains every role.
     pipe_complete = bool(
-        employment_headings == 1
+        employment_headings == 1 and not selective_section
         and section
         and len(section) == len(experience_rows)
         and len(list(PIPE_EXPERIENCE_PATTERN.finditer(text))) == len(experience_rows)
@@ -645,7 +807,7 @@ def parse_resume(file_obj, filename):
     dated_lines = [line for line in section if DATE_RANGE_PATTERN.search(_table_date_range(line))]
     evidence = [row.get('source_evidence', '') for row in experience_rows]
     standard_complete = bool(
-        employment_headings == 1 and section and not pipe_complete
+        employment_headings == 1 and section and not pipe_complete and not selective_section
         and len(dated_lines) == len(experience_rows) > 0
         and all(len(DATE_RANGE_PATTERN.findall(_table_date_range(line))) == 1
                 for line in dated_lines)
@@ -659,15 +821,17 @@ def parse_resume(file_obj, filename):
             or line.rstrip().endswith(('.', '!', '?'))
             or any(line.strip(' |•-–—').casefold() in {
                 row['company'].casefold(), row['role'].casefold()
-            } for row in experience_rows)
+            } or _layout_header_role(line) == row['role'] for row in experience_rows)
             for line in section
         )
         and all(not _looks_like_role(line) or any(
-            _concise_role(line) == row.get('role') for row in experience_rows
+            (_layout_header_role(line) or _concise_role(line)) == row.get('role')
+            for row in experience_rows
         ) for line in section if line not in dated_lines)
         and not explicit_no_employment and len(text) <= RESUME_RAW_TEXT_LIMIT
     )
-    complete_for_archival = pipe_complete or standard_complete
+    complete_for_archival = ((pipe_complete or standard_complete)
+                             and OCR_REQUIRED_MARKER not in text and OCR_USED_MARKER not in text)
     return {
         "full_name": name[:180],
         "headline": headline[:240],
@@ -695,6 +859,8 @@ def parse_resume(file_obj, filename):
             "section_detected": bool(normalized_headings & EXPERIENCE_HEADINGS),
             "explicit_no_employment": explicit_no_employment,
             "complete_for_archival": complete_for_archival,
+            "ocr_required": OCR_REQUIRED_MARKER in text,
+            "ocr_used": OCR_USED_MARKER in text,
             "rule_role_keys": [
                 {key: row.get(key) for key in (
                     "company", "role", "start_date", "end_date", "is_current", "date_label"

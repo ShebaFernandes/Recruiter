@@ -61,6 +61,10 @@ def cases():
         Case("long_history_docx", ["PROFESSIONAL EXPERIENCE", *[f"Engineer | Company {i} | {2008 + i} - {2009 + i}" for i in range(8)]], [Role(f"Company {i}", "Engineer", f"{2008 + i}-01-01", f"{2009 + i}-01-01") for i in range(8)], "docx"),
         Case("career_history_pdf", ["CAREER HISTORY", "Developer | Amber | Jan 2019 - Jan 2020"], [Role("Amber", "Developer", "2019-01-01", "2020-01-01")], "pdf"),
         Case("multicolumn_pdf", ["Name: Synthetic Person", "Skills: Python", "PROFESSIONAL EXPERIENCE", "Senior Engineer | Beacon | Jan 2021 - Present", "Engineer | Arc | Jan 2018 - Dec 2020"], [Role("Beacon", "Senior Engineer", "2021-01-01", current=True), Role("Arc", "Engineer", "2018-01-01", "2020-12-01")], "pdf", columns=True),
+        Case("spaced_employer_date_pdf", ["PROFESSIONAL EXPERIENCE", "Harbor Systems                    Jan 2020 - Present", "Senior Software Engineer                    Bengaluru, India", "Built fictional systems.", "SKILLS", "Python"], [Role("Harbor Systems", "Senior Software Engineer", "2020-01-01", current=True)], "pdf"),
+        Case("spaced_intern_promotion_docx", ["CAREER HISTORY", "Blue Lantern Labs                    Jan 2018 - Jun 2018", "Engineering Intern                    Pune, India", "Built a fictional prototype.", "Copper Systems                    Jan 2020 - Jun 2023", "Software Engineer                    Pune, India", "Built fictional services.", "Copper Systems                    Jul 2023 - Present", "Senior Software Engineer                    Pune, India", "Led fictional delivery.", "SKILLS", "Python"], [Role("Blue Lantern Labs", "Engineering Intern", "2018-01-01", "2018-06-01"), Role("Copper Systems", "Software Engineer", "2020-01-01", "2023-06-01"), Role("Copper Systems", "Senior Software Engineer", "2023-07-01", current=True)], "docx"),
+        Case("fresher_projects_docx", ["Name: Fictional Graduate", "Fresher seeking first role", "PROJECTS", "Built an engineer scheduling prototype in 2025.", "EDUCATION", "Example University"], [], "docx"),
+        Case("unrecognized_selected_experience_pdf", ["SELECTED EXPERIENCE", "Developer | Marigold Labs | Jan 2022 - Dec 2024", "SKILLS", "Python"], [Role("Marigold Labs", "Developer", "2022-01-01", "2024-12-01")], "pdf"),
         Case("image_only_pdf", [], [], "pdf", image_only=True),
     ]
 
@@ -135,7 +139,7 @@ def normalized(value):
 
 def run(use_head=False):
     parse_resume = parser(use_head)
-    totals = {"employers": 0, "roles": 0, "dates": 0, "employer_hits": 0, "role_hits": 0, "date_hits": 0, "unsupported": 0, "duplicates": 0, "processing_errors": 0}
+    totals = {"employers": 0, "roles": 0, "dates": 0, "employer_hits": 0, "role_hits": 0, "date_hits": 0, "unsupported": 0, "duplicates": 0, "processing_errors": 0, "extracted": 0, "matched": 0}
     durations = []
     case_results = []
     for case in cases():
@@ -152,6 +156,8 @@ def run(use_head=False):
         actual_pairs = [(normalized(row.get("company")), normalized(row.get("role"))) for row in rows]
         totals["employers"] += len(case.roles)
         totals["roles"] += len(case.roles)
+        totals["extracted"] += len(rows)
+        case_hits = 0
         for role in case.roles:
             if any(company == normalized(role.company) for company, _ in actual_pairs):
                 totals["employer_hits"] += 1
@@ -159,6 +165,8 @@ def run(use_head=False):
             matching = [row for row, actual in zip(rows, actual_pairs, strict=True) if actual == pair]
             if matching:
                 totals["role_hits"] += 1
+                totals["matched"] += 1
+                case_hits += 1
                 row = matching[0]
                 for key, expected in (("start_date", role.start), ("end_date", role.end)):
                     if expected is not None:
@@ -169,11 +177,14 @@ def run(use_head=False):
                     totals["date_hits"] += bool(row.get("is_current") or "present" in (row.get("date_label") or "").casefold())
         totals["unsupported"] += sum(pair not in expected_pairs for pair in actual_pairs)
         totals["duplicates"] += len(actual_pairs) - len(set(actual_pairs))
-        case_results.append({"name": case.name, "expected_roles": len(case.roles), "extracted_roles": len(rows), "role_pairs": actual_pairs})
+        case_results.append({"name": case.name, "kind": case.kind, "expected_roles": len(case.roles), "extracted_roles": len(rows), "matched_roles": case_hits, "false_positive_roles": sum(pair not in expected_pairs for pair in actual_pairs)})
     return {
         "fixture_count": len(cases()),
         "employer_recall": round(totals["employer_hits"] / totals["employers"], 4),
         "employment_role_recall": round(totals["role_hits"] / totals["roles"], 4),
+        "employment_role_precision": round(totals["matched"] / totals["extracted"], 4),
+        "expected_roles": totals["roles"],
+        "extracted_roles": totals["extracted"],
         "date_accuracy": round(totals["date_hits"] / totals["dates"], 4),
         "unsupported_rows": totals["unsupported"],
         "duplicate_rows": totals["duplicates"],

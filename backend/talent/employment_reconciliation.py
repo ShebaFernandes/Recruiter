@@ -109,7 +109,13 @@ def complete_employment_history(extracted):
     # An oversized optional summary/detail is discarded by schema validation,
     # but says nothing about whether the employment list is complete. Any lost
     # required role or evidence fails the role-count and evidence checks below.
+    optional_detail_rejections = {
+        'work_experience.detail_evidence',
+        'work_experience.achievement_evidence',
+        'work_experience.field_evidence',
+    }
     if any(item.get('category', '').startswith('work_experience.')
+           and item.get('category') not in optional_detail_rejections
            for item in extracted.get('_validation_rejections', [])
            if isinstance(item, dict)):
         return False
