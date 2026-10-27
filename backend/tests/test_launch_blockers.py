@@ -254,3 +254,28 @@ def test_scanner_rejects_non_success_response():
         connect.return_value.__enter__.return_value.recv.return_value = b"NOT OK\0"
         with pytest.raises(ResumeScanError):
             ClamAVResumeScanner().scan(ContentFile(b"fictional"))
+
+
+def test_scanner_streams_clean_file_and_resets_position():
+    file_object = ContentFile(b"fictional-clean-pdf")
+    with patch("talent.resume_processing.socket.create_connection") as connect:
+        connection = connect.return_value.__enter__.return_value
+        connection.recv.return_value = b"stream: OK\0"
+        assert ClamAVResumeScanner().scan(file_object) == "clean"
+    sent = [call.args[0] for call in connection.sendall.call_args_list]
+    assert sent == [b"zINSTREAM\0", len(b"fictional-clean-pdf").to_bytes(4, "big"),
+                    b"fictional-clean-pdf", b"\0\0\0\0"]
+    assert file_object.tell() == 0
+
+
+@pytest.mark.parametrize("failure", [OSError("unavailable"), socket.timeout("timed out")])
+def test_scanner_transport_failure_is_retryable_and_resets_position(failure):
+    file_object = ContentFile(b"fictional-clean-pdf")
+    with patch("talent.resume_processing.socket.create_connection") as connect:
+        if isinstance(failure, socket.timeout):
+            connect.return_value.__enter__.return_value.recv.side_effect = failure
+        else:
+            connect.side_effect = failure
+        with pytest.raises(ResumeScanError, match="temporarily unavailable"):
+            ClamAVResumeScanner().scan(file_object)
+    assert file_object.tell() == 0
