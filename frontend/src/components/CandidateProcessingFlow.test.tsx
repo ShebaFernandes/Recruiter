@@ -2,6 +2,7 @@ import '@testing-library/jest-dom/vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import CandidateExperience from './CandidateExperience'
+import CandidateCareerTimeline from './CandidateCareerTimeline'
 import { api } from '../api'
 import type { Candidate, Resume } from '../types'
 
@@ -16,6 +17,17 @@ async function mount() { await act(async () => { render(<CandidateExperience acc
 async function upload() { await act(async () => { fireEvent.change(screen.getByTestId('resume-input'), { target: { files: [file] } }) }) }
 
 describe('actual candidate processing integration', () => {
+  it('keeps omitted saved employment visible without a generic review action', () => {
+    const items = [
+      { id: 1, company: 'Orchid Labs', role: 'Engineering Intern', start_date: '2026-01-01', end_date: '2026-07-01', is_current: false, confidence_status: 'candidate_confirmed' },
+      { id: 2, company: 'Cedar Studio', role: 'Developer', start_date: '2026-09-01', end_date: null, is_current: true, confidence_status: 'candidate_confirmed' },
+    ] as Candidate['work_experiences']
+    const extraction = { resume_id: 2, status: 'verified_ai', source: 'ai', reason_code: 'evidence_roles_accepted', accepted_role_count: 1, saved_role_count: 2, verified_role_ids: [1], unverified_role_ids: [2], candidate_confirmed_role_ids: [1, 2], stale_profile_preserved: true, profile_state: 'previous_history_preserved' } as Candidate['employment_extraction']
+    render(<CandidateCareerTimeline items={items} extraction={extraction} edit={vi.fn()} />)
+    expect(document.querySelectorAll('.career-period')).toHaveLength(2)
+    expect(screen.queryByRole('button', { name: 'Review saved profile' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Developer at Cedar Studio/ })).toHaveAttribute('aria-label', expect.stringContaining('Not matched to the latest resume'))
+  })
   it('hides the saved layout during transfer and restores it if upload fails', async () => {
     vi.mocked(api.candidateProfile).mockResolvedValue(completed)
     let rejectUpload: (reason: Error) => void = () => undefined
@@ -94,7 +106,7 @@ describe('actual candidate processing integration', () => {
     expect(screen.queryByText('Role & direction')).not.toBeInTheDocument()
     expect(Array.from(document.querySelectorAll('.cp-identity-meta>span')).map(item => item.textContent)).toEqual(['Birla Institute of Technology, Mesra', '5 years experience', 'Bengaluru'])
     expect(screen.getByRole('heading', { name: 'Your career journey' })).toBeVisible()
-    expect(screen.getByRole('button', { name: 'Review saved profile' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Review saved profile' })).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'BEYOND THE CV' })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: "That's me ✓" }))
     expect(screen.getByRole('heading', { name: 'BEYOND THE CV' })).toBeVisible()

@@ -106,6 +106,30 @@ def test_zero_role_replacement_marks_previous_history_as_stale_not_verified(
     }
 
 
+def test_one_role_replacement_keeps_omitted_history_without_false_conflict(
+    client, candidate_account,
+):
+    initial = upload(client).data
+    original_ids = [row['id'] for row in initial['work_experiences']]
+    replacement = upload(client, resume_pdf([
+        'Name: Asha Rao',
+        'Work Experience',
+        'Experience: Senior Backend Engineer|SignalWorks|2022-01-01|Present|Owned payments APIs',
+    ]), 'fictional-one-role.pdf').data
+    latest = CandidateProfile.objects.get().resumes.first()
+
+    assert [row['id'] for row in replacement['work_experiences']] == original_ids
+    assert replacement['resume_review'] is None
+    assert replacement['employment_extraction']['accepted_role_count'] == 1
+    assert len(replacement['employment_extraction']['verified_role_ids']) == 1
+    assert len(replacement['employment_extraction']['unverified_role_ids']) == 1
+    assert replacement['employment_extraction']['profile_state'] == 'previous_history_preserved'
+    assert latest.extracted_data['_employment_outcome']['profile_state'] == (
+        'previous_history_preserved'
+    )
+    assert latest.extracted_data['_employment_outcome']['stale_profile_preserved'] is True
+
+
 def test_manual_role_conflict_is_optional_and_other_roles_stay_saved(client, candidate_account):
     first = upload(client).data
     edited = [dict(row) for row in first['work_experiences']]

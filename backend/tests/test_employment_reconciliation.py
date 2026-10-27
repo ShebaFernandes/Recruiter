@@ -60,6 +60,23 @@ def test_manual_title_and_material_end_date_are_reviewed(candidate_account):
     assert profile.work_experiences.get().end_date.isoformat() == '2024-12-01'
 
 
+def test_equivalent_candidate_correction_keeps_deliberately_blank_fields(candidate_account):
+    profile = CandidateProfile.objects.get()
+    saved = WorkExperience.objects.create(
+        candidate=profile, company='Example Labs', role='Engineer',
+        start_date='2024-01-01', end_date=None, is_current=False,
+        date_label='Jan 2024 — End not specified',
+        confidence_status='candidate_confirmed',
+    )
+    incoming = role('Example Labs', 'Engineer', '2024-01-01', current=True)
+    assert reconcile_employment(profile, [incoming]) == []
+    saved.refresh_from_db()
+    assert saved.is_current is False
+    assert saved.end_date is None
+    assert saved.date_label == 'Jan 2024 — End not specified'
+    assert row_equivalent(saved, incoming)
+
+
 def test_shortened_employer_does_not_duplicate_candidate_correction(candidate_account):
     profile = CandidateProfile.objects.get()
     WorkExperience.objects.create(

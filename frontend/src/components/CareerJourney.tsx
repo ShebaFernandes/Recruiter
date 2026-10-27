@@ -28,7 +28,7 @@ function employment(item:WorkExperience) {
 }
 
 /** No example history or fetching: every marker represents a supplied saved record. */
-export default function CareerJourney({ items, extraction, detailed = false, showCompanyLabels = detailed }: CareerJourneyProps) {
+export default function CareerJourney({ items, extraction, detailed = false, showCompanyLabels = detailed, profilePresentation = false }: CareerJourneyProps) {
   const sorted = sortCareerHistory(items)
   const [now] = useState(Date.now)
   const layout = careerTimelineLayout(sorted, now, !showCompanyLabels)
@@ -41,7 +41,7 @@ export default function CareerJourney({ items, extraction, detailed = false, sho
     observer.observe(root.current)
     return () => observer.disconnect()
   }, [items.length])
-  const fillDatedAxis = showCompanyLabels && layout.datedEnd > 0 && layout.rows.every(row => row.dated)
+  const fillDatedAxis = (showCompanyLabels || profilePresentation) && layout.datedEnd > 0 && layout.rows.every(row => row.dated)
   const calendarWidth = Math.max(layout.width, viewportWidth - 48)
   const stretch = fillDatedAxis ? calendarWidth / layout.datedEnd : Math.max(1, (viewportWidth - 48) / layout.width)
   const contentWidth = fillDatedAxis ? calendarWidth : layout.width * stretch
@@ -101,12 +101,11 @@ export default function CareerJourney({ items, extraction, detailed = false, sho
   const lastDatedEnd = Math.max(...sorted.filter((_, i) => layout.rows[i].dated).map(item => endTime(item, now)).filter(Number.isFinite))
   const endYear = Number.isFinite(lastDatedEnd) ? new Date(lastDatedEnd).getUTCFullYear() : null
   const showEndYear = endYear !== null && !sorted.some((item, index) =>
-    layout.rows[index].dated && careerStartYear(item) === String(endYear)
-    && (layout.datedEnd - layout.rows[index].left) * stretch < 70)
+    layout.rows[index].dated && careerStartYear(item) === String(endYear))
   return <div className="career-history">
     <EmploymentHistoryStatus items={items} extraction={extraction} />
     {items.length > 0 && <>
-      {anyUnverified && <p className="career-review-key">Hollow markers: saved roles needing verification against the latest resume.</p>}
+      {anyUnverified && <p className="career-review-key">Hollow markers show earlier saved roles.</p>}
       <div ref={root} className={`career-journey shared calendar-timeline marker-only ${showCompanyLabels ? 'with-role-summaries' : ''} ${detailed ? 'detailed' : 'compact'} ${items.length === 1 && layout.rows[0].span > 0 ? 'has-single-period' : ''}`} aria-label="Career journey" role="list" tabIndex={0}>
         <div className="career-calendar" role="presentation" style={{ width:contentWidth, height:showCompanyLabels ? 104 + Math.max(0, ...lanes) * 52 + summaryEdges.length * layout.labelHeight : 112 + Math.max(0, ...lanes) * 52 }}>
           <span className={`career-axis ${sorted.some(item => ongoing(item) && Number.isFinite(time(item.start_date)) && !coarseDates(item)) ? 'is-current' : ''}`} aria-hidden="true" style={{ width:layout.datedEnd * stretch }} />
@@ -121,8 +120,8 @@ export default function CareerJourney({ items, extraction, detailed = false, sho
             const overlaps = !coarseDates(item) && earlier.some(row => !coarseDates(row) && endTime(row, now) > start)
             const previousRole = sorted.slice(0, index).reverse().find(row => row.company.trim().toLowerCase() === item.company.trim().toLowerCase() && row.role !== item.role)
             const isVerified = item.id != null && verified.has(item.id)
-            const confirmation = item.confidence_status === 'candidate_confirmed' ? 'Candidate-confirmed or manually edited. ' : ''
-            const verification = isVerified ? 'Verified against the latest resume.' : `${confirmation}Review needed — not verified against the latest resume.`
+            const confirmation = item.confidence_status === 'candidate_confirmed' ? 'Candidate-confirmed history. ' : ''
+            const verification = isVerified ? 'Matched to the latest resume.' : `${confirmation}Not matched to the latest resume.`
             const key = `${item.id ?? index}-${item.company}-${item.start_date}`
             const data:Detail = { key, company:item.company || 'Employer not specified', title:item.role || 'Role not specified', period:period(item), employment:employment(item), verification, description:item.description,
               note:[overlaps ? 'Overlapping employment' : '', previousRole ? `Career progression from ${previousRole.role}` : '', !position.dated ? 'Dates incomplete · not placed on the calendar scale' : ''].filter(Boolean).join(' · ') }

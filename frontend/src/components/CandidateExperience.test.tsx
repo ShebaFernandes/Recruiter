@@ -65,7 +65,7 @@ describe('candidate career experience', () => {
   it('provides an editable empty-history fallback', () => {
     render(<CandidateCareerTimeline items={[]} />)
     expect(screen.getByRole('heading', { name: 'Your career journey' })).toBeVisible()
-    expect(screen.getByText(/No verified employment history is available/)).toBeVisible()
+    expect(screen.getByText(/No employment history is saved yet/)).toBeVisible()
     expect(screen.queryByRole('listitem')).not.toBeInTheDocument()
   })
   it('labels preserved history as stale when the latest resume needs recovery', () => {
@@ -74,17 +74,17 @@ describe('candidate career experience', () => {
       accepted_role_count: 0, saved_role_count: 1, profile_state: 'previous_history_preserved',
       stale_profile_preserved: true,
     }} />)
-    expect(screen.getByRole('status')).toHaveTextContent(/Saved roles remain on the timeline with review-needed markers/i)
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
     expect(container.querySelector('.career-journey')).toBeInTheDocument()
     expect(container.querySelector('.cp-career-previous')).toBeInTheDocument()
   })
-  it('distinguishes successful local fallback from Gemini extraction', () => {
+  it('keeps successful extraction diagnostics out of the visible journey', () => {
     render(<CandidateCareerTimeline items={[{ ...job('Local result', '2020-01-01', '2022-01-01'), id:1 }]} extraction={{
       resume_id:2, verified_role_ids:[1], status: 'verified_fallback', source: 'rules', reason_code: 'evidence_roles_accepted',
       accepted_role_count: 1, saved_role_count: 1, profile_state: 'applied',
       stale_profile_preserved: false,
     }} />)
-    expect(screen.getByRole('status')).toHaveTextContent(/local parser, not Gemini/i)
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
   it('does not show false gaps inside overlapping employment and exposes real gaps', () => {
     const { rerender } = render(<CandidateCareerTimeline items={[

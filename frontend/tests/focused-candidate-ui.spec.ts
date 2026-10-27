@@ -69,7 +69,7 @@ for (const width of [390, 1440]) test(`non-interactive processing and calendar t
   const timeline = page.getByRole('list', { name:'Career journey' })
   await timeline.scrollIntoViewIfNeeded()
   await expect(timeline.locator('.career-period')).toHaveCount(4)
-  await expect(page.locator('.career-history-status')).toContainText('verified against the latest resume’s evidence')
+  await expect(page.locator('.career-history-status')).toHaveCount(0)
   await expect(timeline.locator('.is-internship')).toHaveCount(1)
   await expect(timeline.locator('.is-internship .career-period-line')).toHaveCSS('background-color','rgb(143, 199, 196)')
   await expect(timeline.locator('.career-gap-line')).toHaveCSS('border-top-style','dashed')

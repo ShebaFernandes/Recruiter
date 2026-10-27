@@ -126,6 +126,11 @@ def reconcile_employment(profile, rows):
         if not row_equivalent(row, item):
             conflicts.append(item)
             continue
+        # A candidate-confirmed row may contain a deliberate correction or an
+        # intentionally blank field. Equivalent resume evidence verifies its
+        # identity but must not silently rewrite the candidate's version.
+        if row.confidence_status == 'candidate_confirmed':
+            continue
         updates = []
         gained_precision = False
         # Fill missing facts, but keep candidate-entered text and precise dates.

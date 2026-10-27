@@ -23,7 +23,7 @@ from .candidate_experience import (
     proposed_fields,
     resume_identity_issue,
 )
-from .employment_reconciliation import reconcile_employment, trusted_rows
+from .employment_reconciliation import reconcile_employment, row_equivalent, trusted_rows
 from .models import (
     CandidateProfile,
     FileCleanupJob,
@@ -381,7 +381,11 @@ def _apply_extracted_resume(resume, extracted):
     saved_role_count = profile.work_experiences.count()
     accepted_role_count = int(outcome.get("accepted_role_count") or 0)
     pending_history = "work_experiences" in conflicts
-    stale_profile = accepted_role_count == 0 and saved_role_count > 0
+    accepted_rows = trusted_rows(extracted)
+    stale_profile = any(
+        not any(row_equivalent(saved_row, item) for item in accepted_rows)
+        for saved_row in profile.work_experiences.all()
+    )
     if pending_history:
         profile_state = "pending_candidate_review"
     elif stale_profile:

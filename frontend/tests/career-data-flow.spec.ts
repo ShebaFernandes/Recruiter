@@ -63,7 +63,7 @@ assert not job.resume.ai_usage.exists()`)).toBe('completed')
     expect(saved.employment_extraction.source).toBe('rules')
     await expect(journey.locator('.career-period')).toHaveCount(fixture.roles)
     if (fixture.roles) {
-      await expect(journey.getByRole('status')).toContainText('local parser, not Gemini')
+      await expect(journey.getByRole('status')).toHaveCount(0)
       for (const role of saved.work_experiences) {
         const names = await journey.locator('.career-period button').evaluateAll(els=>els.map(el=>el.getAttribute('aria-label')).join(' '))
         expect(names).toContain(role.company)

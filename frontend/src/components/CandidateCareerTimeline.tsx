@@ -9,6 +9,6 @@ export default function CandidateCareerTimeline({ items, edit, reviewLatestResum
     <div className={stale ? 'cp-career-previous' : ''}><CareerJourney items={items} extraction={extraction} profilePresentation presentAtEnd candidateMilestones /></div>
     {extraction?.profile_state === 'pending_candidate_review' && reviewLatestResume
       ? <button type="button" onClick={reviewLatestResume}>Review roles from latest resume</button>
-      : (!items.length || extraction?.stale_profile_preserved || extraction?.status === 'review_required') && edit && <button type="button" onClick={edit}>Review saved profile</button>}
+      : !items.length && edit && <button type="button" onClick={edit}>Add employment history</button>}
   </section>
 }
