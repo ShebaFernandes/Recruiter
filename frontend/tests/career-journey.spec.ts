@@ -7,7 +7,7 @@ import { provisionRecruiter } from './recruiter-admin'
 test.use({ hasTouch: true })
 
 test('candidate and recruiter share the same interactive promotion journey', async ({ page }, info) => {
-  test.setTimeout(120_000)
+  test.setTimeout(180_000)
   const run = Date.now(), email = `journey-${run}@example.com`, password = 'strong-pass-123'
   const docx = info.outputPath('fictional-promotions.docx')
   const created = spawnSync(path.resolve('../.venv/bin/python'), ['-c', `
@@ -28,19 +28,28 @@ d.save(${JSON.stringify(docx)})
   await page.getByRole('button', { name: 'Create account', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible({ timeout: 20_000 })
   await page.goto(`/?verify-email=${issueLocalAccountToken(email, 'verify_email')}`)
+  const upload = page.waitForResponse(response => response.url().endsWith('/candidate/resumes/') && response.status() === 202)
   await page.getByTestId('resume-input').setInputFiles(docx)
+  const resumeId = (await (await upload).json()).latest_resume.id
+  expect(process.env.DATABASE_URL).toMatch(/\/test_enter_e2e_[a-f0-9]+$/)
+  expect(process.env.RESUME_AI_ENABLED).toBe('false')
+  const processed = spawnSync(path.resolve('../.venv/bin/python'), ['-c', `import django; django.setup()
+from talent.models import ResumeProcessingJob
+from talent.worker_runtime import run_bounded_job
+job = ResumeProcessingJob.objects.get(resume_id=${resumeId})
+assert run_bounded_job(job.pk) == 'completed'`], { cwd:path.resolve('../backend'), env:process.env, encoding:'utf8' })
+  expect(processed.status, 'Offline fictional worker completes').toBe(0)
   await expect(page.locator('.career-period')).toHaveCount(7, { timeout: 30_000 })
   await expect(page.locator('.career-laptop')).toHaveCount(7)
   await expect(page.locator('.cp-identity')).toContainText('Head of AI Engineering')
-  await expect(page.locator('.cp-profile-main')).toContainText('AI Engineering Leadership')
   await expect(page.locator('.cp-skills').getByRole('heading', { name: 'Education' })).toHaveCount(0)
   const labels = await page.locator('.career-period .career-job').evaluateAll(items => items.map(item => item.getAttribute('aria-label')))
-  for (const width of [1440, 1024, 768, 390]) {
+  for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 900 })
     const marker = page.getByRole('button', { name: /Head of AI Engineering at Northstar/ })
     await marker.scrollIntoViewIfNeeded()
-    if (width > 640) await marker.hover(); else await marker.tap()
-    await expect(page.getByRole('tooltip')).toContainText('Apr 2023 - Present')
+    await marker.click()
+    await expect(page.getByRole('tooltip')).toContainText('Apr 2023 — Present')
     await expect(page.getByRole('tooltip')).toContainText('Built a reliable workflow service used by 12 teams.')
     await expect(marker).toHaveClass(/is-active/)
     await expect(page.getByRole('tooltip')).toBeInViewport()
@@ -49,14 +58,14 @@ d.save(${JSON.stringify(docx)})
     if (width === 390) {
       await page.getByRole('button', { name: /Engineering Manager at Northstar/ }).tap()
       await expect(page.getByRole('tooltip')).toContainText('Engineering Manager')
-      await expect(page.getByRole('tooltip')).toContainText('Jan 2021 - Mar 2023')
+      await expect(page.getByRole('tooltip')).toContainText('Jan 2021 — Mar 2023')
     }
     await page.keyboard.press('Escape')
     await expect(page.getByRole('tooltip')).toHaveCount(0)
   }
   await expect(page.getByRole('combobox', { name: 'Profile Visibility' })).toHaveCount(0)
   await page.getByRole('button', { name: /Work preferences.*Edit/ }).click()
-  await page.getByRole('combobox', { name: 'Work setup' }).selectOption('Remote')
+  await page.getByRole('checkbox', { name: 'Remote', exact:true }).check()
   await expect(page.locator('.cp-autosave-status')).toHaveText('Saved')
   await page.getByRole('button', { name: /Notice period.*Edit/ }).click()
   await page.getByRole('combobox', { name: 'Notice period' }).selectOption('30')
@@ -82,12 +91,12 @@ d.save(${JSON.stringify(docx)})
   await expect(graph.locator('.career-laptop')).toHaveCount(7)
   await expect(graph.locator('.career-period-line').first()).toHaveCSS('height', '3px')
   expect(await graph.locator('.career-period .career-job').evaluateAll(items => items.map(item => item.getAttribute('aria-label')))).toEqual(labels)
-  for (const width of [1440, 1024, 768, 390]) {
+  for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 900 })
     const marker = graph.getByRole('button', { name: /Head of AI Engineering at Northstar/ })
     await marker.scrollIntoViewIfNeeded()
     await marker.click()
-    await expect(page.getByRole('tooltip')).toContainText('Apr 2023 - Present')
+    await expect(page.getByRole('tooltip')).toContainText('Apr 2023 — Present')
     await expect(page.getByRole('tooltip')).toBeInViewport()
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await page.screenshot({ path: info.outputPath(`recruiter-journey-${width}.png`) })

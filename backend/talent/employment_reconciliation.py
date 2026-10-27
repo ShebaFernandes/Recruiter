@@ -12,6 +12,16 @@ def normalized_text(value):
     return ' '.join(re.findall(r'\w+', value))
 
 
+def same_employer(left, right):
+    first, second = normalized_text(left), normalized_text(right)
+    if first == second:
+        return True
+    shorter, longer = sorted((first, second), key=len)
+    return bool(shorter and longer.startswith(shorter + ' ') and (
+        len(shorter.split()) >= 2 or len(shorter) >= 5
+    ))
+
+
 def date_value(value):
     return parse_date(str(value)) if value else None
 
@@ -40,11 +50,14 @@ def dates_compatible(saved_date, saved_label, incoming_date, incoming_label):
 
 
 def row_matches(saved, incoming):
-    if normalized_text(saved.company) != normalized_text(incoming.get('company')):
+    if not same_employer(saved.company, incoming.get('company')):
         return False
     if normalized_text(saved.role) != normalized_text(incoming.get('role')):
         return False
     start = date_value(incoming.get('start_date'))
+    if (normalized_text(saved.company) != normalized_text(incoming.get('company'))
+            and not same_month(saved.start_date, start)):
+        return False
     return dates_compatible(saved.start_date, saved.date_label, start,
                             incoming.get('date_label'))
 
@@ -88,7 +101,7 @@ def reconcile_employment(profile, rows):
             # A candidate-corrected title for this same employer and stint is
             # protected, rather than duplicated as a second role.
             corrected = any(
-                normalized_text(row.company) == normalized_text(item.get('company'))
+                same_employer(row.company, item.get('company'))
                 and same_month(row.start_date, date_value(item.get('start_date')))
                 and (row.confidence_status == 'candidate_confirmed'
                      or normalized_text(row.role) == normalized_text(item.get('role')))
@@ -151,7 +164,7 @@ def apply_reviewed_employment(profile, rows):
     """Apply only the candidate-selected conflicts, preserving all other rows."""
     for item in rows:
         row = next((saved for saved in profile.work_experiences.all()
-                    if normalized_text(saved.company) == normalized_text(item.get('company'))
+                    if same_employer(saved.company, item.get('company'))
                     and same_month(saved.start_date, date_value(item.get('start_date')))), None)
         if row is None:
             reconcile_employment(profile, [item])

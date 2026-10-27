@@ -99,6 +99,10 @@ export default function CareerJourney({ items, extraction, detailed = false, sho
   const verified = new Set(extraction?.verified_role_ids || [])
   const anyUnverified = items.some(item => item.id == null || !verified.has(item.id))
   const lastDatedEnd = Math.max(...sorted.filter((_, i) => layout.rows[i].dated).map(item => endTime(item, now)).filter(Number.isFinite))
+  const endYear = Number.isFinite(lastDatedEnd) ? new Date(lastDatedEnd).getUTCFullYear() : null
+  const showEndYear = endYear !== null && !sorted.some((item, index) =>
+    layout.rows[index].dated && careerStartYear(item) === String(endYear)
+    && (layout.datedEnd - layout.rows[index].left) * stretch < 70)
   return <div className="career-history">
     <EmploymentHistoryStatus items={items} extraction={extraction} />
     {items.length > 0 && <>
@@ -144,7 +148,7 @@ export default function CareerJourney({ items, extraction, detailed = false, sho
               </div>
             </div>
           })}
-          {Number.isFinite(lastDatedEnd) && <span className="career-end-year" style={{ left:layout.datedEnd * stretch }} aria-hidden="true">{new Date(lastDatedEnd).getUTCFullYear()}</span>}
+          {showEndYear && <span className="career-end-year" style={{ left:layout.datedEnd * stretch }} aria-hidden="true">{endYear}</span>}
         </div>
       </div>
     </>}

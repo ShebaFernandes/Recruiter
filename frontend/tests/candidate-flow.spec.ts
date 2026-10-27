@@ -261,7 +261,9 @@ document.save(${JSON.stringify(docx)})`], { cwd: path.resolve('../backend'), enc
         if (width === 390) await marker.tap()
         else await marker.hover()
         const popover = page.getByRole('tooltip')
-        for (const detail of expected[index]) await expect(popover).toContainText(detail.replace(' - ', ' — '))
+        for (const [detailIndex, detail] of expected[index].entries()) {
+          await expect(popover).toContainText(detailIndex === 2 ? detail.replace(' - ', ' — ') : detail)
+        }
         const bounds = await popover.boundingBox()
         expect(bounds!.x).toBeGreaterThanOrEqual(0)
         expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width)

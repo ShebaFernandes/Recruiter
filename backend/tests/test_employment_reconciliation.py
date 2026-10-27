@@ -58,3 +58,34 @@ def test_manual_title_and_material_end_date_are_reviewed(candidate_account):
     assert not row_equivalent(saved, proposed)
     assert reconcile_employment(profile, [proposed]) == [proposed]
     assert profile.work_experiences.get().end_date.isoformat() == '2024-12-01'
+
+
+def test_shortened_employer_does_not_duplicate_candidate_correction(candidate_account):
+    profile = CandidateProfile.objects.get()
+    WorkExperience.objects.create(
+        candidate=profile, company='Alpha Platform and Distributed Infrastructure Engineering',
+        role='Candidate corrected role', start_date='2018-01-01', end_date='2022-12-01',
+        confidence_status='candidate_confirmed',
+    )
+    incoming = role('Alpha', 'Engineer', '2018-01-01', '2022-12-01')
+    assert reconcile_employment(profile, [incoming]) == [incoming]
+    assert profile.work_experiences.count() == 1
+
+
+def test_shortened_employer_matches_same_role_without_recreating_it(candidate_account):
+    profile = CandidateProfile.objects.get()
+    saved = WorkExperience.objects.create(
+        candidate=profile, company='Alpha Platform and Distributed Infrastructure Engineering',
+        role='Engineer', start_date='2018-01-01', end_date='2022-12-01',
+        confidence_status='supported',
+    )
+    assert reconcile_employment(profile, [role('Alpha', 'Engineer', '2018-01-01',
+                                               '2022-12-01')]) == []
+    assert list(profile.work_experiences.values_list('id', flat=True)) == [saved.id]
+
+
+def test_undated_short_name_does_not_assume_same_employer(candidate_account):
+    profile = CandidateProfile.objects.get()
+    WorkExperience.objects.create(candidate=profile, company='Alpha Platform', role='Engineer')
+    assert reconcile_employment(profile, [role('Alpha', 'Engineer', None)]) == []
+    assert profile.work_experiences.count() == 2
