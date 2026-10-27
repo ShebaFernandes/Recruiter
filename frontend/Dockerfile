@@ -16,7 +16,8 @@ FROM nginx:stable-alpine
 ARG VITE_CANDIDATE_ONLY=false
 # Static hosting/proxy uses nginx core only; omit unused XML/image/ACME modules.
 RUN apk del nginx-module-acme nginx-module-geoip nginx-module-image-filter \
-    nginx-module-njs nginx-module-xslt && apk upgrade --no-cache
+    nginx-module-njs nginx-module-xslt && apk upgrade --no-cache \
+    && apk add --no-cache 'curl>=8.23.0-r0' 'libcurl>=8.23.0-r0'
 COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 COPY frontend/candidate-only.nginx.conf /etc/nginx/enter-controls/candidate-only.disabled
 RUN if [ "$VITE_CANDIDATE_ONLY" = "true" ]; then \
