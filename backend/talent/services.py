@@ -653,6 +653,15 @@ def parse_resume(file_obj, filename):
                 for row in experience_rows)
         and all(sum(line in item for item in evidence) == 1 for line in dated_lines)
         and all(any(line.strip(' |•-–—') in item for item in evidence) for line in section)
+        and all(
+            line in dated_lines
+            or line.lstrip().startswith(('-', '•', '*'))
+            or line.rstrip().endswith(('.', '!', '?'))
+            or any(line.strip(' |•-–—').casefold() in {
+                row['company'].casefold(), row['role'].casefold()
+            } for row in experience_rows)
+            for line in section
+        )
         and all(not _looks_like_role(line) or any(
             _concise_role(line) == row.get('role') for row in experience_rows
         ) for line in section if line not in dated_lines)

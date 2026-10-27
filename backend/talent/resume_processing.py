@@ -335,13 +335,13 @@ def _apply_extracted_resume(resume, extracted):
     # Employment is reconciled by row. A previous edit to one role does not block
     # safe additions or equivalent roles elsewhere in the journey.
     if latest:
-        role_conflicts = reconcile_employment(profile, trusted_rows(extracted))
+        complete = complete_employment_history(extracted)
+        role_conflicts = reconcile_employment(
+            profile, trusted_rows(extracted), complete=complete,
+        )
         if role_conflicts:
             conflicts['work_experiences'] = role_conflicts
-        complete = complete_employment_history(extracted)
-        archived_ids = archive_omitted_employment(
-            profile, trusted_rows(extracted), resume
-        ) if complete else []
+        archived_ids = archive_omitted_employment(profile, extracted, resume)
         outcome['archive_complete'] = complete
         outcome['archived_role_count'] = len(archived_ids)
     # Keep raw extraction and pending proposals durable. Missing values never erase data.

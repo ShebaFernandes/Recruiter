@@ -140,41 +140,26 @@ def complete_employment_history(extracted):
     return not unmatched
 
 
-def _resume_derived(row, profile):
-    if row.confidence_status == 'candidate_confirmed':
-        return False
-    if row.origin == 'resume_derived':
-        return True
-    if row.origin != 'unknown' or not row.source_evidence:
-        return False
-    # Legacy records lack an origin field. An exact stored extraction match is
-    # required before treating one as automatic rather than candidate-authored.
-    for resume in profile.resumes.filter(processing_status='completed'):
-        data = resume.extracted_data if isinstance(resume.extracted_data, dict) else {}
-        if any(item.get('source_evidence') == row.source_evidence
-               and row_equivalent(row, item) for item in trusted_rows(data)):
-            return True
-    return False
-
-
-def archive_omitted_employment(profile, rows, resume):
-    """Move proven automatic omissions out of the active view without deleting."""
+def archive_omitted_employment(profile, extracted, resume):
+    """Archive omissions only after independently corroborated complete extraction."""
+    if not complete_employment_history(extracted):
+        return []
+    rows = trusted_rows(extracted)
     archived = []
     for saved in profile.work_experiences.all():
         if any(row_equivalent(saved, item) for item in rows):
             continue
-        if not _resume_derived(saved, profile):
-            continue
-        saved.origin = 'resume_derived'
+        # Origin, confidence and candidate corrections remain intact in private
+        # history. Only active visibility changes when a later resume omits it.
         saved.archived_at = timezone.now()
         saved.archived_by_resume_id = resume.pk
-        saved.save(update_fields=['origin', 'archived_at', 'archived_by_resume_id'])
+        saved.save(update_fields=['archived_at', 'archived_by_resume_id'])
         archived.append(saved.pk)
     return archived
 
 
-def reconcile_employment(profile, rows):
-    """Return conflicts; omissions are retained and never become deletions."""
+def reconcile_employment(profile, rows, *, complete=False):
+    """Merge supported roles; complete replacements can supersede corrected rows."""
     saved = list(profile.work_experiences.all())
     matched = set()
     conflicts = []
@@ -201,7 +186,7 @@ def reconcile_employment(profile, rows):
                      or normalized_text(row.role) == normalized_text(item.get('role')))
                 for row in saved
             )
-            if corrected:
+            if corrected and not complete:
                 conflicts.append(item)
                 continue
             # Same employer/title with a different start can be a distinct stint.
@@ -219,7 +204,25 @@ def reconcile_employment(profile, rows):
         index, row = candidates[0]
         matched.add(index)
         if not row_equivalent(row, item):
-            conflicts.append(item)
+            if complete:
+                # Materially different dates/current status are a new supported
+                # version. The former candidate correction is archived below.
+                replacement = WorkExperience(
+                    candidate=profile, company=item['company'], role=item['role'],
+                    origin='resume_derived',
+                )
+                for field in ('start_date', 'end_date'):
+                    setattr(replacement, field, date_value(item.get(field)))
+                for field in ('is_current', 'date_label', 'employment_type', 'location',
+                              'description', 'source_evidence', 'confidence_status', 'gap_reason'):
+                    setattr(replacement, field, item.get(field) or (
+                        False if field == 'is_current' else ''
+                    ))
+                replacement.save()
+                saved.append(replacement)
+                matched.add(len(saved) - 1)
+            else:
+                conflicts.append(item)
             continue
         # A candidate-confirmed row may contain a deliberate correction or an
         # intentionally blank field. Equivalent resume evidence verifies its

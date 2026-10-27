@@ -16,10 +16,11 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 COPY backend ./backend
-# The AI-disabled release must continue serving the already-published v1.0 legal
-# copy. Pending Gemini-aware drafts are deliberately excluded from the image.
-COPY deploy/live-legal-v1.0/PRIVACY_POLICY_PUBLICATION.txt \
-    deploy/live-legal-v1.0/TERMS_PUBLICATION.txt ./deploy/
+# Package the published legal and resume-AI consent files used by the running
+# production release. Their approved content and hashes are unchanged here.
+COPY deploy/PRIVACY_POLICY_PUBLICATION.txt \
+    deploy/TERMS_PUBLICATION.txt \
+    deploy/RESUME_AI_CONSENT_PUBLICATION.txt ./deploy/
 WORKDIR /app/backend
 RUN mkdir -p media staticfiles \
     && python manage.py collectstatic --noinput \

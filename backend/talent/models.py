@@ -246,8 +246,8 @@ class WorkExperience(models.Model):
         default=ConfidenceStatus.PARTIAL,
     )
     gap_reason = models.CharField(max_length=240, blank=True)
-    # Unknown legacy provenance is protected. Only proven resume-derived rows
-    # can leave the active journey after a complete replacement extraction.
+    # Preserve provenance when complete replacements archive older history.
+    # Unknown legacy and candidate-confirmed corrections remain recoverable.
     origin = models.CharField(max_length=20, default="unknown")
     archived_at = models.DateTimeField(null=True, blank=True)
     archived_by_resume_id = models.PositiveIntegerField(null=True, blank=True)
