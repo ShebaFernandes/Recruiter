@@ -2,6 +2,7 @@
 import json
 import logging
 import os
+import resource
 import subprocess
 import sys
 from datetime import timedelta
@@ -14,6 +15,14 @@ from .models import ResumeProcessingJob, WorkerHeartbeat
 from .resume_processing import _claim_job, _retry_or_fail
 
 logger = logging.getLogger(__name__)
+
+
+def _limit_child_resources():
+    # Applied after fork and before Django/PDF libraries start in the child.
+    memory = settings.RESUME_WORKER_CHILD_MEMORY_MB * 1024 * 1024
+    resource.setrlimit(resource.RLIMIT_AS, (memory, memory))
+    cpu = max(10, settings.RESUME_PROCESS_HARD_TIMEOUT_SECONDS - 5)
+    resource.setrlimit(resource.RLIMIT_CPU, (cpu, cpu))
 
 
 def heartbeat(worker_id, state="idle"):
@@ -57,7 +66,11 @@ def run_bounded_job(job_id, idempotency_key=None):
             command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, check=True,
             env=environment,
             timeout=settings.RESUME_PROCESS_HARD_TIMEOUT_SECONDS,
+            preexec_fn=_limit_child_resources if sys.platform.startswith('linux') else None,
         )
+        if sys.platform.startswith('linux'):
+            peak_kb = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
+            logger.info('resume_child_peak_kb job_id=%s peak_kb=%s', job_id, peak_kb)
         return json.loads(result.stdout.strip().splitlines()[-1])["outcome"]
     except (OSError, subprocess.SubprocessError, ValueError, KeyError, IndexError) as error:
         # No stdout/stderr here: parser diagnostics may contain document contents.

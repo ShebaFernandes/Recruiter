@@ -13,6 +13,13 @@ from talent.services import parse_resume
 pytestmark = pytest.mark.django_db
 
 
+@pytest.fixture(autouse=True)
+def isolated_resume_storage(settings, tmp_path):
+    # Promotion paths are stable across fresh test databases. Never reuse media
+    # left by an earlier local test run with the same synthetic primary keys.
+    settings.MEDIA_ROOT = tmp_path
+
+
 @pytest.mark.parametrize(('reason', 'expected'), [
     ('candidate_permission_or_rollout_gate', 'ai_unavailable_or_not_consented'),
     ('unavailable', 'ai_unavailable_and_fallback_empty'),
@@ -152,4 +159,63 @@ def test_evidence_validated_ai_role_saves_without_deterministic_role(
         ('Cedar Labs', 'Engineering Advisor')]
     assert data['employment_extraction']['status'] == 'verified_ai'
     assert data['resume_review'] is None
+    provider.generate.assert_called_once()
+
+
+def test_candidate_retry_revalidates_saved_ai_proposal_without_another_call(
+    client, candidate_account, settings, monkeypatch,
+):
+    settings.RESUME_AI_ENABLED = True
+    settings.RESUME_AI_EXTERNAL_PROCESSING_APPROVED = True
+    settings.RESUME_AI_PROVIDER = 'gemini'
+    settings.RESUME_AI_MODEL = 'fictional-model'
+    settings.RESUME_AI_ROLLOUT_MODE = 'consenting'
+    settings.RESUME_AI_MAX_ATTEMPTS = 1
+    settings.LEGAL_RESUME_AI_VERSION = 'fictional-consent'
+    settings.LEGAL_RESUME_AI_SHA256 = 'a' * 64
+    monkeypatch.setattr('talent.legal.documents', lambda: {'resume_ai': {
+        'version': settings.LEGAL_RESUME_AI_VERSION,
+        'sha256': settings.LEGAL_RESUME_AI_SHA256,
+    }})
+    provider = Mock()
+    provider.generate.return_value = AIProviderResult({
+        'full_name': {'value': None, 'evidence': ''},
+        'location': {'value': None, 'evidence': ''},
+        'professional_title': {'value': None, 'evidence': ''},
+        'professional_summary': {'value': None, 'evidence': ''},
+        'standout_signal': {'value': None, 'evidence': ''},
+        'skills': [], 'education': [],
+        'work_experiences': [{
+            'company': 'Cedar Labs', 'role': 'Engineering Advisor',
+            'employer_evidence': 'Cedar Labs',
+            'role_evidence': 'Engineering Advisor',
+        }],
+    }, 'gemini', 'fictional-model')
+    monkeypatch.setattr('talent.resume_understanding.resume_provider', lambda: provider)
+    response = client.post('/api/v1/candidate/resumes/', {
+        'file': SimpleUploadedFile('fictional.docx', document(
+            'Name: Asha Rao', 'Professional background',
+            'Damaged fictional export without employer or role text.',
+        )),
+        'resume_ai_accepted': 'true',
+        'resume_ai_version': settings.LEGAL_RESUME_AI_VERSION,
+    }, format='multipart')
+    assert response.status_code == 202
+    job = ResumeProcessingJob.objects.get(resume_id=response.data['latest_resume']['id'])
+    assert process_resume_job(job.pk) == 'completed'
+    assert client.get('/api/v1/candidate/profile/').data['work_experiences'] == []
+    recovered = parse_resume(BytesIO(document(
+        'Name: Asha Rao', 'Professional background',
+        'Cedar Labs', 'Engineering Advisor',
+    )), 'fictional.docx')
+    monkeypatch.setattr('talent.resume_processing.parse_resume', lambda *_args: recovered.copy())
+    assert client.post(f'/api/v1/candidate/resumes/{job.resume_id}/retry/').status_code == 202
+    assert process_resume_job(job.pk) == 'completed'
+    profile = client.get('/api/v1/candidate/profile/').data
+    assert [(row['company'], row['role']) for row in profile['work_experiences']] == [
+        ('Cedar Labs', 'Engineering Advisor')]
+    assert profile['employment_extraction']['status'] == 'verified_ai'
+    assert Resume.objects.get(pk=job.resume_id).extracted_data['_interpretation'][
+        'reason'] == 'offline_evidence_revalidation'
+    assert ResumeAIUsage.objects.filter(resume_id=job.resume_id).count() == 1
     provider.generate.assert_called_once()

@@ -585,6 +585,14 @@ def resume_upload(request):
     uploaded = request.FILES.get("file")
     if not uploaded:
         return Response({"detail": "Choose a resume file."}, status=status.HTTP_400_BAD_REQUEST)
+    outstanding = ResumeProcessingJob.objects.filter(
+        state__in=[ResumeProcessingJob.State.QUEUED, ResumeProcessingJob.State.PROCESSING]
+    ).count()
+    if outstanding >= settings.RESUME_QUEUE_MAX_OUTSTANDING:
+        return Response(
+            {"detail": "Resume processing is busy. Please try again shortly."},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
     extension = Path(uploaded.name).suffix.lower()
     if extension not in {".pdf", ".docx"}:
         return Response(

@@ -663,6 +663,42 @@ PIPE_EXPERIENCE_PATTERN = re.compile(
 
 def parse_resume(file_obj, filename):
     text = extract_text(file_obj, filename)
+    evidence_views = []
+    layout = {}
+    layout_regions = []
+    if Path(filename).suffix.lower() == '.pdf':
+        from .document_evidence import pdf_views
+
+        # Keep independently extracted views separate for evidence validation.
+        # The readable view is the model/parser input, never a concatenation.
+        alternative = '' if OCR_REQUIRED_MARKER in text or OCR_USED_MARKER in text else (
+            _poppler_pdf_text(file_obj))
+        evidence_views, layout = pdf_views(file_obj, text, alternative)
+        readable = [view for view in evidence_views if view['text'].strip()]
+        if readable:
+            selected = max(readable, key=lambda view: (
+                _dated_role_count(view['text']),
+                _pdf_readability(view['text'])[1],
+                _pdf_readability(view['text'])[0],
+            ))
+            text = selected['text']
+            layout['selected_method'] = selected['method']
+            if selected['method'] == 'pdfplumber':
+                line_number = 1
+                for block in selected['blocks'][:80]:
+                    layout_regions.append({
+                        'page': block['page'], 'column': block['column'],
+                        'line': line_number, 'bbox': block['bbox'],
+                    })
+                    line_number += len(block['text'].splitlines())
+            counts = [_dated_role_count(view['text']) for view in readable]
+            layout['independent_role_count_agreement'] = (
+                max(counts) > 0 and counts.count(max(counts)) >= 2
+            )
+    elif Path(filename).suffix.lower() == '.docx':
+        from .document_evidence import docx_view
+
+        evidence_views, layout = docx_view(text)
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     email_match = re.search(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}", text)
     phone_match = re.search(r"(?:\+?91[-\s]?)?[6-9]\d{9}", text)
@@ -882,7 +918,10 @@ def parse_resume(file_obj, filename):
         and not explicit_no_employment and len(text) <= RESUME_RAW_TEXT_LIMIT
     )
     complete_for_archival = ((pipe_complete or standard_complete)
-                             and OCR_REQUIRED_MARKER not in text and OCR_USED_MARKER not in text)
+                             and OCR_REQUIRED_MARKER not in text and OCR_USED_MARKER not in text
+                             and not layout.get('layout_incomplete')
+                             and (Path(filename).suffix.lower() != '.pdf'
+                                  or layout.get('independent_role_count_agreement', False)))
     return {
         "full_name": name[:180],
         "headline": headline[:240],
@@ -925,6 +964,10 @@ def parse_resume(file_obj, filename):
         "summary": _value_after_label(text, "Summary"),
         "raw_text": text[:RESUME_RAW_TEXT_LIMIT],
         "_text_truncated": len(text) > RESUME_RAW_TEXT_LIMIT,
+        "_document_layout": layout,
+        # Worker-only, removed before persistence. No extra raw document copies in DB.
+        "_evidence_views": evidence_views,
+        "_layout_regions": layout_regions,
         "standout_signal": standout[:1000],
     }
 

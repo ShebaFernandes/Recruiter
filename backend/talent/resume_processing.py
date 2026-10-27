@@ -38,7 +38,7 @@ from .models import (
     ResumeAIUsage,
     ResumeProcessingJob,
 )
-from .resume_understanding import understand_resume
+from .resume_understanding import revalidate_cached_interpretation, understand_resume
 from .services import parse_resume
 from .storage_cleanup import schedule_cleanup
 
@@ -743,11 +743,22 @@ def process_resume_job(job_id, idempotency_key=None, claimed=None):
                 candidate_requested_ai=resume_ai_allowed,
             )
             if rules_only_retry:
-                extracted['_interpretation'] = {
-                    'source': 'rules', 'reason': 'candidate_requested_rule_retry'
-                }
+                recovered = (
+                    revalidate_cached_interpretation(extracted, previous_private)
+                    if resume.ai_processing_consent_at else None
+                )
+                if recovered:
+                    extracted = recovered
+                else:
+                    extracted['_interpretation'] = {
+                        'source': 'rules', 'reason': 'candidate_requested_rule_retry'
+                    }
         else:
             extracted["_interpretation"] = {"source": "rules", "reason": "identity_check"}
+        # Alternative raw views exist only while this worker validates evidence.
+        # The private resume remains in file storage; persist bounded metadata only.
+        extracted.pop('_evidence_views', None)
+        extracted.pop('_layout_regions', None)
         extracted["_employment_outcome"] = _employment_outcome(extracted)
         if not _set_job_phase(job, "validating"):
             return "superseded"

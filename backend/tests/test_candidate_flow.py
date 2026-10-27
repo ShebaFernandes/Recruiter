@@ -411,6 +411,26 @@ def test_resume_upload_rejects_unsupported_file(client, candidate_account):
 
 
 @pytest.mark.django_db
+def test_resume_queue_backpressure_rejects_new_upload_before_storage(
+    client, candidate_account, tmp_path
+):
+    with override_settings(MEDIA_ROOT=tmp_path, RESUME_QUEUE_MAX_OUTSTANDING=1):
+        first = client.post(
+            '/api/v1/candidate/resumes/',
+            {'file': SimpleUploadedFile('fictional.docx', resume_docx())},
+            format='multipart',
+        )
+        assert first.status_code == 202
+        second = client.post(
+            '/api/v1/candidate/resumes/',
+            {'file': SimpleUploadedFile('fictional-second.docx', resume_docx())},
+            format='multipart',
+        )
+        assert second.status_code == 503
+        assert Resume.objects.count() == 1
+
+
+@pytest.mark.django_db
 def test_resume_ai_permission_is_optional_versioned_and_scoped_to_uploaded_resume(
     client, candidate_account, monkeypatch, tmp_path
 ):
