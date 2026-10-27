@@ -1,0 +1,111 @@
+ENTER — Local Gemini and Career Journey readiness
+27 October 2026. LOCAL ONLY. No production changes or deployments.
+
+RESULT
+Offline flow verified. Real extraction intentionally remains disabled pending key/project
+verification and separate authorization for one paid fictional request and budget headroom.
+No real resume was reprocessed. No candidate records, manual edits, consent records,
+budget ledger entries or migrations were changed. The worker supervisor was restarted.
+
+LOCAL SETTINGS APPLIED (.env is private and ignored)
+AI_PROVIDER=deterministic retained.
+RESUME_AI_PROVIDER=gemini retained.
+RESUME_AI_MODEL=gemini-3.5-flash-lite (previously gemini-3.1-flash-lite).
+RESUME_AI_MAX_OUTPUT_TOKENS=3000 (previously 6000).
+RESUME_AI_INPUT_USD_PER_MILLION=0.30 (previously 0.25).
+RESUME_AI_OUTPUT_USD_PER_MILLION=2.50 (previously 1.50).
+RESUME_AI_MAX_ATTEMPTS=1 retained.
+RESUME_AI_ROLLOUT_MODE=canary; RESUME_AI_CANARY_RESUME_IDS is empty.
+RESUME_QUEUE_BACKEND=database retained.
+RESUME_AI_ENABLED=false, EXTERNAL_PROCESSING_APPROVED=false, ALLOW_PAID=false,
+GEMINI_FREE_TIER_APPROVED=false and legal activation remain closed.
+Daily/monthly caps remain USD 0.01 each. No ledger reset or budget increase.
+The key was removed from shared dotenv values and placed in a mode-0600 ignored
+worker secret file, referenced through RESUME_AI_API_KEY_FILE. Local Django API
+settings do not read that file and discard legacy inherited Gemini/resume key values.
+Local run_resume_worker/process_resume_job processes load the worker credential.
+Production secret-loading behavior is unchanged. No secret value is in this report.
+
+KEY, PROJECT, MODEL, SPENDING
+A read-only GET model metadata call using the local key returned:
+models/gemini-3.5-flash-lite, with generateContent support. It sent no resume or
+prompt and made no generation request. This verifies model access, not Paid status.
+The existing AI Studio session shows project enter (gen-lang-client-0591130162)
+on Paid 1, auto-reload off. The API Keys page returns permission denied, so the
+local key's ownership by that Paid project is NOT VERIFIED. Do not treat model
+metadata success or old release evidence as proof of this key's billing status.
+The billing page also displays an account/payment issue requiring attention.
+Existing deploy/GEMINI_ACTIVATION_EVIDENCE.json records management approval for
+this model, paid service, one attempt, no historical processing, manual-edit protection
+and worker-only secrets. That evidence was read, not modified.
+Current local ledger: USD 0 today; USD 0.078606 this month; USD 0 outstanding reservations.
+Existing monthly cap USD 0.01 therefore blocks a request independently of AI flags.
+The fictional fixture preflight reserves USD 0.008409, below the USD 0.009 maximum.
+The canary runner now checks existing ledger headroom before creating any test records.
+
+UPLOAD CONSENT AND CAREER DATA
+Newest local uploads 545, 546 and 547 have no AI consent. Upload 545, discussed in
+the previous local review, still retains seven candidate-confirmed/manual rows;
+none is verified against that upload. Newest global upload 547 retains two manual
+rows and also has zero verified rows. Upload 546 has six roles verified by rules.
+These are separate candidate profiles; the API selects each profile's own latest
+upload, never the globally newest resume. No consent was backfilled.
+CareerJourney consumes saved WorkExperience IDs verified against the latest upload's
+accepted evidence. Old/manual records remain available for review. No frontend
+replacement was needed. Horizontal linear timeline, years-only labels and hover,
+tap and keyboard focus details remain intact and were visually checked on fictional
+mobile and desktop screenshots.
+
+LOCAL SERVICES
+Backend readiness returns database=ok and resume_queue=database.
+API and worker use the shared root .env: local PostgreSQL 127.0.0.1:5433/enter,
+database queue and local private storage. Worker heartbeat is fresh; zero pending
+jobs. Worker is ready for rules processing, NOT yet authorized/ready for paid extraction.
+The default scripts/run_local.py supervisor intentionally forces offline AI settings.
+Use the one-shot canary runner for a separately authorized fictional paid test;
+do not enable the continuous worker globally. 0023/0024 remain applied and unchanged.
+
+VERIFICATION
+122 distinct focused backend tests passed (121 combined regression tests plus the new
+subprocess credential-isolation test). Tests cover real fictional PDF/DOCX worker
+processing, consent, allowlisting, exhausted budgets, external approval, evidence
+validation, saved-profile API, duplicate delivery and preservation of manual rows.
+Five new paid-canary tests mock the Gemini HTTP boundary and block network access.
+No Gemini generation call was made. Test accounting values belong only to the separate
+test database. An initial run used default SQLite and failed worker tests; rerunning
+against the correct local PostgreSQL test database passed.
+20 focused frontend unit tests and four fictional browser scenarios passed.
+Ruff and Django system checks passed. No frontend source changed in this repair.
+
+EXACT NEXT ACTION FOR REAL GEMINI (NOT EXECUTED)
+1. Resolve AI Studio's key-listing permission/account issue and verify this exact local
+   key belongs to enter / gen-lang-client-0591130162, with Paid service enabled.
+   Do not reveal the key in chat and do not test a personal resume to establish billing.
+2. Separately authorize ONE request for the existing fictional-promotion-gap.pdf,
+   SHA256 dcf9d6f1e5ce37e48418a50c28ec8c529374380305cdb08ba12a75f1fff6fd6b,
+   model gemini-3.5-flash-lite, maximum USD 0.009, zero retries. Also explicitly
+   authorize local monthly cap USD 0.09 (current usage plus this reservation fits),
+   retaining the existing ledger and USD 0.01 daily cap. No personal resume processing.
+3. After those prerequisites, run the following one-shot command from the repository
+   root. These process-only overrides do not activate the continuous worker or API.
+   The runner creates a fresh fictional profile/resume with current versioned consent,
+   allowlists only that generated resume ID and processes at most one attempt.
+
+RESUME_AI_ENABLED=true \
+RESUME_AI_EXTERNAL_PROCESSING_APPROVED=true \
+RESUME_AI_ALLOW_PAID=true \
+RESUME_AI_MONTHLY_BUDGET_USD=0.09 \
+LEGAL_RESUME_AI_APPROVED=true \
+LEGAL_RESUME_AI_VERSION=enter-resume-ai-consent-v1.1 \
+LEGAL_RESUME_AI_SHA256=e9ba89892b3b29aa738ef7dc7ff2913149be87c44080a058ddfa3cc677041040 \
+.venv/bin/python scripts/run_gemini_resume_local_canary.py \
+  --authorized-sha256 dcf9d6f1e5ce37e48418a50c28ec8c529374380305cdb08ba12a75f1fff6fd6b \
+  --execute-authorized
+
+Safe preflight already run (no external request):
+.venv/bin/python scripts/run_gemini_resume_local_canary.py \
+  --authorized-sha256 dcf9d6f1e5ce37e48418a50c28ec8c529374380305cdb08ba12a75f1fff6fd6b
+
+Do not run the execution command until key/project verification AND separate paid-call
+and budget authorization are complete. Future personal uploads require fresh candidate
+consent; this report does not authorize reprocessing any existing resume.

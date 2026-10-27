@@ -191,3 +191,29 @@ def _document_bytes(document):
     content = BytesIO()
     document.save(content)
     return content.getvalue()
+
+
+@pytest.mark.parametrize('extension', ['pdf', 'docx'])
+@pytest.mark.parametrize('stacked', [True, False])
+def test_internship_specialization_and_separate_role_headers(extension, stacked):
+    """Fictional analogue of a slash-separated internship and subsequent job."""
+    entries = [
+        ('Orchid Research and Technologies', 'AI Intern / SDE Intern - AI',
+         'Jan 2026 - Jul 2026'),
+        ('Cedar Recruitment', 'AI Full-Stack Developer', 'Sep 2026 - Present'),
+    ]
+    lines = ['Name: Fictional Candidate', 'EXPERIENCE']
+    for company, role, dates in entries:
+        lines.extend([company, role, dates] if stacked else [' | '.join([company, role, dates])])
+        lines.append('Built reliable tools for the platform team.')
+    rows = parse_resume(resume_file(lines, extension), f'fictional.{extension}')['work_experiences']
+    assert [(row['company'], row['role']) for row in rows] == [entry[:2] for entry in entries]
+    assert rows[0]['employment_type'] == 'Internship'
+    assert rows[1]['employment_type'] == ''  # Do not guess full-time from its duration.
+    assert rows[0]['start_date'] == '2026-01-01'
+    assert rows[0]['end_date'] == '2026-07-01'
+    assert rows[1]['start_date'] == '2026-09-01' and rows[1]['is_current']
+    assert rows[0]['description'] == 'Built reliable tools for the platform team.'
+    assert 'Cedar' not in rows[0]['source_evidence']
+    assert entries[0][0] in rows[0]['source_evidence']
+    assert entries[0][1] in rows[0]['source_evidence']

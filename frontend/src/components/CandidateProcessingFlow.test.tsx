@@ -94,7 +94,7 @@ describe('actual candidate processing integration', () => {
     expect(screen.queryByText('Role & direction')).not.toBeInTheDocument()
     expect(Array.from(document.querySelectorAll('.cp-identity-meta>span')).map(item => item.textContent)).toEqual(['Birla Institute of Technology, Mesra', '5 years experience', 'Bengaluru'])
     expect(screen.getByRole('heading', { name: 'Your career journey' })).toBeVisible()
-    expect(screen.getByRole('button', { name: 'Add career history' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Review saved profile' })).toBeVisible()
     expect(screen.queryByRole('heading', { name: 'BEYOND THE CV' })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: "That's me ✓" }))
     expect(screen.getByRole('heading', { name: 'BEYOND THE CV' })).toBeVisible()
@@ -112,8 +112,8 @@ describe('actual candidate processing integration', () => {
   it('renders accepted uploads immediately, then leaves as soon as a poll completes', async () => {
     vi.spyOn(api, 'uploadResume').mockResolvedValue(queued)
     await mount(); await upload()
-    expect(screen.getByRole('heading', { name: "We're doing the boring part." })).toBeVisible()
-    expect(screen.getByRole('region', { name: "We're doing the boring part." })).toHaveFocus()
+    expect(screen.getByRole('heading', { name: "While we get to know you…" })).toBeVisible()
+    expect(screen.getByRole('region', { name: "While we get to know you…" })).toHaveFocus()
     expect(screen.queryByRole('complementary', { name: 'Career Settings panel' })).not.toBeInTheDocument()
     expect(document.querySelector('.cp-profile-workspace')).not.toBeInTheDocument()
     vi.mocked(api.candidateProfile).mockResolvedValue(completed)
@@ -166,9 +166,49 @@ describe('actual candidate processing integration', () => {
     fireEvent.click(screen.getByText('New resume changes to review (1)'))
     expect(screen.getByText(/saved profile has 1 roles; the latest resume contains 7 roles across 3 employers/i)).toBeVisible()
     expect(screen.getByText('Role 7')).toBeVisible()
-    fireEvent.click(screen.getByLabelText('Use these 7 roles in my Career Journey'))
+    fireEvent.click(screen.getByLabelText('Apply these 7 role changes'))
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Apply selected changes' })) })
     expect(api.reviewResume).toHaveBeenCalledWith(2, ['work_experiences'], '', true)
+  })
+  it('opens the pending resume comparison from a conflicting saved Career Journey', async () => {
+    const saved = [
+      { id: 1, company: 'Cedar Recruitment', role: 'AI Developer', start_date: '2026-09-01',
+        end_date: null, is_current: false, date_label: '2026-09-01 — End not specified',
+        description: '', gap_reason: '', confidence_status: 'candidate_confirmed' as const },
+      { id: 2, company: 'Orchid Research', role: 'AI Intern', start_date: '2026-01-01',
+        end_date: '2026-07-01', is_current: false, date_label: 'Jan 2026 - Jul 2026',
+        description: '', gap_reason: '', confidence_status: 'candidate_confirmed' as const },
+    ]
+    const proposed = [{ ...saved[0], is_current: true, date_label: 'Sep 2026 - Present' }, saved[1]]
+    vi.mocked(api.candidateProfile).mockResolvedValue({
+      ...completed,
+      work_experiences: saved,
+      employment_extraction: {
+        resume_id: 2, status: 'verified_fallback', source: 'rules', reason_code: 'evidence_roles_accepted',
+        accepted_role_count: 2, saved_role_count: 2, profile_state: 'pending_candidate_review',
+        stale_profile_preserved: true, verified_role_ids: [], candidate_confirmed_role_ids: [1, 2],
+        unverified_role_ids: [1, 2],
+      },
+      resume_review: { resume_id: 2, original_name: 'fictional.docx', fields: { work_experiences: proposed } },
+    })
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => { callback(0); return 1 })
+    const reviewRequest = vi.spyOn(api, 'reviewResume')
+    await mount()
+    const review = document.getElementById('resume-changes-review') as HTMLDetailsElement
+    review.scrollIntoView = vi.fn()
+    expect(review).not.toHaveAttribute('open')
+    expect(document.querySelector('.career-history-status')).toHaveTextContent('Some resume details differ from your saved edits')
+    fireEvent.click(screen.getByRole('button', { name: 'Review roles from latest resume' }))
+    expect(review).toHaveAttribute('open')
+    expect(review.scrollIntoView).toHaveBeenCalled()
+    expect([...review.querySelectorAll('.cp-review-history strong')].map(row => row.textContent)).toEqual([
+      'AI Intern', 'AI Developer', 'AI Intern', 'AI Developer',
+    ])
+    expect([...review.querySelectorAll('.cp-review-history small')].map(row => row.textContent)).toEqual([
+      'Jan 2026 - Jul 2026', '2026-09-01 — End not specified',
+      'Jan 2026 - Jul 2026', 'Sep 2026 - Present',
+    ])
+    expect(reviewRequest).not.toHaveBeenCalled()
   })
   it('recovers from polling failure and stops loading on terminal failure', async () => {
     vi.mocked(api.candidateProfile).mockResolvedValue(queued)
@@ -220,4 +260,85 @@ describe('actual candidate processing integration', () => {
     await act(() => vi.advanceTimersByTimeAsync(30000))
     expect(api.resumeStatus).toHaveBeenCalledTimes(2)
   })
+})
+
+it.each([false, true])('uses static reflection prompts without preference writes (replacement=%s)', async replacement => {
+  vi.mocked(api.candidateProfile).mockResolvedValue(replacement ? completed : profile)
+  vi.spyOn(api, 'uploadResume').mockResolvedValue(queued)
+  const patch = vi.spyOn(api, 'updateCandidate')
+  await mount(); await upload()
+  expect(screen.queryByRole('checkbox')).toBeNull()
+  expect(screen.getByText("We're turning your experience into a clearer picture of your career.")).toBeVisible()
+  for (const text of ['Harder problems', 'More ownership', 'Exceptional people', 'Compensation']) {
+    const chip = screen.getByText(text)
+    expect(chip.tagName).toBe('LI')
+    expect(chip).not.toHaveAttribute('tabindex')
+    fireEvent.click(chip)
+  }
+  expect(patch).not.toHaveBeenCalled()
+  expect(api.uploadResume).toHaveBeenCalledWith(file, undefined)
+  vi.mocked(api.candidateProfile).mockResolvedValue(completed)
+  await act(() => vi.advanceTimersByTimeAsync(3000))
+  expect(screen.getByRole('heading', { name: "Here's how we understand you." })).toBeVisible()
+  expect(screen.queryByRole('progressbar')).toBeNull()
+})
+
+it('keeps polling a long-running job while pausing its animation and offering a status check', async () => {
+  vi.mocked(api.candidateProfile).mockResolvedValue(queued)
+  vi.mocked(api.resumeStatus).mockResolvedValue({ resume, worker_available:true })
+  await mount()
+  await act(() => vi.advanceTimersByTimeAsync(61_000))
+  expect(document.querySelector('.cp-processing-bar')).toHaveClass('is-paused')
+  expect(screen.getByRole('button', { name:'Check status again' })).toBeVisible()
+  const calls = vi.mocked(api.resumeStatus).mock.calls.length
+  await act(() => vi.advanceTimersByTimeAsync(16_000))
+  expect(vi.mocked(api.resumeStatus).mock.calls.length).toBeGreaterThan(calls)
+  vi.mocked(api.candidateProfile).mockResolvedValue(completed)
+  await act(async () => { fireEvent.click(screen.getByRole('button', { name:'Check status again' })) })
+  expect(screen.queryByRole('progressbar')).toBeNull()
+})
+
+it('pauses polling in a hidden tab and checks immediately when it becomes active', async () => {
+  vi.mocked(api.candidateProfile).mockResolvedValue(queued)
+  vi.mocked(api.resumeStatus).mockResolvedValue({ resume, worker_available: true })
+  const hidden = vi.spyOn(document, 'hidden', 'get').mockReturnValue(false)
+  await mount()
+  await act(() => vi.advanceTimersByTimeAsync(3000))
+  expect(api.resumeStatus).toHaveBeenCalledTimes(1)
+  hidden.mockReturnValue(true)
+  await act(async () => { document.dispatchEvent(new Event('visibilitychange')) })
+  await act(() => vi.advanceTimersByTimeAsync(60000))
+  expect(api.resumeStatus).toHaveBeenCalledTimes(1)
+  hidden.mockReturnValue(false)
+  vi.mocked(api.candidateProfile).mockResolvedValue(completed)
+  vi.mocked(api.resumeStatus).mockResolvedValue({ resume: completed.latest_resume, worker_available: true })
+  await act(async () => { document.dispatchEvent(new Event('visibilitychange')) })
+  expect(screen.queryByRole('progressbar')).toBeNull()
+  expect(screen.getByRole('heading', { name: "Here's how we understand you." })).toBeVisible()
+})
+
+it('recovers a newer upload after refresh using the latest server resume, not a cached job ID', async () => {
+  vi.mocked(api.candidateProfile).mockResolvedValue(queued)
+  const newResume = { ...resume, id: 2, version: 2 }
+  vi.mocked(api.resumeStatus).mockResolvedValue({ resume: newResume, worker_available: true })
+  await mount()
+  vi.mocked(api.candidateProfile).mockResolvedValue({ ...queued, latest_resume: newResume })
+  await act(() => vi.advanceTimersByTimeAsync(3000))
+  expect(screen.getByRole('progressbar')).toBeVisible()
+  vi.mocked(api.resumeStatus).mockResolvedValue({ resume: { ...newResume, processing_status: 'completed' }, worker_available: true })
+  vi.mocked(api.candidateProfile).mockResolvedValue({ ...completed, latest_resume: { ...newResume, processing_status: 'completed' } })
+  await act(() => vi.advanceTimersByTimeAsync(3000))
+  expect(screen.queryByRole('progressbar')).toBeNull()
+})
+
+it('a manual check retains the truthful worker delay and cannot create another upload', async () => {
+  vi.mocked(api.candidateProfile).mockResolvedValue(queued)
+  vi.mocked(api.resumeStatus).mockResolvedValue({ resume, worker_available: false })
+  const uploadRequest = vi.spyOn(api, 'uploadResume')
+  await mount()
+  await act(() => vi.advanceTimersByTimeAsync(3000))
+  expect(screen.getByRole('status')).toHaveTextContent('temporarily delayed')
+  await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Check status again' })) })
+  expect(screen.getByRole('status')).toHaveTextContent('temporarily delayed')
+  expect(uploadRequest).not.toHaveBeenCalled()
 })

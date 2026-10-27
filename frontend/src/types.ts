@@ -13,6 +13,20 @@ export type WorkExperience = {
   confidence_status?: 'supported' | 'partial' | 'candidate_confirmed'
   gap_reason: string
 }
+export type EmploymentExtraction = {
+  resume_id?: number | null
+  resume_processing_status?: Resume['processing_status'] | null
+  verified_role_ids?: number[]
+  candidate_confirmed_role_ids?: number[]
+  unverified_role_ids?: number[]
+  status: 'verified_ai' | 'verified_fallback' | 'confirmed_no_employment' | 'review_required' | 'processing'
+  source: 'ai' | 'rules' | 'unknown'
+  reason_code: string
+  accepted_role_count: number
+  saved_role_count: number
+  profile_state: 'pending' | 'applied' | 'pending_candidate_review' | 'previous_history_preserved' | 'not_applied' | 'empty' | 'unchanged'
+  stale_profile_preserved: boolean
+}
 export type Resume = {
   id: number
   original_name: string
@@ -20,6 +34,7 @@ export type Resume = {
   uploaded_at: string
   processing_status: 'uploaded' | 'queued' | 'processing' | 'completed' | 'failed'
   scan_status: 'quarantined' | 'scanning' | 'clean' | 'infected' | 'failed'
+  processing_stage?: 'uploaded' | 'queued' | 'scanning' | 'extracting' | 'validating' | 'processing' | 'completed' | 'failed'
   processing_error: string
   can_retry: boolean
   url: string | null
@@ -73,6 +88,7 @@ export type Candidate = {
   discovery_status: 'draft' | 'submitted' | 'not_looking'
   profile_updated_at: string
   work_experiences: WorkExperience[]
+  employment_extraction?: EmploymentExtraction | null
   latest_resume: Resume | null
   viewed: boolean
   stage: string

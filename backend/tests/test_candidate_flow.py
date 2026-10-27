@@ -161,7 +161,7 @@ def test_resume_parser_extracts_company_date_then_role_layout():
                 "end_date": "2026-07-01",
                 "is_current": False,
                 "date_label": "Jan 2026 - Jul 2026",
-                "employment_type": "",
+                "employment_type": "Internship",
                 "location": "Bengaluru, India",
                 "description": "Built a LangGraph-based product requirements agent.",
                 "source_evidence": (

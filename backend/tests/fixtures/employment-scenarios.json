@@ -1,0 +1,9 @@
+[
+  {"name":"promotions", "lines":["EXPERIENCE", "Northstar Labs | Software Engineer | Jan 2020 - Dec 2021", "Northstar Labs | Senior Software Engineer | Jan 2022 - Dec 2023", "Maple Systems | Engineering Lead | Jan 2024 - Present"], "roles":3},
+  {"name":"internship", "lines":["EXPERIENCE", "Orchid Analytics | Data Analyst Intern | May 2022 - Jul 2022", "Orchid Analytics | Data Analyst | Aug 2022 - Dec 2024"], "roles":2},
+  {"name":"overlap-gap", "lines":["EXPERIENCE", "Cedar Software | Software Engineer | Jan 2020 - Dec 2021", "Quartz Studio | Technical Consultant | Jan 2021 - Jun 2021", "Riverstone Systems | Platform Engineer | Jan 2023 - Present"], "roles":3},
+  {"name":"single", "lines":["EXPERIENCE", "Willow Technology Cooperative | Software Engineer | Mar 2022 - May 2022"], "roles":1},
+  {"name":"partial", "lines":["RELEVANT EXPERIENCE", "Junior Developer at Cedar Software", "PROJECTS", "Personal Project | Search prototype | 2025"], "roles":1},
+  {"name":"fresher", "lines":["Fresher seeking first role", "PROJECTS", "Personal Project | Recommendation Engine | 2025", "EDUCATION", "Example University"], "roles":0},
+  {"name":"unresolved", "lines":["Skills: Python", "Career details available on request."], "roles":0}
+]

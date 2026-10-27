@@ -39,9 +39,17 @@ def run_bounded_job(job_id, idempotency_key=None):
     environment = dict(os.environ)
     # Tests and isolated staging may override the connection's database name. The child
     # must NEVER fall back to the parent's development database URL in that case.
-    database_url = urlsplit(environment["DATABASE_URL"])
+    database = settings.DATABASES["default"]
+    database_url = urlsplit(environment.get("DATABASE_URL", "postgresql://"))
+    credentials = quote(str(database.get("USER", "")), safe="")
+    credentials += ":" + quote(str(database.get("PASSWORD", "")), safe="")
+    host = str(database.get("HOST") or "localhost")
+    if ":" in host and not host.startswith("["):
+        host = f"[{host}]"
+    port = str(database.get("PORT") or 5432)
     environment["DATABASE_URL"] = urlunsplit(database_url._replace(
-        path="/" + quote(str(settings.DATABASES["default"]["NAME"]), safe=""),
+        scheme="postgresql", netloc=f"{credentials}@{host}:{port}",
+        path="/" + quote(str(database["NAME"]), safe=""),
     ))
     environment["MEDIA_ROOT"] = str(settings.MEDIA_ROOT)
     try:
@@ -51,7 +59,7 @@ def run_bounded_job(job_id, idempotency_key=None):
             timeout=settings.RESUME_PROCESS_HARD_TIMEOUT_SECONDS,
         )
         return json.loads(result.stdout.strip().splitlines()[-1])["outcome"]
-    except (subprocess.SubprocessError, ValueError, KeyError, IndexError):
+    except (OSError, subprocess.SubprocessError, ValueError, KeyError, IndexError) as error:
         # No stdout/stderr here: parser diagnostics may contain document contents.
         logger.warning("resume_child_failed job_id=%s", job_id)
         job = ResumeProcessingJob.objects.filter(pk=job_id).first()
@@ -60,8 +68,15 @@ def run_bounded_job(job_id, idempotency_key=None):
         if job.state == "completed":
             return "duplicate"
         if job.state == "processing":
+            message = (
+                "The processing worker could not start. Your file is saved; please retry."
+                if isinstance(error, OSError)
+                else "Processing could not finish safely. Your file is saved; please retry."
+            )
+            if isinstance(error, subprocess.TimeoutExpired):
+                message = "Processing exceeded its safe resource limit."
             return _retry_or_fail(
-                job_id, "Processing exceeded its safe resource limit.", claimed=claimed,
+                job_id, message, claimed=claimed,
             )
         # Startup failures leave the message outstanding for redelivery.
         return "busy"

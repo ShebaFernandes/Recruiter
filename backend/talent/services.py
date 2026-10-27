@@ -53,6 +53,13 @@ SECTION_HEADINGS = {
     "work history",
     "career history",
     "employment experience",
+    "career experience",
+    "industry experience",
+    "relevant experience",
+    "professional background",
+    "professional journey",
+    "internship experience",
+    "internships",
     "education",
     "academic background",
     "qualifications",
@@ -73,6 +80,13 @@ EXPERIENCE_HEADINGS = {
     "work history",
     "career history",
     "employment experience",
+    "career experience",
+    "industry experience",
+    "relevant experience",
+    "professional background",
+    "professional journey",
+    "internship experience",
+    "internships",
 }
 EDUCATION_HEADINGS = {"education", "academic background", "qualifications"}
 MONTH_PATTERN = (
@@ -110,7 +124,9 @@ def _append_right_column_sections(text):
     lines = text.splitlines()
     additions = []
     heading_pattern = re.compile(
-        r"(?i)\b(professional experience|employment history|work experience|work history)\b"
+        r"(?i)\b(professional experience|employment history|work experience|work history|"
+        r"career experience|industry experience|relevant experience|professional background|"
+        r"professional journey|internship experience|internships)\b"
     )
     for index, line in enumerate(lines):
         match = heading_pattern.search(line)
@@ -295,7 +311,7 @@ def _table_date_range(line):
     return line
 
 
-def _employment_details(value):
+def _employment_details(value, role=""):
     employment_type = next(
         (
             label
@@ -310,6 +326,11 @@ def _employment_details(value):
         ),
         "",
     )
+    if not employment_type and any(
+        re.search(r"\b(?:intern|internship)\s*\)?\s*(?:$|[-–—:])", title.strip(), re.I)
+        for title in re.split(r"[|/;]", role)
+    ):
+        employment_type = "Internship"
     location = ""
     location_match = re.search(
         r"(?i)(?:\||·)\s*([^|·]{2,80}(?:,\s*[A-Za-z]{2,40})?)\s*$", value
@@ -325,6 +346,14 @@ def _employment_details(value):
 
 def _standard_experiences(lines):
     section = [_table_date_range(line) for line in _section_lines(lines, EXPERIENCE_HEADINGS)]
+    # Separate employer/title/date lines belong to the next role, never to the
+    # previous role's achievements. Only explicit adjacent dated headers qualify.
+    header_starts = set()
+    for date_index in range(2, len(section)):
+        if DATE_RANGE_PATTERN.fullmatch(section[date_index]):
+            next_role, next_company = _role_and_company(section[date_index - 2 : date_index])
+            if _concise_role(next_role) and next_company:
+                header_starts.add(date_index - 2)
     experiences = []
     employer = ""
     for index, line in enumerate(section):
@@ -375,8 +404,9 @@ def _standard_experiences(lines):
                 continue
             employer = company
             description = []
-            for following in section[description_start:]:
-                if DATE_RANGE_PATTERN.search(following):
+            for following_index in range(description_start, len(section)):
+                following = section[following_index]
+                if following_index in header_starts or DATE_RANGE_PATTERN.search(following):
                     break
                 if re.match(r"(?i)^.+?\s+(?:at|@)\s+.+$", following) and _concise_role(following):
                     break
@@ -388,10 +418,14 @@ def _standard_experiences(lines):
                 if remainder:
                     description.insert(0, remainder)
             evidence_lines = [line]
+            if not prefix:
+                evidence_lines = section[max(0, index - 2) : index + 1]
             if description_start == index + 2:
                 evidence_lines.append(section[index + 1])
             evidence_lines.extend(description)
-            employment_type, role_location = _employment_details(" | ".join(evidence_lines[:2]))
+            employment_type, role_location = _employment_details(
+                " | ".join(evidence_lines[:2]), role
+            )
             experiences.append(
                 {
                     "role": role,
@@ -572,6 +606,14 @@ def parse_resume(file_obj, filename):
         )
         if re.search(pattern, preference_text, re.IGNORECASE):
             work_preferences.append(preference)
+    normalized_headings = {_heading(line) for line in lines}
+    explicit_no_employment = bool(
+        re.search(
+            r"(?i)\b(?:fresher|no (?:professional |work |employment )?experience|"
+            r"seeking (?:a )?first (?:job|role)|never (?:been )?employed)\b",
+            text,
+        )
+    )
     return {
         "full_name": name[:180],
         "headline": headline[:240],
@@ -596,6 +638,8 @@ def parse_resume(file_obj, filename):
                 + len({row["company"].casefold() for row in experience_rows})
             ),
             "recognized_roles": len(experience_rows),
+            "section_detected": bool(normalized_headings & EXPERIENCE_HEADINGS),
+            "explicit_no_employment": explicit_no_employment,
         },
         "notice_period_days": int(notice_match.group(1)) if notice_match else None,
         "current_salary_lpa": float(current_salary.group(1)) if current_salary else None,

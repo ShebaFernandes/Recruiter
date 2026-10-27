@@ -10,15 +10,29 @@ uv sync
 cd frontend && npm install && cd ..
 docker compose up -d db
 DATABASE_URL=postgresql://enter:enter@127.0.0.1:5433/enter uv run python backend/manage.py migrate
-DATABASE_URL=postgresql://enter:enter@127.0.0.1:5433/enter uv run python backend/manage.py runserver 127.0.0.1:8010
+uv run python scripts/run_local.py
+```
+
+The local launcher starts Django, the frontend and the durable resume worker together.
+It uses the local PostgreSQL queue and private files, disables external AI calls, and
+restarts a stopped worker with bounded backoff. Keep this terminal open. Ctrl+C stops
+the services started by the launcher. Apply pending local migrations first; ports
+8010 and 5173 must be free. It does not deploy or change production configuration.
+
+If the local UI and Django are already running and only the worker is missing:
+
+```bash
+uv run python scripts/run_local.py --worker-only
 ```
 
 Direct local Django and worker commands load the repository `.env` without overriding values
 already exported by the shell. Tests and staging/production do not load this local file.
 
-Run the durable local resume worker in another terminal:
+For separate manual service terminals, start Django, the worker and frontend (all three
+are required for asynchronous uploads). These direct commands use your `.env` AI settings:
 
 ```bash
+DATABASE_URL=postgresql://enter:enter@127.0.0.1:5433/enter uv run python backend/manage.py runserver 127.0.0.1:8010
 DATABASE_URL=postgresql://enter:enter@127.0.0.1:5433/enter uv run python backend/manage.py run_resume_worker
 ```
 

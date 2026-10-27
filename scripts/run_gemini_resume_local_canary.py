@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 sys.path.insert(0, str(ROOT / "scripts"))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+os.environ["ENTER_LOCAL_RESUME_WORKER"] = "true"
 
 import django  # noqa: E402
 
@@ -25,6 +26,7 @@ from anthropic_resume_local_benchmark import CASES  # noqa: E402
 from django.conf import settings  # noqa: E402
 from django.contrib.auth.models import User  # noqa: E402
 from django.core.files.base import ContentFile  # noqa: E402
+from django.db.models import Q, Sum  # noqa: E402
 from django.utils import timezone  # noqa: E402
 from rest_framework.test import APIClient  # noqa: E402
 from talent.models import (  # noqa: E402
@@ -117,6 +119,20 @@ def main():
     ) / Decimal("1000000")
     if reservation > MAX_RESERVATION:
         raise SystemExit("Conservative reservation exceeds the test limit; no request made.")
+    now = timezone.now()
+    headroom = {}
+    for period, start, cap in (
+        ("daily", now.replace(hour=0, minute=0, second=0, microsecond=0),
+         settings.RESUME_AI_DAILY_BUDGET_USD),
+        ("monthly", now.replace(day=1, hour=0, minute=0, second=0, microsecond=0),
+         settings.RESUME_AI_MONTHLY_BUDGET_USD),
+    ):
+        totals = ResumeAIUsage.objects.filter(created_at__gte=start).aggregate(
+            actual=Sum("actual_cost_usd"),
+            reserved=Sum("estimated_cost_usd", filter=Q(outcome="reserved")),
+        )
+        spent = sum((value or Decimal("0") for value in totals.values()), Decimal("0"))
+        headroom[period] = cap - spent
     preflight = {
         "mode": "execute" if args.execute_authorized else "preflight-only",
         "external_requests": 0,
@@ -134,6 +150,8 @@ def main():
         "storage": settings.STORAGES["default"]["BACKEND"],
         "queue": settings.RESUME_QUEUE_BACKEND,
         "api_key_configured": bool(settings.GEMINI_API_KEY or settings.RESUME_AI_API_KEY),
+        "budget_headroom_usd": {key: str(value) for key, value in headroom.items()},
+        "budget_can_reserve": all(value >= reservation for value in headroom.values()),
     }
     if not args.execute_authorized:
         print(json.dumps(preflight, indent=2))
@@ -149,6 +167,7 @@ def main():
         "output_limit": settings.RESUME_AI_MAX_OUTPUT_TOKENS == MAX_OUTPUT_TOKENS,
         "daily_budget": settings.RESUME_AI_DAILY_BUDGET_USD >= MAX_RESERVATION,
         "monthly_budget": settings.RESUME_AI_MONTHLY_BUDGET_USD >= MAX_RESERVATION,
+        "ledger_headroom": all(value >= reservation for value in headroom.values()),
         "fallback": settings.RESUME_AI_FALLBACK == "rules",
         "rollout": settings.RESUME_AI_ROLLOUT_MODE == "canary",
         "key": bool(settings.GEMINI_API_KEY or settings.RESUME_AI_API_KEY),

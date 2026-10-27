@@ -1,0 +1,124 @@
+ENTER — Local resume worker recovery review
+26 October 2026. No deployment; no real Gemini/provider calls.
+
+ROOT CAUSE AND LIVE LOCAL RESULT
+The API and Vite frontend were running, but no resume worker process was running.
+The only heartbeat was stopped, about 66 hours old. Job 516 / resume 545 was
+queued, enqueued, and had zero attempts. Its file was still saved in quarantine.
+The frontend uses http://127.0.0.1:8010/api/v1, and polls the owner's latest resume
+through /candidate/resume-status/; no stale cached job ID caused this incident.
+The local queue is PostgreSQL (127.0.0.1:5433, enter). Gemini was already disabled.
+
+Started a supervised offline worker against the same local database/private media.
+Job 516 completed on attempt 1, scan status clean, provider attempt records zero.
+Worker heartbeat is healthy and there are no queued/processing jobs at final check.
+The idle local worker was deliberately stopped once; its supervisor restarted it
+automatically and health recovered, verifying the restart path.
+Seven older failed jobs remain failed; they were not automatically retried or relabeled.
+
+Completion of the job does not certify complete employment extraction: the recovered
+resume's metadata reports review_required / no_supported_roles_detected. The rules
+fallback found zero supported roles, and all seven existing saved roles were preserved
+as previous history not verified by this resume. No resume content was inspected to
+investigate this separate extraction-quality issue. Candidate review remains needed.
+
+FIXES
+- scripts/run_local.py starts API, UI and durable worker together, requires local DB
+  and local private storage, disables external AI, refuses pending migrations, and
+  restarts a stopped worker with bounded backoff. --worker-only supports an existing
+  local API/UI session. README now recommends this startup path.
+- Worker recovers transient DB/network errors with bounded backoff and sanitized
+  category-only logging. Per-process heartbeats cannot mark another worker stopped.
+- Child processes inherit the resolved database host/name/credentials and media root;
+  a missing DATABASE_URL or child launch OSError cannot strand a claimed job forever.
+- Duplicate delivery cannot fail a live final attempt. Failed jobs require explicit
+  retry. Concurrent retry requests recheck eligibility under the job lock and enqueue
+  only one retry; the same saved file/job is reused. Provider caps/ledger are retained.
+- New job.phase metadata records scanning, extracting, and final validation/save at
+  actual worker boundaries. Status/profile APIs expose processing_stage; completed
+  still requires the atomic profile/job commit. Stage updates are attempt-fenced.
+- Polling retains 10-second request timeouts, bounded backoff and no-store status reads;
+  it pauses in hidden tabs and resumes on visibility. Manual status checks are guarded
+  against repeated clicks and retain the delay message when the worker is unavailable.
+- Existing card, mountain background, static chips, separate unchecked consent,
+  reduced-motion styles, and shared Career Journey are preserved.
+
+MIGRATIONS / PRESERVATION
+0023_preserve_resume_ai_budget_ledger.py is byte-for-byte unchanged and is now applied
+locally. 0024_resume_job_phase.py is an additive metadata migration, also applied
+locally. No missing model migrations detected. Neither migration was applied to AWS.
+The existing extraction implementation (resume_understanding.py), deterministic
+parser (services.py), and shared Career Journey TSX/CSS are byte-for-byte unchanged
+from the start of this repair. Existing reliability/manual-merge changes were retained.
+
+VERIFICATION
+146 distinct backend tests passed across the focused suites:
+  test_worker_recovery.py (8)
+  test_launch_blockers.py, test_resume_identity_and_leases.py,
+  test_production_hardening.py (27 combined)
+  test_resume_understanding.py, test_resume_reliability_matrix.py,
+  test_resume_safe_merge.py, test_candidate_experience.py (111 combined)
+Includes real isolated worker child, child launch failure, transient DB recovery,
+concurrent retry, final-attempt duplicate delivery, scanner protection, lease fencing,
+Gemini unavailable with mocked provider, fallback, request-cap preservation after
+failed save, consent, budget-ledger deletion protection, and manual edit preservation.
+
+Frontend: full suite passed 145 tests; final focused reruns passed, including the new
+manual-worker-health test (146 distinct frontend tests now). ESLint and production
+build passed. Existing bundle-size advisory remains (not a build failure).
+
+Final real browser run: 3 passed, isolated disposable PostgreSQL/media, no external AI.
+  resume-processing-ui.spec.ts: 1440px and 390px, initial/replacement uploads,
+  stopped worker then started, queue/delay, disconnected status, Check status again,
+  actual scanning/extracting, refresh during processing, automatic My Profile,
+  manual-edit preservation, reduced motion, static chips and horizontal overflow.
+  worker-retry-ui.spec.ts: failed child, clear retry action, same resume/job, refresh
+  while queued, standard worker subprocess completion, My Profile, one upload total.
+  Final recovery-only rerun also passed after refining the sanitized failure message.
+  Its cold-start signup allowance matches the other browser tests (20 seconds).
+
+Screenshots (synthetic test accounts only):
+frontend/test-results/worker-recovery-final/resume-processing-ui-accep-53abd-s-visibly-process-at-1440px/processing-0-1440.png
+frontend/test-results/worker-recovery-final/resume-processing-ui-accep-61cb7-ts-visibly-process-at-390px/processing-0-390.png
+frontend/test-results/worker-retry-final/worker-retry-ui-failed-wor-e87f1-file-without-another-upload/failed-mobile.png
+frontend/test-results/worker-retry-final/worker-retry-ui-failed-wor-e87f1-file-without-another-upload/retry-completed-mobile.png
+
+FILES CHANGED IN THIS REPAIR (earlier pending UI/reliability changes remain)
+README.md
+scripts/run_local.py
+backend/talent/worker_runtime.py
+backend/talent/management/commands/run_resume_worker.py
+backend/talent/models.py
+backend/talent/migrations/0024_resume_job_phase.py
+backend/talent/resume_processing.py
+backend/talent/serializers.py
+backend/talent/candidate_views.py
+backend/talent/views.py
+backend/tests/test_worker_recovery.py
+frontend/src/types.ts
+frontend/src/api.ts
+frontend/src/components/CandidatePresentation.tsx
+frontend/src/components/CandidateExperience.tsx
+frontend/src/components/CandidatePresentation.test.tsx
+frontend/src/components/CandidateProcessingFlow.test.tsx
+frontend/tests/resume-processing-ui.spec.ts
+frontend/tests/worker-retry-ui.spec.ts
+RESUME_WORKER_REVIEW.txt
+
+LOCAL PREVIEW
+Currently: http://127.0.0.1:5173 (API on 8010; supervised offline worker left running).
+Keep the worker running while testing. For a later fresh startup, stop existing local
+servers so 8010/5173 are free, then from /Users/enter/Desktop/recruiter:
+  .venv/bin/python backend/manage.py migrate
+  .venv/bin/python scripts/run_local.py
+If API/UI are already running but worker is missing:
+  .venv/bin/python scripts/run_local.py --worker-only
+The launcher is a local session, not an OS login/startup service.
+
+PRODUCTION LIMITS
+AWS/SQS/ClamAV service health was not inspected or changed. Local tests used the
+configured development scanner (format validation); they do not certify production
+malware scanning. Production needs its own worker/queue/scanner health verification
+and migrations 0023/0024 before the changed backend is rolled out. Live Gemini
+availability/latency was not tested; all provider failure tests were mocked. Do not
+deploy until the user approves.

@@ -298,6 +298,48 @@ def test_resume_text_over_legacy_limit_remains_available_for_ai():
     assert parsed["_text_truncated"] is False
 
 
+@pytest.mark.parametrize(
+    "heading",
+    [
+        "RELEVANT EXPERIENCE",
+        "INDUSTRY EXPERIENCE",
+        "PROFESSIONAL BACKGROUND",
+        "INTERNSHIP EXPERIENCE",
+    ],
+)
+def test_alternative_employment_headings_keep_internship_table_roles(heading):
+    parsed = parse_resume(
+        BytesIO(
+            (
+                f"Name: Fictional Candidate\n{heading}\n"
+                "Northstar Labs | Software Engineering Intern | Jun 2023 - Aug 2023\n"
+                "Built an internal test harness.\nEDUCATION\nExample University"
+            ).encode()
+        ),
+        "fictional.txt",
+    )
+
+    assert [(row["company"], row["role"]) for row in parsed["work_experiences"]] == [
+        ("Northstar Labs", "Software Engineering Intern")
+    ]
+    assert parsed["work_experiences"][0]["start_date"] == "2023-06-01"
+    assert parsed["_employment_parse"]["section_detected"] is True
+
+
+def test_explicit_fresher_projects_are_not_misclassified_as_employment():
+    parsed = parse_resume(
+        BytesIO(
+            b"Name: Fictional Student\nFresher seeking first role\n"
+            b"PROJECTS\nPersonal Project | Recommendation Engine | 2025\n"
+            b"EDUCATION\nExample University"
+        ),
+        "fictional.txt",
+    )
+
+    assert parsed["work_experiences"] == []
+    assert parsed["_employment_parse"]["explicit_no_employment"] is True
+
+
 def test_input_reservation_includes_instructions_schema_and_document():
     reserved = request_input_token_reservation(TEXT)
     document_only_estimate = (len(TEXT.encode("utf-8")) + 1) // 2 + 256
@@ -354,6 +396,61 @@ def test_overlong_optional_provider_prose_does_not_discard_supported_roles():
         "category": "schema.overlong_text_discarded",
         "count": 1,
     }]
+
+
+def test_missing_and_malformed_optional_role_prose_does_not_erase_employment():
+    data = response()
+    first = data["work_experiences"][0]
+    for key in ("start", "end", "employment_type", "location", "details"):
+        first.pop(key)
+    first["achievements"] = {"unexpected": "shape"}
+
+    parsed = validate_interpretation(data, TEXT)
+
+    assert len(parsed["work_experiences"]) == 2
+    assert parsed["work_experiences"][0]["date_label"] == "Unknown — Unknown"
+    assert parsed["work_experiences"][0]["description"] == ""
+    assert {item["category"] for item in parsed["_validation_rejections"]} == {
+        "schema.optional_field_discarded"
+    }
+
+
+@pytest.mark.parametrize("field", ["company", "role", "employer_evidence", "role_evidence"])
+def test_missing_essential_employment_field_is_rejected(field):
+    data = response()
+    data["work_experiences"][0].pop(field)
+
+    with pytest.raises(AIProviderMalformedResponse) as exc_info:
+        validate_interpretation(data, TEXT)
+
+    assert exc_info.value.stage == "schema_validation"
+
+
+def test_exact_table_row_can_support_company_role_and_dates_together():
+    text = """Professional Experience
+Northstar Labs | Software Engineering Intern | Jun 2023 - Aug 2023
+Built an internal test harness.
+"""
+    data = work_response([
+        {
+            "company": "Northstar Labs",
+            "role": "Software Engineering Intern",
+            "start": "Jun 2023",
+            "end": "Aug 2023",
+            # Deliberately unusable separate employer evidence: the exact table row
+            # remains strict evidence for both company and role.
+            "employer_evidence": "employer heading unavailable",
+            "role_evidence": (
+                "Northstar Labs | Software Engineering Intern | Jun 2023 - Aug 2023"
+            ),
+        }
+    ])
+
+    parsed = validate_interpretation(data, text)
+
+    assert len(parsed["work_experiences"]) == 1
+    assert parsed["work_experiences"][0]["start_date"] == "2023-06-01"
+    assert parsed["work_experiences"][0]["end_date"] == "2023-08-01"
 
 
 def test_seven_promoted_roles_with_distant_employer_headings_are_supported():
@@ -1405,6 +1502,34 @@ def test_free_tier_gemini_records_zero_billed_cost_not_reserved_price(
     usage.refresh_from_db()
     assert usage.estimated_cost_usd == Decimal("0.009733")
     assert usage.actual_cost_usd == Decimal("0")
+
+
+@pytest.mark.django_db
+def test_budget_ledger_survives_candidate_and_resume_deletion(candidate_account):
+    from django.contrib.auth.models import User
+    from talent.models import Resume, ResumeAIUsage
+
+    user = User.objects.get(pk=candidate_account["user"]["id"])
+    resume = Resume.objects.create(
+        candidate=user.candidate_profile,
+        file="quarantine/fictional-ledger.pdf",
+        original_name="fictional-ledger.pdf",
+    )
+    usage = ResumeAIUsage.objects.create(
+        resume=resume,
+        attempt=1,
+        provider="gemini",
+        model="fictional-model",
+        outcome=ResumeAIUsage.Outcome.SUCCEEDED,
+        estimated_cost_usd=Decimal("0.006000"),
+        actual_cost_usd=Decimal("0.004000"),
+    )
+
+    user.delete()
+
+    usage.refresh_from_db()
+    assert usage.resume_id is None
+    assert usage.actual_cost_usd == Decimal("0.004000")
 
 
 @pytest.mark.django_db

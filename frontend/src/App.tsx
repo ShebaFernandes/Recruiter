@@ -312,7 +312,7 @@ function CandidateCard({ result, selected, toggle, open, status }: {
         <span><BriefcaseBusiness /> <b>Experience:</b> {candidate.total_experience} years</span>
         <span><IndianRupee /> <b>{candidate.current_salary_lpa ? 'Current salary:' : 'Expected salary:'}</b> {candidate.current_salary_lpa || candidate.expected_salary_lpa ? `${candidate.current_salary_lpa || candidate.expected_salary_lpa} LPA` : 'Not shared'}</span>
       </div>
-      <div className="career-row"><b>career journey</b><CareerJourney items={candidate.work_experiences} /></div>
+      <div className="career-row"><b>career journey</b><CareerJourney extraction={candidate.employment_extraction} items={candidate.work_experiences} /></div>
       <div className="card-skills"><b>Skills</b><div className="skill-list">{candidate.skills.slice(0, 7).map(skill => <span key={skill}><Check />{skill}</span>)}</div></div>
     </div>
     <div className="candidate-actions">
@@ -384,7 +384,7 @@ function ProfileDrawer({ candidate, close, refresh, projects, selectedProject, a
     {candidate.skills.length > 0 && <section><div className="section-kicker">SKILLS</div><div className="skill-list">{candidate.skills.map(skill => <span key={skill}>{skill}</span>)}</div></section>}
     {candidate.work_preferences.length > 0 && <section><div className="section-kicker">WORK PREFERENCES</div><div className="skill-list">{candidate.work_preferences.map(preference => <span key={preference}>{preference}</span>)}</div></section>}
     {candidate.education.length > 0 && <section><div className="section-kicker">EDUCATION</div><div className="profile-education">{candidate.education.map(item => <p key={item}><GraduationCap /> {item}</p>)}</div></section>}
-    {candidate.work_experiences.length > 0 && <section><div className="section-kicker">CAREER JOURNEY</div><CareerJourney items={candidate.work_experiences} detailed /></section>}
+    {<section><div className="section-kicker">CAREER JOURNEY</div><CareerJourney extraction={candidate.employment_extraction} items={candidate.work_experiences} detailed /></section>}
     <button className="text-button" onClick={refresh}>Refresh persisted signals</button>
   </div></div>
 }

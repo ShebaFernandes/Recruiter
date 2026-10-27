@@ -27,9 +27,13 @@ from .services import DATE_RANGE_PATTERN, _concise_role, _resume_date, parse_dat
 logger = logging.getLogger(__name__)
 
 
-def obj(properties):
-    return {"type": "object", "properties": properties, "required": list(properties),
-            "additionalProperties": False}
+def obj(properties, *, required=None):
+    return {
+        "type": "object",
+        "properties": properties,
+        "required": list(properties) if required is None else list(required),
+        "additionalProperties": False,
+    }
 
 
 TEXT = {"type": "string", "maxLength": 1500}
@@ -39,14 +43,29 @@ SUMMARY_FACT = obj({
     "value": {"type": ["string", "null"], "maxLength": 1500},
     "evidence": TEXT,
 })
-ROLE = obj({key: NULL_TEXT for key in (
-    "company", "role", "start", "end", "employment_type", "location"
-)} | {
-    "employer_evidence": TEXT,
-    "role_evidence": TEXT,
-    "details": TEXT,
-    "achievements": {"type": "array", "maxItems": 30, "items": FACT},
-})
+ROLE = obj(
+    {
+        "company": NULL_TEXT,
+        "role": NULL_TEXT,
+        # Dates and descriptive prose improve the profile but are not necessary to
+        # establish that an evidence-backed employment role exists. Defaults are
+        # application-only; provider schemas omit them.
+        "start": {**NULL_TEXT, "default": None},
+        "end": {**NULL_TEXT, "default": None},
+        "employment_type": {**NULL_TEXT, "default": None},
+        "location": {**NULL_TEXT, "default": None},
+        "employer_evidence": TEXT,
+        "role_evidence": TEXT,
+        "details": {**TEXT, "default": ""},
+        "achievements": {
+            "type": "array",
+            "maxItems": 12,
+            "items": FACT,
+            "default": [],
+        },
+    },
+    required=("company", "role", "employer_evidence", "role_evidence"),
+)
 SCHEMA = obj({
     "full_name": FACT,
     "location": obj({"value": {"type": ["string", "null"], "maxLength": 120}, "evidence": TEXT}),
@@ -68,6 +87,8 @@ include that range in employer_evidence; never reuse heading dates across promot
 employer heading may otherwise be reused for multiple later roles or be on another page. Preserve
 promotions as separate roles, concurrent roles, gaps and unknown or year-only dates.
 Extract every employment entry in the document; do not shorten the career history.
+Prioritize complete company, role, date and evidence fields over optional prose. Omit
+details, achievements, employment_type and location before omitting any employment entry.
 employment_type and location must be null unless explicitly stated for that role.
 Use null for missing facts, not zero. end must be the literal 'Present'/'Current'/'Now'
 only when explicitly stated; null means unknown, not current employment.
@@ -92,10 +113,16 @@ def _validate_shape(value, schema):
             return
         kind = "string"
     if kind == "object":
-        if not isinstance(value, dict) or set(value) != set(schema["properties"]):
+        required = set(schema.get("required", []))
+        if (
+            not isinstance(value, dict)
+            or not required.issubset(value)
+            or set(value) - set(schema["properties"])
+        ):
             raise AIProviderMalformedResponse(stage="schema_validation")
         for key, child in schema["properties"].items():
-            _validate_shape(value[key], child)
+            if key in value:
+                _validate_shape(value[key], child)
     elif kind == "array":
         if not isinstance(value, list) or len(value) > schema["maxItems"]:
             raise AIProviderMalformedResponse(stage="schema_validation")
@@ -103,6 +130,73 @@ def _validate_shape(value, schema):
             _validate_shape(item, schema["items"])
     elif not isinstance(value, str) or len(value) > schema["maxLength"]:
         raise AIProviderMalformedResponse(stage="schema_validation")
+
+
+def _valid_structure(value, schema):
+    """Check types/required keys while leaving length handling to its own sanitizer."""
+    kinds = schema["type"] if isinstance(schema["type"], list) else [schema["type"]]
+    if value is None:
+        return "null" in kinds
+    kind = next((item for item in kinds if item != "null"), kinds[0])
+    if kind == "string":
+        return isinstance(value, str)
+    if kind == "array":
+        return (
+            isinstance(value, list)
+            and len(value) <= schema.get("maxItems", len(value))
+            and all(_valid_structure(item, schema["items"]) for item in value)
+        )
+    if kind == "object":
+        if not isinstance(value, dict):
+            return False
+        required = set(schema.get("required", []))
+        properties = schema["properties"]
+        return (
+            required.issubset(value)
+            and not (set(value) - set(properties))
+            and all(_valid_structure(item, properties[key]) for key, item in value.items())
+        )
+    return False
+
+
+def _normalize_optional_fields(value, schema):
+    """Fill omitted optional fields and discard malformed optional prose safely.
+
+    Essential employment identity/evidence fields remain strictly required and keep
+    strict types. An optional description with provider drift must not erase otherwise
+    valid roles. Only aggregate counts are returned for privacy-safe diagnostics.
+    """
+    kinds = schema["type"] if isinstance(schema["type"], list) else [schema["type"]]
+    if value is None and "null" in kinds:
+        return value, 0
+    kind = next((item for item in kinds if item != "null"), kinds[0])
+    if kind == "object" and isinstance(value, dict):
+        normalized = dict(value)
+        discarded = 0
+        required = set(schema.get("required", []))
+        for key, child in schema["properties"].items():
+            if key not in normalized:
+                if key not in required and "default" in child:
+                    normalized[key] = deepcopy(child["default"])
+                continue
+            if key not in required and "default" in child:
+                if not _valid_structure(normalized[key], child):
+                    normalized[key] = deepcopy(child["default"])
+                    discarded += 1
+                    continue
+            normalized[key], child_discarded = _normalize_optional_fields(
+                normalized[key], child
+            )
+            discarded += child_discarded
+        return normalized, discarded
+    if kind == "array" and isinstance(value, list):
+        normalized, discarded = [], 0
+        for item in value:
+            clean, child_discarded = _normalize_optional_fields(item, schema["items"])
+            normalized.append(clean)
+            discarded += child_discarded
+        return normalized, discarded
+    return value, 0
 
 
 def _discard_unknown_properties(value, schema):
@@ -211,7 +305,14 @@ def _evidence_positions(evidence, text):
 
 
 def _associated_employer_positions(fact, facts, text):
-    employer_positions = _evidence_positions(fact["employer_evidence"], text)
+    employer_evidence = fact["employer_evidence"]
+    if not supported(fact.get("company"), employer_evidence, text) and supported(
+        fact.get("company"), fact.get("role_evidence"), text
+    ):
+        # Table and two-column extraction frequently puts employer, role and dates
+        # in one exact line. Reusing that line is still strict verbatim evidence.
+        employer_evidence = fact["role_evidence"]
+    employer_positions = _evidence_positions(employer_evidence, text)
     role_positions = _evidence_positions(fact["role_evidence"], text)
     if not employer_positions or not role_positions:
         return []
@@ -219,6 +320,10 @@ def _associated_employer_positions(fact, facts, text):
     for candidate in facts:
         company = candidate.get("company")
         evidence = candidate.get("employer_evidence")
+        if not supported(company, evidence, text) and supported(
+            company, candidate.get("role_evidence"), text
+        ):
+            evidence = candidate["role_evidence"]
         if not supported(company, evidence, text):
             continue
         headings.extend(
@@ -465,7 +570,8 @@ def _rejection(category, item_index=None, field=None):
 
 NON_EMPLOYMENT_ROLE = re.compile(
     r"(?i)^(?:career|employment|study)\s+(?:break|gap)|"
-    r"^(?:parental|maternity|paternity)\s+leave$|^sabbatical$|^unemployed$"
+    r"^(?:parental|maternity|paternity)\s+leave$|^sabbatical$|^unemployed$|"
+    r"^(?:(?:academic|personal|capstone|college|university)\s+)?project$"
 )
 
 
@@ -544,6 +650,7 @@ def directions(rows):
 
 def validate_interpretation(data, text):
     data, ignored_properties = _discard_unknown_properties(data, SCHEMA)
+    data, discarded_optional_fields = _normalize_optional_fields(data, SCHEMA)
     data, discarded_overlong_text = _discard_overlong_text(data, SCHEMA)
     _validate_shape(data, SCHEMA)
     result, rejections = {}, []
@@ -559,6 +666,11 @@ def validate_interpretation(data, text):
         rejections.append({
             "category": "schema.overlong_text_discarded",
             "count": discarded_overlong_text,
+        })
+    if discarded_optional_fields:
+        rejections.append({
+            "category": "schema.optional_field_discarded",
+            "count": discarded_optional_fields,
         })
     for key in (
         "full_name",
@@ -585,10 +697,13 @@ def validate_interpretation(data, text):
         employer_evidence = fact["employer_evidence"]
         role_evidence = fact["role_evidence"]
         if not supported(fact["company"], employer_evidence, text):
-            rejections.append(
-                _rejection("work_experience.employer_association", index, "company")
-            )
-            continue
+            if supported(fact["company"], role_evidence, text):
+                employer_evidence = role_evidence
+            else:
+                rejections.append(
+                    _rejection("work_experience.employer_association", index, "company")
+                )
+                continue
         if _is_non_employment_role(fact["role"]):
             rejections.append(
                 _rejection("work_experience.non_employment", index, "role")

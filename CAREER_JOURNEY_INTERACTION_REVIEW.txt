@@ -1,0 +1,80 @@
+Career Journey interaction review — 26 October 2026
+
+Implemented the latest interaction direction. This supersedes the earlier
+proposal to hide unverified saved roles in a separate disclosure.
+
+Default graph shows only a continuous horizontal axis, employment markers and
+year labels. Company, title, complete date labels and evidence-supported
+employment type appear in the shared hover/tap/focus popover. Escape, a second
+tap or an outside interaction dismisses it. Touch targets are 44px. Reduced
+motion is respected. Long histories scroll within the graph at mobile widths.
+
+Actual saved employment records supply every marker. Latest-resume verification
+controls filled versus hollow markers, never removal of saved history. Manual
+or candidate-confirmed history remains identifiable in the card. Only an empty
+saved history produces an empty state. Failed extraction is not called fresher.
+
+Positions share an actual calendar scale. Promotions and overlaps remain
+separate. Very close/simultaneous starts retain their horizontal date position
+and use extra marker lanes. Unknown/partial dates remain off the dated axis,
+with the original date label and an explanation in the popover. Genuine gaps
+use dashed segments; incomplete evidence and adjacent months do not imply gaps.
+Verified internships use lighter teal; other roles use deeper teal. Full-time
+text is shown only when supported by the saved employment evidence.
+
+Implementation files changed in this UI pass:
+frontend/src/components/CareerJourney.tsx
+frontend/src/components/career-journey.css
+frontend/src/components/careerTimelineLayout.ts
+frontend/src/components/CandidateCareerTimeline.tsx
+frontend/src/components/EmploymentHistoryStatus.tsx
+
+Tests updated:
+frontend/src/components/CandidateCareerTimeline.test.tsx
+frontend/src/components/CandidateExperience.test.tsx
+frontend/src/components/EmploymentHistoryStatus.test.tsx
+frontend/tests/timeline-marker-ui.spec.ts
+frontend/tests/timeline-states-ui.spec.ts
+frontend/tests/career-data-flow.spec.ts
+frontend/tests/focused-candidate-ui.spec.ts
+frontend/tests/resume-processing-ui.spec.ts
+
+Validation:
+- Frontend: 147 tests across 27 files passed; lint and production build passed.
+- Eight focused browser checks passed across the final runs: shared marker
+  interaction (2), timeline states (2), production app loading/timeline (2),
+  and real offline resume-to-My Profile flows (2), all at 390px and 1440px.
+- The real flows cover promotions, internship, overlapping employment and
+  gaps, one role, partial dates, no employment, and failed replacement with
+  older saved history retained. They use disposable databases and fictional
+  DOCX files, with AI disabled, and assert no AI usage records were created.
+- Visually inspected desktop/mobile default graphs and open details, plus the
+  actual My Profile screenshots. Fixed automatic-scroll focus dismissal,
+  single-role overflow and an inherited max-width rule collapsing tap targets.
+- The build retains its existing bundle-size advisory; build succeeded.
+
+Screenshots (fictional test records only):
+frontend/test-results/career-journey-review/desktop-default.png
+frontend/test-results/career-journey-review/desktop-details.png
+frontend/test-results/career-journey-review/mobile-default.png
+frontend/test-results/career-journey-review/mobile-details.png
+frontend/test-results/career-journey-review/desktop-my-profile.png
+frontend/test-results/career-journey-review/mobile-my-profile.png
+
+Preservation:
+No backend code, candidate records, consent settings, provider credentials,
+budget limits or infrastructure were changed in this UI pass. Hash checks
+confirm migrations 0023/0024, resume understanding/processing, services,
+worker runtime and the local launcher match the preserved reliability snapshot.
+No paid provider call was made. No production deployment was performed.
+
+Local preview:
+Open http://127.0.0.1:5173 and view My Profile with a local candidate account.
+If the frontend is stopped, run from frontend/:
+VITE_API_URL=http://127.0.0.1:8010/api/v1 npm run dev
+Keep the existing local Django server and worker running for resume processing.
+
+Reproduce isolated browser verification from the repository root:
+DATABASE_URL=postgresql://enter:enter@127.0.0.1:5433/enter .venv/bin/python scripts/e2e_isolated.py timeline-marker-ui.spec.ts timeline-states-ui.spec.ts focused-candidate-ui.spec.ts career-data-flow.spec.ts
+
+Deployment remains pending the user's UI review.

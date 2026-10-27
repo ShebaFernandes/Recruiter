@@ -359,3 +359,24 @@ def test_preview_rate_limit_and_quarantine(client, candidate_account):
         assert client.get(f"/api/v1/candidate/resumes/{rid}/preview/").status_code == 429
     Resume.objects.filter(pk=rid).update(scan_status="quarantined")
     assert client.get(f"/api/v1/candidate/resumes/{rid}/preview/").status_code == 404
+
+
+def test_processing_motivations_preserve_preferences_and_do_not_grant_consent(
+    client, candidate_account
+):
+    url = "/api/v1/candidate/profile/"
+    before = client.get(url).data
+    assert before["career_preferences"].get("motivators", []) == []
+    client.patch(url, {"career_preferences": {"preferred_locations": ["Pune"]}}, format="json")
+    choices = ["Harder problems", "More ownership", "Exceptional people", "Compensation"]
+    response = client.patch(url, {"career_preferences": {"motivators": choices}}, format="json")
+    assert response.status_code == 200
+    saved = client.get(url).data
+    assert saved["career_preferences"]["motivators"] == choices
+    assert saved["career_preferences"]["preferred_locations"] == ["Pune"]
+    assert saved["visibility"] == before["visibility"]
+    assert saved["submission_consent_at"] == before["submission_consent_at"]
+    assert not Resume.objects.filter(ai_processing_consent_at__isnull=False).exists()
+    cleared = client.patch(url, {"career_preferences": {"motivators": []}}, format="json")
+    assert cleared.status_code == 200
+    assert client.get(url).data["career_preferences"]["motivators"] == []

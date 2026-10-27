@@ -1,0 +1,152 @@
+ENTER — corrected resume loading UI and Career Journey
+Local review: 26 October 2026. No deployment performed.
+This report supersedes the previous interactive-motivation implementation report.
+
+UPDATED SCREENS
+
+Resume uploads and updates share CandidateProcessing:
+- Existing mountain background and a centred, softly translucent white card.
+- Exact headline: “While we get to know you…”
+- Exact supporting line: “We're turning your experience into a clearer picture of your career.”
+- Primary animated teal loading ring and indeterminate progress rail. No percentage,
+  simulated completion or timed extraction/validation milestones.
+- Actual upload, queue, scan and processing status controls the status copy.
+  The API does not distinguish live extraction from validation, so the processing
+  state truthfully says “extracting and validating your experience” together.
+- Worker delays and status errors stop decorative animation and expose Check status
+  again. Sixty seconds without a state change also pauses animation and offers the
+  check, while status polling continues. Only backend completion opens My Profile.
+- Four small static text chips appear below the loading section. They have no
+  checkboxes, handlers, selection state, tab stops, save requests or submit button.
+- Gemini consent stays separate on the upload/replacement form. Existing career
+  preferences remain untouched; the loading screen no longer writes preferences.
+
+Shared Career Journey (candidate and recruiter):
+- All saved roles render with full employer names, titles and date labels.
+- One uniform calendar scale positions known periods and genuine gaps. The scale
+  can expand uniformly to keep successive role labels on a single readable row.
+- True overlaps retain separate period tracks and individual accessible targets;
+  simultaneous/very close labels can use additional rows. Promotions stay separate.
+- Light teal requires supported internship evidence or candidate-confirmed type.
+- Dashed gaps are conservative: unresolved dates cannot assert an employment gap.
+- A single known period fills the available width. A single undated role starts at
+  the left, with its supplied dates and no fabricated duration.
+- Year-only dates retain year-only wording; missing end dates do not imply Present.
+  Unknown/partial periods remain visible outside the precise dated axis.
+- Full names and dates wrap without ellipsis. Long histories scroll horizontally.
+  Hover, tap, keyboard focus and Escape details work in both audiences.
+
+Employment status is distinct from processing completion:
+- Verified against resume evidence.
+- Explicit no-employment declaration in the resume.
+- Extraction failed/needs review, without calling the candidate a fresher.
+- Older/manual history preserved, not verified by the latest upload.
+- Pending proposals are labelled as awaiting review, not already applied/verified.
+- Legacy saved records without outcome metadata do not claim latest-resume verification.
+
+The current backend's confirmed_no_employment value means an explicit statement in
+resume content. It does not expose a separate “candidate clicked no employment”
+confirmation flag. The UI names the available evidence honestly; empty extraction
+alone never becomes a no-employment declaration.
+
+RELIABILITY PATCH / MIGRATION 0023
+
+backend/talent/migrations/0023_preserve_resume_ai_budget_ledger.py remains present
+and unchanged. It changes ResumeAIUsage.resume to nullable SET_NULL so deleting a
+resume/account preserves usage-ledger records and spending history.
+
+Read-only check of the local development database:
+  0022_resume_ai_http_diagnostics: applied
+  0023_preserve_resume_ai_budget_ledger: NOT applied
+
+The local development database was not migrated by this correction. Migration 0023
+was applied successfully as part of disposable test-database creation, and the
+budget-ledger deletion regression test passed. The ledger fix requires 0023 when
+the release is eventually applied. Production migration status was not queried.
+The migration is still an untracked file in the existing working tree; include it
+with the preserved reliability patch when committing/releasing that work.
+
+Before/after SHA-256 comparisons confirmed these files were not changed by this
+correction:
+  backend/talent/models.py
+  backend/talent/resume_processing.py
+  backend/talent/resume_understanding.py
+  backend/talent/serializers.py
+  backend/talent/services.py
+  backend/talent/migrations/0023_preserve_resume_ai_budget_ledger.py
+  backend/tests/test_resume_reliability_matrix.py
+
+No backend implementation, historical records, consent records, AWS settings,
+Gemini extraction, fallback rules, evidence validation or budget limits were changed.
+
+REMAINING EXTRACTION FINDINGS
+
+Read-only, de-identified aggregate of the latest 50 LOCAL jobs:
+  20 jobs with Gemini attempts; 15 Gemini-accepted jobs with roles.
+  32 local-fallback jobs; 8 jobs with zero extracted roles.
+  Recorded failure-stage events: 2 HTTP errors, 1 evidence-validation failure.
+  Recorded rejected-evidence categories: detail 42, date 4, role 4, achievement 1.
+
+These counts describe existing local history, not new live-Gemini tests and not
+production health. Outcome reason codes were absent in this historical window.
+The eight zero-role jobs therefore cannot safely be classified as genuine
+no-employment declarations versus unresolved extraction. They need evidence review
+or a safe reprocess under the reliability patch; no paid reprocessing was triggered.
+Evidence rejection is a safeguard, not proof that all associated jobs failed.
+
+VALIDATION
+
+- 141 frontend/component tests across 27 files.
+- 111 backend tests passed in a disposable local PostgreSQL database:
+  test_resume_understanding.py, test_resume_reliability_matrix.py,
+  test_resume_safe_merge.py, test_candidate_experience.py.
+  Includes provider failures/fallback, consent, spending limits, ledger preservation,
+  resume replacement, stale history and protection of manual edits.
+- 10 focused Playwright cases covering 390/1440px, plus loading at 768/1024px:
+  focused-candidate-ui.spec.ts, processing-presentation.spec.ts (excluding unrelated
+  Kindred check), timeline-marker-ui.spec.ts, timeline-states-ui.spec.ts.
+- Keyboard, tap, no horizontal page overflow, timeline scrolling, reduced motion,
+  static chip DOM/no PATCH requests, actual status copy, delayed-state recovery,
+  automatic completion, single-role width and employment-status distinctions checked.
+- Frontend lint and build passed. Existing bundle-size advisory remains non-blocking.
+- Desktop/mobile screenshots visually inspected. Browser data is fictional and
+  browser API responses are controlled fixtures; backend tests exercise real APIs.
+
+Screenshots are in frontend/test-results/corrected-candidate-final/ (ignored output):
+  focused-candidate-ui-*/upload-390.png and upload-1440.png
+  focused-candidate-ui-*/update-390.png and update-1440.png
+  focused-candidate-ui-*/delayed-390.png and delayed-1440.png
+  focused-candidate-ui-*/career-390.png and career-1440.png
+  timeline-states-ui-*/employment-states-390.png and employment-states-1440.png
+
+MAIN FILES CHANGED IN THIS CORRECTION
+  frontend/src/App.tsx
+  frontend/src/components/CandidateExperience.tsx
+  frontend/src/components/CandidatePresentation.tsx
+  frontend/src/components/CandidateCareerTimeline.tsx
+  frontend/src/components/CareerJourney.tsx
+  frontend/src/components/EmploymentHistoryStatus.tsx (new)
+  frontend/src/components/careerTimelineLayout.ts
+  frontend/src/components/candidate-experience.css
+  frontend/src/components/career-journey.css
+  frontend/src/components/platform-glass.css
+  Corresponding component tests and focused browser tests.
+  ProcessingMotivations.tsx from the previous pass was removed.
+  Existing favicon assets were retained.
+
+LOCAL PREVIEW / REPRODUCTION
+
+With the configured LOCAL Django server on 8010 and resume worker running:
+  cd /Users/enter/Desktop/recruiter/frontend
+  VITE_API_URL=http://127.0.0.1:8010/api/v1 npm run dev -- --host 127.0.0.1 --port 5173
+
+Use a local candidate account and fictional resume for upload/update review.
+If using an alternate frontend port, ensure local CORS/CSRF settings allow it.
+For controlled UI review without live uploads or paid AI, run against a Vite server:
+  PLAYWRIGHT_BASE_URL=http://127.0.0.1:5173 npm run test:e2e -- focused-candidate-ui.spec.ts timeline-marker-ui.spec.ts timeline-states-ui.spec.ts processing-presentation.spec.ts --grep-invert Kindred
+
+Safe backend regression command from the repository root:
+  DATABASE_URL=postgresql://enter:enter@127.0.0.1:5433/enter .venv/bin/python scripts/test_isolated.py backend/tests/test_resume_understanding.py backend/tests/test_resume_reliability_matrix.py backend/tests/test_resume_safe_merge.py backend/tests/test_candidate_experience.py
+
+No production release, migration or paid extraction was triggered. Deployment awaits
+explicit approval of the final UI.

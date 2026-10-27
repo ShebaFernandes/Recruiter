@@ -1,0 +1,134 @@
+ENTER — Career Journey data provenance and local AI review
+26 October 2026. Local only; no deployment, AWS changes or live provider calls.
+
+1. WHY GEMINI DID NOT RUN
+Latest local job: 516, resume 545, completed by the rules fallback.
+Its persisted interpretation is source=rules, reason=disabled, with zero provider attempts.
+No explicit Gemini consent was recorded for this upload.
+The local supervisor deliberately enforces offline operation, as required during the
+worker repair. Local settings also have AI enabled=false, external-processing
+approval=false, rollout=disabled, legal AI approval=false, paid authorization=false,
+and Gemini free-tier authorization=false.
+The configured provider/model are Gemini / gemini-3.1-flash-lite. Local settings can
+load a credential; only its presence was inspected, never its value. Its validity,
+provider access and live model availability were NOT tested. No production secret
+was copied into local configuration, and no configuration/consent/budget was changed.
+At inspection, the de-identified ledger records $0.078606 used/reserved this month
+against a configured $0.01 monthly cap (today: $0 against $0.01 daily cap). The
+existing monthly cap would independently block another budgeted request.
+A live paid call would require current explicit upload consent, approved local
+activation/provider settings, an explicitly authorized budget resolution and separate
+user authorization. None of these controls was bypassed or reset. A live call was
+not needed for the fictional pipeline tests.
+
+2. DATA FLOW AND WHY SEVEN OLD ROLES APPEARED
+The timeline receives CandidateProfile.work_experiences saved in PostgreSQL.
+No seven-role array or fixture companies are embedded in production frontend code.
+The latest resume accepted zero employment roles. Reconciliation correctly preserved
+seven saved rows instead of erasing them; all seven currently have the database
+candidate_confirmed marker (candidate confirmation/manual edits, not resume proof).
+The UI previously continued to draw every saved row on the primary graph, accompanied
+by a warning. Also, the API fetched the latest COMPLETED resume outcome, which could
+misrepresent a newer failed/pending upload, and removed that metadata for recruiters.
+Stored outcome counts could also become stale after manual edits or review.
+
+3. IMPLEMENTATION
+New read-only employment_history.py evaluates the latest upload (including failure
+and pending processing), its accepted evidence, and the CURRENT saved records.
+It compares row contents, dates, current flags, employment type and details using
+the existing reconciliation comparison, not equal counts or company names alone.
+Only accepted pipeline rows with evidence and supported/partial confidence qualify.
+The API returns current verified_role_ids, candidate_confirmed_role_ids and
+unverified_role_ids with latest resume ID/state and extraction source. It exposes
+this same safe classification to authorized candidate/recruiter views, without raw
+resume text, evidence excerpts, consent details or provider responses.
+No historical candidate rows or extraction snapshots were migrated or rewritten.
+
+The shared CareerJourney draws only saved IDs verified against the latest upload.
+When there is no uploaded resume, clearly candidate-confirmed/manual records may
+form a labelled candidate-confirmed timeline. Legacy rows without provenance are
+retained for review rather than silently certified.
+Unmatched saved records appear in a closed-by-default review disclosure, with full
+employer, title, month/year dates and explicit candidate-confirmed/manual versus
+older-record labels. A zero-role/failed extraction shows review needed and no
+fabricated primary graph. Explicit no-employment statements remain distinct.
+Candidate can use Review saved profile; edits are retained through the existing UI.
+The latest local upload now reports 0 verified IDs, 7 retained IDs, 7 confirmed/manual
+IDs. These seven records remain safely stored and are not presented as new extraction.
+
+The existing continuous horizontal date-scaled timeline, internship evidence rule,
+stronger full-time colors, overlap lanes, promotions, single-role sizing, incomplete
+dates and mobile scrolling remain shared. Fixed false gaps between consecutive
+months (e.g. Dec -> Jan promotion). Removed old opacity reduction so review text
+stays readable. Full employer names/titles/dates remain visible; no ellipsis added.
+
+4. VERIFICATION
+141 distinct focused backend tests passed:
+- 18 new provenance tests: 14 real bounded worker runs covering fictional PDF/DOCX
+  promotions, internship/full-time, overlapping roles/gaps, one role, partial dates,
+  explicit fresher and unresolved extraction; protected manual rows; actual terminal
+  extraction failure with earlier history; equal-count mismatch; mocked Gemini success.
+- 123 existing regression tests: candidate isolation, recruiter flow, safe merge,
+  extraction/evidence validation, candidate experience, consent/budgets and worker recovery.
+The new mocked Gemini test exercises real evidence validation with a fabricated
+provider response; it is NOT proof of live Gemini success. All real worker fixture
+runs use the rules parser and explicitly assert zero provider usage records.
+
+149 frontend tests passed. ESLint, Ruff and production build passed (existing
+bundle-size advisory remains). Relevant focused reruns also passed after final edits.
+8 browser scenarios passed across 390px and 1440px:
+- 2 real multi-scenario flows (one per width) upload fictional resumes, run the real
+  bounded worker, wait for automatic My Profile, and compare displayed rows to the
+  saved profile API. Includes honest old-history review after an unresolved replacement.
+- 2 shared candidate/recruiter hover/tap/keyboard/scroll checks.
+- 2 single-role, partial-date and verification-state checks.
+- 2 loading/consent/static-chip/timeline regression checks with fictional API responses.
+The last two were rerun successfully after updating their expected provenance wording.
+Desktop and mobile screenshots were visually inspected. No real candidate screenshots
+or resume text were added to reports.
+
+Screenshots:
+frontend/test-results/career-provenance-final/career-data-flow-latest-re-10a82--drives-My-Profile-at-390px/preserved-review-390.png
+frontend/test-results/career-provenance-final/career-data-flow-latest-re-6c00e-drives-My-Profile-at-1440px/promotions-1440.png
+frontend/test-results/career-provenance-final/career-data-flow-latest-re-6c00e-drives-My-Profile-at-1440px/overlap-gap-1440.png
+Additional shared-state screenshots: frontend/test-results/career-provenance-final/
+Final loading regression screenshots: frontend/test-results/career-provenance-focused/
+
+5. PRESERVATION / REMAINING LIMIT
+Migrations 0023/0024, resume_understanding.py, resume_processing.py, services.py,
+worker_runtime.py and the supervised local launcher are byte-for-byte unchanged
+from the start of this repair. The de-identified spending ledger and consent controls
+are unchanged. The worker remains healthy and no local jobs are pending.
+The real latest upload still needs employment review: no new roles were invented,
+no paid extraction was attempted, and no existing history was erased. Live Gemini
+access remains unverified and blocked by the controls listed above.
+
+FILES CHANGED IN THIS REPAIR
+backend/talent/employment_history.py
+backend/talent/serializers.py
+backend/tests/test_employment_provenance.py
+backend/tests/fixtures/employment-scenarios.json
+backend/tests/test_resume_safe_merge.py
+frontend/src/types.ts
+frontend/src/components/CareerJourney.tsx
+frontend/src/components/CandidateCareerTimeline.tsx
+frontend/src/components/EmploymentHistoryStatus.tsx
+frontend/src/components/career-journey.css
+frontend/src/components/candidate-experience.css
+frontend/src/components/CandidateCareerTimeline.test.tsx
+frontend/src/components/CandidateExperience.test.tsx
+frontend/src/components/EmploymentHistoryStatus.test.tsx
+frontend/tests/career-data-flow.spec.ts
+frontend/tests/focused-candidate-ui.spec.ts
+frontend/tests/timeline-marker-ui.spec.ts
+frontend/tests/timeline-states-ui.spec.ts
+frontend/tests/resume-processing-ui.spec.ts
+CAREER_JOURNEY_DATA_REVIEW.txt
+
+LOCAL PREVIEW
+http://127.0.0.1:5173 — refresh My Profile to load the current API classification.
+For a fresh startup from /Users/enter/Desktop/recruiter, with existing local servers
+stopped and migrations applied:
+  .venv/bin/python scripts/run_local.py
+This remains an offline launcher; it does not authorize or enable Gemini.
+No deployment has been performed.

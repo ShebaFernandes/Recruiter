@@ -384,8 +384,25 @@ RESUME_AI_GEMINI_FREE_TIER_APPROVED = (
 )
 RESUME_AI_PROVIDER = os.getenv("RESUME_AI_PROVIDER", "anthropic")
 RESUME_AI_MODEL = os.getenv("RESUME_AI_MODEL", "")
-RESUME_AI_API_KEY = secret_value("RESUME_AI_API_KEY", "RESUME_AI_API_KEY_FILE")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+# Local API processes must not load the resume worker's credential. Production
+# keeps its existing mounted-secret configuration; tests never load local dotenv.
+_local_resume_worker = (
+    os.getenv("ENTER_LOCAL_RESUME_WORKER", "false").lower() == "true"
+    or (len(sys.argv) > 1 and sys.argv[1] in {"run_resume_worker", "process_resume_job"})
+)
+if APP_ENV == "local" and not TESTING:
+    if not _local_resume_worker:
+        # Also discard legacy keys inherited from a development auto-reloader.
+        os.environ.pop("GEMINI_API_KEY", None)
+        os.environ.pop("RESUME_AI_API_KEY", None)
+    RESUME_AI_API_KEY = (
+        secret_value("RESUME_AI_API_KEY", "RESUME_AI_API_KEY_FILE")
+        if _local_resume_worker else ""
+    )
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "") if _local_resume_worker else ""
+else:
+    RESUME_AI_API_KEY = secret_value("RESUME_AI_API_KEY", "RESUME_AI_API_KEY_FILE")
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_API_BASE_URL = os.getenv(
     "GEMINI_API_BASE_URL", "https://generativelanguage.googleapis.com/v1beta"
 )

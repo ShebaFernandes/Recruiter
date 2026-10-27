@@ -100,6 +100,9 @@
 .cp-career .career-journey.compact-markers .career-gap-marker>b { display:none; }
 .cp-career-empty { padding:18px 20px; border:1px dashed var(--enter-border); border-radius:var(--enter-radius-control); background:var(--enter-bg); }
 .cp-career-empty p { margin:0 0 12px; color:var(--enter-text-muted); }
+.cp-career-status { margin:10px 0 4px; padding:10px 12px; border:1px solid var(--enter-border); border-radius:var(--enter-radius-control); background:var(--enter-bg); color:var(--enter-text-muted); font-size:13px; line-height:1.45; }
+.cp-career-status.needs-review { border-color:#c98735; background:#fff8ec; color:#704612; }
+.cp-career-previous { opacity:1; }
 .cp-signals { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 28px; padding:16px 0 4px; border-top:1px solid var(--enter-border); }
 .cp-signals h3 { font-size:15px; margin:0 0 8px; }
 .cp-signals p { margin:0 0 8px; }
@@ -502,3 +505,21 @@
 .cp-settings-editor input.cp-compensation-input { appearance: textfield; -moz-appearance: textfield; }
 .cp-settings-editor input.cp-compensation-input::-webkit-inner-spin-button,
 .cp-settings-editor input.cp-compensation-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* The processing indicator is primary; reflection chips are static copy. */
+.processing-card .cp-loading-section { margin:36px 0 32px; }
+.processing-card .cp-processing-bar { width:100%; max-width:none; height:6px; background:rgba(11,115,120,.10); }
+.processing-card .cp-processing-bar span { background:linear-gradient(90deg,var(--enter-primary),var(--enter-highlight)); }
+.processing-card .cp-processing-intro { color:var(--enter-text-muted); font-size:15px; line-height:1.65; margin:0; }
+.processing-card .cp-processing-prompts { padding-top:22px; border-top:1px solid rgba(22,59,101,.10); }
+.processing-card .cp-processing-prompts p { margin:0 0 14px; font-size:14px; color:var(--enter-text-muted); }
+.processing-card .cp-processing-prompts ul { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin:0; padding:0; list-style:none; }
+.processing-card .cp-processing-prompts li { padding:5px 9px; border:1px solid rgba(22,59,101,.10); border-radius:999px; background:rgba(255,255,255,.35); color:var(--enter-text-muted); font:400 11px/1.4 var(--enter-font-ui); }
+.processing-card .cp-processing-bar.is-paused span { animation:none; transform:none; opacity:.45; }
+@media(prefers-reduced-motion:reduce) { .processing-card .cp-processing-bar span { animation:none; transform:none; } }
+.processing-card .cp-loading-orbit { display:block; width:76px; height:76px; margin:0 auto 28px; border:3px solid rgba(11,115,120,.10); border-top-color:var(--enter-highlight); border-right-color:rgba(11,115,120,.4); border-radius:50%; animation:cp-orbit-turn 2.4s linear infinite; }
+.processing-card .is-delayed .cp-loading-orbit { animation:none; opacity:.45; }
+@keyframes cp-orbit-turn { to { transform:rotate(360deg); } }
+@media(prefers-reduced-motion:reduce) { .processing-card .cp-loading-orbit { animation:none; } }
+/* Programmatic status focus is not a selectable card. Controls keep their focus rings. */
+.candidate-experience .processing-card:focus { outline:none; }

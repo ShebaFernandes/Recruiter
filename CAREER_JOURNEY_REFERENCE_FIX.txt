@@ -1,0 +1,57 @@
+ENTER — Local Career Journey reference and accuracy repair
+27 October 2026. Local only; no paid provider requests or production deployment.
+
+Why the reference differed
+The candidate wrapper explicitly disabled company labels, and the shared component
+rendered marker-only timelines. Paid Google billing does not change those UI settings.
+The internship detector only recognized titles ending in Intern/Internship or beginning
+with Intern followed by a separator. AI Intern / SDE Intern - AI did not match.
+
+Changes
+- Candidate profiles and detailed recruiter profiles now show complete saved employer,
+  title and month/year date summaries under the continuous horizontal timeline.
+  Compact recruiter lists retain the compact interaction. Axis labels remain years-only.
+- Ongoing dated employment has an arrow. The dated axis fills the available space while
+  preserving a uniform calendar scale. Labels near the edge stay inside the scrollable
+  canvas and use separate lanes when necessary; saved facts are never shifted in time.
+- Explicit slash-separated internship titles and specialization suffixes are recognized.
+  Internship line/marker styling uses light teal; other roles use dark teal. Duration,
+  age and incidental descriptions of interns cannot classify a role as an internship.
+  Explicit conflicting employment types remain authoritative.
+- A resume end date stated as a month (e.g. Jul 2026) fills that entire month visually.
+  Jan–Jul followed by Sep–Present now leaves only August as a one-month gap. Stored
+  dates are unchanged. Exact ISO-date evidence keeps its exact position; incomplete
+  dates remain outside the precise scale. Hover/tap/keyboard details remain available.
+- The rules parser recognizes internship status from the explicit role title. For
+  employer/title/date stacked layouts, the next employer/title can no longer leak
+  into the previous role's description. Evidence includes the corresponding headers.
+- Provenance tests now use per-test private storage, preventing reset test IDs from
+  reading clean fictional files left by an earlier test run.
+
+Data and activation limits
+No existing candidate profile, manual edit or resume consent was rewritten, and no
+existing resume was reprocessed. Migrations 0023 and 0024 were not edited.
+The graph continues to use saved API employment rows and the latest-upload verification
+classification. Historical/manual rows carry review-needed markers when unverified.
+Fixing presentation does not silently certify or repair an incorrect saved role.
+The supplied billing image shows Paid 1 for enter. Local paid extraction remains off
+under the user's earlier separate-authorization requirement. This change does not
+raise budgets, alter consent, enable Free-tier personal processing or touch AWS.
+
+Validation
+131 focused backend tests passed, including fictional PDF/DOCX parsing, actual bounded
+worker -> saved profile API flows, Gemini mocked responses, consent/budgets and manual
+edit protection. 148 frontend unit tests passed. Ruff, ESLint and production build pass;
+the existing bundle-size advisory remains. Fictional mobile/desktop reference previews
+confirm the light internship color, darker subsequent job, matching month boundaries,
+non-overlapping labels, genuine gap and keyboard/touch/hover details.
+Six final isolated browser scenarios passed, including full fictional upload-to-profile
+flows at 390px and 1440px, partial dates and the reference-style internship graph.
+The initial backend run exposed reused test-file paths; per-test isolation resolved it.
+The initial real browser flow was launched without its required isolated environment;
+it stopped at account verification. The final run uses scripts/e2e_isolated.py with a
+disposable database, private test storage, local mail and external AI disabled.
+
+Local preview: refresh http://127.0.0.1:5173/ and open My Profile.
+Existing wrong role/date values still require candidate review or a separately
+explicitly authorized extraction with current consent; no paid call is authorized here.

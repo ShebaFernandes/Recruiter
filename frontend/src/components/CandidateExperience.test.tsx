@@ -10,7 +10,7 @@ import type { Resume, WorkExperience } from '../types'
 
 afterEach(() => { cleanup(); vi.restoreAllMocks() })
 const resume: Resume = { id: 9, original_name: 'original.docx', version: 1, uploaded_at: '', processing_status: 'completed', scan_status: 'clean', processing_error: '', can_retry: false, url: '/api/v1/resumes/9/download/' }
-const job = (company: string, start_date: string | null, end_date: string | null): WorkExperience => ({ company, role: 'Engineer', start_date, end_date, description: '', gap_reason: '' })
+const job = (company: string, start_date: string | null, end_date: string | null): WorkExperience => ({ company, role: 'Engineer', start_date, end_date, description: '', gap_reason: '', confidence_status:'candidate_confirmed' })
 
 describe('candidate career experience', () => {
   it('keeps candidate history chronological, ends with Present, and preserves same-year promotions', () => {
@@ -21,8 +21,8 @@ describe('candidate career experience', () => {
     const roles = () => [...container.querySelectorAll('.career-period>.career-job')]
     expect(roles()).toHaveLength(3)
     expect(roles()[0]).toHaveAttribute('aria-label', expect.stringContaining('Engineer at Early company'))
-    expect(container.querySelector('.career-present')).toHaveTextContent('Present')
-    expect(roles().map(role => role.querySelector('small')?.textContent)).toEqual(['2010', 'Jan 2021', 'Jun 2021'])
+    expect(container.querySelector('.career-end-year')).toHaveTextContent(String(new Date().getFullYear()))
+    expect(roles().map(role => role.querySelector('small')?.textContent)).toEqual(['2010', '2021', '2021'])
     fireEvent.focus(roles()[2])
     expect(screen.getByRole('tooltip')).toHaveTextContent('Recent company')
     expect(screen.getByRole('tooltip')).toHaveTextContent('Lead')
@@ -34,8 +34,8 @@ describe('candidate career experience', () => {
   it('keeps recruiter labels while showing candidate facts only in the interactive popover', () => {
     const items = [job('Saved Employer', '2020-01-01', '2022-01-01')]
     const { container, rerender } = render(<CareerJourney items={items} detailed />)
-    expect(container.querySelector('.career-job>b')).toHaveTextContent('Saved Employer')
-    expect(container.querySelector('.career-job>em')).toHaveTextContent('Engineer')
+    expect(container.querySelector('.career-job>b')).toBeNull()
+    expect(container.querySelector('.career-job>em')).toBeNull()
     rerender(<CandidateCareerTimeline items={items} />)
     expect(container.querySelector('.career-job')).toHaveTextContent('2020')
     expect(container.querySelector('.career-job>b')).toBeNull()
@@ -65,8 +65,26 @@ describe('candidate career experience', () => {
   it('provides an editable empty-history fallback', () => {
     render(<CandidateCareerTimeline items={[]} />)
     expect(screen.getByRole('heading', { name: 'Your career journey' })).toBeVisible()
-    expect(screen.getByText(/couldn't confidently identify employment history/)).toBeVisible()
+    expect(screen.getByText(/No verified employment history is available/)).toBeVisible()
     expect(screen.queryByRole('listitem')).not.toBeInTheDocument()
+  })
+  it('labels preserved history as stale when the latest resume needs recovery', () => {
+    const { container } = render(<CandidateCareerTimeline items={[job('Previously saved', '2020-01-01', '2022-01-01')]} extraction={{
+      status: 'review_required', source: 'rules', reason_code: 'employment_section_not_resolved',
+      accepted_role_count: 0, saved_role_count: 1, profile_state: 'previous_history_preserved',
+      stale_profile_preserved: true,
+    }} />)
+    expect(screen.getByRole('status')).toHaveTextContent(/Saved roles remain on the timeline with review-needed markers/i)
+    expect(container.querySelector('.career-journey')).toBeInTheDocument()
+    expect(container.querySelector('.cp-career-previous')).toBeInTheDocument()
+  })
+  it('distinguishes successful local fallback from Gemini extraction', () => {
+    render(<CandidateCareerTimeline items={[{ ...job('Local result', '2020-01-01', '2022-01-01'), id:1 }]} extraction={{
+      resume_id:2, verified_role_ids:[1], status: 'verified_fallback', source: 'rules', reason_code: 'evidence_roles_accepted',
+      accepted_role_count: 1, saved_role_count: 1, profile_state: 'applied',
+      stale_profile_preserved: false,
+    }} />)
+    expect(screen.getByRole('status')).toHaveTextContent(/local parser, not Gemini/i)
   })
   it('does not show false gaps inside overlapping employment and exposes real gaps', () => {
     const { rerender } = render(<CandidateCareerTimeline items={[
@@ -90,8 +108,8 @@ describe('candidate career experience', () => {
   })
   it('displays processing activities without fabricated completed stages', () => {
     render(<CandidateProcessing resume={{ ...resume, processing_status: 'processing' }} uploading={false} retry={vi.fn()} upload={vi.fn()} error="" />)
-    expect(screen.getByText('Mapping your career journey')).toBeVisible()
-    expect(screen.getAllByRole('listitem')).toHaveLength(5)
+    expect(screen.getByRole('status')).toHaveTextContent('Processing')
+    expect(screen.getAllByRole('listitem')).toHaveLength(4)
     expect(screen.queryByText(/100%|Completed/)).not.toBeInTheDocument()
   })
   it('renders actual document content as escaped text and supports expand/collapse', async () => {

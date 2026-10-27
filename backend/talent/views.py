@@ -669,7 +669,19 @@ def retry_resume_processing(request, resume_id):
         )
     with transaction.atomic():
         job = ResumeProcessingJob.objects.select_for_update().get(resume=resume)
+        # Recheck under the same lease lock as the worker. Concurrent clicks
+        # must never reset an already queued/processing attempt.
+        resume.refresh_from_db()
+        if job.state != ResumeProcessingJob.State.FAILED or (
+            resume.processing_status != Resume.ProcessingStatus.FAILED
+            or resume.scan_status == Resume.ScanStatus.INFECTED
+        ):
+            return Response(
+                {"detail": "This job is already queued, processing, or cannot be retried."},
+                status=status.HTTP_409_CONFLICT,
+            )
         job.state = ResumeProcessingJob.State.QUEUED
+        job.phase = ""
         job.attempts = 0
         job.available_at = timezone.now()
         job.locked_at = None

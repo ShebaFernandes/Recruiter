@@ -29,7 +29,11 @@ def observed_parse(file, name):
 processing.get_resume_scanner = lambda: ObservedScanner()
 processing.parse_resume = observed_parse
 job = ResumeProcessingJob.objects.get(resume_id=${resumeId})
-print(processing.process_resume_job(job.pk, str(job.idempotency_key)))
+if ${slow ? 'True' : 'False'}:
+    print(processing.process_resume_job(job.pk, str(job.idempotency_key)))
+else:
+    from talent.worker_runtime import run_bounded_job
+    print(run_bounded_job(job.pk))
 heartbeat('observed-test-worker', 'stopped')`
   const child = spawn(python, ['-c', script], { cwd: backend, env: process.env })
   let output = ''
@@ -70,7 +74,7 @@ Path(${JSON.stringify(pdf)}).write_bytes(resume_pdf(['Name: Asha Rao', 'Role: Pr
 Path(${JSON.stringify(otherPerson)}).write_bytes(resume_pdf())
 Path(${JSON.stringify(careerUpdate)}).write_bytes(resume_docx(role='Staff Engineer', extra='Experience: Advisor|New Studio|2025-01-01|Present|Advises engineers'))`], { cwd: backend, env: process.env })
   expect(fixture.status).toBe(0)
-  const heading = page.getByRole('heading', { name: "We're doing the boring part." })
+  const heading = page.getByRole('heading', { name: "While we get to know you…" })
   const state = page.locator('.cp-processing-status')
   for (const [index, file] of [docx, pdf].entries()) {
     if (index) {
@@ -97,9 +101,8 @@ Path(${JSON.stringify(careerUpdate)}).write_bytes(resume_docx(role='Staff Engine
       // not keep implying that resume extraction is underway.
       await expect(state).toContainText('temporarily delayed', { timeout: 20_000 })
       await expect(page.locator('.cp-processing-bar')).toHaveClass(/is-paused/)
-      await expect(page.getByRole('list', { name: 'Profile preparation activities, not completed stages' }).getByRole('listitem')).toHaveCount(5)
-      await expect(page.locator('.cp-processing-message span')).toHaveCSS('opacity', '1')
-      await expect(bar).toHaveCSS('background-color', 'rgb(109, 74, 255)')
+      await expect(page.locator('.cp-processing-prompts li')).toHaveCount(4)
+      await expect(page.locator('.cp-processing-prompts input')).toHaveCount(0)
       await expect(bar).toHaveCSS('height', '6px')
       await page.screenshot({ path: info.outputPath(`queued-${width}.png`) })
       // A disconnected status poll must offer recovery without claiming failure.
@@ -108,7 +111,7 @@ Path(${JSON.stringify(careerUpdate)}).write_bytes(resume_docx(role='Staff Engine
       await expect(page.getByRole('button', { name: 'Check status again' })).toBeVisible()
       await page.unroute('**/candidate/resume-status/')
       await page.getByRole('button', { name: 'Check status again' }).click()
-      await expect(state).toContainText('Queued')
+      await expect(state).toContainText('temporarily delayed')
       await page.emulateMedia({ reducedMotion: 'reduce' })
       await expect(bar).toHaveCSS('animation-name', 'none')
       await page.emulateMedia({ reducedMotion: 'no-preference' })
@@ -117,7 +120,12 @@ Path(${JSON.stringify(careerUpdate)}).write_bytes(resume_docx(role='Staff Engine
     try {
       await expect(state).toContainText('Scanning', { timeout: 20_000 })
       await page.screenshot({ path: info.outputPath(`scanning-${index}-${width}.png`) })
-      await expect(state).toContainText('Processing', { timeout: 40_000 })
+      if (!index) {
+        await page.reload()
+        await expect(heading).toBeVisible()
+        await expect(state).toContainText(/Scanning|Extracting/)
+      }
+      await expect(state).toContainText('Extracting', { timeout: 40_000 })
       await page.screenshot({ path: info.outputPath(`processing-${index}-${width}.png`) })
       expect(await running.done).toBe('completed')
       await expect(heading).toHaveCount(0, { timeout: 20_000 })
@@ -159,6 +167,7 @@ Path(${JSON.stringify(careerUpdate)}).write_bytes(resume_docx(role='Staff Engine
   await expect(page.locator('.cp-identity')).toContainText('Asha Rao')
   await expect(page.locator('.cp-identity')).toContainText('Candidate-corrected title')
   await expect(page.locator('.career-journey .career-period')).toHaveCount(3)
+  await expect(page.locator('.career-sequence.needs-review')).toHaveCount(3)
   await expect(page.getByRole('heading', { name: 'Review resume changes' })).toHaveCount(0)
   await page.screenshot({ path: info.outputPath(`identity-protected-${width}.png`) })
   await page.getByRole('button', { name: 'View Resume', exact: true }).click()

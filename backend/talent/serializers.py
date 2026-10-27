@@ -11,6 +11,7 @@ from .candidate_experience import (
     pending_fields,
     resume_identity_issue,
 )
+from .employment_history import employment_history
 from .models import (
     CandidatePhoto,
     CandidateProfile,
@@ -88,6 +89,7 @@ class WorkExperienceSerializer(serializers.ModelSerializer):
 class ResumeSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
     can_retry = serializers.SerializerMethodField()
+    processing_stage = serializers.SerializerMethodField()
 
     class Meta:
         model = Resume
@@ -99,6 +101,7 @@ class ResumeSerializer(serializers.ModelSerializer):
             "version",
             "uploaded_at",
             "processing_status",
+            "processing_stage",
             "scan_status",
             "processing_error",
             "can_retry",
@@ -115,6 +118,14 @@ class ResumeSerializer(serializers.ModelSerializer):
         path = f"/api/v1/resumes/{obj.pk}/download/"
         return request.build_absolute_uri(path) if request else path
 
+    def get_processing_stage(self, obj):
+        if obj.processing_status != "processing":
+            return obj.processing_status
+        job = getattr(obj, "processing_job", None)
+        return (job.phase if job else "") or (
+            "scanning" if obj.scan_status == "scanning" else "processing"
+        )
+
     def get_can_retry(self, obj):
         return (
             obj.processing_status == Resume.ProcessingStatus.FAILED
@@ -125,6 +136,7 @@ class ResumeSerializer(serializers.ModelSerializer):
 class CandidateProfileSerializer(serializers.ModelSerializer):
     work_experiences = WorkExperienceSerializer(many=True, required=False)
     latest_resume = serializers.SerializerMethodField()
+    employment_extraction = serializers.SerializerMethodField()
     viewed = serializers.SerializerMethodField()
     stage = serializers.SerializerMethodField()
     resume_updated = serializers.SerializerMethodField()
@@ -143,10 +155,17 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         request = self.context.get("request")
         if getattr(getattr(request, "user", None), "id", None) != instance.user_id:
-            for field in ("career_preferences", "resume_review", "available_resume",
-                          "resume_identity_warning"):
+            for field in (
+                "career_preferences",
+                "resume_review",
+                "available_resume",
+                "resume_identity_warning",
+            ):
                 data.pop(field, None)
         return data
+
+    def get_employment_extraction(self, obj):
+        return employment_history(obj)
 
     def get_resume_identity_warning(self, obj):
         resume = obj.resumes.filter(processing_status="completed").first()
@@ -360,6 +379,7 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
             "submission_consent_version",
             "profile_updated_at",
             "work_experiences",
+            "employment_extraction",
             "latest_resume",
             "viewed",
             "stage",

@@ -1,126 +1,159 @@
 import { useEffect, useId, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
-import type { WorkExperience } from '../types'
+import type { EmploymentExtraction, WorkExperience } from '../types'
 import { careerStartYear, sortCareerHistory } from '../careerHistory'
 import { CandidateMilestoneIcon } from './CandidateMilestoneIcon'
-import { candidateMilestoneDate } from './candidateMilestoneDate'
+import { careerTimelineLayout, coarseDates, endTime, isInternship, ongoing, time } from './careerTimelineLayout'
+import EmploymentHistoryStatus from './EmploymentHistoryStatus'
 import './career-journey.css'
 
-const month = 2629800000
-const time = (value: string | null) => value ? new Date(value).getTime() : NaN
-const ongoing = (item: WorkExperience) => !item.end_date && (
-  item.is_current === true || (
-    item.is_current === undefined && (
-      Boolean(item.start_date && !item.date_label) || /present|current|now/i.test(item.date_label || '')
-    )
-  )
-)
-const endTime = (item: WorkExperience) => ongoing(item) ? Date.now() : time(item.end_date)
-const coarseDates = (item: WorkExperience) => Boolean(item.date_label && (
-  /(?:^|\()\d{4}\s*[–—-]\s*\d{2,4}(?:$|\))/.test(item.date_label) ||
-  (!item.start_date && /^\s*\d{4}\s*[–—-]\s*(?:present|current|now)/i.test(item.date_label))
-))
-const duration = (months: number) => months >= 12 ? `${(months / 12).toFixed(months % 12 ? 1 : 0)} yrs` : `${months} mo`
+// Compact recruiter lists can omit summaries; profile views retain saved role labels.
+type CareerJourneyProps = { items: WorkExperience[]; detailed?: boolean; showCompanyLabels?: boolean; compactMarkers?: boolean; profilePresentation?: boolean; minimal?: boolean; reverse?: boolean; presentAtEnd?: boolean; candidateMilestones?: boolean; extraction?: EmploymentExtraction | null }
+type Detail = { key:string; company?:string; title:string; period:string; employment?:string; verification?:string; note?:string; description?:string }
+type OpenDetail = Detail & { x:number; y:number; above:boolean }
 const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-const monthYear = (value: string | null | undefined) => {
+const monthYear = (value:string | null) => {
   const matched = value?.match(/^((?:19|20)\d{2})-(0[1-9]|1[0-2])(?:-|$)/)
   return matched ? `${monthNames[Number(matched[2]) - 1]} ${matched[1]}` : value || ''
 }
-const shortCompany = (name: string) => name
-  .replace(/\s+(?:private\s+limited|pvt\.?\s+ltd\.?|limited|ltd\.?|llp|incorporated|inc\.?|corporation|corp\.?)$/i, '')
-  .replace(/\s+technologies$/i, '')
-  .trim() || name
-const companyLabel = (name: string) => shortCompany(name)
-  .replace(/\s*\([^)]{1,80}\)\s*$/, '')
-  .replace(/\.com$/i, '')
-  .trim() || shortCompany(name)
+function period(item:WorkExperience) {
+  if (item.date_label && (coarseDates(item) || !item.start_date || (!item.end_date && !ongoing(item)))) return item.date_label
+  return `${monthYear(item.start_date) || 'Start not specified'} — ${monthYear(item.end_date) || (ongoing(item) ? 'Present' : 'End not specified')}`
+}
+function employment(item:WorkExperience) {
+  if (isInternship(item)) return 'Internship'
+  // Neither a long duration nor the absence of an internship label proves full-time work.
+  if (['supported', 'candidate_confirmed'].includes(item.confidence_status || '') && item.employment_type) return item.employment_type
+  return ''
+}
 
-/** Shared by recruiter cards/drawers and the candidate's own profile. No data fetching. */
-export default function CareerJourney({ items, detailed = false, showCompanyLabels = true, compactMarkers = false, profilePresentation = false, minimal = false, reverse = false, presentAtEnd = false, candidateMilestones = false }: { items: WorkExperience[]; detailed?: boolean; showCompanyLabels?: boolean; compactMarkers?: boolean; profilePresentation?: boolean; minimal?: boolean; reverse?: boolean; presentAtEnd?: boolean; candidateMilestones?: boolean }) {
+/** No example history or fetching: every marker represents a supplied saved record. */
+export default function CareerJourney({ items, extraction, detailed = false, showCompanyLabels = detailed }: CareerJourneyProps) {
   const sorted = sortCareerHistory(items)
-  const displayed = reverse ? [...sorted.filter(item => item.start_date)].reverse().concat(sorted.filter(item => !item.start_date)) : sorted
+  const [now] = useState(Date.now)
+  const layout = careerTimelineLayout(sorted, now, !showCompanyLabels)
   const id = useId()
   const root = useRef<HTMLDivElement>(null)
-  const [active, setActive] = useState<{ key: string; title: string; company?: string; period: string; detail: string; note?: string; x: number; y: number; above: boolean } | null>(null)
+  const [viewportWidth, setViewportWidth] = useState(0)
+  useEffect(() => {
+    if (!root.current || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(entries => setViewportWidth(entries[0].target.clientWidth))
+    observer.observe(root.current)
+    return () => observer.disconnect()
+  }, [items.length])
+  const fillDatedAxis = showCompanyLabels && layout.datedEnd > 0 && layout.rows.every(row => row.dated)
+  const calendarWidth = Math.max(layout.width, viewportWidth - 48)
+  const stretch = fillDatedAxis ? calendarWidth / layout.datedEnd : Math.max(1, (viewportWidth - 48) / layout.width)
+  const contentWidth = fillDatedAxis ? calendarWidth : layout.width * stretch
+  const [active, setActive] = useState<OpenDetail | null>(null)
   const pinned = useRef<string | null>(null)
   const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const close = () => { clearTimeout(hideTimer.current); pinned.current = null; setActive(null) }
   const leave = () => { if (pinned.current !== active?.key) hideTimer.current = setTimeout(close, 180) }
   useEffect(() => {
-    const dismiss = (event: Event) => {
+    const dismiss = (event:Event) => {
       if (event.type === 'keydown' && (event as KeyboardEvent).key !== 'Escape') return
-      if (event.type === 'pointerdown' && (root.current?.contains(event.target as Node) || (event.target as Element).closest?.('.career-popover'))) return
-      if ((event.type === 'wheel' || event.type === 'touchmove') && (event.target as Element).closest?.('.career-popover')) return
+      const target = event.target instanceof Element ? event.target : null
+      if (target?.closest('.career-popover')) return
+      if (event.type === 'pointerdown' && root.current?.contains(event.target as Node)) return
       close()
     }
     document.addEventListener('keydown', dismiss)
     document.addEventListener('pointerdown', dismiss)
     window.addEventListener('resize', dismiss)
-    window.addEventListener('wheel', dismiss, { passive: true })
-    window.addEventListener('touchmove', dismiss, { passive: true })
+    window.addEventListener('wheel', dismiss, { passive:true }); window.addEventListener('touchmove', dismiss, { passive:true })
     return () => { clearTimeout(hideTimer.current); document.removeEventListener('keydown', dismiss); document.removeEventListener('pointerdown', dismiss); window.removeEventListener('resize', dismiss); window.removeEventListener('wheel', dismiss); window.removeEventListener('touchmove', dismiss) }
   }, [])
-  if (!sorted.length) return <p className="muted">No employment history has been confirmed yet.</p>
-  const show = (element: HTMLElement, data: Omit<NonNullable<typeof active>, 'x' | 'y' | 'above'>) => {
+  const show = (element:HTMLElement, data:Detail) => {
     clearTimeout(hideTimer.current)
     if (pinned.current !== data.key) pinned.current = null
     const box = element.getBoundingClientRect()
-    const width = Math.min(320, window.innerWidth - 24)
-    const above = window.innerHeight - box.bottom < 270 && box.top > 270
-    setActive({ ...data, x: Math.max(12, Math.min(box.left, window.innerWidth - width - 12)), y: above ? window.innerHeight - box.top + 8 : Math.max(12, Math.min(box.bottom + 8, window.innerHeight - 262)), above })
+    const width = Math.min(360, window.innerWidth - 24)
+    const above = window.innerHeight - box.bottom < 280 && box.top > 280
+    setActive({ ...data, x:Math.max(12, Math.min(box.left - width / 2 + box.width / 2, window.innerWidth - width - 12)), y:above ? window.innerHeight - box.top + 10 : Math.max(12, Math.min(box.bottom + 10, window.innerHeight - 272)), above })
   }
-  return <>
-    <div ref={root} className={`career-journey shared ${detailed ? 'detailed' : 'compact'} ${compactMarkers ? 'compact-markers' : ''} ${profilePresentation ? 'profile-presentation' : ''} ${minimal ? 'minimal-milestones' : ''} ${reverse ? 'reverse-milestones' : ''} ${presentAtEnd ? 'present-at-end' : ''}`} aria-label="Career journey" role="list" tabIndex={0}>
-      {reverse && sorted.some(ongoing) && <div className="career-present" role="presentation"><span>Present</span><i aria-hidden="true" /></div>}
-      {displayed.map((item, displayIndex) => {
-        const index = sorted.indexOf(item)
-        const milestoneYear = careerStartYear(item)
-        const previousMilestoneYear = displayed[displayIndex - 1]
-          ? careerStartYear(displayed[displayIndex - 1])
-          : null
-        const start = time(item.start_date), end = endTime(item)
-        const earlier = sorted.slice(0, index).filter(row => Number.isFinite(time(row.start_date)))
-        // Use the union of earlier employment, not just the preceding row: nested jobs
-        // must not manufacture a gap while another role was still ongoing.
-        const uncertain = coarseDates(item) || earlier.some(row => !Number.isFinite(endTime(row)) || coarseDates(row))
-        const latestEnd = Math.max(...earlier.map(endTime).filter(Number.isFinite))
-        const gap = !uncertain && Number.isFinite(latestEnd) && start - latestEnd > 60 * 86400000 ? Math.round((start - latestEnd) / month) : 0
-        const overlaps = !coarseDates(item) && earlier.some(row => !coarseDates(row) && endTime(row) > start)
-        const months = !coarseDates(item) && Number.isFinite(end) && end >= start ? Math.max(1, Math.round((end - start) / month)) : 0
-        const duplicateMilestoneYear = Boolean(milestoneYear && displayed.some((row, rowIndex) => rowIndex !== displayIndex && careerStartYear(row) === milestoneYear))
-        const candidateMilestone = candidateMilestoneDate(item, duplicateMilestoneYear)
-        const visibleMilestone = candidateMilestones && previousMilestoneYear === milestoneYear && candidateMilestone === milestoneYear
-          ? 'Same year'
-          : candidateMilestone
-        const storedPeriod = item.date_label || `${item.start_date?.slice(0, 7) || 'Start not specified'} — ${item.end_date?.slice(0, 7) || (ongoing(item) ? 'Present' : 'End not specified')}`
-        const period = profilePresentation && !coarseDates(item)
-          ? `${monthYear(item.start_date) || 'Start not specified'} — ${monthYear(item.end_date) || (ongoing(item) ? 'Present' : 'End not specified')}`
-          : storedPeriod
-        const key = `${item.id ?? index}-${item.company}-${item.start_date}`
-        const firstCompanyMarker = displayed.findIndex(row => row.company.trim().toLocaleLowerCase() === item.company.trim().toLocaleLowerCase()) === displayIndex
-        const displayCompanyLabel = showCompanyLabels && (!minimal || firstCompanyMarker)
-        const previousRole = sorted.slice(0, index).reverse().find(row => row.company.trim().toLowerCase() === item.company.trim().toLowerCase() && row.role !== item.role)
-        const note = [overlaps ? 'Overlapping employment' : '', minimal && previousRole ? `Career progression from ${previousRole.role}` : ''].filter(Boolean).join(' · ')
-        const data = { key, title: item.role || 'Role not specified', company: minimal ? companyLabel(item.company) : item.company, period: `${period}${months ? ` · ${duration(months)}` : ''}`, detail: item.description || (minimal ? '' : 'No additional work details provided.'), note: note || undefined }
-        const roleSpan = Math.max(180, Math.min(420, (months || 12) * 6))
-        const gapSpan = Math.max(72, Math.min(260, gap * 4))
-        return <div className="career-sequence" key={key} style={{ flexGrow: Math.max(1, months), '--career-role-span': `${roleSpan}px`, '--career-gap-span': gap > 0 ? `${gapSpan}px` : '0px' } as CSSProperties}>
-          {gap > 0 && <div className="career-gap-period" role="listitem"><button type="button" className="career-job career-gap-marker" aria-label={`Career gap of approximately ${gap} months`} onMouseEnter={e => show(e.currentTarget, { key: `${key}-gap`, title: 'Career gap', period: `Approximately ${duration(gap)}`, detail: item.gap_reason || 'Reason not provided by the candidate.' })} onMouseLeave={leave} onFocus={e => show(e.currentTarget, { key: `${key}-gap`, title: 'Career gap', period: `Approximately ${duration(gap)}`, detail: item.gap_reason || 'Reason not provided by the candidate.' })} onBlur={close} onClick={e => { pinned.current = `${key}-gap`; show(e.currentTarget, { key: `${key}-gap`, title: 'Career gap', period: `Approximately ${duration(gap)}`, detail: item.gap_reason || 'Reason not provided by the candidate.' }) }}><b>{duration(gap)} gap</b><span className="career-period-line" /><small>{new Date(latestEnd).getFullYear()}<i>{item.start_date?.slice(0, 4)}</i></small></button></div>}
-          <div className="career-period" role="listitem">
-            <button type="button" className={`career-job ${active?.key === key ? 'is-active' : ''}`} aria-label={`${data.title} at ${item.company}, ${data.period}${overlaps ? ', overlapping employment' : ''}`} aria-expanded={active?.key === key} aria-describedby={active?.key === key ? id : undefined}
-              onMouseEnter={e => { if (e.buttons === 0) show(e.currentTarget, data) }} onMouseLeave={leave}
-              onFocus={e => show(e.currentTarget, data)} onBlur={close}
-              onClick={e => { if (pinned.current === key) close(); else { pinned.current = key; show(e.currentTarget, data) } }}>
-              {displayCompanyLabel && <b>{minimal ? companyLabel(item.company) : item.company}</b>}<span className="career-period-line"><span className="career-marker-icon" aria-hidden="true"><CandidateMilestoneIcon /></span>{!compactMarkers && <><i /><i /></>}</span>
-              <small><span>{candidateMilestones ? visibleMilestone : (reverse || minimal) && milestoneYear && previousMilestoneYear === milestoneYear ? '' : milestoneYear || '?'}</span>{!compactMarkers && <i>{item.end_date?.slice(0, 4) || (ongoing(item) ? 'Now' : '?')}</i>}</small>
-              {detailed && <em>{item.role}</em>}
-              {profilePresentation && <span className="career-role-summary"><span className="career-initial" aria-hidden="true">{item.company.trim().charAt(0).toLocaleUpperCase() || '·'}</span><strong>{item.company || 'Employer not specified'}</strong><span>{item.role || 'Role not specified'}</span><span className="career-role-dates">{period}</span></span>}
-            </button>
-          </div>
+  const handlers = (data:Detail) => ({
+    onMouseEnter: (event:React.MouseEvent<HTMLButtonElement>) => { if (event.buttons === 0) show(event.currentTarget, data) },
+    onMouseLeave: leave,
+    onFocus: (event:React.FocusEvent<HTMLButtonElement>) => show(event.currentTarget, data),
+    onBlur: close,
+    onClick: (event:React.MouseEvent<HTMLButtonElement>) => { if (pinned.current === data.key) close(); else { pinned.current = data.key; show(event.currentTarget, data) } },
+  })
+  // Close/simultaneous starts keep their actual horizontal date coordinate. Only
+  // their hit targets/years use extra lanes, so no overlapping job is discarded.
+  const markerLanes:number[] = []
+  const lanes = layout.rows.map(row => {
+    let lane = markerLanes.findIndex(end => row.left * stretch - end >= 52)
+    if (lane < 0) lane = markerLanes.length
+    markerLanes[lane] = row.left * stretch
+    return lane
+  })
+  const summaryEdges:number[] = []
+  const summaries = layout.rows.map(row => {
+    const left = Math.max(0, Math.min(row.left * stretch, contentWidth - 240))
+    let lane = summaryEdges.findIndex(end => left >= end + 24)
+    if (lane < 0) lane = summaryEdges.length
+    summaryEdges[lane] = left + 240
+    return { left, lane }
+  })
+  const verified = new Set(extraction?.verified_role_ids || [])
+  const anyUnverified = items.some(item => item.id == null || !verified.has(item.id))
+  const lastDatedEnd = Math.max(...sorted.filter((_, i) => layout.rows[i].dated).map(item => endTime(item, now)).filter(Number.isFinite))
+  return <div className="career-history">
+    <EmploymentHistoryStatus items={items} extraction={extraction} />
+    {items.length > 0 && <>
+      {anyUnverified && <p className="career-review-key">Hollow markers: saved roles needing verification against the latest resume.</p>}
+      <div ref={root} className={`career-journey shared calendar-timeline marker-only ${showCompanyLabels ? 'with-role-summaries' : ''} ${detailed ? 'detailed' : 'compact'} ${items.length === 1 && layout.rows[0].span > 0 ? 'has-single-period' : ''}`} aria-label="Career journey" role="list" tabIndex={0}>
+        <div className="career-calendar" role="presentation" style={{ width:contentWidth, height:showCompanyLabels ? 104 + Math.max(0, ...lanes) * 52 + summaryEdges.length * layout.labelHeight : 112 + Math.max(0, ...lanes) * 52 }}>
+          <span className={`career-axis ${sorted.some(item => ongoing(item) && Number.isFinite(time(item.start_date)) && !coarseDates(item)) ? 'is-current' : ''}`} aria-hidden="true" style={{ width:layout.datedEnd * stretch }} />
+          {sorted.map((item, index) => {
+            const position = layout.rows[index]
+            const start = time(item.start_date)
+            const earlier = sorted.slice(0, index).filter(row => Number.isFinite(time(row.start_date)))
+            const uncertain = sorted.some(row => !Number.isFinite(time(row.start_date)) || coarseDates(row)) || earlier.some(row => !Number.isFinite(endTime(row, now)))
+            const latestEnd = Math.max(...earlier.map(row => endTime(row, now)).filter(Number.isFinite))
+            const gapStart = Number.isFinite(latestEnd) ? Date.UTC(new Date(latestEnd).getUTCFullYear(), new Date(latestEnd).getUTCMonth() + 1, 1) : NaN
+            const gap = !uncertain && start - gapStart >= 28 * 86400000 ? Math.round((start - gapStart) / 2629800000) : 0
+            const overlaps = !coarseDates(item) && earlier.some(row => !coarseDates(row) && endTime(row, now) > start)
+            const previousRole = sorted.slice(0, index).reverse().find(row => row.company.trim().toLowerCase() === item.company.trim().toLowerCase() && row.role !== item.role)
+            const isVerified = item.id != null && verified.has(item.id)
+            const confirmation = item.confidence_status === 'candidate_confirmed' ? 'Candidate-confirmed or manually edited. ' : ''
+            const verification = isVerified ? 'Verified against the latest resume.' : `${confirmation}Review needed — not verified against the latest resume.`
+            const key = `${item.id ?? index}-${item.company}-${item.start_date}`
+            const data:Detail = { key, company:item.company || 'Employer not specified', title:item.role || 'Role not specified', period:period(item), employment:employment(item), verification, description:item.description,
+              note:[overlaps ? 'Overlapping employment' : '', previousRole ? `Career progression from ${previousRole.role}` : '', !position.dated ? 'Dates incomplete · not placed on the calendar scale' : ''].filter(Boolean).join(' · ') }
+            const gapData:Detail = { key:`${key}-gap`, title:'Career gap', period:`Approximately ${gap} ${gap === 1 ? 'month' : 'months'}`, description:item.gap_reason || 'Reason not provided by the candidate.' }
+            return <div className={`career-sequence ${isInternship(item) ? 'is-internship' : ''} ${isVerified ? 'is-verified' : 'needs-review'} ${position.dated ? '' : 'dates-incomplete'}`} key={key}
+              style={{ left:position.left * stretch, '--career-role-span':`${position.span * stretch}px`, '--career-marker-lane':lanes[index], '--career-summary-left':`${summaries[index].left - position.left * stretch}px`, '--career-summary-top':`${98 + Math.max(0, ...lanes) * 52 + summaries[index].lane * layout.labelHeight}px` } as CSSProperties}>
+              <span className="career-period-line" aria-hidden="true" />
+              {gap > 0 && <div className="career-gap-period" role="listitem" style={{ left:(layout.x(gapStart) - position.left) * stretch, width:(layout.x(start) - layout.x(gapStart)) * stretch }}>
+                <button type="button" className="career-job career-gap-marker" aria-label={`Career gap of approximately ${gap} ${gap === 1 ? 'month' : 'months'}`} aria-expanded={active?.key === gapData.key} aria-describedby={active?.key === gapData.key ? id : undefined} {...handlers(gapData)}><span className="career-gap-line" aria-hidden="true" /></button>
+              </div>}
+              <div className="career-period" role="listitem">
+                {lanes[index] > 0 && <span className="career-marker-stem" aria-hidden="true" />}
+                <button type="button" className={`career-job ${active?.key === key ? 'is-active' : ''}`} aria-label={`${data.title} at ${data.company}, ${data.period}${data.employment ? `, ${data.employment}` : ''}${overlaps ? ', overlapping employment' : ''}, ${verification}`} aria-expanded={active?.key === key} aria-describedby={active?.key === key ? id : undefined} {...handlers(data)}>
+                  <span className="career-marker-icon" aria-hidden="true"><CandidateMilestoneIcon /></span>
+                  <small>{careerStartYear(item) || '?'}</small>
+                </button>
+                {showCompanyLabels && <div className="career-role-summary">
+                  <span className="career-company-initial" aria-hidden="true">{data.company?.trim().charAt(0).toUpperCase()}</span>
+                  <div><strong>{data.company}</strong><span>{data.title}</span><span className="career-summary-dates">{data.period}</span>
+                    {data.employment && <span className="career-summary-type">{data.employment}</span>}
+                  </div>
+                </div>}
+              </div>
+            </div>
+          })}
+          {Number.isFinite(lastDatedEnd) && <span className="career-end-year" style={{ left:layout.datedEnd * stretch }} aria-hidden="true">{new Date(lastDatedEnd).getUTCFullYear()}</span>}
         </div>
-      })}
-      {presentAtEnd && sorted.some(ongoing) && <div className="career-present career-present-end" role="presentation"><span>Present</span><i aria-hidden="true" /></div>}
-    </div>
-    {active && createPortal(<div id={id} className={`career-popover ${minimal ? 'candidate-career-popover' : ''}`} role="tooltip" onMouseEnter={() => clearTimeout(hideTimer.current)} onMouseLeave={leave} style={{ left: active.x, ...(active.above ? { bottom: active.y } : { top: active.y }) }}>{minimal ? <><strong>{active.company || active.title}</strong>{active.company && <span>{active.title}</span>}<small>{active.period}</small>{candidateMilestones && <>{active.note && <p>{active.note}</p>}{active.detail && <p>{active.detail}</p>}</>}</> : <><strong>{active.company || active.title}</strong>{active.company && <b>{active.title}</b>}<span>{active.period}</span>{active.note && <span>{active.note}</span>}{active.detail && <p>{active.detail}</p>}</>}</div>, document.body)}
-  </>
+      </div>
+    </>}
+    {active && createPortal(<div id={id} className="career-popover" role="tooltip" onMouseEnter={() => clearTimeout(hideTimer.current)} onMouseLeave={leave} style={{ left:active.x, ...(active.above ? { bottom:active.y } : { top:active.y }) }}>
+      <strong>{active.company || active.title}</strong>{active.company && <b>{active.title}</b>}
+      <span className="career-detail-dates">{active.period}</span>
+      {active.employment && <span className="career-detail-type">{active.employment}</span>}
+      {active.verification && <p className="career-detail-verification">{active.verification}</p>}
+      {active.note && <p>{active.note}</p>}{active.description && <p>{active.description}</p>}
+    </div>, document.body)}
+  </div>
 }

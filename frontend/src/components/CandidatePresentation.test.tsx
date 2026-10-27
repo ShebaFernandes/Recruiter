@@ -18,16 +18,15 @@ describe('candidate presentation', () => {
     ['uploaded', 'quarantined', 'Uploaded — waiting to be queued.'],
     ['queued', 'quarantined', 'Queued — waiting for a resume worker.'],
     ['processing', 'scanning', 'Scanning — checking your file safely.'],
-    ['processing', 'clean', 'Processing — preparing your profile.'],
+    ['processing', 'clean', 'Processing — extracting and validating your experience.'],
   ] as const)('presents the actual %s / %s state', (processing_status, scan_status, status) => {
     const { container } = render(<CandidateProcessing {...props()} resume={{ ...resume, processing_status, scan_status }} />)
-    expect(screen.getByRole('heading', { name: "We're doing the boring part." })).toBeVisible()
+    expect(screen.getByRole('heading', { name: "While we get to know you…" })).toBeVisible()
     expect(screen.getByRole('status')).toHaveTextContent(status)
     expect(screen.getByRole('progressbar')).not.toHaveAttribute('aria-valuenow')
     expect(screen.getByText(resume.original_name)).toBeVisible()
     expect(screen.queryByRole('button', { name: 'Retry processing' })).not.toBeInTheDocument()
     expect(container.textContent).not.toMatch(/\d+%/)
-    expect(screen.getByRole('list')).toHaveAccessibleName('Profile preparation activities, not completed stages')
   })
   it('keeps failure, retry and replacement actions connected to their callbacks', () => {
     const actions = props()
@@ -50,15 +49,13 @@ describe('candidate presentation', () => {
     expect(screen.getByRole('button', { name: 'Queueing…' })).toBeDisabled()
     expect(screen.getByLabelText('Upload a replacement resume')).toBeDisabled()
   })
-  it('cycles all five descriptions without changing the backend status or delaying completion', () => {
+  it('keeps the actual status stable and exits immediately on completion', () => {
     vi.useFakeTimers()
     vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }))
     const { container, rerender } = render(<CandidateProcessing {...props()} />)
-    for (const text of ['Reading your experience', 'Mapping your career journey', 'Identifying your strongest skills', "Understanding what you've built", 'Building your ENTER profile']) {
-      expect(container.querySelector('.cp-processing-message')).toHaveTextContent(text)
-      expect(screen.getByRole('status')).toHaveTextContent('Queued')
-      act(() => vi.advanceTimersByTime(3000))
-    }
+    act(() => vi.advanceTimersByTime(15000))
+    expect(screen.getByRole('status')).toHaveTextContent('Queued')
+    expect(container.querySelector('.cp-processing-message')).toBeNull()
     rerender(<CandidateProcessing {...props()} resume={{ ...resume, processing_status: 'completed' }} />)
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Your profile is ready' })).toBeVisible()
@@ -69,10 +66,34 @@ describe('candidate presentation', () => {
     const refresh = vi.fn()
     const { container, rerender } = render(<CandidateProcessing {...props()} />)
     act(() => vi.advanceTimersByTime(6000))
-    expect(container.querySelector('.cp-processing-message')).toHaveTextContent('Reading your experience')
+    expect(container.querySelector('.cp-processing-message')).toBeNull()
+    expect(screen.getByRole('status')).toHaveTextContent('Queued')
     rerender(<CandidateProcessing {...props()} error="Status unavailable" refresh={refresh} />)
     expect(screen.getByRole('status')).toHaveTextContent('Unable to check')
     fireEvent.click(screen.getByRole('button', { name: 'Check status again' }))
     expect(refresh).toHaveBeenCalledOnce()
   })
+})
+
+it('shows only real state changes, pauses an overdue animation and never claims completion', () => {
+  vi.useFakeTimers()
+  const refresh = vi.fn()
+  const { container, rerender } = render(<CandidateProcessing {...props()} refresh={refresh} />)
+  act(() => vi.advanceTimersByTime(60_000))
+  expect(container.querySelector('.cp-processing-bar')).toHaveClass('is-paused')
+  expect(screen.getByRole('status')).toHaveTextContent('taking longer than expected')
+  fireEvent.click(screen.getByRole('button', { name:'Check status again' }))
+  expect(refresh).toHaveBeenCalledOnce()
+  rerender(<CandidateProcessing {...props()} refresh={refresh} resume={{ ...resume, processing_status:'processing', scan_status:'scanning' }} />)
+  act(() => vi.advanceTimersByTime(0))
+  expect(screen.getByRole('status')).toHaveTextContent('Scanning')
+  expect(container.querySelector('.cp-processing-bar')).not.toHaveClass('is-paused')
+  expect(screen.queryByText('Your profile is ready')).toBeNull()
+})
+
+it.each(['extracting', 'validating'] as const)('shows the backend %s phase without claiming success', processing_stage => {
+  render(<CandidateProcessing {...props()} resume={{ ...resume, processing_status: 'processing', scan_status: 'clean', processing_stage }} />)
+  expect(screen.getByRole('status')).toHaveTextContent(processing_stage === 'extracting' ? 'Extracting' : 'Validating')
+  expect(screen.getByRole('progressbar')).not.toHaveAttribute('aria-valuenow')
+  expect(screen.queryByText('Your profile is ready')).toBeNull()
 })

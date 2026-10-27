@@ -23,6 +23,7 @@ from .candidate_experience import (
     proposed_fields,
     resume_identity_issue,
 )
+from .employment_reconciliation import reconcile_employment, trusted_rows
 from .models import (
     CandidateProfile,
     FileCleanupJob,
@@ -30,10 +31,9 @@ from .models import (
     Resume,
     ResumeAIUsage,
     ResumeProcessingJob,
-    WorkExperience,
 )
 from .resume_understanding import understand_resume
-from .services import parse_date, parse_resume
+from .services import parse_resume
 from .storage_cleanup import schedule_cleanup
 
 logger = logging.getLogger(__name__)
@@ -190,6 +190,16 @@ def _claim_job(job_id, idempotency_key=None):
             return None, "invalid"
         if job.state == ResumeProcessingJob.State.COMPLETED:
             return None, "duplicate"
+        if job.state == ResumeProcessingJob.State.FAILED:
+            return None, "failed"
+        # A duplicate delivery during the last permitted attempt must not fail
+        # a live lease. Only its owner (or stale-lease recovery) can finish it.
+        if (
+            job.state == ResumeProcessingJob.State.PROCESSING
+            and job.locked_at
+            and job.locked_at > stale_before
+        ):
+            return None, "busy"
         if job.attempts >= job.max_attempts:
             job.state = ResumeProcessingJob.State.FAILED
             job.locked_at = None
@@ -200,19 +210,18 @@ def _claim_job(job_id, idempotency_key=None):
                 processing_updated_at=timezone.now(),
             )
             return None, "failed"
-        if (
-            job.state == ResumeProcessingJob.State.PROCESSING
-            and job.locked_at
-            and job.locked_at > stale_before
-        ):
-            return None, "busy"
         if job.available_at > timezone.now():
             return None, "delayed"
         job.state = ResumeProcessingJob.State.PROCESSING
         job.attempts += 1
         job.locked_at = timezone.now()
         job.last_error = ""
-        job.save(update_fields=["state", "attempts", "locked_at", "last_error", "updated_at"])
+        job.phase = (
+            "extracting" if job.resume.scan_status == Resume.ScanStatus.CLEAN else "scanning"
+        )
+        job.save(update_fields=[
+            "state", "attempts", "locked_at", "last_error", "phase", "updated_at",
+        ])
         resume_updates = {
             "processing_status": Resume.ProcessingStatus.PROCESSING,
             "processing_error": "",
@@ -241,13 +250,57 @@ def _promote_clean_file(resume):
     schedule_cleanup(old_name)
 
 
+def _employment_outcome(extracted):
+    """Return privacy-safe extraction state, separate from job completion."""
+    roles = extracted.get("work_experiences")
+    roles = roles if isinstance(roles, list) else []
+    interpretation = extracted.get("_interpretation")
+    interpretation = interpretation if isinstance(interpretation, dict) else {}
+    parse = extracted.get("_employment_parse")
+    parse = parse if isinstance(parse, dict) else {}
+    source = str(interpretation.get("source") or "rules")
+    if roles:
+        status = "verified_ai" if source in {"ai", "ai_cached"} else "verified_fallback"
+        reason = "evidence_roles_accepted"
+    elif parse.get("explicit_no_employment"):
+        status = "confirmed_no_employment"
+        reason = "explicit_no_employment_statement"
+    else:
+        status = "review_required"
+        fallback_reason = str(interpretation.get("reason") or "")
+        if source in {"ai", "ai_cached"}:
+            reason = "ai_no_supported_roles"
+        elif fallback_reason == "malformed_response":
+            reason = "provider_response_failed_and_fallback_empty"
+        elif parse.get("section_detected"):
+            reason = "employment_section_not_resolved"
+        else:
+            reason = "no_supported_roles_detected"
+    return {
+        "status": status,
+        "source": "ai" if source in {"ai", "ai_cached"} else "rules",
+        "reason_code": reason,
+        "accepted_role_count": len(roles),
+        "profile_state": "pending",
+        "saved_role_count": 0,
+        "stale_profile_preserved": False,
+    }
+
+
 def _apply_extracted_resume(resume, extracted):
     profile = resume.candidate
+    outcome = extracted.setdefault("_employment_outcome", _employment_outcome(extracted))
     issue = resume_identity_issue(resume, profile)
     if issue:
         extracted["_identity_issue"] = issue
         extracted["_blocked_proposals"] = proposed_fields(extracted)
         extracted["_needs_review"] = False
+        outcome.update({
+            "status": "review_required",
+            "reason_code": "resume_identity_mismatch",
+            "profile_state": "unchanged",
+            "saved_role_count": profile.work_experiences.count(),
+        })
         return
     previous = next((item for item in profile.resumes.filter(
         version__lt=resume.version, processing_status="completed"
@@ -263,6 +316,8 @@ def _apply_extracted_resume(resume, extracted):
     safe, conflicts = {}, {}
     latest = profile.resumes.first().pk == resume.pk
     for field, value in proposals.items():
+        if field == 'work_experiences':
+            continue
         if comparable(field, value) == saved[field]:
             continue
         if latest and field not in protected and (
@@ -271,6 +326,12 @@ def _apply_extracted_resume(resume, extracted):
             safe[field] = value
         else:
             conflicts[field] = value
+    # Employment is reconciled by row. A previous edit to one role does not block
+    # safe additions or equivalent roles elsewhere in the journey.
+    if latest:
+        role_conflicts = reconcile_employment(profile, trusted_rows(extracted))
+        if role_conflicts:
+            conflicts['work_experiences'] = role_conflicts
     # Keep raw extraction and pending proposals durable. Missing values never erase data.
     extracted["_pending_fields"] = conflicts
     extracted["_needs_review"] = bool(conflicts)
@@ -312,31 +373,39 @@ def _apply_extracted_resume(resume, extracted):
     profile.career_preferences = signals
     profile.save(update_fields=["career_preferences", "profile_updated_at"])
     extracted["_auto_signals"] = signal_baseline
-    if safe.get("work_experiences"):
-        profile.work_experiences.all().delete()
-        WorkExperience.objects.bulk_create(
-            [
-                WorkExperience(
-                    candidate=profile,
-                    company=item["company"],
-                    role=item["role"],
-                    start_date=parse_date(item["start_date"]) if item.get("start_date") else None,
-                    end_date=parse_date(item["end_date"]) if item.get("end_date") else None,
-                    is_current=bool(item.get("is_current")),
-                    date_label=item.get("date_label", ""),
-                    employment_type=item.get("employment_type", ""),
-                    location=item.get("location", ""),
-                    description=item.get("description", ""),
-                    source_evidence=item.get("source_evidence", ""),
-                    confidence_status=item.get("confidence_status", "partial"),
-                )
-                for item in safe["work_experiences"]
-            ]
-        )
     current = profile_values(profile)
     extracted["_auto_applied"] = (
         current if previous is None and latest else
         {**baseline, **{field: current[field] for field in safe}}
+    )
+    saved_role_count = profile.work_experiences.count()
+    accepted_role_count = int(outcome.get("accepted_role_count") or 0)
+    pending_history = "work_experiences" in conflicts
+    stale_profile = accepted_role_count == 0 and saved_role_count > 0
+    if pending_history:
+        profile_state = "pending_candidate_review"
+    elif stale_profile:
+        profile_state = "previous_history_preserved"
+    elif accepted_role_count and saved_role_count >= accepted_role_count:
+        profile_state = "applied"
+    elif accepted_role_count:
+        profile_state = "not_applied"
+    else:
+        profile_state = "empty"
+    outcome.update({
+        "profile_state": profile_state,
+        "saved_role_count": saved_role_count,
+        "stale_profile_preserved": stale_profile,
+    })
+    logger.info(
+        "Resume employment outcome status=%s reason=%s source=%s accepted_roles=%s "
+        "saved_roles=%s profile_state=%s",
+        outcome["status"],
+        outcome["reason_code"],
+        outcome["source"],
+        accepted_role_count,
+        saved_role_count,
+        profile_state,
     )
 
 
@@ -571,6 +640,16 @@ def _retry_or_fail(job_id, message, scan_failed=False, claimed=None, recover_sta
     return "failed" if terminal else "retry"
 
 
+def _set_job_phase(job, phase):
+    # A stale child cannot change the status of a replacement attempt.
+    return ResumeProcessingJob.objects.filter(
+        pk=job.pk, state="processing", attempts=job.attempts, locked_at=job.locked_at,
+        locked_at__gt=timezone.now() - timedelta(
+            seconds=settings.RESUME_PROCESSING_TIMEOUT_SECONDS,
+        ),
+    ).update(phase=phase, updated_at=timezone.now())
+
+
 def process_resume_job(job_id, idempotency_key=None, claimed=None):
     job, outcome = (claimed, "claimed") if claimed else _claim_job(job_id, idempotency_key)
     if not job:
@@ -597,6 +676,8 @@ def process_resume_job(job_id, idempotency_key=None, claimed=None):
             # FieldFile retains a closed handle after the scanner/promote pass.
             # Reload it so local and remote storage backends open a fresh stream.
             resume = Resume.objects.select_related("candidate").get(pk=resume.pk)
+        if not _set_job_phase(job, "extracting"):
+            return "superseded"
         with resume.file.open("rb") as file_object:
             extracted = parse_resume(file_object, resume.original_name)
         if not extracted.get("raw_text", "").strip():
@@ -620,6 +701,9 @@ def process_resume_job(job_id, idempotency_key=None, claimed=None):
             )
         else:
             extracted["_interpretation"] = {"source": "rules", "reason": "identity_check"}
+        extracted["_employment_outcome"] = _employment_outcome(extracted)
+        if not _set_job_phase(job, "validating"):
+            return "superseded"
         with transaction.atomic():
             locked_job = ResumeProcessingJob.objects.select_for_update().get(pk=job.pk)
             if not _owns_attempt(locked_job, job):

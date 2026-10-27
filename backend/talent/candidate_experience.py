@@ -6,6 +6,7 @@ import unicodedata
 from decimal import Decimal
 
 MOTIVATORS = {
+    "Exceptional people",
     "Exceptional team",
     "Harder problems",
     "More ownership",
@@ -98,8 +99,20 @@ def pending_fields(resume, profile):
     # Existing uploads remain reviewable, but unchanged fields are not conflicts.
     proposals = data.get("_pending_fields", proposed_fields(data))
     saved = profile_values(profile)
-    return {key: value for key, value in proposals.items()
-            if key in RESUME_FIELDS and comparable(key, value) != saved[key]}
+    from .employment_reconciliation import row_equivalent
+
+    result = {}
+    for key, value in proposals.items():
+        if key not in RESUME_FIELDS:
+            continue
+        if key == 'work_experiences':
+            unresolved = [item for item in value if not any(
+                row_equivalent(row, item) for row in profile.work_experiences.all())]
+            if unresolved:
+                result[key] = unresolved
+        elif comparable(key, value) != saved[key]:
+            result[key] = value
+    return result
 
 
 def name_tokens(value):

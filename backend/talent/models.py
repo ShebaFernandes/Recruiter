@@ -305,6 +305,8 @@ class ResumeProcessingJob(models.Model):
         Resume, on_delete=models.CASCADE, related_name="processing_job"
     )
     state = models.CharField(max_length=20, choices=State.choices, default=State.QUEUED)
+    # Informational only; terminal success still requires the atomic profile commit.
+    phase = models.CharField(max_length=20, blank=True)
     idempotency_key = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     attempts = models.PositiveSmallIntegerField(default=0)
     max_attempts = models.PositiveSmallIntegerField(default=3)
@@ -328,7 +330,15 @@ class ResumeAIUsage(models.Model):
         SUCCEEDED = "succeeded", "Succeeded"
         FAILED = "failed", "Failed"
 
-    resume = models.ForeignKey(Resume, on_delete=models.CASCADE, related_name="ai_usage")
+    # Budget consumption must survive candidate/resume deletion. The detached row
+    # contains billing/diagnostic aggregates only, never resume text or identity.
+    resume = models.ForeignKey(
+        Resume,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="ai_usage",
+    )
     attempt = models.PositiveSmallIntegerField()
     provider = models.CharField(max_length=40)
     model = models.CharField(max_length=120)

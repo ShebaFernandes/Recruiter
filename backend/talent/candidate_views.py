@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from .candidate_experience import pending_fields, record_candidate_edits, resume_identity_issue
 from .models import CandidatePhoto, CandidateProfile, Resume
 from .permissions import IsCandidate
-from .serializers import CandidateProfileSerializer
+from .serializers import CandidateProfileSerializer, ResumeSerializer
 from .services import read_docx
 from .storage_cleanup import schedule_cleanup, store_private_upload
 from .throttling import DatabaseRateThrottle
@@ -48,12 +48,15 @@ PHOTO_FORMATS = {
 @permission_classes([IsCandidate])
 def processing_status(request):
     # Do not load raw extraction, work history, old resume versions or private URLs.
-    resume = Resume.objects.filter(candidate__user=request.user).only(
-        "id", "processing_status", "scan_status", "processing_error"
+    resume = Resume.objects.select_related("processing_job").filter(
+        candidate__user=request.user,
+    ).only(
+        "id", "processing_status", "scan_status", "processing_error", "processing_job__phase"
     ).first()
     data = None if not resume else {
         "id": resume.pk,
         "processing_status": resume.processing_status,
+        "processing_stage": ResumeSerializer().get_processing_stage(resume),
         "scan_status": resume.scan_status,
         "processing_error": resume.processing_error,
         "can_retry": resume.processing_status == "failed" and resume.scan_status != "infected",
@@ -184,14 +187,19 @@ def review_resume(request, resume_id):
         not isinstance(field, str) or field not in proposed for field in fields
     ):
         return Response({"detail": "Choose valid resume fields."}, status=400)
+    from .employment_reconciliation import apply_reviewed_employment
+
+    selected_history = proposed.get('work_experiences') if 'work_experiences' in fields else None
     serializer = CandidateProfileSerializer(
         profile,
-        data={field: proposed[field] for field in fields},
+        data={field: proposed[field] for field in fields if field != 'work_experiences'},
         partial=True,
         context={"request": request},
     )
     serializer.is_valid(raise_exception=True)
     serializer.save()
+    if selected_history:
+        apply_reviewed_employment(profile, selected_history)
     keep_pending = request.data.get("keep_pending") is True
     remaining = {key: value for key, value in proposed.items() if key not in fields}
     resume.extracted_data["_pending_fields"] = remaining if keep_pending else {}

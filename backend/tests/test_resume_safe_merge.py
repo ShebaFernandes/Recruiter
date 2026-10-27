@@ -75,6 +75,59 @@ def test_manual_clears_zero_and_beyond_cv_survive_multiple_replacements(client, 
     assert result.data["latest_resume"]["original_name"] == "replacement.pdf"
 
 
+def test_zero_role_replacement_marks_previous_history_as_stale_not_verified(
+    client, candidate_account,
+):
+    initial = upload(client).data
+    saved_roles = len(initial["work_experiences"])
+
+    replacement = upload(
+        client,
+        resume_pdf([
+            "Name: Asha Rao",
+            "Skills: Python",
+            "Career details available on request.",
+        ]),
+        "fictional-unresolved.pdf",
+    ).data
+
+    assert len(replacement["work_experiences"]) == saved_roles
+    assert {key: replacement["employment_extraction"][key] for key in (
+        "status", "source", "reason_code", "accepted_role_count", "saved_role_count",
+        "profile_state", "stale_profile_preserved",
+    )} == {
+        "status": "review_required",
+        "source": "rules",
+        "reason_code": "no_supported_roles_detected",
+        "accepted_role_count": 0,
+        "saved_role_count": saved_roles,
+        "profile_state": "previous_history_preserved",
+        "stale_profile_preserved": True,
+    }
+
+
+def test_manual_role_conflict_is_optional_and_other_roles_stay_saved(client, candidate_account):
+    first = upload(client).data
+    edited = [dict(row) for row in first['work_experiences']]
+    edited[0]['role'] = 'Candidate corrected role'
+    patch(client, {'work_experiences': edited})
+    replacement = upload(client).data
+    assert len(replacement['work_experiences']) == 2
+    assert any(row['role'] == 'Candidate corrected role'
+               for row in replacement['work_experiences'])
+    assert replacement['resume_review'] is not None
+    assert len(replacement['resume_review']['fields']['work_experiences']) == 1
+    saved_ids = {row['id'] for row in replacement['work_experiences']}
+    accepted = client.post(
+        f"/api/v1/candidate/resumes/{replacement['resume_review']['resume_id']}/review/",
+        {'fields': ['work_experiences'], 'keep_pending': True,
+         'profile_updated_at': replacement['profile_updated_at']}, format='json',
+    )
+    assert accepted.status_code == 200, accepted.data
+    assert {row['id'] for row in accepted.data['work_experiences']} == saved_ids
+    assert accepted.data['resume_review'] is None
+
+
 def test_legacy_provenance_is_not_assumed(client, candidate_account):
     upload(client)
     profile = CandidateProfile.objects.get()
@@ -130,7 +183,7 @@ def test_pending_conflicts_do_not_block_submission(client, candidate_account):
     assert response.data["headline"] == "My corrected title"
 
 
-def test_candidate_can_accept_only_complete_pending_career_history(
+def test_new_supported_roles_apply_while_unrelated_candidate_correction_survives(
     client, candidate_account,
 ):
     initial = upload(client).data
@@ -153,22 +206,14 @@ def test_candidate_can_accept_only_complete_pending_career_history(
     job = ResumeProcessingJob.objects.get(resume_id=accepted.data["latest_resume"]["id"])
     assert process_resume_job(job.pk, str(job.idempotency_key)) == "completed"
     pending = client.get("/api/v1/candidate/profile/").data
-    proposed = pending["resume_review"]["fields"]["work_experiences"]
-    assert len(proposed) == 7
-    response = client.post(
-        f"/api/v1/candidate/resumes/{pending['resume_review']['resume_id']}/review/",
-        {
-            "fields": ["work_experiences"],
-            "keep_pending": True,
-            "profile_updated_at": pending["profile_updated_at"],
-        },
-        format="json",
-    )
-    assert response.status_code == 200, response.data
-    assert len(response.data["work_experiences"]) == 7
-    assert len({row["id"] for row in response.data["work_experiences"]}) == 7
-    assert response.data["meaningful_work"] == "My saved Beyond the CV answer"
-    assert response.data["resume_review"] is None
+    assert pending["resume_review"] is None
+    assert len(pending["work_experiences"]) == 9
+    assert len({row["id"] for row in pending["work_experiences"]}) == 9
+    assert any(row["role"] == "Candidate corrected role"
+               for row in pending["work_experiences"])
+    assert any(row["is_current"] and row["end_date"] is None
+               for row in pending["work_experiences"])
+    assert pending["meaningful_work"] == "My saved Beyond the CV answer"
 
 
 def _document_bytes(document):

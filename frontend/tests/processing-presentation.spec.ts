@@ -17,7 +17,7 @@ for (const width of [390, 768, 1024, 1440]) test(`focused processing and complet
   })
   await page.route('**/*.mp4', route => route.abort())
   await page.goto('/')
-  const card = page.getByRole('region', { name: "We're doing the boring part." })
+  const card = page.getByRole('region', { name: "While we get to know you…" })
   await expect(card).toBeVisible()
   await expect(page.getByRole('complementary', { name: 'Career Settings panel' })).toHaveCount(0)
   await expect(page.locator('.cp-profile-workspace')).toHaveCount(0)
