@@ -197,6 +197,42 @@ def _local_ocr_pdf(file_obj, pages):
         return results
 
 
+def _pdf_readability(text):
+    """Score readable words, not byte count (broken font maps often add spaces)."""
+    words = len(re.findall(r'(?u)\b\w{3,}\b', text))
+    role_lines = sum(_looks_like_role(line) for line in text.splitlines())
+    return words, role_lines
+
+
+def _dated_role_count(text):
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    section = _section_lines(lines, EXPERIENCE_HEADINGS) or _unheaded_employment_lines(lines)
+    return len(PIPE_EXPERIENCE_PATTERN.findall(text)) + len(
+        _standard_experiences(lines, section)
+    )
+
+
+def _poppler_pdf_text(file_obj):
+    """Use the packaged local extractor as a bounded second text view, never OCR."""
+    if not shutil.which('pdftotext'):
+        return ''
+    file_obj.seek(0, 2)
+    size = file_obj.tell()
+    if size > 8 * 1024 * 1024:
+        return ''
+    file_obj.seek(0)
+    try:
+        output = subprocess.run(
+            ['pdftotext', '-layout', '-', '-'],
+            input=file_obj.read(size + 1), capture_output=True, check=True, timeout=12,
+        ).stdout
+    except (OSError, subprocess.SubprocessError):
+        return ''
+    if len(output) > 500_000:
+        return ''
+    return output.decode('utf-8', errors='replace')
+
+
 def extract_text(file_obj, filename):
     extension = Path(filename).suffix.lower()
     file_obj.seek(0)
@@ -222,6 +258,18 @@ def extract_text(file_obj, filename):
             if characters > 500_000:
                 raise ValueError("Resume exceeds the safe text limit.")
             parts.append(text)
+        # A font's character map can split words in pypdf while Poppler still
+        # recovers readable employer and title words. Prefer a clearly better
+        # local view; keep the existing page-level OCR guard for textless pages.
+        if not textless_pages:
+            current_text = "\n".join(parts)
+            alternative = _poppler_pdf_text(file_obj)
+            current_words, current_role_lines = _pdf_readability(current_text)
+            alternate_words, alternate_role_lines = _pdf_readability(alternative)
+            if (alternate_words >= max(80, current_words * 1.4)
+                    and _dated_role_count(alternative) >= _dated_role_count(current_text)
+                    and alternate_role_lines > current_role_lines):
+                return alternative
         if textless_pages:
             recognized = _local_ocr_pdf(file_obj, textless_pages)
             for index in textless_pages:
@@ -469,7 +517,10 @@ def _standard_experiences(lines, original_section=None):
                     elif len(parts) == 1:
                         employer = parts[0]
             elif prefix and layout_gap >= 3 and index + 1 < len(section):
-                role = _layout_header_role(section[index + 1])
+                next_line = section[index + 1]
+                role = _layout_header_role(next_line) or _concise_role(
+                    next_line.split('|', 1)[0]
+                )
                 if role:
                     company = prefix
                     description_start = index + 2

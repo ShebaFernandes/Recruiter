@@ -7,7 +7,7 @@ export default function EmploymentHistoryStatus({ items, extraction }: { items: 
   else if (extraction?.profile_state === 'pending_candidate_review') message = 'Some resume details differ from your saved edits. Your Career Journey is ready; you can compare those changes if you wish.'
   else if (items.length) return null
   else if (extraction?.status === 'confirmed_no_employment') message = 'No employment history was declared in this resume.'
-  else if (extraction?.status === 'review_required') message = 'We could not find supported employment history in this resume. You can add your history manually.'
+  else if (extraction?.status === 'review_required') message = 'We could not verify employment history from this resume. It may still contain jobs; you can try reading the saved file again or add your history manually.'
   else message = 'No employment history is saved yet.'
   return <p className="career-history-status" role="status">{message}</p>
 }

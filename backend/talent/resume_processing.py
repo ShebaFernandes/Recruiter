@@ -276,6 +276,11 @@ def _employment_outcome(extracted):
         fallback_reason = str(interpretation.get("reason") or "")
         if source in {"ai", "ai_cached"}:
             reason = "ai_no_supported_roles"
+        elif fallback_reason == "candidate_permission_or_rollout_gate":
+            reason = "ai_unavailable_or_not_consented"
+        elif fallback_reason in {"budget_exhausted", "rate_limited", "unavailable",
+                                 "timeout", "authentication_error", "permission_denied"}:
+            reason = "ai_unavailable_and_fallback_empty"
         elif fallback_reason == "malformed_response":
             reason = "provider_response_failed_and_fallback_empty"
         elif parse.get("section_detected"):
@@ -448,6 +453,23 @@ def _resume_ai_allowed(resume):
     if settings.RESUME_AI_ROLLOUT_MODE == "canary":
         return resume.pk in settings.RESUME_AI_CANARY_RESUME_IDS
     return settings.RESUME_AI_ROLLOUT_MODE == "consenting"
+
+
+def can_retry_resume(resume):
+    """Candidate-initiated reparse, with a per-file limit and no further AI spend."""
+    if resume.scan_status == Resume.ScanStatus.INFECTED:
+        return False
+    count = (resume.extracted_data or {}).get('_candidate_retry_count', 0)
+    if resume.processing_status == Resume.ProcessingStatus.FAILED:
+        return count < 2
+    return (
+        resume.processing_status == Resume.ProcessingStatus.COMPLETED
+        and (resume.extracted_data or {}).get('_employment_outcome', {}).get('status')
+        == 'review_required'
+        and count < 1
+        and not Resume.objects.filter(candidate_id=resume.candidate_id,
+                                      version__gt=resume.version).exists()
+    )
 
 
 def _resume_ai_budget_enforced():
@@ -671,7 +693,8 @@ def process_resume_job(job_id, idempotency_key=None, claimed=None):
     if not job:
         return outcome
     resume = Resume.objects.select_related("candidate").get(pk=job.resume_id)
-    resume_ai_allowed = _resume_ai_allowed(resume)
+    rules_only_retry = bool(resume.extracted_data.get('_rules_only_retry'))
+    resume_ai_allowed = _resume_ai_allowed(resume) and not rules_only_retry
     try:
         if resume.scan_status != Resume.ScanStatus.CLEAN:
             with resume.file.open("rb") as file_object:
@@ -699,8 +722,12 @@ def process_resume_job(job_id, idempotency_key=None, claimed=None):
         if not extracted.get("raw_text", "").strip():
             raise ValueError("No readable text was found in this resume.")
         previous_private = resume.extracted_data
-        if previous_private.get("_ai_cached_result"):
+        if previous_private.get("_ai_cached_result") and not rules_only_retry:
             extracted["_ai_cached_result"] = previous_private["_ai_cached_result"]
+        if rules_only_retry:
+            extracted['_rules_only_retry'] = True
+            extracted['_candidate_retry_count'] = previous_private.get(
+                '_candidate_retry_count', 0)
         resume.extracted_data = extracted
         if not resume_identity_issue(resume, resume.candidate):
             extracted = understand_resume(
@@ -715,6 +742,10 @@ def process_resume_job(job_id, idempotency_key=None, claimed=None):
                 ai_allowed=resume_ai_allowed,
                 candidate_requested_ai=resume_ai_allowed,
             )
+            if rules_only_retry:
+                extracted['_interpretation'] = {
+                    'source': 'rules', 'reason': 'candidate_requested_rule_retry'
+                }
         else:
             extracted["_interpretation"] = {"source": "rules", "reason": "identity_check"}
         extracted["_employment_outcome"] = _employment_outcome(extracted)

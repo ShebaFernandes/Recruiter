@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 from django.test import override_settings
 from pypdf import PdfWriter
+from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 from talent import services
 
 
@@ -63,3 +64,48 @@ def test_ocr_over_page_limit_does_not_invoke_local_tools(monkeypatch):
     with override_settings(RESUME_LOCAL_OCR_ENABLED=True, RESUME_LOCAL_OCR_MAX_PAGES=1):
         result = services._local_ocr_pdf(BytesIO(b'fictional'), [0, 1])
     assert result == {}
+
+
+def test_readable_local_pdf_view_recovers_supported_roles_without_ocr(monkeypatch):
+    writer = PdfWriter()
+    page = writer.add_blank_page(width=612, height=792)
+    font = DictionaryObject({
+        NameObject('/Type'): NameObject('/Font'),
+        NameObject('/Subtype'): NameObject('/Type1'),
+        NameObject('/BaseFont'): NameObject('/Helvetica'),
+    })
+    page[NameObject('/Resources')] = DictionaryObject({
+        NameObject('/Font'): DictionaryObject({NameObject('/F1'): writer._add_object(font)})
+    })
+    stream = DecodedStreamObject()
+    stream.set_data(b'BT /F1 10 Tf 50 740 Td '
+                    b'(Fictional profile text with a broken employer career layout) Tj ET')
+    page[NameObject('/Contents')] = writer._add_object(stream)
+    output = BytesIO()
+    writer.write(output)
+    payload = output.getvalue()
+    alternative = (
+        'PROFESSIONAL EXPERIENCE\n'
+        'Engineer | Fictional Studio | Jan 2020 - Dec 2022\n'
+        'Engineering Intern | Example Works | Jan 2019 - Jun 2019\n'
+    )
+    monkeypatch.setattr(services.shutil, 'which', lambda command: '/usr/bin/' + command)
+    original_run = services.subprocess.run
+
+    def fake_run(command, **kwargs):
+        assert command == ['pdftotext', '-layout', '-', '-']
+        assert kwargs['input'] == payload
+        assert kwargs['timeout'] == 12
+        return SimpleNamespace(stdout=alternative.encode())
+
+    monkeypatch.setattr(services.subprocess, 'run', fake_run)
+    monkeypatch.setattr(services, '_pdf_readability', lambda text:
+                        (100, 2) if text == alternative else (20, 0))
+    with override_settings(RESUME_LOCAL_OCR_ENABLED=False):
+        parsed = services.parse_resume(BytesIO(payload), 'fictional.pdf')
+    assert {(row['company'], row['role']) for row in parsed['work_experiences']} == {
+        ('Fictional Studio', 'Engineer'), ('Example Works', 'Engineering Intern'),
+    }
+    assert not parsed['_employment_parse']['ocr_used']
+    assert not parsed['_employment_parse']['ocr_required']
+    monkeypatch.setattr(services.subprocess, 'run', original_run)

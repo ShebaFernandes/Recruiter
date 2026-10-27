@@ -15,7 +15,8 @@ it.each([CareerJourney, CandidateCareerTimeline])('separates current evidence, e
   rerender(<Component items={[]} extraction={extraction('confirmed_no_employment')} />)
   expect(screen.getByRole('status')).toHaveTextContent('No employment history was declared in this resume')
   rerender(<Component items={[]} extraction={extraction('review_required')} />)
-  expect(screen.getByRole('status')).toHaveTextContent('could not find supported employment history')
+  expect(screen.getByRole('status')).toHaveTextContent('could not verify employment history')
+  expect(screen.getByRole('status')).toHaveTextContent('may still contain jobs')
   expect(screen.queryByText(/fresher/i)).toBeNull()
   expect(screen.getByRole('status')).toHaveTextContent('add your history manually')
   expect(container.querySelector('.career-journey')).toBeNull()
@@ -28,6 +29,12 @@ it.each([CareerJourney, CandidateCareerTimeline])('separates current evidence, e
   expect(screen.getByRole('tooltip')).toHaveTextContent('Candidate-confirmed history')
   expect(screen.getByRole('tooltip')).toHaveTextContent('Not matched to the latest resume')
   expect(role.description).toBe('Candidate edited details.')
+})
+it('offers one explicit no-AI recovery action for an unreadable saved resume', () => {
+  let attempts = 0
+  render(<CandidateCareerTimeline items={[]} extraction={extraction('review_required')} retryProcessing={() => { attempts++ }} edit={() => { throw new Error('manual edit should not be primary') }} />)
+  fireEvent.click(screen.getByRole('button', { name: /Try reading this saved resume again \(without AI\)/ }))
+  expect(attempts).toBe(1)
 })
 it('does not certify equally sized old rows or unpublished extraction proposals', () => {
   const { container } = render(<CareerJourney items={[role]} extraction={extraction('verified_ai', { accepted_role_count:1, profile_state:'pending_candidate_review', unverified_role_ids:[7] })} />)

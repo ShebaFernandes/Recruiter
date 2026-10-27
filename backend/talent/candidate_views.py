@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from .candidate_experience import pending_fields, record_candidate_edits, resume_identity_issue
 from .models import CandidatePhoto, CandidateProfile, Resume, WorkExperience
 from .permissions import IsCandidate
+from .resume_processing import can_retry_resume
 from .serializers import CandidateProfileSerializer, ResumeSerializer
 from .services import read_docx
 from .storage_cleanup import schedule_cleanup, store_private_upload
@@ -60,7 +61,7 @@ def processing_status(request):
         "processing_stage": ResumeSerializer().get_processing_stage(resume),
         "scan_status": resume.scan_status,
         "processing_error": resume.processing_error,
-        "can_retry": resume.processing_status == "failed" and resume.scan_status != "infected",
+        "can_retry": can_retry_resume(resume),
     }
     response = Response({"resume": data, "worker_available": worker_available()})
     response["Cache-Control"] = "private, no-store"

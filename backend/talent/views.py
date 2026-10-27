@@ -49,7 +49,7 @@ from .models import (
     UserRole,
 )
 from .permissions import IsCandidate, IsRecruiter, is_approved_recruiter, is_verified_candidate
-from .resume_processing import enqueue_resume_job
+from .resume_processing import can_retry_resume, enqueue_resume_job
 from .search_grounding import ground_saved_search
 from .search_understanding import (
     SearchUnderstandingUnavailable,
@@ -662,9 +662,9 @@ def retry_resume_processing(request, resume_id):
             {"detail": "This file did not pass the security scan. Upload a different resume."},
             status=status.HTTP_409_CONFLICT,
         )
-    if resume.processing_status != Resume.ProcessingStatus.FAILED:
+    if not can_retry_resume(resume):
         return Response(
-            {"detail": "Only failed resume processing jobs can be retried."},
+            {"detail": "This resume is not eligible for another processing attempt."},
             status=status.HTTP_409_CONFLICT,
         )
     with transaction.atomic():
@@ -672,10 +672,8 @@ def retry_resume_processing(request, resume_id):
         # Recheck under the same lease lock as the worker. Concurrent clicks
         # must never reset an already queued/processing attempt.
         resume.refresh_from_db()
-        if job.state != ResumeProcessingJob.State.FAILED or (
-            resume.processing_status != Resume.ProcessingStatus.FAILED
-            or resume.scan_status == Resume.ScanStatus.INFECTED
-        ):
+        if job.state not in {ResumeProcessingJob.State.FAILED,
+                             ResumeProcessingJob.State.COMPLETED} or not can_retry_resume(resume):
             return Response(
                 {"detail": "This job is already queued, processing, or cannot be retried."},
                 status=status.HTTP_409_CONFLICT,
@@ -689,6 +687,10 @@ def retry_resume_processing(request, resume_id):
         job.last_error = ""
         job.completed_at = None
         job.save()
+        data = dict(resume.extracted_data or {})
+        data['_rules_only_retry'] = True
+        data['_candidate_retry_count'] = data.get('_candidate_retry_count', 0) + 1
+        resume.extracted_data = data
         resume.processing_status = Resume.ProcessingStatus.QUEUED
         resume.scan_status = Resume.ScanStatus.QUARANTINED
         resume.processing_error = ""
@@ -697,6 +699,7 @@ def retry_resume_processing(request, resume_id):
                 "processing_status",
                 "scan_status",
                 "processing_error",
+                "extracted_data",
                 "processing_updated_at",
             ]
         )

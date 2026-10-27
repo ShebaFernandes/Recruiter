@@ -22,6 +22,7 @@ from .models import (
     Search,
     WorkExperience,
 )
+from .resume_processing import can_retry_resume
 
 
 class SignupSerializer(serializers.Serializer):
@@ -127,10 +128,7 @@ class ResumeSerializer(serializers.ModelSerializer):
         )
 
     def get_can_retry(self, obj):
-        return (
-            obj.processing_status == Resume.ProcessingStatus.FAILED
-            and obj.scan_status != Resume.ScanStatus.INFECTED
-        )
+        return can_retry_resume(obj)
 
 
 class CandidateProfileSerializer(serializers.ModelSerializer):
