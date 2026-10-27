@@ -345,7 +345,8 @@ def _employment_details(value, role=""):
 
 
 def _standard_experiences(lines):
-    section = [_table_date_range(line) for line in _section_lines(lines, EXPERIENCE_HEADINGS)]
+    original_section = _section_lines(lines, EXPERIENCE_HEADINGS)
+    section = [_table_date_range(line) for line in original_section]
     # Separate employer/title/date lines belong to the next role, never to the
     # previous role's achievements. Only explicit adjacent dated headers qualify.
     header_starts = set()
@@ -357,6 +358,8 @@ def _standard_experiences(lines):
     experiences = []
     employer = ""
     for index, line in enumerate(section):
+        if PIPE_EXPERIENCE_PATTERN.fullmatch(original_section[index]):
+            continue  # Already parsed as one complete, structured Work row.
         matches = list(DATE_RANGE_PATTERN.finditer(line))
         if not matches:
             continue
@@ -468,6 +471,13 @@ def _education_rows(text, lines):
     return list(dict.fromkeys(rows))[:8]
 
 
+PIPE_EXPERIENCE_PATTERN = re.compile(
+    r"^\s*(?:Experience|Work)\s*:\s*([^|\n]+)\|([^|\n]+)\|"
+    r"(\d{4}-\d{2}-\d{2})\|([^|\n]+)(?:\|([^\n]+))?$",
+    re.IGNORECASE | re.MULTILINE,
+)
+
+
 def parse_resume(file_obj, filename):
     text = extract_text(file_obj, filename)
     lines = [line.strip() for line in text.splitlines() if line.strip()]
@@ -493,11 +503,7 @@ def parse_resume(file_obj, filename):
     headline = _concise_role(_value_after_label(text, "Role") or _value_after_label(text, "Title"))
     company = _value_after_label(text, "Company")
     experience_rows = []
-    for match in re.finditer(
-        r"(?im)^\s*(?:Experience|Work)\s*:\s*([^|\n]+)\|([^|\n]+)\|"
-        r"(\d{4}-\d{2}-\d{2})\|([^|\n]+)(?:\|([^\n]+))?$",
-        text,
-    ):
+    for match in PIPE_EXPERIENCE_PATTERN.finditer(text):
         end_value = match.group(4).strip()
         experience_rows.append(
             {
@@ -614,6 +620,45 @@ def parse_resume(file_obj, filename):
             text,
         )
     )
+    section = _section_lines(lines, EXPERIENCE_HEADINGS)
+    employment_headings = sum(
+        _heading_and_tail(line)[0] in EXPERIENCE_HEADINGS for line in lines
+    )
+    # Archiving needs an independently enumerable, bounded work-history section.
+    # A successful model response or the parser's ordinary reliability heuristic
+    # cannot prove that a free-form section contains every role.
+    pipe_complete = bool(
+        employment_headings == 1
+        and section
+        and len(section) == len(experience_rows)
+        and len(list(PIPE_EXPERIENCE_PATTERN.finditer(text))) == len(experience_rows)
+        and all(PIPE_EXPERIENCE_PATTERN.fullmatch(line) for line in section)
+        and all(row.get("start_date") and (row.get("end_date") or row.get("is_current"))
+                for row in experience_rows)
+        and not explicit_no_employment
+        and len(text) <= RESUME_RAW_TEXT_LIMIT
+    )
+    # Standard dated layouts can also be counted independently. Every dated
+    # header must map to one parsed row, and every line in the bounded section
+    # must be covered by that row's verbatim evidence. Unpaired headers, umbrella
+    # tenures, truncated evidence, and ambiguous undated lines fail closed.
+    dated_lines = [line for line in section if DATE_RANGE_PATTERN.search(_table_date_range(line))]
+    evidence = [row.get('source_evidence', '') for row in experience_rows]
+    standard_complete = bool(
+        employment_headings == 1 and section and not pipe_complete
+        and len(dated_lines) == len(experience_rows) > 0
+        and all(len(DATE_RANGE_PATTERN.findall(_table_date_range(line))) == 1
+                for line in dated_lines)
+        and all(row.get('start_date') and (row.get('end_date') or row.get('is_current'))
+                for row in experience_rows)
+        and all(sum(line in item for item in evidence) == 1 for line in dated_lines)
+        and all(any(line.strip(' |•-–—') in item for item in evidence) for line in section)
+        and all(not _looks_like_role(line) or any(
+            _concise_role(line) == row.get('role') for row in experience_rows
+        ) for line in section if line not in dated_lines)
+        and not explicit_no_employment and len(text) <= RESUME_RAW_TEXT_LIMIT
+    )
+    complete_for_archival = pipe_complete or standard_complete
     return {
         "full_name": name[:180],
         "headline": headline[:240],
@@ -640,6 +685,13 @@ def parse_resume(file_obj, filename):
             "recognized_roles": len(experience_rows),
             "section_detected": bool(normalized_headings & EXPERIENCE_HEADINGS),
             "explicit_no_employment": explicit_no_employment,
+            "complete_for_archival": complete_for_archival,
+            "rule_role_keys": [
+                {key: row.get(key) for key in (
+                    "company", "role", "start_date", "end_date", "is_current", "date_label"
+                )}
+                for row in experience_rows
+            ] if complete_for_archival else [],
         },
         "notice_period_days": int(notice_match.group(1)) if notice_match else None,
         "current_salary_lpa": float(current_salary.group(1)) if current_salary else None,

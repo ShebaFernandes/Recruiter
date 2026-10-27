@@ -23,7 +23,13 @@ from .candidate_experience import (
     proposed_fields,
     resume_identity_issue,
 )
-from .employment_reconciliation import reconcile_employment, row_equivalent, trusted_rows
+from .employment_reconciliation import (
+    archive_omitted_employment,
+    complete_employment_history,
+    reconcile_employment,
+    row_equivalent,
+    trusted_rows,
+)
 from .models import (
     CandidateProfile,
     FileCleanupJob,
@@ -332,6 +338,12 @@ def _apply_extracted_resume(resume, extracted):
         role_conflicts = reconcile_employment(profile, trusted_rows(extracted))
         if role_conflicts:
             conflicts['work_experiences'] = role_conflicts
+        complete = complete_employment_history(extracted)
+        archived_ids = archive_omitted_employment(
+            profile, trusted_rows(extracted), resume
+        ) if complete else []
+        outcome['archive_complete'] = complete
+        outcome['archived_role_count'] = len(archived_ids)
     # Keep raw extraction and pending proposals durable. Missing values never erase data.
     extracted["_pending_fields"] = conflicts
     extracted["_needs_review"] = bool(conflicts)

@@ -3,6 +3,8 @@
 import re
 import unicodedata
 
+from django.utils import timezone
+
 from .models import WorkExperience
 from .services import parse_date
 
@@ -89,6 +91,88 @@ def trusted_rows(extracted):
             and row.get('confidence_status') in {'supported', 'partial'}]
 
 
+def complete_employment_history(extracted):
+    """Allow omission archiving only after two agreeing, complete observations."""
+    parse = extracted.get('_employment_parse') or {}
+    interpretation = extracted.get('_interpretation') or {}
+    rows = trusted_rows(extracted)
+    keys = parse.get('rule_role_keys') or []
+    if (not parse.get('complete_for_archival') or extracted.get('_text_truncated')
+            or len(rows) != len(keys) or not rows
+            or interpretation.get('source') not in {'rules', 'ai', 'ai_cached'}):
+        return False
+    if (interpretation.get('source') == 'rules'
+            and interpretation.get('reason') not in {
+                'disabled', 'deterministic_reliable', 'candidate_permission_or_rollout_gate'
+            }):
+        return False
+    # An oversized optional summary/detail is discarded by schema validation,
+    # but says nothing about whether the employment list is complete. Any lost
+    # required role or evidence fails the role-count and evidence checks below.
+    if any(item.get('category', '').startswith('work_experience.')
+           for item in extracted.get('_validation_rejections', [])
+           if isinstance(item, dict)):
+        return False
+    unmatched = list(rows)
+    for key in keys:
+        if not isinstance(key, dict):
+            return False
+        rule = WorkExperience(
+            company=key.get('company') or '', role=key.get('role') or '',
+            start_date=date_value(key.get('start_date')),
+            end_date=date_value(key.get('end_date')),
+            is_current=bool(key.get('is_current')),
+            date_label=key.get('date_label') or '',
+        )
+        index = next((i for i, row in enumerate(unmatched)
+                      if row_equivalent(rule, row) and row_equivalent(
+                          WorkExperience(
+                              company=row['company'], role=row['role'],
+                              start_date=date_value(row.get('start_date')),
+                              end_date=date_value(row.get('end_date')),
+                              is_current=bool(row.get('is_current')),
+                              date_label=row.get('date_label') or '',
+                          ), key
+                      )), None)
+        if index is None:
+            return False
+        unmatched.pop(index)
+    return not unmatched
+
+
+def _resume_derived(row, profile):
+    if row.confidence_status == 'candidate_confirmed':
+        return False
+    if row.origin == 'resume_derived':
+        return True
+    if row.origin != 'unknown' or not row.source_evidence:
+        return False
+    # Legacy records lack an origin field. An exact stored extraction match is
+    # required before treating one as automatic rather than candidate-authored.
+    for resume in profile.resumes.filter(processing_status='completed'):
+        data = resume.extracted_data if isinstance(resume.extracted_data, dict) else {}
+        if any(item.get('source_evidence') == row.source_evidence
+               and row_equivalent(row, item) for item in trusted_rows(data)):
+            return True
+    return False
+
+
+def archive_omitted_employment(profile, rows, resume):
+    """Move proven automatic omissions out of the active view without deleting."""
+    archived = []
+    for saved in profile.work_experiences.all():
+        if any(row_equivalent(saved, item) for item in rows):
+            continue
+        if not _resume_derived(saved, profile):
+            continue
+        saved.origin = 'resume_derived'
+        saved.archived_at = timezone.now()
+        saved.archived_by_resume_id = resume.pk
+        saved.save(update_fields=['origin', 'archived_at', 'archived_by_resume_id'])
+        archived.append(saved.pk)
+    return archived
+
+
 def reconcile_employment(profile, rows):
     """Return conflicts; omissions are retained and never become deletions."""
     saved = list(profile.work_experiences.all())
@@ -97,6 +181,16 @@ def reconcile_employment(profile, rows):
     for item in rows:
         candidates = [(index, row) for index, row in enumerate(saved)
                       if index not in matched and row_matches(row, item)]
+        if not candidates:
+            archived = next((row for row in WorkExperience.all_objects.filter(
+                candidate=profile, archived_at__isnull=False
+            ) if row_equivalent(row, item)), None)
+            if archived is not None:
+                archived.archived_at = None
+                archived.archived_by_resume_id = None
+                archived.save(update_fields=['archived_at', 'archived_by_resume_id'])
+                saved.append(archived)
+                candidates = [(len(saved) - 1, archived)]
         if not candidates:
             # A candidate-corrected title for this same employer and stint is
             # protected, rather than duplicated as a second role.
@@ -111,7 +205,8 @@ def reconcile_employment(profile, rows):
                 conflicts.append(item)
                 continue
             # Same employer/title with a different start can be a distinct stint.
-            row = WorkExperience(candidate=profile, company=item['company'], role=item['role'])
+            row = WorkExperience(candidate=profile, company=item['company'], role=item['role'],
+                                 origin='resume_derived')
             for field in ('start_date', 'end_date'):
                 setattr(row, field, date_value(item.get(field)))
             for field in ('is_current', 'date_label', 'employment_type', 'location',

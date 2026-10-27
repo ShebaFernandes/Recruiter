@@ -214,6 +214,13 @@ def delete_candidate_photo_file(sender, instance, **kwargs):
         schedule_cleanup(instance.file.name)
 
 
+class ActiveWorkExperienceManager(models.Manager):
+    use_in_migrations = True
+
+    def get_queryset(self):
+        return super().get_queryset().filter(archived_at__isnull=True)
+
+
 class WorkExperience(models.Model):
     class ConfidenceStatus(models.TextChoices):
         SUPPORTED = "supported", "Supported by resume evidence"
@@ -239,9 +246,19 @@ class WorkExperience(models.Model):
         default=ConfidenceStatus.PARTIAL,
     )
     gap_reason = models.CharField(max_length=240, blank=True)
+    # Unknown legacy provenance is protected. Only proven resume-derived rows
+    # can leave the active journey after a complete replacement extraction.
+    origin = models.CharField(max_length=20, default="unknown")
+    archived_at = models.DateTimeField(null=True, blank=True)
+    archived_by_resume_id = models.PositiveIntegerField(null=True, blank=True)
+
+    objects = ActiveWorkExperienceManager()
+    all_objects = models.Manager()
 
     class Meta:
         ordering = ["start_date"]
+        base_manager_name = "all_objects"
+        default_manager_name = "objects"
 
 
 class Resume(models.Model):

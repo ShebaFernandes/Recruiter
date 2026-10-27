@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.http import FileResponse
+from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_datetime
 from PIL import Image, ImageOps, UnidentifiedImageError
 from rest_framework.decorators import api_view, parser_classes, permission_classes, throttle_classes
@@ -12,7 +13,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from .candidate_experience import pending_fields, record_candidate_edits, resume_identity_issue
-from .models import CandidatePhoto, CandidateProfile, Resume
+from .models import CandidatePhoto, CandidateProfile, Resume, WorkExperience
 from .permissions import IsCandidate
 from .serializers import CandidateProfileSerializer, ResumeSerializer
 from .services import read_docx
@@ -62,6 +63,31 @@ def processing_status(request):
         "can_retry": resume.processing_status == "failed" and resume.scan_status != "infected",
     }
     response = Response({"resume": data, "worker_available": worker_available()})
+    response["Cache-Control"] = "private, no-store"
+    return response
+
+
+@api_view(["POST"])
+@permission_classes([IsCandidate])
+@transaction.atomic
+def restore_archived_employment(request, experience_id):
+    profile = CandidateProfile.objects.select_for_update().get(user=request.user)
+    row = get_object_or_404(
+        WorkExperience.all_objects.select_for_update(), pk=experience_id,
+        candidate=profile, archived_at__isnull=False,
+    )
+    row.archived_at = None
+    row.archived_by_resume_id = None
+    row.origin = "candidate"
+    row.confidence_status = WorkExperience.ConfidenceStatus.CANDIDATE_CONFIRMED
+    row.save(update_fields=[
+        "archived_at", "archived_by_resume_id", "origin", "confidence_status",
+    ])
+    profile.save(update_fields=["profile_updated_at"])
+    from .candidate_experience import record_candidate_edits
+
+    record_candidate_edits(profile, {"work_experiences"})
+    response = Response(CandidateProfileSerializer(profile, context={"request": request}).data)
     response["Cache-Control"] = "private, no-store"
     return response
 

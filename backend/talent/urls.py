@@ -20,6 +20,8 @@ urlpatterns = [
     path("candidate/account/", views.delete_candidate_account),
     path("candidate/profile/", views.candidate_profile),
     path("candidate/profile/submit/", views.submit_candidate_profile),
+    path("candidate/work-experiences/<int:experience_id>/restore/",
+         candidate_views.restore_archived_employment),
     path("candidate/photo/", candidate_views.candidate_photo),
     path("candidate/resumes/", views.resume_upload),
     path("candidate/resume-status/", candidate_views.processing_status),

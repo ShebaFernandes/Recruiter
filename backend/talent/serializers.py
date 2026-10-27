@@ -135,6 +135,7 @@ class ResumeSerializer(serializers.ModelSerializer):
 
 class CandidateProfileSerializer(serializers.ModelSerializer):
     work_experiences = WorkExperienceSerializer(many=True, required=False)
+    archived_work_experiences = serializers.SerializerMethodField()
     latest_resume = serializers.SerializerMethodField()
     employment_extraction = serializers.SerializerMethodField()
     viewed = serializers.SerializerMethodField()
@@ -160,12 +161,23 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
                 "resume_review",
                 "available_resume",
                 "resume_identity_warning",
+                "archived_work_experiences",
             ):
                 data.pop(field, None)
         return data
 
     def get_employment_extraction(self, obj):
         return employment_history(obj)
+
+    def get_archived_work_experiences(self, obj):
+        request = self.context.get("request")
+        if getattr(getattr(request, "user", None), "id", None) != obj.user_id:
+            return []
+        rows = WorkExperience.all_objects.filter(candidate=obj, archived_at__isnull=False)
+        return [
+            {**WorkExperienceSerializer(row).data, "archived_at": row.archived_at}
+            for row in rows
+        ]
 
     def get_resume_identity_warning(self, obj):
         resume = obj.resumes.filter(processing_status="completed").first()
@@ -379,6 +391,7 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
             "submission_consent_version",
             "profile_updated_at",
             "work_experiences",
+            "archived_work_experiences",
             "employment_extraction",
             "latest_resume",
             "viewed",
