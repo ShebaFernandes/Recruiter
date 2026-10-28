@@ -78,7 +78,7 @@ for (const width of [390, 1440]) test(`non-interactive processing and calendar t
   await expect(page.getByRole('tooltip')).toContainText('Jul 2020 — Jul 2022')
   await page.keyboard.press('Escape')
   await expect(page.getByRole('tooltip')).toHaveCount(0)
-  if (width === 390) expect(await timeline.evaluate(el => el.scrollWidth > el.clientWidth)).toBe(true)
+  expect(await timeline.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   await page.locator('.cp-career-heading h3').click()
   await timeline.evaluate(el => { el.scrollLeft = 0 })

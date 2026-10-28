@@ -1,4 +1,5 @@
 import type { WorkExperience } from '../types'
+import { careerStartYear } from '../careerHistory'
 
 export const time = (value: string | null) => value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(value).getTime() : NaN
 export const ongoing = (item: WorkExperience) => !item.end_date && (
@@ -74,4 +75,59 @@ export function careerTimelineLayout(items: WorkExperience[], now = Date.now(), 
     return { left, span, lane, barLane, dated }
   })
   return { rows, width: right + 24, height: 65 + lanes.length * labelHeight, labelHeight, datedEnd, x }
+}
+
+/** Fit actual dates to the card. Nearby starts get separate touch-target lanes. */
+export function fittedCareerTimeline(items: WorkExperience[], width: number, now = Date.now()) {
+  const padding = 24
+  const usable = Math.max(1, width - padding * 2)
+  const dated = items.map(item => !coarseDates(item) ? time(item.start_date) : NaN)
+  const starts = dated.filter(Number.isFinite)
+  const ends = items.flatMap((item, index) => {
+    if (!Number.isFinite(dated[index])) return []
+    const end = periodEndTime(item, now)
+    return Number.isFinite(end) && end >= dated[index] ? [end] : []
+  })
+  const minimum = starts.length ? Math.min(...starts) : NaN
+  const maximum = starts.length ? Math.max(...starts, ...ends) : NaN
+  const minMonth = Number.isFinite(minimum) ? calendarMonth(minimum) : NaN
+  const maxMonth = Number.isFinite(maximum) ? calendarMonth(maximum) : NaN
+  const dateX = (value: number) => Number.isFinite(value) && Number.isFinite(minMonth)
+    ? padding + (maxMonth > minMonth ? (calendarMonth(value) - minMonth) / (maxMonth - minMonth) : .5) * usable
+    : NaN
+  const datedEdges: number[] = []
+  const unknownEdges: number[] = []
+  const unknownCount = dated.filter(value => !Number.isFinite(value)).length
+  let unknownIndex = 0
+  const positions = items.map((item, index) => {
+    const isDated = Number.isFinite(dated[index])
+    const x = isDated ? dateX(dated[index]) : padding + ((unknownIndex++ + .5) / Math.max(1, unknownCount)) * usable
+    const edges = isDated ? datedEdges : unknownEdges
+    let lane = edges.findIndex(edge => x - edge >= 44)
+    if (lane < 0) lane = edges.length
+    edges[lane] = x
+    const end = periodEndTime(item, now)
+    const endX = isDated && Number.isFinite(end) && end >= dated[index] ? dateX(end) : NaN
+    return { x, lane, dated:isDated, span:Number.isFinite(endX) ? Math.max(0, endX - x) : 0 }
+  })
+  const maxDatedLane = Math.max(0, datedEdges.length - 1)
+  const axisY = 28 + maxDatedLane * 48
+  const unknownY = starts.length ? axisY + 76 : 28
+  const height = unknownCount ? unknownY + Math.max(0, unknownEdges.length - 1) * 48 + 56 : axisY + 72
+  const yearGap = width < 500 ? 58 : 42
+  let previousDatedX = -Infinity
+  let previousUnknownX = -Infinity
+  const seenYears = new Set<string>()
+  const yearLabels = items.map((item, index) => {
+    const year = careerStartYear(item)
+    const x = positions[index].x
+    const previous = positions[index].dated ? previousDatedX : previousUnknownX
+    if (!year || seenYears.has(year) || x - previous < yearGap) return ''
+    seenYears.add(year)
+    if (positions[index].dated) previousDatedX = x
+    else previousUnknownX = x
+    return year
+  })
+  return { positions, axisY, unknownY, height, dateX, yearLabels, hasDated:starts.length > 0,
+    endYear:Number.isFinite(maximum) ? new Date(maximum).getUTCFullYear() : null }
 }

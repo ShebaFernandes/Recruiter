@@ -391,14 +391,10 @@ test('real candidate resume, timeline, preferences, replacement, preview and acc
   await expect(page.locator('.cp-profile-main').getByRole('slider', { name: 'Build and Lead preference' })).toHaveCount(0)
   await layouts(page, info, 'profile')
   await expect(page.locator('.career-axis')).toHaveCount(1)
-  await page.locator('.career-journey').focus()
-  const needsScroll = await page.locator('.career-journey').evaluate(el => el.scrollWidth > el.clientWidth)
-  if (needsScroll) {
-    const beforeScroll = await page.locator('.career-journey').evaluate(el => el.scrollLeft)
-    await page.keyboard.press('ArrowRight')
-    await expect.poll(() => page.locator('.career-journey').evaluate(el => el.scrollLeft)).toBeGreaterThan(beforeScroll)
-  }
-  await expect(page.locator('.career-journey')).toHaveCSS('outline-style', 'solid')
+  expect(await page.locator('.career-journey').evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true)
+  const careerMarker = page.locator('.career-journey .career-period .career-job').first()
+  await careerMarker.focus()
+  await expect(careerMarker).toHaveCSS('outline-style', 'solid')
   await page.getByRole('button', { name: 'View Resume', exact: true }).click()
   await expect(page.locator('.cp-docx')).toContainText('Built a payments recovery service.')
   await page.getByRole('button', { name: 'Maximize resume' }).click()

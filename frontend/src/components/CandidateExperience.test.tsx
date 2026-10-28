@@ -22,7 +22,7 @@ describe('candidate career experience', () => {
     expect(roles()).toHaveLength(3)
     expect(roles()[0]).toHaveAttribute('aria-label', expect.stringContaining('Engineer at Early company'))
     expect(container.querySelector('.career-end-year')).toHaveTextContent(String(new Date().getFullYear()))
-    expect(roles().map(role => role.querySelector('small')?.textContent)).toEqual(['2010', '2021', '2021'])
+    expect(roles().map(role => role.querySelector('small')?.textContent)).toEqual(['2010', '2021', undefined])
     fireEvent.focus(roles()[2])
     expect(screen.getByRole('tooltip')).toHaveTextContent('Recent company')
     expect(screen.getByRole('tooltip')).toHaveTextContent('Lead')
@@ -74,7 +74,7 @@ describe('candidate career experience', () => {
       accepted_role_count: 0, saved_role_count: 1, profile_state: 'previous_history_preserved',
       stale_profile_preserved: true,
     }} />)
-    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('latest resume extraction is incomplete')
     expect(container.querySelector('.career-journey')).toBeInTheDocument()
     expect(container.querySelector('.cp-career-previous')).toBeInTheDocument()
   })
