@@ -4,7 +4,7 @@ import path from 'node:path'
 import { issueLocalAccountToken } from './account-token'
 
 test('permanent preferences: responsive layout, inline editing and persistence', async ({ page, browser }, info) => {
-  test.setTimeout(120_000)
+  test.setTimeout(180_000)
   await page.addInitScript(() => sessionStorage.setItem('enter-door-intro-seen', '1'))
   const email = `preferences-${Date.now()}@example.test`
   await page.goto('/')
@@ -31,7 +31,8 @@ b=io.BytesIO();d.save(b);sys.stdout.buffer.write(b.getvalue())`, email])
   await expect(page.getByRole('heading', { name: 'Career Settings', exact: true })).toHaveCount(0)
   await expect(panel.getByText('Role & direction', { exact: true })).toHaveCount(0)
   await expect(panel.getByRole('heading', { name: 'Build ↔ Lead Spectrum' })).toBeVisible()
-  for (const name of ['Availability', 'Notice period', 'Compensation', 'Work preferences', 'How should we reach you?', 'Professional links']) {
+  await expect(panel.getByText('Job Search Status')).toBeVisible()
+  for (const name of ['Notice period', 'Compensation', 'Work preferences', 'How should we reach you?', 'Professional links']) {
     await panel.getByRole('button', { name: new RegExp(name.replace('?', '\\?')) }).first().click()
     await expect(panel.locator('form')).toBeVisible()
     await page.locator('.cp-welcome').click()

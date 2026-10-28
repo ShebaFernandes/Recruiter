@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { issueLocalAccountToken } from './account-token'
+import { expectDiscoverableCareerRoles } from './career-role-assertions'
 
 test.use({ actionTimeout:10000 })
 const cases = JSON.parse(readFileSync(path.resolve('../backend/tests/fixtures/employment-scenarios.json'), 'utf8')) as { name:string; lines:string[]; roles:number }[]
@@ -61,31 +62,27 @@ assert not job.resume.ai_usage.exists()`)).toBe('completed')
     expect(saved.work_experiences).toHaveLength(fixture.roles)
     expect(saved.employment_extraction.verified_role_ids).toHaveLength(fixture.roles)
     expect(saved.employment_extraction.source).toBe('rules')
-    await expect(journey.locator('.career-period')).toHaveCount(fixture.roles)
+    if (fixture.roles) await expectDiscoverableCareerRoles(page, journey, saved.work_experiences.map((role: { company: string; role: string }) => [role.company, role.role]))
+    else await expect(journey.locator('.career-period')).toHaveCount(0)
     if (fixture.roles) {
       await expect(journey.getByRole('status')).toHaveCount(0)
       for (const role of saved.work_experiences) {
-        const names = await journey.locator('.career-period button').evaluateAll(els=>els.map(el=>el.getAttribute('aria-label')).join(' '))
-        expect(names).toContain(role.company)
-        expect(names).toContain(role.role)
         await expect(journey.locator('.career-journey')).not.toContainText(role.company)
       }
-      const button = journey.locator('.career-period button').first()
-      await button.focus()
-      await expect(page.getByRole('tooltip')).toBeVisible()
-      await page.keyboard.press('Escape')
-      await button.click()
-      await expect(page.getByRole('tooltip')).toBeVisible()
-      await page.keyboard.press('Escape')
     } else {
       expect(saved.employment_extraction.status).toBe('confirmed_no_employment')
-      await expect(journey.getByRole('status')).toContainText('No employment history declared in the latest resume')
+      await expect(journey.getByRole('status')).toContainText('No jobs were listed in this resume.')
     }
-    if (fixture.name === 'internship') await expect(journey.locator('.is-internship')).toHaveCount(1)
+    if (fixture.name === 'internship') await expect(journey.locator('.career-sequence.is-internship')).toHaveCount(1)
     if (['promotions', 'internship'].includes(fixture.name)) await expect(journey.locator('.career-gap-period')).toHaveCount(0)
     if (fixture.name === 'overlap-gap') {
       await expect(journey.locator('.career-gap-period')).toHaveCount(1)
-      await expect(journey.locator('button[aria-label*="overlapping employment"]')).toHaveCount(1)
+      const dated = saved.work_experiences.filter((role: { start_date: string | null; end_date: string | null }) => role.start_date && role.end_date)
+      expect(dated.some((role: { start_date: string; end_date: string }, index: number) =>
+        dated.slice(index + 1).some((other: { start_date: string; end_date: string }) =>
+          role.start_date <= other.end_date && other.start_date <= role.end_date,
+        ),
+      )).toBe(true)
     }
     if (fixture.name === 'partial') {
       await expect(journey.locator('.career-period button')).toHaveAttribute('aria-label', /not specified/)
@@ -103,8 +100,8 @@ assert not job.resume.ai_usage.exists()`)).toBe('completed')
       expect(unresolved.work_experiences).toEqual(saved.work_experiences)
       expect(unresolved.employment_extraction.status).toBe('review_required')
       expect(unresolved.employment_extraction.verified_role_ids).toEqual([])
-      await expect(journey.locator('.career-period')).toHaveCount(saved.work_experiences.length)
-      await expect(journey.getByRole('status')).toContainText('Review is needed')
+      await expectDiscoverableCareerRoles(page, journey, saved.work_experiences.map((role: { company: string; role: string }) => [role.company, role.role]))
+      await expect(journey.getByRole('status')).toContainText('Latest resume could not be fully read; saved roles remain visible.')
       await expect(journey.locator('.career-sequence.needs-review')).toHaveCount(saved.work_experiences.length)
       await journey.scrollIntoViewIfNeeded()
       await page.screenshot({ path:info.outputPath(`preserved-review-${width}.png`), animations:'disabled' })

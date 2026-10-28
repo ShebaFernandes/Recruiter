@@ -3,12 +3,22 @@ import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 import { issueLocalAccountToken } from './account-token'
 import { provisionRecruiter } from './recruiter-admin'
+import { dismissCareerPopover, expectDiscoverableCareerRoles, openCareerRole } from './career-role-assertions'
 
 test.use({ hasTouch: true })
 
 test('candidate and recruiter share the same interactive promotion journey', async ({ page }, info) => {
   test.setTimeout(180_000)
   const run = Date.now(), email = `journey-${run}@example.com`, password = 'strong-pass-123'
+  const expected = [
+    ['First Company', 'Software Engineer', 'Jan 2011 - Dec 2013'],
+    ['Earlier Studio', 'Engineer', '2014-16'],
+    ['Earlier Studio', 'Senior Engineer', '2016-17'],
+    ['Earlier Studio', 'VP - Engineering', 'Jun 2017 - Apr 2019'],
+    ['Northstar', 'Senior Engineer', 'May 2019 - Dec 2020'],
+    ['Northstar', 'Engineering Manager', 'Jan 2021 - Mar 2023'],
+    ['Northstar', 'Head of AI Engineering', 'Apr 2023 - Present'],
+  ] as const
   const docx = info.outputPath('fictional-promotions.docx')
   const created = spawnSync(path.resolve('../.venv/bin/python'), ['-c', `
 import os; os.environ.setdefault('DJANGO_SETTINGS_MODULE','config.settings')
@@ -39,29 +49,30 @@ from talent.worker_runtime import run_bounded_job
 job = ResumeProcessingJob.objects.get(resume_id=${resumeId})
 assert run_bounded_job(job.pk) == 'completed'`], { cwd:path.resolve('../backend'), env:process.env, encoding:'utf8' })
   expect(processed.status, 'Offline fictional worker completes').toBe(0)
-  await expect(page.locator('.career-period')).toHaveCount(7, { timeout: 30_000 })
-  await expect(page.locator('.career-laptop')).toHaveCount(7)
+  const candidateTimeline = page.locator('.cp-career .career-journey')
+  await expect(candidateTimeline.locator('.career-period > .career-job').first()).toBeVisible({ timeout: 30_000 })
+  const profile = await (await page.request.get(`${process.env.PLAYWRIGHT_API_URL}/candidate/profile/`)).json()
+  expect(profile.work_experiences).toHaveLength(expected.length)
+  expect(new Set(profile.work_experiences.map((role: { id: number }) => role.id)).size).toBe(expected.length)
+  await expectDiscoverableCareerRoles(page, candidateTimeline, expected)
   await expect(page.locator('.cp-identity')).toContainText('Head of AI Engineering')
   await expect(page.locator('.cp-skills').getByRole('heading', { name: 'Education' })).toHaveCount(0)
-  const labels = await page.locator('.career-period .career-job').evaluateAll(items => items.map(item => item.getAttribute('aria-label')))
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 900 })
-    const marker = page.getByRole('button', { name: /Head of AI Engineering at Northstar/ })
-    await marker.scrollIntoViewIfNeeded()
-    await marker.click()
-    await expect(page.getByRole('tooltip')).toContainText('Apr 2023 — Present')
-    await expect(page.getByRole('tooltip')).toContainText('Built a reliable workflow service used by 12 teams.')
-    await expect(marker).toHaveClass(/is-active/)
-    await expect(page.getByRole('tooltip')).toBeInViewport()
+    await expectDiscoverableCareerRoles(page, candidateTimeline, expected)
+    const detail = await openCareerRole(page, candidateTimeline, 'Northstar', 'Head of AI Engineering')
+    await expect(detail).toContainText('Apr 2023 — Present')
+    await expect(detail).toBeInViewport()
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await page.screenshot({ path: info.outputPath(`candidate-journey-${width}.png`) })
     if (width === 390) {
-      await page.getByRole('button', { name: /Engineering Manager at Northstar/ }).tap()
-      await expect(page.getByRole('tooltip')).toContainText('Engineering Manager')
-      await expect(page.getByRole('tooltip')).toContainText('Jan 2021 — Mar 2023')
+      await dismissCareerPopover(candidateTimeline)
+      const manager = await openCareerRole(page, candidateTimeline, 'Northstar', 'Engineering Manager')
+      await expect(manager).toContainText('Jan 2021 — Mar 2023')
     }
-    await page.keyboard.press('Escape')
+    await dismissCareerPopover(candidateTimeline)
     await expect(page.getByRole('tooltip')).toHaveCount(0)
+    await expect(page.getByRole('dialog', { name: /roles grouped here/ })).toHaveCount(0)
   }
   await expect(page.getByRole('combobox', { name: 'Profile Visibility' })).toHaveCount(0)
   await page.getByRole('button', { name: /Work preferences.*Edit/ }).click()
@@ -86,21 +97,20 @@ assert run_bounded_job(job.pk) == 'completed'`], { cwd:path.resolve('../backend'
   await page.getByLabel('Candidate search').fill('AI engineer in Pune with Python')
   await page.getByRole('button', { name: 'Search talent' }).click()
   await page.locator('.candidate-card').filter({ hasText: 'Journey Test Candidate' }).first().getByRole('button', { name: 'View profile' }).click()
+  await page.setViewportSize({ width: 1440, height: 900 })
   const graph = page.locator('.profile-drawer .career-journey')
-  await expect(graph.locator('.career-period')).toHaveCount(7)
-  await expect(graph.locator('.career-laptop')).toHaveCount(7)
+  await expectDiscoverableCareerRoles(page, graph, expected)
   await expect(graph.locator('.career-period-line').first()).toHaveCSS('height', '3px')
-  expect(await graph.locator('.career-period .career-job').evaluateAll(items => items.map(item => item.getAttribute('aria-label')))).toEqual(labels)
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 900 })
-    const marker = graph.getByRole('button', { name: /Head of AI Engineering at Northstar/ })
-    await marker.scrollIntoViewIfNeeded()
-    await marker.click()
-    await expect(page.getByRole('tooltip')).toContainText('Apr 2023 — Present')
-    await expect(page.getByRole('tooltip')).toBeInViewport()
+    await expectDiscoverableCareerRoles(page, graph, expected)
+    const detail = await openCareerRole(page, graph, 'Northstar', 'Head of AI Engineering')
+    await expect(detail).toContainText('Apr 2023 — Present')
+    await expect(detail).toBeInViewport()
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await page.screenshot({ path: info.outputPath(`recruiter-journey-${width}.png`) })
-    await marker.click()
+    await dismissCareerPopover(graph)
     await expect(page.getByRole('tooltip')).toHaveCount(0)
+    await expect(page.getByRole('dialog', { name: /roles grouped here/ })).toHaveCount(0)
   }
 })

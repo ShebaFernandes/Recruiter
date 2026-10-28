@@ -3,6 +3,7 @@ import path from 'node:path'
 import { spawn, spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { issueLocalAccountToken } from './account-token'
+import { expectDiscoverableCareerRoles, openCareerRole } from './career-role-assertions'
 
 const password = 'strong-pass-123'
 test.use({ actionTimeout: 15_000, video: 'on' })
@@ -236,8 +237,9 @@ for line in promotion_lines():
 document.save(${JSON.stringify(docx)})`], { cwd: path.resolve('../backend'), encoding: 'utf8', env: { ...process.env, DJANGO_SETTINGS_MODULE: 'config.settings' } })
     if (generated.status) throw new Error(generated.stderr)
     await page.getByTestId('resume-input').setInputFiles(docx)
-    const markers = page.locator('.career-period>.career-job')
-    await expect(markers).toHaveCount(7, { timeout: 30_000 })
+    const timeline = page.locator('.cp-career .career-journey')
+    const markers = timeline.locator('.career-period>.career-job')
+    await expect(markers.first()).toBeVisible({ timeout: 30_000 })
     expect(await page.getByRole('button', { name: "That's me ✓" }).evaluate(el => Boolean(document.querySelector('.cp-resume-row')!.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true)
     const expected = [
       ['First Company', 'Software Engineer', 'Jan 2011 - Dec 2013'],
@@ -249,32 +251,26 @@ document.save(${JSON.stringify(docx)})`], { cwd: path.resolve('../backend'), enc
       ['Northstar', 'Head of AI Engineering', 'Apr 2023 - Present'],
     ]
     await expect(page.locator('.career-journey')).not.toContainText('Present')
-    await expect(markers.last()).toHaveAttribute('aria-label', /Present/)
+    const profile = await (await page.request.get(`${process.env.PLAYWRIGHT_API_URL}/candidate/profile/`)).json()
+    expect(profile.work_experiences).toHaveLength(expected.length)
+    expect(new Set(profile.work_experiences.map((role: { id: number }) => role.id)).size).toBe(expected.length)
     for (const width of [1440, 1024, 768, 390]) {
       await page.setViewportSize({ width, height: 900 })
       await page.evaluate(() => document.fonts.ready)
       await expect(page.locator('.career-role-summary')).toHaveCount(0)
-      await expect(page.locator('.career-marker-icon')).toHaveCount(7)
-      for (let index = 0; index < expected.length; index++) {
-        const marker = markers.nth(index)
-        await marker.scrollIntoViewIfNeeded()
-        if (width === 390) await marker.tap()
-        else await marker.hover()
-        const popover = page.getByRole('tooltip')
-        for (const [detailIndex, detail] of expected[index].entries()) {
-          await expect(popover).toContainText(detailIndex === 2 ? detail.replace(' - ', ' — ') : detail)
-        }
-        const bounds = await popover.boundingBox()
-        expect(bounds!.x).toBeGreaterThanOrEqual(0)
-        expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width)
-        expect(bounds!.y).toBeGreaterThanOrEqual(0)
-        expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(900)
-        if (index === 6 && (width === 1440 || width === 390)) await page.screenshot({ path: info.outputPath(`career-details-${width}.png`) })
-        if (width === 390) await marker.tap()
-        else { await page.mouse.move(0, 0); await expect(popover).toHaveCount(0) }
-      }
+      await expect(page.locator('.career-marker-icon')).toHaveCount(await markers.count())
+      await expectDiscoverableCareerRoles(page, timeline, expected)
+      const detail = await openCareerRole(page, timeline, 'Northstar', 'Head of AI Engineering')
+      await expect(detail).toContainText('Apr 2023 — Present')
+      const bounds = await detail.boundingBox()
+      expect(bounds!.x).toBeGreaterThanOrEqual(0)
+      expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width)
+      expect(bounds!.y).toBeGreaterThanOrEqual(0)
+      expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(900)
+      if (width === 1440 || width === 390) await page.screenshot({ path: info.outputPath(`career-details-${width}.png`) })
+      await page.keyboard.press('Escape')
       await markers.nth(0).focus()
-      await expect(page.getByRole('tooltip')).toContainText(expected[0][0])
+      await expect(page.getByRole('tooltip').or(page.getByRole('dialog', { name: /roles grouped here/ }))).toBeVisible()
       await page.keyboard.press('Escape')
       await expect(page.getByRole('tooltip')).toHaveCount(0)
       await page.locator('.career-journey').evaluate(element => element.scrollLeft = 0)
@@ -294,7 +290,7 @@ document.save(${JSON.stringify(docx)})`], { cwd: path.resolve('../backend'), enc
     await expect(page.getByRole('button', { name: 'Harder problems', exact: true })).toHaveAttribute('aria-pressed', 'true')
     await page.getByRole('button', { name: /Job Search Status/ }).click()
     await expect(page.getByRole('group', { name: 'Job Search Status' })).toBeVisible()
-    await expect(markers).toHaveCount(7)
+    await expectDiscoverableCareerRoles(page, timeline, expected)
     await page.getByRole('button', { name: 'View Resume', exact: true }).click()
     await expect(page.locator('.cp-docx')).toContainText('Head of AI Engineering')
   })

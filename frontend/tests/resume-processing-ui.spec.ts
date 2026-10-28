@@ -66,13 +66,22 @@ for (const width of [1440, 390]) test(`accepted uploads and replacements visibly
 os.environ.setdefault('DJANGO_SETTINGS_MODULE','config.settings')
 import django; django.setup()
 from pathlib import Path
+from io import BytesIO
+from docx import Document
 from tests.test_candidate_flow import resume_pdf, resume_docx
 from talent.worker_runtime import heartbeat
 heartbeat('observed-test-worker', 'stopped')
-Path(${JSON.stringify(docx)}).write_bytes(resume_docx())
-Path(${JSON.stringify(pdf)}).write_bytes(resume_pdf(['Name: Asha Rao', 'Role: Principal Engineer', 'Location: Pune', 'Skills: Python, Django']))
+def same_person(data):
+    document = Document(BytesIO(data))
+    for paragraph in document.paragraphs:
+        paragraph.text = paragraph.text.replace('asha@example.com', ${JSON.stringify(email)})
+    output = BytesIO()
+    document.save(output)
+    return output.getvalue()
+Path(${JSON.stringify(docx)}).write_bytes(same_person(resume_docx(name='Processing Test Candidate')))
+Path(${JSON.stringify(pdf)}).write_bytes(resume_pdf(['Name: Processing Test Candidate', 'Email: ${email}', 'Role: Principal Engineer', 'Location: Pune', 'Skills: Python, Django']))
 Path(${JSON.stringify(otherPerson)}).write_bytes(resume_pdf())
-Path(${JSON.stringify(careerUpdate)}).write_bytes(resume_docx(role='Staff Engineer', extra='Experience: Advisor|New Studio|2025-01-01|Present|Advises engineers'))`], { cwd: backend, env: process.env })
+Path(${JSON.stringify(careerUpdate)}).write_bytes(same_person(resume_docx(name='Processing Test Candidate', role='Staff Engineer', extra='Experience: Advisor|New Studio|2025-01-01|Present|Advises engineers')))`], { cwd: backend, env: process.env })
   expect(fixture.status).toBe(0)
   const heading = page.getByRole('heading', { name: "While we get to know you…" })
   const state = page.locator('.cp-processing-status')
@@ -164,7 +173,7 @@ Path(${JSON.stringify(careerUpdate)}).write_bytes(resume_docx(role='Staff Engine
   const mismatch = worker((await (await mismatchUpload).json()).latest_resume.id, false)
   expect(await mismatch.done).toBe('completed')
   await expect(page.getByRole('alert').filter({ hasText: "We couldn't match this resume" })).toBeVisible({ timeout: 20_000 })
-  await expect(page.locator('.cp-identity')).toContainText('Asha Rao')
+  await expect(page.locator('.cp-identity')).toContainText('Processing Test Candidate')
   await expect(page.locator('.cp-identity')).toContainText('Candidate-corrected title')
   await expect(page.locator('.career-journey .career-period')).toHaveCount(3)
   await expect(page.locator('.career-sequence.needs-review')).toHaveCount(3)

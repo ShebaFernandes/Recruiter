@@ -46,6 +46,60 @@ if __name__ == "__main__":
         "VITE_API_URL": f"{api_origin}/api/v1",
         "SECURE_SSL_REDIRECT": "false",
     })
+    if os.environ.get("E2E_REAL_CLAMAV") == "1":
+        port = int(os.environ.get("E2E_CLAMAV_PORT", "33310"))
+        if not 1024 <= port <= 65535:
+            raise SystemExit("The isolated ClamAV port must be unprivileged and local.")
+        os.environ.update({
+            "RESUME_SCANNER_BACKEND": "clamav", "CLAMAV_HOST": "127.0.0.1",
+            "CLAMAV_PORT": str(port),
+        })
+    if os.environ.get("E2E_PUBLISHED_LEGAL") == "1":
+        # Exercise the published candidate flow with the repository's approved
+        # public copy. Keep the hashes pinned so a changed document fails closed.
+        allowed = {
+            "LEGAL_EFFECTIVE_DATE", "LEGAL_PRIVACY_VERSION", "LEGAL_TERMS_VERSION",
+            "LEGAL_AGE_VERSION", "LEGAL_SUBMISSION_VERSION",
+            "LEGAL_PRIVACY_SHA256", "LEGAL_TERMS_SHA256", "LEGAL_AGE_SHA256",
+            "LEGAL_SUBMISSION_SHA256",
+        }
+        example = ROOT / "deploy" / "production.env.example"
+        public_legal = dict(
+            line.split("=", 1) for line in example.read_text().splitlines()
+            if line.split("=", 1)[0] in allowed
+        )
+        # The original production example predates the approved Gemini-aware
+        # privacy/terms publication. Use the matching approved overlay for those
+        # public hashes and versions; the backend still verifies the actual copy.
+        overlay_keys = {
+            "LEGAL_PRIVACY_VERSION", "LEGAL_TERMS_VERSION",
+            "LEGAL_PRIVACY_SHA256", "LEGAL_TERMS_SHA256",
+            "LEGAL_RESUME_AI_VERSION", "LEGAL_RESUME_AI_SHA256",
+        }
+        overlay = ROOT / "deploy" / "compose.gemini-publication.yaml"
+        updated_legal = dict(
+            (key.strip(), value.strip().strip('"'))
+            for line in overlay.read_text().splitlines()
+            if ":" in line
+            for key, value in [line.split(":", 1)]
+            if key.strip() in overlay_keys
+        )
+        if set(updated_legal) != overlay_keys or not all(updated_legal.values()):
+            raise SystemExit("Approved legal overlay is incomplete.")
+        public_legal.update(updated_legal)
+        required_legal = allowed | {"LEGAL_RESUME_AI_VERSION", "LEGAL_RESUME_AI_SHA256"}
+        if set(public_legal) != required_legal or not all(public_legal.values()):
+            raise SystemExit("Published legal test configuration is incomplete.")
+        os.environ.update(public_legal)
+        os.environ.update({
+            "LEGAL_CONTENT_APPROVED": "true", "LEGAL_WORKFLOW_PREVIEW": "false",
+            "LEGAL_RESUME_AI_APPROVED": "true", "VITE_LEGAL_CONTENT_APPROVED": "true",
+        })
+    else:
+        os.environ.update({
+            "LEGAL_CONTENT_APPROVED": "false", "LEGAL_WORKFLOW_PREVIEW": "false",
+            "LEGAL_RESUME_AI_APPROVED": "false", "VITE_LEGAL_CONTENT_APPROVED": "false",
+        })
     os.environ.pop("AWS_STORAGE_BUCKET_NAME", None)
     import django
 
