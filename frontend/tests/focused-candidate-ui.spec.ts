@@ -68,14 +68,26 @@ for (const width of [390, 1440]) test(`non-interactive processing and calendar t
   }
   const timeline = page.getByRole('list', { name:'Career journey' })
   await timeline.scrollIntoViewIfNeeded()
-  await expect(timeline.locator('.career-period')).toHaveCount(4)
+  await expect(timeline.locator('.career-sequence')).toHaveCount(4)
   await expect(page.locator('.career-history-status')).toHaveCount(0)
   await expect(timeline.locator('.is-internship')).toHaveCount(1)
   await expect(timeline.locator('.is-internship .career-period-line')).toHaveCSS('background-color','rgb(143, 199, 196)')
   await expect(timeline.locator('.career-gap-line')).toHaveCSS('border-top-style','dashed')
   const engineer = timeline.getByRole('button', { name:/Software Engineer at Northstar/ })
-  await engineer.focus()
-  await expect(page.getByRole('tooltip')).toContainText('Jul 2020 — Jul 2022')
+  if (await engineer.count()) {
+    await engineer.focus()
+    await expect(page.getByRole('tooltip')).toContainText('Jul 2020 — Jul 2022')
+  } else {
+    const clusters = timeline.locator('.career-job.is-cluster')
+    let found = false
+    for (let index = 0; index < await clusters.count(); index++) {
+      await clusters.nth(index).focus()
+      const details = await page.getByRole('dialog').innerText()
+      if (details.includes('Software Engineer') && details.includes('Jul 2020 — Jul 2022')) found = true
+      await page.keyboard.press('Escape')
+    }
+    expect(found).toBe(true)
+  }
   await page.keyboard.press('Escape')
   await expect(page.getByRole('tooltip')).toHaveCount(0)
   expect(await timeline.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true)

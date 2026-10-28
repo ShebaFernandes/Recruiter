@@ -77,12 +77,14 @@ export function careerTimelineLayout(items: WorkExperience[], now = Date.now(), 
   return { rows, width: right + 24, height: 65 + lanes.length * labelHeight, labelHeight, datedEnd, x }
 }
 
-/** Fit actual dates to the card. Nearby starts get separate touch-target lanes. */
+/** Keep one date axis. Compact only markers whose touch targets would collide. */
 export function fittedCareerTimeline(items: WorkExperience[], width: number, now = Date.now()) {
   const padding = 24
   const usable = Math.max(1, width - padding * 2)
   const dated = items.map(item => !coarseDates(item) ? time(item.start_date) : NaN)
   const starts = dated.filter(Number.isFinite)
+  const unknownIndices = dated.flatMap((value, index) => Number.isFinite(value) ? [] : [index])
+  const datedUsable = Math.max(1, usable - (starts.length && unknownIndices.length ? 56 : 0))
   const ends = items.flatMap((item, index) => {
     if (!Number.isFinite(dated[index])) return []
     const end = periodEndTime(item, now)
@@ -93,41 +95,59 @@ export function fittedCareerTimeline(items: WorkExperience[], width: number, now
   const minMonth = Number.isFinite(minimum) ? calendarMonth(minimum) : NaN
   const maxMonth = Number.isFinite(maximum) ? calendarMonth(maximum) : NaN
   const dateX = (value: number) => Number.isFinite(value) && Number.isFinite(minMonth)
-    ? padding + (maxMonth > minMonth ? (calendarMonth(value) - minMonth) / (maxMonth - minMonth) : .5) * usable
+    ? padding + (maxMonth > minMonth ? (calendarMonth(value) - minMonth) / (maxMonth - minMonth) : .5) * datedUsable
     : NaN
-  const datedEdges: number[] = []
-  const unknownEdges: number[] = []
-  const unknownCount = dated.filter(value => !Number.isFinite(value)).length
-  let unknownIndex = 0
   const positions = items.map((item, index) => {
     const isDated = Number.isFinite(dated[index])
-    const x = isDated ? dateX(dated[index]) : padding + ((unknownIndex++ + .5) / Math.max(1, unknownCount)) * usable
-    const edges = isDated ? datedEdges : unknownEdges
-    let lane = edges.findIndex(edge => x - edge >= 44)
-    if (lane < 0) lane = edges.length
-    edges[lane] = x
+    const x = isDated ? dateX(dated[index]) : (starts.length ? width - padding : width / 2)
     const end = periodEndTime(item, now)
     const endX = isDated && Number.isFinite(end) && end >= dated[index] ? dateX(end) : NaN
-    return { x, lane, dated:isDated, span:Number.isFinite(endX) ? Math.max(0, endX - x) : 0 }
+    return { x, dated:isDated, span:Number.isFinite(endX) ? Math.max(0, endX - x) : 0 }
   })
-  const maxDatedLane = Math.max(0, datedEdges.length - 1)
-  const axisY = 28 + maxDatedLane * 48
-  const unknownY = starts.length ? axisY + 76 : 28
-  const height = unknownCount ? unknownY + Math.max(0, unknownEdges.length - 1) * 48 + 56 : axisY + 72
+  type Group = { members:number[]; x:number; dated:boolean }
+  const groups:Group[] = []
+  const datedIndices = dated.flatMap((value, index) => Number.isFinite(value) ? [index] : [])
+  const slots = Math.max(1, Math.floor(datedUsable / 48))
+  if (datedIndices.length > slots) {
+    const bins = new Map<number, number[]>()
+    for (const index of datedIndices) {
+      const slot = Math.min(slots - 1, Math.floor((positions[index].x - padding) / datedUsable * slots))
+      bins.set(slot, [...(bins.get(slot) || []), index])
+    }
+    for (const [slot, members] of bins) groups.push({
+      members, x:padding + (slot + .5) * datedUsable / slots, dated:true,
+    })
+  } else {
+    for (const index of datedIndices) {
+      const previous = groups.at(-1)
+      if (previous && positions[index].x - previous.x < 44) {
+        previous.members.push(index)
+        previous.x = previous.members.reduce((total, member) => total + positions[member].x, 0) / previous.members.length
+      } else groups.push({ members:[index], x:positions[index].x, dated:true })
+    }
+  }
+  if (unknownIndices.length) groups.push({
+    members:unknownIndices, x:starts.length ? width - padding : width / 2, dated:false,
+  })
+  const axisY = 28
+  const height = 102
   const yearGap = width < 500 ? 58 : 42
-  let previousDatedX = -Infinity
-  let previousUnknownX = -Infinity
+  const endYear = Number.isFinite(maximum) ? new Date(maximum).getUTCFullYear() : null
+  let previousYearX = -Infinity
   const seenYears = new Set<string>()
-  const yearLabels = items.map((item, index) => {
-    const year = careerStartYear(item)
-    const x = positions[index].x
-    const previous = positions[index].dated ? previousDatedX : previousUnknownX
-    if (!year || seenYears.has(year) || x - previous < yearGap) return ''
+  const yearLabels = items.map(() => '')
+  for (const group of groups) {
+    if (!group.dated) continue
+    const year = careerStartYear(items[group.members[0]])
+    if (endYear !== null && year !== String(endYear) && group.x > width - padding - yearGap) continue
+    if (!year || seenYears.has(year) || group.x - previousYearX < yearGap) continue
     seenYears.add(year)
-    if (positions[index].dated) previousDatedX = x
-    else previousUnknownX = x
-    return year
-  })
-  return { positions, axisY, unknownY, height, dateX, yearLabels, hasDated:starts.length > 0,
-    endYear:Number.isFinite(maximum) ? new Date(maximum).getUTCFullYear() : null }
+    previousYearX = group.x
+    yearLabels[group.members[0]] = year
+  }
+  if (!starts.length && unknownIndices.length === 1) {
+    yearLabels[unknownIndices[0]] = careerStartYear(items[unknownIndices[0]]) || ''
+  }
+  return { positions, groups, axisY, height, dateX, yearLabels, hasDated:starts.length > 0,
+    endYear }
 }

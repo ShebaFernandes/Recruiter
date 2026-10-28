@@ -43,11 +43,14 @@ it('does not certify equally sized old rows or unpublished extraction proposals'
 })
 it('renders all saved rows with distinct verified and review-needed markers', () => {
   const { container } = render(<CareerJourney items={[role, { ...role, id:8, role:'Older saved role' }]} extraction={extraction('verified_fallback', { accepted_role_count:1, verified_role_ids:[7], unverified_role_ids:[8] })} />)
-  expect(container.querySelectorAll('.career-period')).toHaveLength(2)
+  expect(container.querySelectorAll('.career-sequence')).toHaveLength(2)
+  expect(container.querySelectorAll('.career-period')).toHaveLength(1)
   expect(container.querySelectorAll('.career-sequence.needs-review')).toHaveLength(1)
   expect(container.querySelectorAll('.career-sequence.is-verified')).toHaveLength(1)
   expect(screen.getByRole('status')).toHaveTextContent('older history')
   expect(container.querySelector('.career-journey')).not.toHaveTextContent('Older saved role')
+  fireEvent.focus(screen.getByRole('button', { name:/2 career roles/ }))
+  expect(screen.getByRole('dialog')).toHaveTextContent('Older saved role')
 })
 it('draws legacy saved roles with review-needed markers when provenance is missing', () => {
   const { container } = render(<CareerJourney items={[{ ...role, confidence_status:'supported' }]} />)

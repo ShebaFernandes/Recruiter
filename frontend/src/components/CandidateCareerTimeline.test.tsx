@@ -27,7 +27,7 @@ it('preserves year-only roles and current dates without inventing January', () =
   const items = [role({ start_date:'2024-04-01', end_date:null, is_current:true }), role({ start_date:null, end_date:null, date_label:'2014 — 15' }), role({ start_date:'2010-01-01' })]
   expect(sortCareerHistory(items).map(item => item.start_date)).toEqual(['2010-01-01', null, '2024-04-01'])
   const { container } = render(<CareerJourney items={items} />)
-  expect([...container.querySelectorAll('.career-period small')].map(el => el.textContent)).toEqual(['2010','2014','2024'])
+  expect([...container.querySelectorAll('.career-period small')].map(el => el.textContent)).toEqual(['2010','2024'])
   fireEvent.focus(screen.getByRole('button', { name:/2014 — 15/ }))
   expect(screen.getByRole('tooltip')).toHaveTextContent('Dates incomplete')
   expect(screen.getByRole('tooltip')).not.toHaveTextContent('Jan')
@@ -52,14 +52,16 @@ it('keeps complete employer/title/date/type details in the interactive card', ()
   expect(screen.getByRole('tooltip')).toHaveTextContent(item.role)
   expect(screen.getByRole('tooltip')).toHaveTextContent('Full-time')
 })
-it('keeps simultaneous overlaps as separate reachable markers at the same date coordinate', () => {
+it('keeps simultaneous overlaps as separate roles in one accessible cluster', () => {
   const { container } = render(<CareerJourney items={[role(), role({ role:'Advisor', company:'Second employer' })]} />)
   const rows = [...container.querySelectorAll<HTMLElement>('.career-sequence')]
   expect(rows).toHaveLength(2)
   expect(rows[0].style.left).toEqual(rows[1].style.left)
-  expect(rows[0].style.getPropertyValue('--career-marker-lane')).not.toEqual(rows[1].style.getPropertyValue('--career-marker-lane'))
-  fireEvent.click(screen.getByRole('button', { name:/Advisor at/ }))
-  expect(screen.getByRole('tooltip')).toHaveTextContent('Overlapping employment')
+  expect(container.querySelectorAll('.career-period .career-job')).toHaveLength(1)
+  fireEvent.click(screen.getByRole('button', { name:/2 career roles/ }))
+  expect(screen.getByRole('dialog')).toHaveTextContent('Example')
+  expect(screen.getByRole('dialog')).toHaveTextContent('Second employer')
+  expect(screen.getByRole('dialog')).toHaveTextContent('Overlapping employment')
 })
 it('shows internship status only with evidence and keeps incidental mentions out of classification', () => {
   const { container } = render(<CareerJourney items={[role({ role:'Engineering Intern' }), role({ role:'Internship Program Manager', start_date:'2020-01-01' })]} />)
