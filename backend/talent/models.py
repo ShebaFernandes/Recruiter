@@ -297,6 +297,9 @@ class Resume(models.Model):
     ai_processing_consent_at = models.DateTimeField(null=True, blank=True)
     ai_processing_consent_version = models.CharField(max_length=100, blank=True)
     ai_processing_consent_sha256 = models.CharField(max_length=64, blank=True)
+    file_sha256 = models.CharField(max_length=64, blank=True)
+    ownership_confirmed_file_sha256 = models.CharField(max_length=64, blank=True)
+    ownership_confirmed_at = models.DateTimeField(null=True, blank=True)
     processing_updated_at = models.DateTimeField(auto_now=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 

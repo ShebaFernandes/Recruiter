@@ -249,7 +249,7 @@ def test_original_docx_preview_and_authorization(client, candidate_account):
 
 def test_real_pdf_extraction_and_download(client, candidate_account):
     data = upload(client, resume_pdf(), "real.pdf").data
-    assert data["full_name"] == "Priya Nair"
+    assert data["full_name"] == "Asha Rao"
     response = client.get(f"/api/v1/resumes/{data['latest_resume']['id']}/download/")
     assert response.status_code == 200
     assert b"".join(response.streaming_content).startswith(b"%PDF")
@@ -258,7 +258,7 @@ def test_real_pdf_extraction_and_download(client, candidate_account):
 def test_pdf_career_dates_are_extracted_and_saved(client, candidate_account):
     pdf = resume_pdf(
         [
-            "Name: Real PDF Candidate",
+            "Name: Asha Rao",
             "Role: Platform Engineer",
             "Location: Pune",
             "5 years of experience",
@@ -277,7 +277,7 @@ def test_pdf_career_dates_are_extracted_and_saved(client, candidate_account):
 def test_incomplete_overlapping_history_and_corrections(client, candidate_account):
     document = Document()
     for line in [
-        "Name: History Example",
+        "Name: Asha Rao",
         "Work Experience",
         "Engineer at Alpha",
         "Jan 2020 - Dec 2023",

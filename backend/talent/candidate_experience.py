@@ -126,17 +126,49 @@ def resume_identity_issue(resume, profile):
     Names are not identity proof. Unknown or substantially different names require a
     corrected document, not a one-click permission to combine different people's data.
     """
-    if resume.extracted_data.get("_identity_issue"):
-        return resume.extracted_data["_identity_issue"]
-    if resume.version <= 1:
-        return None
+    recorded = resume.extracted_data.get("_identity_issue")
+    if recorded == "identity_mismatch":
+        return recorded
     incoming = name_tokens(resume.extracted_data.get("full_name", ""))
     saved = name_tokens(profile.full_name)
-    if not incoming or not saved:
-        return "identity_unverified"
-    if incoming != saved:
+    source = resume.extracted_data.get("_identity_name_source")
+    if incoming and saved and incoming != saved and source == "explicit_header":
         return "identity_mismatch"
-    return None
+    if resume.version <= 1:
+        return None
+    if not saved:
+        return "identity_unverified"
+    if incoming and incoming != saved:
+        issue = "identity_unverified" if source in {"inferred_header", "none"} else (
+            "identity_mismatch"
+        )
+        if issue == "identity_mismatch":
+            return issue
+    elif incoming == saved:
+        return None
+    else:
+        # A verified account email appearing in the document is an independent
+        # identity anchor. An auto-filled profile address may be circular.
+        document_email = (resume.extracted_data.get("email") or "").strip().casefold()
+        account_email = (profile.user.email or "").strip().casefold()
+        if (profile.email_verified_at and document_email and account_email
+                and document_email == account_email):
+            return None
+        issue = "identity_unverified"
+    file_hash = getattr(resume, "file_sha256", "")
+    confirmed_hash = getattr(resume, "ownership_confirmed_file_sha256", "")
+    if (issue == "identity_unverified" and getattr(resume, "ownership_confirmed_at", None)
+            and file_hash and confirmed_hash and file_hash == confirmed_hash):
+        return None
+    return issue
+
+
+def can_confirm_resume_identity(resume, profile):
+    """Ownership declaration is for missing anchors, never a conflicting name."""
+    return (
+        resume_identity_issue(resume, profile) == "identity_unverified"
+        and not name_tokens(resume.extracted_data.get("full_name", ""))
+    )
 
 
 def record_candidate_edits(profile, fields):

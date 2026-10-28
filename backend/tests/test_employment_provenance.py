@@ -149,7 +149,9 @@ def test_mocked_gemini_evidence_is_distinct_from_rules_and_requires_matching_sav
         response(), 'gemini', 'synthetic-offline-model',
     )
     monkeypatch.setattr('talent.resume_understanding.resume_provider', lambda: provider)
-    data = upload(client, resume_pdf(TEXT.splitlines()), 'fictional.pdf').data
+    data = upload(client, resume_pdf(
+        TEXT.replace('Name: Sample Person', 'Name: Asha Rao').splitlines()),
+        'fictional.pdf').data
     provider.generate.assert_called_once()
     assert data['employment_extraction']['status'] == 'verified_ai'
     assert data['employment_extraction']['source'] == 'ai'

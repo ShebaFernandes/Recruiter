@@ -88,6 +88,7 @@ export const api = {
   submitCandidate: (consent: boolean, submissionVersion?: string) => request<Candidate>('/candidate/profile/submit/', { method: 'POST', body: JSON.stringify({ consent, submission_accepted: consent, submission_version: submissionVersion }) }),
   uploadResume: (file: File, aiConsent?: { version: string }) => { const body = new FormData(); body.append('file', file); body.append('resume_ai_accepted', String(Boolean(aiConsent))); if (aiConsent) body.append('resume_ai_version', aiConsent.version); return request<Candidate>('/candidate/resumes/', { method: 'POST', body }) },
   retryResume: (id: number) => request<Candidate>(`/candidate/resumes/${id}/retry/`, { method: 'POST' }),
+  confirmResumeOwnership: (id: number, version: number, password: string) => request<Candidate>(`/candidate/resumes/${id}/confirm-ownership/`, { method: 'POST', body: JSON.stringify({ version, password, confirmation: true }) }),
   searches: () => request<Search[]>('/searches/'),
   createSearch: (query: string, project?: number) => request<Search>('/searches/', { method: 'POST', body: JSON.stringify({ query, project }) }),
   answerSearch: (id: number, answer: string) => request<Search>(`/searches/${id}/answer/`, { method: 'POST', body: JSON.stringify({ answer }) }),

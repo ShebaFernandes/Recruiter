@@ -59,8 +59,8 @@ def resume_pdf(lines=None):
     )
     page[NameObject("/Resources")] = resources
     lines = lines or [
-        "Name: Priya Nair",
-        "Email: priya@example.com",
+        "Name: Asha Rao",
+        "Email: asha@example.com",
         "Role: Backend Engineer",
         "Location: Pune",
         "4 years of experience",
@@ -351,8 +351,8 @@ def test_resume_extracts_standard_career_and_education_sections(
 ):
     document = Document()
     for line in [
-        "Name: Maya Sen",
-        "Email: maya@example.com",
+        "Name: Asha Rao",
+        "Email: asha@example.com",
         "Location: Bengaluru",
         "7 years of experience",
         "Skills: Python, Django, PostgreSQL",
@@ -541,7 +541,7 @@ def test_real_pdf_is_extracted(client, candidate_account, tmp_path):
         )
         response = client.post("/api/v1/candidate/resumes/", {"file": upload}, format="multipart")
         response = complete_resume_upload(client, response)
-        assert response.data["full_name"] == "Priya Nair"
+        assert response.data["full_name"] == "Asha Rao"
         assert response.data["headline"] == "Backend Engineer"
         assert response.data["location"] == "Pune"
         assert response.data["skills"] == ["Python", "Django", "PostgreSQL"]

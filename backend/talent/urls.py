@@ -27,6 +27,8 @@ urlpatterns = [
     path("candidate/resume-status/", candidate_views.processing_status),
     path("candidate/resumes/<int:resume_id>/review/", candidate_views.review_resume),
     path("candidate/resumes/<int:resume_id>/preview/", candidate_views.preview_docx),
+    path("candidate/resumes/<int:resume_id>/confirm-ownership/",
+         views.confirm_resume_ownership),
     path(
         "candidate/resumes/<int:resume_id>/retry/",
         views.retry_resume_processing,

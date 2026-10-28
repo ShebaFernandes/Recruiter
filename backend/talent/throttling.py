@@ -97,6 +97,13 @@ class ResumeUploadRateThrottle(DatabaseRateThrottle):
     scope = "resume_upload"
 
 
+class ResumeOwnershipRateThrottle(DatabaseRateThrottle):
+    scope = "resume_ownership"
+
+    def get_rate(self):
+        return "5/hour"
+
+
 class RecruiterSearchRateThrottle(DatabaseRateThrottle):
     scope = "recruiter_search"
 

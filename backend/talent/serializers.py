@@ -8,6 +8,7 @@ from .candidate_experience import (
     LIST_FIELDS,
     MOTIVATORS,
     TEXT_FIELDS,
+    can_confirm_resume_identity,
     pending_fields,
     resume_identity_issue,
 )
@@ -180,7 +181,13 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
     def get_resume_identity_warning(self, obj):
         resume = obj.resumes.filter(processing_status="completed").first()
         issue = resume_identity_issue(resume, obj) if resume else None
-        return {"resume_id": resume.pk, "code": issue} if issue else None
+        return {
+            "resume_id": resume.pk, "version": resume.version,
+            "original_name": resume.original_name, "code": issue,
+            "can_confirm": (can_confirm_resume_identity(resume, obj)
+                            and obj.resumes.first().pk == resume.pk
+                            and resume.scan_status == Resume.ScanStatus.CLEAN),
+        } if issue else None
 
     def get_profile_photo_url(self, obj):
         request = self.context.get("request")

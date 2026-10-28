@@ -29,6 +29,29 @@ const contactMethods = ['Email', 'WhatsApp', 'Phone']
 export function ResumeAIConsent({ document, checked, disabled, change }: { document: LegalDocument; checked: boolean; disabled: boolean; change: (checked: boolean) => void }) {
   return <label className="cp-check cp-ai-consent"><input type="checkbox" checked={checked} disabled={disabled} onChange={event => change(event.target.checked)} /><span>{document.text.trim()}</span></label>
 }
+
+function ResumeOwnershipPrompt({ warning, busy, confirm, chooseResume }: { warning: NonNullable<Candidate['resume_identity_warning']>; busy: boolean; confirm: (password: string) => Promise<boolean>; chooseResume: () => void }) {
+  const [password, setPassword] = useState('')
+  const [checked, setChecked] = useState(false)
+  const unverified = warning.code === 'identity_unverified' && warning.can_confirm
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!checked || !password) return
+    const accepted = await confirm(password)
+    setPassword('')
+    if (accepted) setChecked(false)
+  }
+  return <div role="alert" className="cp-resume-updates">
+    <strong>{unverified ? 'Confirm this resume belongs to you' : "We couldn't match this resume to your profile."}</strong>
+    <p>Resume version {warning.version}: <strong>{warning.original_name}</strong>. {unverified && 'Open the private Resume section below to inspect this exact file.'}</p>
+    {unverified ? <form onSubmit={event => void submit(event)}>
+      <p>The document has no reliable account-name match. Confirming ownership does not verify any employer, role or date. You can then request a no-AI retry of this saved file.</p>
+      <label className="cp-check"><input type="checkbox" checked={checked} disabled={busy} onChange={event => setChecked(event.target.checked)} />I confirm this exact resume is mine.</label>
+      <label>Verify your account password<input type="password" autoComplete="current-password" value={password} disabled={busy} onChange={event => setPassword(event.target.value)} /></label>
+      <div className="cp-actions"><button type="submit" disabled={busy || !checked || !password}>Confirm ownership</button><button type="button" disabled={busy} onClick={chooseResume}>Upload a different resume</button></div>
+    </form> : <><p>Your saved information is unchanged. Upload your own resume showing the correct name. ENTER will not combine two people's career histories.</p><button type="button" onClick={chooseResume}>Choose the correct resume</button></>}
+  </div>
+}
 const jobStatuses = [
   { value: 'Actively looking', label: 'Actively Looking' },
   { value: 'Open to the right opportunity', label: 'Open to Opportunities' },
@@ -568,7 +591,7 @@ export default function CandidateExperience({ beforeLeaveRef }: { accountDeleted
       </section>
     </section> : (processing || !resume) && processingView ? null : <>
       <section className="cp-section cp-profile" tabIndex={-1}>
-        {p.resume_identity_warning && <div role="alert" className="cp-resume-updates"><strong>We couldn't match this resume to your profile.</strong><p>Your saved information is unchanged. Check the uploaded document and replace it with your own resume showing your correct name. We won't combine two people's career histories.</p><button onClick={() => document.querySelector<HTMLInputElement>('#career-settings-panel input[type="file"]')?.click()}>Choose the correct resume</button></div>}
+        {p.resume_identity_warning && <ResumeOwnershipPrompt key={p.resume_identity_warning.resume_id} warning={p.resume_identity_warning} busy={busy} confirm={password => run(() => api.confirmResumeOwnership(p.resume_identity_warning!.resume_id, p.resume_identity_warning!.version, password), 'Ownership recorded. You can retry extraction without AI.')} chooseResume={() => document.querySelector<HTMLInputElement>('#career-settings-panel input[type="file"]')?.click()} />}
         {editing ? <ProfileEditor profile={p} busy={busy} save={save} cancel={() => setEditing(false)} /> : <>
           <div className="cp-identity-card"><CandidatePhoto key={p.profile_photo_url || 'initials'} profile={p} busy={busy} upload={file => void uploadPhoto(file)} remove={() => void run(api.removeCandidatePhoto, '')} /><div className="cp-identity-column"><div className="cp-identity"><h3>{displayName(p.full_name)}</h3><p className="cp-professional-title">{title || 'Add your professional title'}</p>{identityDetails.length > 0 && <div className="cp-identity-meta">{college && <span><GraduationCap aria-hidden="true" />{college}</span>}{Number(p.total_experience) > 0 && <span><BriefcaseBusiness aria-hidden="true" />{p.total_experience} years experience</span>}{p.location && <span><MapPin aria-hidden="true" />{p.location}</span>}</div>}</div><div className="cp-professional-read"><h3 className="cp-read-heading" aria-label="ENTER's read on you"><Sparkles className="cp-read-sparkle" aria-hidden="true" /><svg className="cp-read-wordmark" viewBox="145 145 1110 310" aria-hidden="true" focusable="false"><image href="/enter-wordmark.svg" width="1400" height="600" /></svg><span>'s read on you</span></h3><p>{professionalRead}</p></div></div><aside className="cp-highlight"><h3>What stood out to us</h3><p>{preferences.standout_signal || 'Add an evidence-backed achievement using “Not quite — edit”.'}</p>{preferences.standout_signal && highlightTopics.length > 0 && <div className="cp-highlight-topics">{highlightTopics.map(topic => <span key={topic}>{topic}</span>)}</div>}</aside></div>
           <div className="cp-career-surface"><CandidateCareerTimeline items={p.work_experiences} extraction={p.employment_extraction} edit={() => setEditing(true)} retryProcessing={p.latest_resume?.can_retry && p.employment_extraction?.status === 'review_required' ? () => { void run(() => api.retryResume(p.latest_resume!.id), 'Rechecking your saved resume without AI.') } : undefined} reviewLatestResume={p.resume_review?.resume_id === p.employment_extraction?.resume_id && p.resume_review?.fields.work_experiences ? () => {

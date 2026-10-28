@@ -58,7 +58,7 @@ export type Candidate = {
   build_lead_preference: number | null
   profile_photo_url: string | null
   available_resume?: Resume | null
-  resume_identity_warning?: { resume_id: number; code: string } | null
+  resume_identity_warning?: { resume_id: number; version: number; original_name: string; code: string; can_confirm: boolean } | null
   resume_review?: { resume_id: number; fields: Partial<Candidate>; original_name?: string } | null
   id: number
   full_name: string

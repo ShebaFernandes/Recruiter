@@ -361,13 +361,12 @@ def association_supported(fact, facts, text):
 
 
 def _recover_layout_evidence(data, view):
-    """Replace quote formatting drift with actual nearby source blocks.
+    """Recover source quotations from bounded spatially adjacent blocks.
 
-    Facts still need literal employer and title strings in the same page, column,
-    and employment section. No evidence is combined across extraction methods.
-    The ordinary validator checks the reconstructed *source* quotes afterwards.
+    This allows PDF/DOCX reading-order differences without joining facts from
+    separate entries, sections, pages, columns or extraction methods.
     """
-    from .services import EXPERIENCE_HEADINGS, _heading_and_tail
+    from .services import DATE_RANGE_PATTERN, EXPERIENCE_HEADINGS, _heading_and_tail
 
     blocks = view.get('blocks') or []
     if not blocks:
@@ -379,38 +378,66 @@ def _recover_layout_evidence(data, view):
         if heading:
             section = heading
         sections.append(section)
-    has_headings = any(item is not None for item in sections)
+    def windows(value):
+        matches = []
+        for start, first in enumerate(blocks):
+            for end in range(start, min(start + 3, len(blocks))):
+                last = blocks[end]
+                if (first['page'] != last['page']
+                        or first['column'] != last['column']
+                        or sections[start] != sections[end]):
+                    break
+                if (first.get('bbox') and last.get('bbox')
+                        and last['bbox'][3] - first['bbox'][1] > 55):
+                    break
+                quote = '\n'.join(block['text'] for block in blocks[start:end + 1])
+                if supported(value, quote, quote):
+                    matches.append((start, end, quote))
+                    break
+        return matches
+
     recovered = deepcopy(data)
     for fact in recovered.get('work_experiences', []):
         company, role = fact.get('company'), fact.get('role')
         if not company or not role or _is_non_employment_role(role):
             continue
         pairs = []
-        for role_index, role_block in enumerate(blocks):
-            if not supported(role, role_block['text'], role_block['text']):
+        for role_start, role_end, role_quote in windows(role):
+            if sections[role_start] is not None and sections[role_start] not in EXPERIENCE_HEADINGS:
                 continue
-            if has_headings and sections[role_index] not in EXPERIENCE_HEADINGS:
-                continue
-            for company_index in range(max(0, role_index - 1), role_index + 1):
-                company_block = blocks[company_index]
-                if not supported(company, company_block['text'], company_block['text']):
+            for company_start, company_end, company_quote in windows(company):
+                if company_start > role_start or role_start - company_end > 2:
                     continue
-                if (company_block['page'] != role_block['page']
-                        or company_block['column'] != role_block['column']
-                        or sections[company_index] != sections[role_index]):
+                if (blocks[company_start]['page'] != blocks[role_start]['page']
+                        or blocks[company_start]['column'] != blocks[role_start]['column']
+                        or sections[company_start] != sections[role_start]):
                     continue
-                if company_index == role_index:
-                    remaining = re.sub(re.escape(company), '', role_block['text'],
+                if re.search(re.escape(normalized(role)), normalized(company)):
+                    remaining = re.sub(re.escape(company), '', role_quote,
                                        count=1, flags=re.I)
                     if not supported(role, remaining, remaining):
                         continue
-                pairs.append((role_index - company_index, role_index,
-                              company_index))
+                intervening = '\n'.join(
+                    block['text'] for block in blocks[company_end + 1:role_start]
+                )
+                if any(other is not fact and supported(
+                    other.get('company'), intervening, intervening
+                ) for other in recovered['work_experiences']):
+                    continue
+                pairs.append((role_start - company_end, company_start,
+                              role_start, company_quote, role_quote, role_end))
         if not pairs:
             continue
-        _, role_index, company_index = min(pairs)
-        fact['employer_evidence'] = blocks[company_index]['text']
-        fact['role_evidence'] = blocks[role_index]['text']
+        _, _, role_start, company_quote, role_quote, role_end = min(pairs)
+        if role_end + 1 < len(blocks):
+            next_block = blocks[role_end + 1]
+            if (next_block['page'] == blocks[role_start]['page']
+                    and next_block['column'] == blocks[role_start]['column']
+                    and sections[role_end + 1] == sections[role_start]
+                    and DATE_RANGE_PATTERN.fullmatch(next_block['text'].strip())):
+                role_quote += '\n' + next_block['text']
+        fact['employer_evidence'] = company_quote
+        fact['role_evidence'] = role_quote
     return recovered
 
 
@@ -949,10 +976,31 @@ def validate_interpretation(data, text, evidence_views=None):
                 checked.append((view, _validate_interpretation_single(
                     recovered, view['text']), recovered))
     if not checked:
-        checked = [({'method': 'primary', 'text': text, 'blocks': []},
-                    _validate_interpretation_single(data, text), data)]
+        # An explicitly unsafe layout must not regain authority through the
+        # generic fallback just because no row could be reconstructed.
+        fallback_text = text if evidence_views is None else ''
+        checked = [({'method': 'primary', 'text': fallback_text, 'blocks': []},
+                    _validate_interpretation_single(data, fallback_text), data)]
     selected = next((result for view, result, proposal in checked
                      if view['text'] == text), checked[0][1])
+    # Page/table scopes should not hide independently supported header facts.
+    # Each accepted scalar still has to appear in one complete, safe view.
+    accepted_profile = set()
+    for source_key, output_key in (
+        ('full_name', 'full_name'), ('location', 'location'),
+        ('professional_title', 'headline'), ('professional_summary', 'summary'),
+        ('standout_signal', 'standout_signal'),
+    ):
+        claimed = data.get(source_key, {}).get('value')
+        if claimed is None:
+            continue
+        if any(result.get(output_key) == claimed for _, result, _ in checked):
+            selected[output_key] = claimed
+            accepted_profile.add(f'profile.{source_key}_evidence')
+    for key in ('skills', 'education'):
+        selected[key] = list(dict.fromkeys(
+            item for _, result, _ in checked for item in result.get(key, [])
+        ))
     accepted = {}
     for view, result, proposal in checked:
         for row in result.get('work_experiences', []):
@@ -972,7 +1020,8 @@ def validate_interpretation(data, text, evidence_views=None):
     # A role rejected by the selected view is no longer a rejection if another
     # independent, trusted view supports it. Keep all other diagnostics private.
     rejections = [item for item in selected['_validation_rejections']
-                  if item.get('item_index') not in accepted]
+                  if item.get('item_index') not in accepted
+                  and item.get('category') not in accepted_profile]
     for index, (_, _, _, source_result, _) in accepted.items():
         rejections.extend(item for item in source_result['_validation_rejections']
                           if item.get('item_index') == index)
@@ -1078,6 +1127,39 @@ def _needs_ai(rules):
     return not history or not quality.get("reliable", bool(history))
 
 
+def _spatially_validated_rule_rows(rules):
+    """Do not trust flattened rule associations on an uncertain PDF layout."""
+    if not rules.get('_evidence_views'):
+        return []
+    empty = {'value': None, 'evidence': ''}
+    proposals = []
+    for row in rules.get('work_experiences', []):
+        quote = row.get('source_evidence') or ''
+        if not quote or not row.get('company') or not row.get('role'):
+            continue
+        labels = (row.get('date_label') or '').split(' — ', 1)
+        start = labels[0] if labels and labels[0] not in {'', 'Unknown'} else None
+        end = labels[1] if len(labels) > 1 and labels[1] not in {'', 'Unknown'} else None
+        proposals.append({
+            'company': row['company'], 'role': row['role'],
+            'start': start, 'end': end,
+            'employment_type': row.get('employment_type') or None,
+            'location': row.get('location') or None,
+            'employer_evidence': row['company'], 'role_evidence': quote,
+            'details': '', 'achievements': [],
+        })
+    if not proposals:
+        return []
+    payload = {
+        'full_name': empty, 'location': empty, 'professional_title': empty,
+        'professional_summary': empty, 'standout_signal': empty,
+        'education': [], 'skills': [], 'work_experiences': proposals,
+    }
+    return validate_interpretation(
+        payload, rules.get('raw_text', ''), rules.get('_evidence_views'),
+    )['work_experiences']
+
+
 def understand_resume(
     rules,
     reserve_attempt,
@@ -1089,6 +1171,14 @@ def understand_resume(
 ):
     """reserve_attempt fences the lease and enforces a durable per-resume request cap."""
     result = dict(rules)
+    layout = rules.get('_document_layout') or {}
+    if layout.get('layout_uncertain') or layout.get('layout_incomplete'):
+        result['work_experiences'] = _spatially_validated_rule_rows(rules)
+        result['_employment_parse'] = {
+            **(rules.get('_employment_parse') or {}),
+            'reliable': False, 'complete_for_archival': False, 'rule_role_keys': [],
+        }
+        rules = result
     rows = result.get("work_experiences", [])
     result["strongest_skills"] = ranked_skills(result.get("skills", []), rows)
     result["likely_directions"] = directions(rows)

@@ -112,7 +112,7 @@ describe('actual candidate processing integration', () => {
     expect(screen.getByRole('heading', { name: 'BEYOND THE CV' })).toBeVisible()
   })
   it('keeps the saved profile and shows an inline correction path for identity mismatch', async () => {
-    vi.mocked(api.candidateProfile).mockResolvedValue({ ...completed, resume_identity_warning: { resume_id: 1, code: 'identity_mismatch' } })
+    vi.mocked(api.candidateProfile).mockResolvedValue({ ...completed, resume_identity_warning: { resume_id: 1, version: 1, original_name: 'career.docx', code: 'identity_mismatch', can_confirm: false } })
     await mount()
     expect(screen.getByRole('alert')).toHaveTextContent("We couldn't match this resume")
     expect(screen.getByRole('heading', { name: "Here's how we understand you." })).toBeVisible()
@@ -120,6 +120,19 @@ describe('actual candidate processing integration', () => {
     expect(screen.queryByRole('heading', { name: 'Review resume changes' })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Choose the correct resume' }))
     expect(screen.getByRole('complementary', { name: 'Career Settings panel' })).toBeVisible()
+  })
+  it('confirms only an unverified exact resume after fresh password entry', async () => {
+    const ambiguous = { ...completed, resume_identity_warning: { resume_id: 1, version: 2, original_name: 'career.docx', code: 'identity_unverified', can_confirm: true } }
+    vi.mocked(api.candidateProfile).mockResolvedValue(ambiguous)
+    const confirmed = vi.spyOn(api, 'confirmResumeOwnership').mockResolvedValue({ ...completed, resume_identity_warning: null })
+    await mount()
+    expect(screen.getByRole('alert')).toHaveTextContent('Resume version 2: career.docx')
+    expect(screen.getByRole('button', { name: 'Confirm ownership' })).toBeDisabled()
+    fireEvent.click(screen.getByLabelText('I confirm this exact resume is mine.'))
+    fireEvent.change(screen.getByLabelText('Verify your account password'), { target: { value: 'strong-pass-123' } })
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Confirm ownership' })) })
+    expect(confirmed).toHaveBeenCalledWith(1, 2, 'strong-pass-123')
+    expect(screen.queryByText('Confirm this resume belongs to you')).not.toBeInTheDocument()
   })
   it('renders accepted uploads immediately, then leaves as soon as a poll completes', async () => {
     vi.spyOn(api, 'uploadResume').mockResolvedValue(queued)

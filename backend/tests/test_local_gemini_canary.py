@@ -50,7 +50,8 @@ def test_paid_canary_fictional_upload_safeguards(
     monkeypatch.setattr('talent.ai_providers._post_json', post)
     # Fail any accidental network access, including alternative provider paths.
     monkeypatch.setattr('urllib.request.urlopen', Mock(side_effect=AssertionError('No network')))
-    payload = {'file': SimpleUploadedFile('fictional.pdf', resume_pdf(TEXT.splitlines()))}
+    payload = {'file': SimpleUploadedFile('fictional.pdf', resume_pdf(
+        TEXT.replace('Name: Sample Person', 'Name: Asha Rao').splitlines()))}
     if gate != 'no_consent':
         payload.update(resume_ai_accepted='true',
                        resume_ai_version=settings.LEGAL_RESUME_AI_VERSION)

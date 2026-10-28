@@ -1,3 +1,4 @@
+import hashlib
 import math
 from pathlib import Path
 
@@ -72,6 +73,7 @@ from .throttling import (
     PasswordResetConfirmRateThrottle,
     PasswordResetRateThrottle,
     RecruiterSearchRateThrottle,
+    ResumeOwnershipRateThrottle,
     ResumeUploadRateThrottle,
     SignupRateThrottle,
     VerificationConsumeRateThrottle,
@@ -613,6 +615,10 @@ def resume_upload(request):
             {"detail": f"Resume exceeds the {max_megabytes} MB limit."},
             status=status.HTTP_400_BAD_REQUEST,
         )
+    digest = hashlib.sha256()
+    for chunk in uploaded.chunks():
+        digest.update(chunk)
+    uploaded.seek(0)
     profile = request.user.candidate_profile
     stored_name = store_private_upload(uploaded, "quarantine", uploaded.name)
     with transaction.atomic():
@@ -623,6 +629,7 @@ def resume_upload(request):
             candidate=profile,
             file=stored_name,
             original_name=Path(uploaded.name).name[:255],
+            file_sha256=digest.hexdigest(),
             version=version,
             processing_status=Resume.ProcessingStatus.UPLOADED,
             scan_status=Resume.ScanStatus.QUARANTINED,
@@ -653,6 +660,82 @@ def resume_upload(request):
         CandidateProfileSerializer(profile, context={"request": request}).data,
         status=status.HTTP_202_ACCEPTED,
     )
+
+
+@api_view(["POST"])
+@permission_classes([IsCandidate])
+@throttle_classes([ResumeOwnershipRateThrottle])
+def confirm_resume_ownership(request, resume_id):
+    """Bind an authenticated ownership declaration to one clean file version.
+
+    This clears only an identity uncertainty. Employment still requires the
+    worker's independent source-evidence validation on a candidate retry.
+    """
+    from .candidate_experience import can_confirm_resume_identity
+
+    if request.data.get("confirmation") is not True:
+        return Response({"detail": "Confirm that this exact file is your resume."},
+                        status=status.HTTP_400_BAD_REQUEST)
+    if not request.user.check_password(str(request.data.get("password", ""))):
+        return Response({"detail": "Your password is incorrect."},
+                        status=status.HTTP_400_BAD_REQUEST)
+    try:
+        requested_version = int(request.data.get("version"))
+    except (TypeError, ValueError):
+        return Response({"detail": "Choose the exact resume version."},
+                        status=status.HTTP_400_BAD_REQUEST)
+    resume = Resume.objects.select_related("candidate__user").filter(
+        pk=resume_id, candidate__user=request.user,
+    ).first()
+    if not resume:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    if (resume.version != requested_version
+            or resume.processing_status != Resume.ProcessingStatus.COMPLETED
+            or resume.scan_status != Resume.ScanStatus.CLEAN
+            or not can_confirm_resume_identity(resume, resume.candidate)):
+        return Response({"detail": "This resume is not eligible for ownership confirmation."},
+                        status=status.HTTP_409_CONFLICT)
+    digest = hashlib.sha256()
+    size = 0
+    with resume.file.open("rb") as source:
+        for chunk in iter(lambda: source.read(64 * 1024), b""):
+            size += len(chunk)
+            if size > settings.RESUME_MAX_BYTES:
+                return Response({"detail": "The stored resume exceeds the safe size limit."},
+                                status=status.HTTP_409_CONFLICT)
+            digest.update(chunk)
+    with transaction.atomic():
+        profile = CandidateProfile.objects.select_for_update().get(user=request.user)
+        locked = Resume.objects.select_for_update().get(pk=resume.pk, candidate=profile)
+        latest = profile.resumes.order_by("-version").first()
+        if (latest.pk != locked.pk or locked.version != requested_version
+                or locked.processing_status != Resume.ProcessingStatus.COMPLETED
+                or locked.scan_status != Resume.ScanStatus.CLEAN
+                or not can_confirm_resume_identity(locked, profile)):
+            return Response({"detail": "This resume is no longer eligible."},
+                            status=status.HTTP_409_CONFLICT)
+        calculated = digest.hexdigest()
+        if locked.file_sha256 and locked.file_sha256 != calculated:
+            return Response({"detail": "The stored file no longer matches its upload."},
+                            status=status.HTTP_409_CONFLICT)
+        locked.file_sha256 = calculated
+        locked.ownership_confirmed_file_sha256 = calculated
+        locked.ownership_confirmed_at = timezone.now()
+        data = dict(locked.extracted_data or {})
+        outcome = dict(data.get("_employment_outcome") or {})
+        outcome.update({"status": "review_required",
+                        "reason_code": "identity_confirmed_offline_retry_available"})
+        data["_employment_outcome"] = outcome
+        locked.extracted_data = data
+        locked.save(update_fields=[
+            "file_sha256", "ownership_confirmed_file_sha256", "ownership_confirmed_at",
+            "extracted_data",
+        ])
+    response = Response(
+        CandidateProfileSerializer(profile, context={"request": request}).data,
+    )
+    response["Cache-Control"] = "private, no-store"
+    return response
 
 
 @api_view(["POST"])
