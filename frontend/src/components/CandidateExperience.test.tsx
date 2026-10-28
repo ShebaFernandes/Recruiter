@@ -66,7 +66,7 @@ describe('candidate career experience', () => {
   it('provides an editable empty-history fallback', () => {
     render(<CandidateCareerTimeline items={[]} />)
     expect(screen.getByRole('heading', { name: 'Your career journey' })).toBeVisible()
-    expect(screen.getByText(/No employment history is saved yet/)).toBeVisible()
+    expect(screen.getByText(/No roles saved yet/)).toBeVisible()
     expect(screen.queryByRole('listitem')).not.toBeInTheDocument()
   })
   it('labels preserved history as stale when the latest resume needs recovery', () => {
@@ -75,9 +75,9 @@ describe('candidate career experience', () => {
       accepted_role_count: 0, saved_role_count: 1, profile_state: 'previous_history_preserved',
       stale_profile_preserved: true,
     }} />)
-    expect(screen.getByRole('status')).toHaveTextContent('latest resume extraction is incomplete')
+    expect(screen.getByRole('status')).toHaveTextContent('Latest resume could not be fully read')
     expect(container.querySelector('.career-journey')).toBeInTheDocument()
-    expect(container.querySelector('.cp-career-previous')).toBeInTheDocument()
+    expect(screen.getByText(/1 saved role/)).toBeInTheDocument()
   })
   it('keeps successful extraction diagnostics out of the visible journey', () => {
     render(<CandidateCareerTimeline items={[{ ...job('Local result', '2020-01-01', '2022-01-01'), id:1 }]} extraction={{

@@ -222,8 +222,8 @@ describe('actual candidate processing integration', () => {
     const review = document.getElementById('resume-changes-review') as HTMLDetailsElement
     review.scrollIntoView = vi.fn()
     expect(review).not.toHaveAttribute('open')
-    expect(document.querySelector('.career-history-status')).toHaveTextContent('Some resume details differ from your saved edits')
-    fireEvent.click(screen.getByRole('button', { name: 'Review roles from latest resume' }))
+    expect(document.querySelector('.career-history-status')).toHaveTextContent('A saved edit differs from the latest resume')
+    fireEvent.click(screen.getByRole('button', { name: 'Check saved edit' }))
     expect(review).toHaveAttribute('open')
     expect(review.scrollIntoView).toHaveBeenCalled()
     expect([...review.querySelectorAll('.cp-review-history strong')].map(row => row.textContent)).toEqual([

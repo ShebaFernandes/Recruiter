@@ -12,19 +12,33 @@ for (const width of [390, 768, 1440]) for (const count of [1, 2, 5, 10, 20]) {
       import RefreshRuntime from '/@react-refresh';
       import '/src/styles.css'; import '/src/components/candidate-experience.css'; import '/src/components/candidate-theme.css';
       RefreshRuntime.injectIntoGlobalHook(window);window.$RefreshReg$=()=>{};window.$RefreshSig$=()=>type=>type;window.__vite_plugin_react_preamble_installed__=true;
-      const {default:Journey}=await import('/src/components/CareerJourney.tsx');
+      const {default:Journey}=await import('/src/components/CandidateCareerTimeline.tsx');
       const count=new URLSearchParams(location.search).get('count')*1;
       const roles=Array.from({length:count},(_,i)=>({id:i+1,company:'Fictional Employer '+String(i+1).padStart(2,'0'),role:i===0?'Engineering Intern':'Engineer '+(i+1),start_date:String(1980+i*2)+'-03-01',end_date:String(1981+i*2)+'-08-01',date_label:'Mar '+(1980+i*2)+' — Aug '+(1981+i*2),employment_type:i===0?'Internship':'Full-time',confidence_status:'supported',description:'Fictional role',gap_reason:''}));
       const extraction={resume_id:1,status:'verified_ai',source:'ai',accepted_role_count:count,saved_role_count:count,verified_role_ids:roles.map(role=>role.id),unverified_role_ids:[],profile_state:'applied',stale_profile_preserved:false};
-      ReactDOM.createRoot(document.getElementById('review')).render(React.createElement('main',{style:{maxWidth:1120,margin:'24px auto',padding:'0 16px'}},React.createElement('section',{'aria-label':'Candidate career card',style:{padding:20,background:'#fff',borderRadius:18}},React.createElement('h1',{style:{fontSize:20}},'Your career journey'),React.createElement(Journey,{items:roles,extraction}))));
+      ReactDOM.createRoot(document.getElementById('review')).render(React.createElement('main',{className:'candidate-experience',style:{maxWidth:1120,margin:'24px auto',padding:'0 16px'}},React.createElement('section',{'aria-label':'Candidate career card',style:{padding:20,background:'#fff',borderRadius:18}},React.createElement(Journey,{items:roles,extraction}))));
       </script></body></html>` }))
     await page.goto(`/timeline-fit-review?count=${count}`)
     const card = page.getByRole('region', { name: 'Candidate career card' })
     const graph = card.getByRole('list', { name: 'Career journey' })
+    await expect(card.getByText(`${count} saved ${count === 1 ? 'role' : 'roles'} · Tap a marker for details`)).toBeVisible()
+    await expect(card.getByText('Tap or hover over a marker to view your role.')).toBeVisible()
+    await expect(card.getByRole('button', { name: 'Fix dates' })).toHaveCount(0)
     await expect(graph.locator('.career-sequence')).toHaveCount(count)
     await expect(graph.locator('.career-role-summary')).toHaveCount(0)
     await expect(graph.locator('.career-sequence.is-internship')).toHaveCount(1)
     await expect(graph.locator('.career-sequence.is-verified')).toHaveCount(count)
+    const legend = card.getByLabel('Career journey legend')
+    await expect(legend).toContainText('Internship')
+    await expect(legend).not.toContainText('Unverified history')
+    if (count === 1) {
+      await expect(legend).not.toContainText('Employment')
+      await expect(legend).not.toContainText('Career gap')
+    } else {
+      await expect(legend).toContainText('Employment')
+      await expect(legend).toContainText('Career gap')
+    }
+    await expect(graph.locator('.career-axis')).toHaveCSS('background-color', 'rgb(215, 233, 232)')
     expect(await graph.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true)
     const bounds = await graph.boundingBox()

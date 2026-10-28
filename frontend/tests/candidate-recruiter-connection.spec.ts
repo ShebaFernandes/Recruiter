@@ -46,7 +46,7 @@ test('candidate created in the UI is discovered and updated in the recruiter UI'
   await expect(page.locator('.cp-identity')).toContainText('Backend Engineer')
   await expect(page.locator('.cp-signals')).toContainText('Python')
   await expect(page.locator('.cp-signals')).toContainText('Django')
-  await page.getByRole('button', { name: 'Not quite — edit' }).click()
+  await page.getByRole('button', { name: 'Edit profile' }).click()
   await page.getByRole('button', { name: 'Add experience', exact: true }).click()
   await page.getByLabel('Company 1', { exact: true }).fill('Audit Systems')
   await page.getByLabel('Job title 1', { exact: true }).fill('Backend Engineer')

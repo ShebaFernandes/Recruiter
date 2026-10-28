@@ -1,46 +1,53 @@
 /* Every viewport uses one horizontal date axis; crowded role starts become clusters. */
-.career-history { min-width:0; }
+.career-history { --career-employment:#0b7378; --career-internship:#8fc7c4; --career-axis:#d7e9e8; --career-gap:#849198; min-width:0; }
 .career-journey.shared.calendar-timeline.marker-only { display:block; box-sizing:border-box; width:100%; min-width:0; margin:12px 0; padding:8px 0 12px; overflow:visible; }
 .marker-only .career-calendar { position:relative; width:100%; min-width:0; }
-.marker-only .career-axis { position:absolute; left:24px; right:24px; height:2px; background:#b8c9cc; }
+.marker-only .career-axis { position:absolute; left:24px; right:24px; height:2px; background:var(--career-axis); }
 .marker-only .career-axis.is-current::after { content:''; position:absolute; right:0; top:-5px; width:10px; height:10px; border-top:2px solid #0b7378; border-right:2px solid #0b7378; transform:rotate(45deg); }
 .career-journey.shared.marker-only .career-sequence { position:absolute; display:block; width:0; min-width:0; }
 .career-journey.shared.marker-only .career-period { position:static; width:0; min-width:0; }
-.career-journey.shared.marker-only .career-period-line { position:absolute; left:0; top:22px; width:var(--career-role-span); height:3px; background:#0b7378; pointer-events:none; }
-.career-journey.shared.marker-only .is-internship .career-period-line { background:#8fc7c4; }
+.career-journey.shared.marker-only .career-period-line { position:absolute; left:0; top:22px; width:var(--career-role-span); height:3px; background:var(--career-employment); pointer-events:none; }
+.career-journey.shared.marker-only .is-internship .career-period-line { background:var(--career-internship); }
 .career-journey.shared.marker-only .dates-incomplete .career-period-line { display:none; }
 .career-journey.shared.marker-only .career-job { position:absolute; z-index:2; left:-22px; top:0; display:flex; align-items:center; justify-content:center; box-sizing:border-box; width:44px; max-width:none; height:44px; min-height:44px; padding:0; border:0; border-radius:50%; background:transparent; color:var(--enter-text); cursor:pointer; -webkit-tap-highlight-color:transparent; }
 .career-journey.shared.marker-only .career-job:focus-visible { outline:var(--enter-focus-ring); outline-offset:2px; box-shadow:none; }
-.career-journey.shared.marker-only .career-marker-icon { position:static; display:grid; place-items:center; box-sizing:border-box; width:18px; height:18px; border:1px solid #0b7378; border-radius:50%; background:#0b7378; color:#fff; }
-.career-journey.shared.marker-only .is-internship .career-marker-icon { border-color:#8fc7c4; background:#c7e6e3; color:#245d61; }
-.career-journey.shared.marker-only .is-cluster-mixed .career-marker-icon { border-color:#0b7378; background:linear-gradient(135deg,#c7e6e3 45%,#0b7378 45%); color:#173f43; }
-.career-journey.shared.marker-only .needs-review .career-marker-icon { border-width:2px; background:var(--enter-surface); color:#0b7378; }
-.career-journey.shared.marker-only .cluster-needs-review .career-marker-icon { border-width:2px; background:var(--enter-surface); color:#0b7378; }
-.career-journey.shared.marker-only .is-internship.needs-review .career-marker-icon { border-color:#8fc7c4; }
-.career-journey.shared.marker-only .dates-incomplete .career-marker-icon { border-style:dotted; }
+.career-journey.shared.marker-only .career-marker-icon { position:static; display:grid; place-items:center; box-sizing:border-box; width:18px; height:18px; border:2px solid var(--career-employment); border-radius:50%; background:var(--career-employment); color:#fff; }
+.career-journey.shared.marker-only .is-internship .career-marker-icon { border-color:var(--career-internship); background:#c7e6e3; color:#245d61; }
+.career-journey.shared.marker-only .is-cluster-mixed .career-marker-icon { border-color:var(--career-employment); background:linear-gradient(135deg,var(--career-internship) 45%,var(--career-employment) 45%); color:#173f43; }
+.career-journey.shared.marker-only .needs-review .career-marker-icon { background:var(--enter-surface); color:var(--career-employment); }
+.career-journey.shared.marker-only .cluster-needs-review .career-marker-icon { background:var(--enter-surface); color:var(--career-employment); }
+.career-journey.shared.marker-only .is-internship.needs-review .career-marker-icon { border-color:var(--career-employment); }
 .career-journey.shared.marker-only .career-laptop { width:12px; height:12px; stroke-width:1.75; }
 .career-journey.shared.marker-only .is-cluster .career-marker-icon { width:26px; height:26px; }
 .career-cluster-count { font:700 11px/1 var(--enter-font-ui); }
-.career-journey.shared.marker-only .is-cluster-mixed .career-cluster-count { display:grid; place-items:center; width:16px; height:16px; border-radius:50%; background:#fff; color:#173f43; }
+.career-journey.shared.marker-only .is-cluster-mixed .career-cluster-count { display:grid; place-items:center; width:16px; height:16px; border-radius:50%; background:var(--career-employment); color:#fff; }
+.career-journey.shared.marker-only .cluster-needs-review.is-cluster-mixed .career-cluster-count { background:var(--enter-surface); color:var(--career-employment); }
 .career-journey.shared.marker-only .career-job:is(:hover,:focus-visible,.is-active) .career-marker-icon { box-shadow:0 0 0 4px rgba(11,115,120,.12); }
 .career-journey.shared.marker-only .career-job>small { position:absolute; top:47px; left:50%; transform:translateX(-50%); margin:0; color:var(--enter-text-muted); font:500 12px/1.5 var(--enter-font-ui); white-space:nowrap; }
 .career-journey.shared.marker-only .career-gap-period { position:absolute; min-width:0; }
 .career-journey.shared.marker-only .career-gap-marker { z-index:1; left:0; top:0; width:100%; min-width:0; border-radius:4px; }
-.marker-only .career-gap-line { display:block; width:100%; height:3px; border-top:2px dashed #60777b; background:var(--enter-surface); box-sizing:border-box; }
+.marker-only .career-gap-line { display:block; width:100%; height:3px; border-top:2px dashed var(--career-gap); background:var(--enter-surface); box-sizing:border-box; }
+.career-legend { display:flex; align-items:center; flex-wrap:wrap; gap:4px 12px; margin:0 0 3px; color:var(--enter-text-muted); font:400 11px/1.4 var(--enter-font-ui); }
+.career-legend>span { display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
+.career-legend-marker { display:inline-block; box-sizing:border-box; width:10px; height:10px; border:2px solid var(--career-employment); border-radius:50%; background:var(--career-employment); }
+.career-legend-marker.is-internship { border-color:var(--career-internship); background:#c7e6e3; }
+.career-legend-marker.is-unverified { background:var(--enter-surface); }
+.career-legend-gap { display:inline-block; width:15px; border-top:2px dashed var(--career-gap); }
 .marker-only .career-end-year { position:absolute; width:max-content; color:var(--enter-text-muted); font:500 12px/1.5 var(--enter-font-ui); white-space:nowrap; }
-.career-history-status { margin:10px 0; padding:10px 12px; border-left:2px solid var(--enter-highlight); background:var(--enter-primary-soft); color:var(--enter-text-muted); font:400 12px/1.6 var(--enter-font-ui); }
-.career-history-status.needs-review { border-left-style:dashed; }
-.career-review-key { margin:8px 0; color:var(--enter-text-muted); font:400 12px/1.5 var(--enter-font-ui); }
-.career-popover { position:fixed; z-index:2500; box-sizing:border-box; width:min(360px,calc(100vw - 24px)); max-height:min(260px,70vh); overflow:auto; padding:18px; border:1px solid var(--enter-border); border-radius:var(--enter-radius-control); box-shadow:var(--enter-shadow-popover); background:var(--enter-surface); color:var(--enter-text); font:400 13px/1.5 var(--enter-font-ui); overflow-wrap:anywhere; }
-.career-popover :is(strong,b,span) { display:block; margin:0 0 6px; color:inherit; }
-.career-popover strong { font-size:15px; }
-.career-popover p { margin:8px 0 0; white-space:pre-line; }
+.career-history-status { margin:6px 0; color:var(--enter-text-muted); font:400 11px/1.45 var(--enter-font-ui); }
+.career-popover { position:fixed; z-index:2500; box-sizing:border-box; width:min(320px,calc(100vw - 24px)); max-height:min(260px,70vh); overflow:auto; padding:11px 12px; border:1px solid var(--enter-border); border-radius:var(--enter-radius-control); box-shadow:var(--enter-shadow-popover); background:var(--enter-surface); color:var(--enter-text); font:400 12px/1.4 var(--enter-font-ui); overflow-wrap:anywhere; }
+.career-popover :is(strong,b,span) { display:block; margin:0 0 3px; color:inherit; }
+.career-popover strong { font-size:13px; line-height:1.35; }
+.career-popover p { margin:5px 0 0; white-space:pre-line; }
 .career-popover .career-detail-type { color:#0b7378; }
-.career-popover .career-detail-verification { border-top:1px solid var(--enter-border); padding-top:10px; font-size:12px; }
+.career-popover .career-detail-verification { border-top:1px solid var(--enter-border); padding-top:6px; font-size:11px; }
+.career-popover-edit { min-height:36px; margin-top:6px; padding:6px 10px; border:1px solid var(--enter-primary); border-radius:var(--enter-radius-control); background:var(--enter-primary-soft); color:var(--enter-primary-hover); font:600 11px/1.3 var(--enter-font-ui); cursor:pointer; }
+.career-popover-edit:focus-visible { outline:var(--enter-focus-ring); outline-offset:2px; }
 .career-cluster-popover { max-height:min(320px,70vh); }
 .career-cluster-popover ul { margin:8px 0 12px; padding:0; list-style:none; }
 .career-cluster-popover li { padding:10px 0; border-top:1px solid var(--enter-border); }
 .career-cluster-popover li :is(b,span,small) { display:block; margin:0 0 2px; font-size:12px; }
 .career-cluster-close { min-height:44px; padding:8px 14px; border:1px solid var(--enter-border); border-radius:var(--enter-radius-control); background:var(--enter-surface); color:var(--enter-text); cursor:pointer; }
 .career-cluster-close:focus-visible { outline:var(--enter-focus-ring); outline-offset:2px; }
+@media(pointer:coarse) { .career-popover-edit,.career-cluster-close { min-height:44px; } }
 @media(prefers-reduced-motion:reduce) { .calendar-timeline *, .career-popover { transition:none!important; animation:none!important; } }

@@ -78,7 +78,7 @@ Path(${JSON.stringify(careerUpdate)}).write_bytes(resume_docx(role='Staff Engine
   const state = page.locator('.cp-processing-status')
   for (const [index, file] of [docx, pdf].entries()) {
     if (index) {
-      await page.getByRole('button', { name: 'Not quite — edit', exact: true }).click()
+      await page.getByRole('button', { name: 'Edit profile', exact: true }).click()
       await page.getByLabel('Professional title', { exact: true }).fill('Candidate-corrected title')
       await page.getByRole('button', { name: 'Save corrections' }).click()
       await expect(page.locator('.cp-identity')).toContainText('Candidate-corrected title')

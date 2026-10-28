@@ -409,7 +409,7 @@ test('real candidate resume, timeline, preferences, replacement, preview and acc
   await expect(page.getByRole('dialog', { name: 'Uploaded resume' })).toHaveCount(0)
   await page.getByRole('button', { name: 'Collapse resume' }).click()
   await expect(page.locator('#candidate-resume-preview')).toHaveCount(0)
-  await page.getByRole('button', { name: 'Not quite — edit' }).click()
+  await page.getByRole('button', { name: 'Edit profile' }).click()
   await page.getByLabel('Professional title', { exact: true }).fill('Staff Platform Engineer')
   await layouts(page, info, 'profile-editor')
   await page.locator('.cp-work-edit summary').first().click()
