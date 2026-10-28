@@ -115,6 +115,47 @@ def test_column_scopes_do_not_join_employer_and_role():
     assert result['work_experiences'] == []
 
 
+def test_adjacent_layout_blocks_recover_quote_formatting_without_inventing_values():
+    content = pdf_bytes([
+        'WORK EXPERIENCE', 'Fictional Layout Works | Jan 2020 - Dec 2022',
+        'Platform Engineer | Bengaluru', 'SKILLS', 'Python',
+    ])
+    parsed = services.parse_resume(BytesIO(content), 'fictional-layout.pdf')
+    proposal = _response([(
+        'Fictional Layout Works', 'Platform Engineer', 'Jan 2020', 'Dec 2022')])
+    proposal['work_experiences'][0]['employer_evidence'] = (
+        'Fictional Layout Works Jan 2020 - Dec 2022')
+    proposal['work_experiences'][0]['role_evidence'] = 'Platform Engineer Bengaluru'
+    result = validate_interpretation(proposal, parsed['raw_text'], parsed['_evidence_views'])
+    assert len(result['work_experiences']) == 1
+    assert result['work_experiences'][0]['date_label'] == 'Jan 2020 — Dec 2022'
+
+
+def test_layout_recovery_cannot_borrow_from_projects_or_across_sections():
+    content = pdf_bytes([
+        'PROJECTS', 'Fictional Layout Works | Jan 2020 - Dec 2022',
+        'Platform Engineer | Bengaluru', 'WORK EXPERIENCE',
+        'Other Studio | Jan 2021 - Dec 2023', 'Analyst | Remote',
+    ])
+    parsed = services.parse_resume(BytesIO(content), 'fictional-project.pdf')
+    proposal = _response([(
+        'Fictional Layout Works', 'Platform Engineer', 'Jan 2020', 'Dec 2022')])
+    proposal['work_experiences'][0]['employer_evidence'] = 'Fictional Layout Works Jan 2020'
+    proposal['work_experiences'][0]['role_evidence'] = 'Platform Engineer Bengaluru'
+    result = validate_interpretation(proposal, parsed['raw_text'], parsed['_evidence_views'])
+    assert result['work_experiences'] == []
+
+
+def test_layout_recovery_does_not_turn_employer_name_into_a_role():
+    content = pdf_bytes(['WORK EXPERIENCE', 'Engineer Labs | Jan 2020 - Dec 2022'])
+    parsed = services.parse_resume(BytesIO(content), 'fictional-employer-only.pdf')
+    proposal = _response([('Engineer Labs', 'Engineer', 'Jan 2020', 'Dec 2022')])
+    proposal['work_experiences'][0]['employer_evidence'] = 'Engineer Labs Jan 2020'
+    proposal['work_experiences'][0]['role_evidence'] = 'Engineer Jan 2020'
+    result = validate_interpretation(proposal, parsed['raw_text'], parsed['_evidence_views'])
+    assert result['work_experiences'] == []
+
+
 def test_image_only_resume_is_not_classified_as_a_fresher():
     image = Image.new('RGB', (900, 220), 'white')
     ImageDraw.Draw(image).text(

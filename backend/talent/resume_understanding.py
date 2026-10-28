@@ -360,6 +360,60 @@ def association_supported(fact, facts, text):
     return bool(_associated_employer_positions(fact, facts, text))
 
 
+def _recover_layout_evidence(data, view):
+    """Replace quote formatting drift with actual nearby source blocks.
+
+    Facts still need literal employer and title strings in the same page, column,
+    and employment section. No evidence is combined across extraction methods.
+    The ordinary validator checks the reconstructed *source* quotes afterwards.
+    """
+    from .services import EXPERIENCE_HEADINGS, _heading_and_tail
+
+    blocks = view.get('blocks') or []
+    if not blocks:
+        return data
+    sections = []
+    section = None
+    for block in blocks:
+        heading, _ = _heading_and_tail(block['text'])
+        if heading:
+            section = heading
+        sections.append(section)
+    has_headings = any(item is not None for item in sections)
+    recovered = deepcopy(data)
+    for fact in recovered.get('work_experiences', []):
+        company, role = fact.get('company'), fact.get('role')
+        if not company or not role or _is_non_employment_role(role):
+            continue
+        pairs = []
+        for role_index, role_block in enumerate(blocks):
+            if not supported(role, role_block['text'], role_block['text']):
+                continue
+            if has_headings and sections[role_index] not in EXPERIENCE_HEADINGS:
+                continue
+            for company_index in range(max(0, role_index - 1), role_index + 1):
+                company_block = blocks[company_index]
+                if not supported(company, company_block['text'], company_block['text']):
+                    continue
+                if (company_block['page'] != role_block['page']
+                        or company_block['column'] != role_block['column']
+                        or sections[company_index] != sections[role_index]):
+                    continue
+                if company_index == role_index:
+                    remaining = re.sub(re.escape(company), '', role_block['text'],
+                                       count=1, flags=re.I)
+                    if not supported(role, remaining, remaining):
+                        continue
+                pairs.append((role_index - company_index, role_index,
+                              company_index))
+        if not pairs:
+            continue
+        _, role_index, company_index = min(pairs)
+        fact['employer_evidence'] = blocks[company_index]['text']
+        fact['role_evidence'] = blocks[role_index]['text']
+    return recovered
+
+
 COMPACT_YEAR_RANGE = re.compile(
     r"(?<!\d)((?:19|20)\d{2})\s*[-\u2013\u2014]\s*(\d{2})(?!\d)"
 )
@@ -883,33 +937,43 @@ def validate_interpretation(data, text, evidence_views=None):
     views = evidence_views or [{'method': 'primary', 'text': text, 'blocks': []}]
     from .document_evidence import evidence_location
 
-    checked = [(view, _validate_interpretation_single(data, view['text']))
-               for view in views if view.get('text') and view.get('validation_safe', True)]
+    checked = []
+    for view in views:
+        if not view.get('text') or not view.get('validation_safe', True):
+            continue
+        strict = _validate_interpretation_single(data, view['text'])
+        checked.append((view, strict, data))
+        if len(strict.get('work_experiences', [])) < len(data.get('work_experiences', [])):
+            recovered = _recover_layout_evidence(data, view)
+            if recovered is not data and recovered != data:
+                checked.append((view, _validate_interpretation_single(
+                    recovered, view['text']), recovered))
     if not checked:
         checked = [({'method': 'primary', 'text': text, 'blocks': []},
-                    _validate_interpretation_single(data, text))]
-    selected = next((result for view, result in checked if view['text'] == text), checked[0][1])
+                    _validate_interpretation_single(data, text), data)]
+    selected = next((result for view, result, proposal in checked
+                     if view['text'] == text), checked[0][1])
     accepted = {}
-    for view, result in checked:
+    for view, result, proposal in checked:
         for row in result.get('work_experiences', []):
             index = row['_proposal_index']
             score = (row['confidence_status'] == 'supported',
                      bool(row.get('start_date')) + bool(row.get('end_date')))
             if index not in accepted or score > accepted[index][0]:
-                accepted[index] = (score, row, view, result)
+                accepted[index] = (score, row, view, result, proposal)
     selected['work_experiences'] = []
     for index in sorted(accepted):
-        _, row, view, _ = accepted[index]
+        _, row, view, _, proposal = accepted[index]
         row = dict(row)
         row.pop('_proposal_index', None)
         row['_evidence_location'] = evidence_location(
-            data['work_experiences'][index].get('role_evidence'), view)
+            proposal['work_experiences'][index].get('role_evidence'), view)
         selected['work_experiences'].append(row)
     # A role rejected by the selected view is no longer a rejection if another
     # independent, trusted view supports it. Keep all other diagnostics private.
     rejections = [item for item in selected['_validation_rejections']
                   if item.get('item_index') not in accepted]
-    for index, (_, _, _, source_result) in accepted.items():
+    for index, (_, _, _, source_result, _) in accepted.items():
         rejections.extend(item for item in source_result['_validation_rejections']
                           if item.get('item_index') == index)
     selected['_validation_rejections'] = rejections
