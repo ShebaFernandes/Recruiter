@@ -1,26 +1,23 @@
-"""Guard the already-published legal package used by production image builds."""
+"""Guard the approved legal package used by AI-disabled production image builds."""
 
 import hashlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-PUBLISHED_FILE_HASHES = {
+LIVE_SNAPSHOT_FILE_HASHES = {
     "PRIVACY_POLICY_PUBLICATION.txt": (
-        "7cfeb57abf1ac8537c59c1b06dc8b7bbeafc90e1dba6b3979737bef069a5bad9"
+        "d1c43d6d463335d30d31d4bc1233bec83f9c8bc43a939ff4087b0b60d381d26c"
     ),
     "TERMS_PUBLICATION.txt": (
-        "e6276b935d62840c98084e491e072781ac9776dd1ad3011c4d4d8276b7aaac8c"
-    ),
-    "RESUME_AI_CONSENT_PUBLICATION.txt": (
-        "c9bbf730166a2d55a91d9a219c469f3d512c3c040adf36886f709daa767498b4"
+        "c3d509227aa02272912175005f06e2ef7f675de09c8d37c705546476b513f572"
     ),
 }
 
 
-def test_production_dockerfile_packages_current_published_legal_copy():
+def test_production_dockerfile_packages_approved_live_legal_snapshot():
     dockerfile = (ROOT / "backend" / "Dockerfile.production").read_text()
-    assert "deploy/live-legal-v1.0/" not in dockerfile
-    for name, expected_sha256 in PUBLISHED_FILE_HASHES.items():
-        source = ROOT / "deploy" / name
+    for name, expected_sha256 in LIVE_SNAPSHOT_FILE_HASHES.items():
+        source = ROOT / "deploy" / "live-legal-v1.0" / name
         assert hashlib.sha256(source.read_bytes()).hexdigest() == expected_sha256
-        assert f"deploy/{name}" in dockerfile
+        assert f"deploy/live-legal-v1.0/{name}" in dockerfile
+    assert "deploy/RESUME_AI_CONSENT_PUBLICATION.txt" not in dockerfile
