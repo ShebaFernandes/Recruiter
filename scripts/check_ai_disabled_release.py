@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 LIVE_ROOT = ROOT / "deploy" / "live-legal-v1.0"
-PENDING_ROOT = ROOT / "deploy"
+GEMINI_DOCUMENT_ROOT = ROOT / "deploy"
 
 LIVE_HASHES = {
     "PRIVACY_POLICY_PUBLICATION.txt": (
@@ -19,7 +19,7 @@ LIVE_HASHES = {
     ),
     "TERMS_PUBLICATION.txt": ("55b5b1ebca80a523218760499bedd2c93650b9ff04350f4355c483d313e825ef"),
 }
-PENDING_HASHES = {
+GEMINI_DOCUMENT_HASHES = {
     "PRIVACY_POLICY_PUBLICATION.txt": (
         "6549ab6514b940459b8b853ee63643fc97c91f9dfc2d62aac511083c6b1bf574"
     ),
@@ -76,16 +76,16 @@ def verify_legal_files():
         )
         require(digest(text) == expected, f"Live legal snapshot hash changed: {name}")
 
-    for name, expected in PENDING_HASHES.items():
-        source, text = public_text(PENDING_ROOT / name)
+    for name, expected in GEMINI_DOCUMENT_HASHES.items():
+        source, text = public_text(GEMINI_DOCUMENT_ROOT / name)
         statuses = [
             line.strip() for line in source.splitlines() if line.startswith("PUBLICATION STATUS:")
         ]
         require(
-            statuses == ["PUBLICATION STATUS: PENDING REVIEW"],
-            f"Pending Gemini document status changed: {name}",
+            statuses == ["PUBLICATION STATUS: APPROVED"],
+            f"Approved Gemini document status changed: {name}",
         )
-        require(digest(text) == expected, f"CEO-approved pending document hash changed: {name}")
+        require(digest(text) == expected, f"Approved Gemini document hash changed: {name}")
 
 
 def verify_packaging():
@@ -97,7 +97,7 @@ def verify_packaging():
     )
     require(
         "deploy/RESUME_AI_CONSENT_PUBLICATION.txt" not in dockerfile,
-        "Pending Gemini consent must not be packaged in the AI-disabled image",
+        "Gemini consent must not be packaged in the AI-disabled image",
     )
 
     compose = (ROOT / "compose.production.yaml").read_text()
@@ -147,7 +147,7 @@ def verify_environment(path):
     for name, expected_value in expected.items():
         require(values.get(name, "").lower() == expected_value, f"Unsafe release value: {name}")
     require(values.get("LEGAL_EFFECTIVE_DATE"), "LEGAL_EFFECTIVE_DATE is missing")
-    require(values.get("LEGAL_RESUME_AI_SHA256", "") == "", "Pending AI consent hash must not load")
+    require(values.get("LEGAL_RESUME_AI_SHA256", "") == "", "Gemini consent hash must not load")
 
 
 def main():
@@ -168,7 +168,7 @@ def main():
             {
                 "ai_disabled_release": "PASS",
                 "live_legal": "v1.0 hash-pinned",
-                "pending_gemini_documents": "preserved and unpublished",
+                "approved_gemini_documents": "preserved and not loaded",
                 "candidate_intake": "verify-unpaused-env" if not args.env_file else "unpaused",
                 "external_calls": 0,
             }

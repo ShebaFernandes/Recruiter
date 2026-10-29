@@ -4,15 +4,15 @@ Status: locally prepared; not deployed.
 
 This release preserves the currently published candidate legal copy and keeps
 registration, resume uploads, saved profiles, queued work, and candidate access
-available. It does not publish the pending Gemini-aware documents, enable Gemini,
+available. It does not load the approved Gemini-aware documents, enable Gemini,
 load a Gemini consent hash, or permit external resume processing.
 
 ## Release invariants
 
 - The backend image packages the approved live Privacy and Terms v1.0 snapshot
   from `deploy/live-legal-v1.0/`, with the existing immutable hashes.
-- The three CEO-approved Gemini-aware files remain at `PUBLICATION STATUS: PENDING
-  REVIEW`, with their recorded versions and public-text hashes unchanged.
+- The three approved Gemini-aware files retain their recorded versions and public-text
+  hashes. Their approval does not enable Gemini or load them into this AI-disabled release.
 - `compose.production.yaml` overrides recruiter AI and resume AI to disabled,
   clears provider keys from application containers, and does not add an AI secret.
 - `deploy/compose.ai-disabled-release.yaml` repeats those fail-closed controls for
@@ -55,6 +55,6 @@ review reference, and actual review date. It may be genuine qualified legal
 clearance or explicit management privacy/legal risk acceptance, but must not
 confuse the two. The decision must expressly cover the exact three recorded
 versions and hashes and the Gemini processing/overseas transfer/DPA and Terms
-liability/jurisdiction issues. This is ENTER's publication control for the pending
-documents, not an identified statutory lawyer-signature requirement and not a
+liability/jurisdiction issues. This is ENTER's publication control for the
+Gemini-aware documents, not an identified statutory lawyer-signature requirement and not a
 blocker to local AI-disabled build and release preparation.
