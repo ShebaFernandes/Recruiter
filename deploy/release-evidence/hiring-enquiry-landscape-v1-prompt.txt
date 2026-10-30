@@ -1,0 +1,6 @@
+Mode: built-in image_gen tool (image editing).
+Saved project asset: frontend/public/media/hiring-enquiry-landscape-v1.png
+Reference: user-provided hiring-card screenshot, used only as a visual reference.
+
+Final prompt:
+Use case: precise-object-edit. Asset type: clean scenic bitmap background for a website modal frame. Input image is the edit target. Remove the entire white form card, every letter and control, mouse cursor, and the narrow browser strip at the top. Reconstruct only the landscape naturally behind those removed areas: soft misty green forested mountain ridges, low white valley clouds and a quiet lake at bottom right, same soft daylight, subdued blue-green palette and photographic mood as the reference. Keep the visible landscape composition and scenery consistent. Output landscape-only image, no card, UI, text, borders, cursor, logos or watermark. The real white card will be rendered separately in code. Save the generated image to a local file and return its path.

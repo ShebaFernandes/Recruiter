@@ -46,8 +46,8 @@
   transition: background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 .simple-landing .ce-landing-cta--candidates {
-  border-color: #172344;
-  background: #fff;
+  border-color: #c7ccd2;
+  background: #e5e7eb;
   color: #172344;
 }
 .simple-landing .ce-landing-cta--companies {
@@ -68,7 +68,7 @@
     background: #3b52da;
     box-shadow: 0 0 0 3px rgba(48,70,201,.12), 0 0 20px rgba(48,70,201,.25);
   }
-  .simple-landing .ce-landing-cta--candidates:hover { background: rgba(48,70,201,.06); }
+  .simple-landing .ce-landing-cta--candidates:hover { background: #d8dce2; }
   .simple-landing .ce-landing-cta--companies:hover { background: #4b61cd; }
 }
 .simple-landing .ce-landing-cta:focus-visible {

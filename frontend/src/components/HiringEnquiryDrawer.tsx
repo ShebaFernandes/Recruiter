@@ -145,26 +145,28 @@ export default function HiringEnquiryDrawer({ enquiry, minimumDate, opener, onCl
   </div>
 
   const uploadField = <div className="enquiry-upload"><input ref={fileRef} id={`${titleId}-file`} aria-label={file ? "Replace JD's" : "Upload JD's"} type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={event => { const chosen = event.target.files?.[0] ?? null; if (chosen && !/\.(pdf|docx)$/i.test(chosen.name)) { setErrors(current => ({ ...current, file: 'Choose a PDF or DOCX file.' })); event.target.value = ''; setFile(null); return } setErrors(current => { const next = { ...current }; delete next.file; return next }); setFile(chosen) }} />
-    <label htmlFor={`${titleId}-file`}><Paperclip size={18} aria-hidden="true" /> {file ? "Replace JD's" : "Upload JD's"} <span aria-hidden="true" className="enquiry-upload__arrow">↑</span></label>
+    <label htmlFor={`${titleId}-file`}><Paperclip size={18} aria-hidden="true" /> {file ? "Replace JD's" : "Upload JD's"}</label>
     {file && <div className="enquiry-upload__file"><span>{file.name}</span><button type="button" onClick={() => { setFile(null); if (fileRef.current) fileRef.current.value = '' }}>Remove</button></div>}
     {errors.file && <small className="enquiry-error" role="alert">{errors.file}</small>}
   </div>
 
   return createPortal(<div className={`enquiry-backdrop${closing ? ' is-closing' : ''}`} onMouseDown={event => { if (event.target === event.currentTarget) close() }}>
+    <div className="enquiry-scene" onMouseDown={event => { if (event.target === event.currentTarget) close() }}>
     <div ref={panelRef} className={`enquiry-drawer enquiry-drawer--${enquiry.kind}`} role="dialog" aria-modal="true" aria-labelledby={titleId}>
       <header className="enquiry-header"><div><h2 id={titleId}>{details.title}</h2><p>{details.description}</p></div><button ref={closeRef} className="enquiry-close" type="button" onClick={close} aria-label="Close hiring enquiry"><X size={20} aria-hidden="true" /></button></header>
       <form className="enquiry-form" noValidate onSubmit={submit}>
-        {field('name', 'Full name', name, setName)}
+        {field('name', 'Your name', name, setName)}
         {field('company', 'Company name', company, setCompany)}
         {field('email', 'Work email', email, setEmail, 'email')}
         {enquiry.kind === 'hire' && <>{!enquiry.role && field('role', 'Role or job title', role, setRole)}{!enquiry.location && field('location', 'Hiring location', location, setLocation)}{departmentField}{uploadField}{!enquiry.headcount && headcountField}</>}
         {enquiry.kind === 'team' && <>{!enquiry.teamFocus && field('teamFocus', 'Team or department focus', teamFocus, setTeamFocus)}{departmentField}{!enquiry.headcount && headcountField}{uploadField}</>}
         {enquiry.kind === 'drive' && <>{departmentField}{!enquiry.role && field('role', 'Role or job title', role, setRole)}{!enquiry.headcount && headcountField}{!enquiry.location && field('location', 'Hiring location', location, setLocation)}{!enquiry.deadline && <label className="enquiry-field"><span>Target hiring date</span><input type="date" min={minimumDate} value={deadline} onChange={event => setDeadline(event.target.value)} aria-invalid={!!errors.deadline} />{errors.deadline && <small className="enquiry-error" role="alert">{errors.deadline}</small>}</label>}{uploadField}</>}
-        <label className="enquiry-field"><span>Notes</span><textarea rows={3} placeholder="Tell us anything else about your hiring needs..." value={notes} onChange={event => setNotes(event.target.value)} /></label>
+        <label className="enquiry-field"><span>Notes</span><textarea aria-label="Notes" rows={2} maxLength={250} aria-describedby={`${titleId}-notes-limit`} placeholder="Tell us anything else about your hiring needs..." value={notes} onChange={event => setNotes(event.target.value.slice(0, 250))} /><small id={`${titleId}-notes-limit`} className="enquiry-notes-limit">{notes.length}/250 characters</small></label>
         {submitState === 'sent' && <p className="enquiry-notice" role="status">Thank you. Your request has been received. Our team will follow up at your work email.</p>}
         {submitError && <p className="enquiry-notice enquiry-notice--error" role="alert">{submitError}</p>}
         <div className="enquiry-actions"><button type="button" className="enquiry-back" onClick={close}>Back</button><button type="submit" className="enquiry-submit" disabled={submitState !== 'idle'}>{submitState === 'sending' ? 'Sending…' : submitState === 'sent' ? 'Sent' : details.action} {submitState === 'idle' && <ArrowRight size={16} aria-hidden="true" />}</button></div>
       </form>
+    </div>
     </div>
   </div>, document.body)
 }
