@@ -24,7 +24,7 @@
 .growth-stages__eyebrow {
   margin: 0 0 18px;
   color: #dfe4e9;
-  font: 500 11px/1.4 var(--enter-font-sans);
+  font: 500 11px/1.4 var(--enter-font-ui);
   letter-spacing: .2em;
 }
 
@@ -40,7 +40,7 @@
   max-width: 760px;
   margin: 20px auto 0;
   color: #bec3ca;
-  font: 400 15px/1.6 var(--enter-font-sans);
+  font: 400 15px/1.6 var(--enter-font-ui);
   text-wrap: balance;
 }
 
@@ -56,7 +56,7 @@
   gap: 20px;
   margin: 42px 0 22px;
   color: #f0f1f1;
-  font: 500 11px/1 var(--enter-font-sans);
+  font: 500 11px/1 var(--enter-font-ui);
   letter-spacing: .18em;
 }
 
@@ -105,7 +105,7 @@
 .growth-stage-card__category,
 .growth-stage-card__specializations {
   margin: 0;
-  font-family: var(--enter-font-sans);
+  font-family: var(--enter-font-ui);
   letter-spacing: .16em;
 }
 
@@ -135,7 +135,7 @@
   max-width: 485px;
   margin: 18px 0 0;
   color: #606a7c;
-  font: 400 15px/1.6 var(--enter-font-sans);
+  font: 400 15px/1.6 var(--enter-font-ui);
 }
 
 .growth-stage-card__specializations {
@@ -159,7 +159,7 @@
   border-radius: 9999px;
   color: #fff;
   background: #3046c9;
-  font: 500 14px/1 var(--enter-font-sans);
+  font: 500 14px/1 var(--enter-font-ui);
   cursor: pointer;
   transition: background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
@@ -198,7 +198,7 @@
   min-height: 20px;
   margin: 0;
   color: #aeb8c9;
-  font: 500 13px/1.5 var(--enter-font-sans);
+  font: 500 13px/1.5 var(--enter-font-ui);
   text-align: center;
   opacity: 0;
   transition: opacity 180ms ease;
@@ -310,14 +310,14 @@
 .growth-stages__grid--enquiry .growth-stage-card h3 { font-size: 26px; }
 .growth-stages__grid--enquiry .growth-stage-card__description { font-size: 13px; }
 .growth-stage-card__cta { min-height: 36px; padding: 10px 16px; font-size: 12px; }
-.growth-enquiry { padding: 22px; border-radius: 18px; background: #faf9f6; color: #17213b; font: 400 12px/1.5 var(--enter-font-sans); }
+.growth-enquiry { padding: 22px; border-radius: 18px; background: #faf9f6; color: #17213b; font: 400 12px/1.5 var(--enter-font-ui); }
 .growth-enquiry__heading { display: flex; align-items: start; gap: 12px; justify-content: space-between; }
 .growth-enquiry__heading h3 { margin: 0; font: 400 28px/1.1 var(--enter-font-editorial); letter-spacing: -.03em; }
 .growth-enquiry__heading button { border: 0; background: transparent; font-size: 24px; cursor: pointer; color: #17213b; }
-.growth-enquiry h4, .growth-enquiry legend { margin: 18px 0 8px; color: #4056c6; font: 600 10px/1.5 var(--enter-font-sans); text-transform: uppercase; letter-spacing: .06em; }
+.growth-enquiry h4, .growth-enquiry legend { margin: 18px 0 8px; color: #4056c6; font: 600 10px/1.5 var(--enter-font-ui); text-transform: uppercase; letter-spacing: .06em; }
 .growth-enquiry__fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
 .growth-enquiry label { display: grid; gap: 5px; color: #687287; font-size: 10px; }
-.growth-enquiry :is(input:not([type="checkbox"]), select, textarea) { box-sizing: border-box; width: 100%; min-width: 0; min-height: 34px; padding: 8px 10px; border: 1px solid #d9dce1; border-radius: 8px; background: white; color: #17213b; font: 400 12px/1.4 var(--enter-font-sans); }
+.growth-enquiry :is(input:not([type="checkbox"]), select, textarea) { box-sizing: border-box; width: 100%; min-width: 0; min-height: 34px; padding: 8px 10px; border: 1px solid #d9dce1; border-radius: 8px; background: white; color: #17213b; font: 400 12px/1.4 var(--enter-font-ui); }
 .growth-enquiry textarea { resize: vertical; }
 .growth-enquiry fieldset { margin: 0 0 12px; padding: 0; border: 0; }
 .growth-enquiry__pills { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -449,4 +449,38 @@
   .growth-stages__grid--enquiry .growth-stage-card { grid-column: 1; grid-row: auto; width: 100%; justify-self: stretch; }
   .growth-stages__grid--leadership .growth-enquiry { grid-column: 1; grid-row: 1; }
   .growth-stages__grid--leadership .growth-stage-card { grid-column: 1; grid-row: 2; }
+}
+
+/* Compact, matched growth cards and enquiry pairs. */
+.growth-stages__eyebrow { font-size: 10px; font-weight: 400; letter-spacing: .16em; }
+.growth-stages__intro { font-weight: 400; }
+.growth-stages__progress { color: #929aaa; font-size: 9px; }
+.growth-stages__progress i { background: rgba(146, 154, 170, .4); }
+.growth-stage-card__marker { color: #778092; font-size: 9px; }
+.growth-stages__grid { max-width: 880px; margin-inline: auto; gap: 24px; }
+.growth-stages__grid:not(.growth-stages__grid--enquiry) .growth-stage-card {
+  min-height: 460px; grid-template-rows: minmax(300px, auto) 160px; border-radius: 22px;
+}
+.growth-stage-card__body { padding: 24px; }
+.growth-stage-card h3 { font-size: 26px; }
+.growth-stage-card__description { font-size: 13px; line-height: 1.55; }
+.growth-stages__grid--enquiry, .growth-stages__grid--leadership {
+  grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch;
+}
+.growth-stages__grid--enquiry > :is(.growth-enquiry, .growth-stage-card) {
+  box-sizing: border-box; width: 100%; height: min(520px, calc(100svh - 100px)); min-height: 0;
+  align-self: stretch; border-radius: 20px;
+}
+.growth-stages__grid--enquiry .growth-stage-card { grid-template-rows: auto minmax(140px, 1fr); }
+.growth-enquiry { padding: 20px; overflow-y: auto; }
+.growth-enquiry__heading { margin-bottom: 14px; }
+.growth-enquiry__heading h3 { font-size: 23px; }
+.growth-enquiry :is(input:not([type="checkbox"]), select, textarea) { min-height: 34px; padding: 7px 9px; font-size: 11px; }
+.growth-enquiry textarea { resize: none; }
+.growth-enquiry__pills button { padding: 5px 7px; font-size: 9px; }
+@media (max-width: 760px) {
+  .growth-stages__grid--enquiry, .growth-stages__grid--leadership { grid-template-columns: 1fr; }
+  .growth-stages__grid--enquiry > :is(.growth-enquiry, .growth-stage-card) { height: auto; }
+  .growth-stages__grid--enquiry .growth-stage-card { min-height: 380px; }
+  .growth-stages__grid:not(.growth-stages__grid--enquiry) .growth-stage-card { min-height: 0; grid-template-rows: auto 150px; }
 }

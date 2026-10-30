@@ -19,7 +19,7 @@ describe('TestimonialsCarousel', () => {
     expect(cards.map(card => card.querySelector('.testimonial-glass-card__identity strong')?.textContent)).toEqual([
       'Steve Francis', 'Drushya Shetty', 'Divya V', 'Prachi Sharma',
     ])
-    expect(cards[0].textContent).toContain("I've worked with Enter Recruitment")
+    expect(cards[0].textContent).toContain("I've worked with enter Recruitment")
     expect(cards[0].textContent).toContain("I'd recommend")
     expect(cards[1].textContent).toContain('a dependable recruitment partner!')
     expect(cards[2].textContent).toContain('future hiring requirements.')

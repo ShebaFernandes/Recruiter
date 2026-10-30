@@ -106,7 +106,7 @@ export default function WhenTeamsChange() {
         <div className="when-teams-change__copy-group">
           <p>A layoff may be a business decision. For the person receiving it, it can change everything overnight.</p>
         </div>
-        <p>ENTER helps you make that transition a little less difficult.</p>
+        <p>enter helps you make that transition a little less difficult.</p>
         <p>Give impacted employees a direct path into our hiring network, where their experience is understood, their work is represented with context, and they can be considered for opportunities where they genuinely belong.</p>
       </div>
 

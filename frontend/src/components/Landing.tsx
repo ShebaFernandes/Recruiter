@@ -30,7 +30,7 @@ export default function Landing({ choose }: {
     <div className="ce-mountain-hero">
     <header className="ce-masthead">
       <div className="ce-brand-lockup">
-      <a className="ce-logo" href="#enter-home" aria-label="ENTER home"><EnterLogo className="ce-logo-mark" decorative /></a>
+      <a className="ce-logo" href="#enter-home" aria-label="enter home"><EnterLogo className="ce-logo-mark" decorative /></a>
       <span className="ce-masthead-note">Humanity. Integrity and Possibility.</span>
       </div>
       <nav aria-label="Main navigation">
@@ -56,11 +56,11 @@ export default function Landing({ choose }: {
 
     <section className="ce-intro ce-page-width" id="enter-home" tabIndex={-1} aria-labelledby="ce-title">
       <div className="ce-intro-grid">
-        <h1 id="ce-title" aria-label="The best teams are built by ENTER.">The best teams are<br />built by <span className="ce-headline-brand" aria-hidden="true"><EnterLogo className="ce-headline-wordmark" decorative />.</span></h1>
+        <h1 id="ce-title" aria-label="The best teams are built by enter.">The best teams are<br />built by <span className="ce-headline-brand" aria-hidden="true"><EnterLogo className="ce-headline-wordmark" decorative />.</span></h1>
         <div className="ce-intro-aside">
           <p className="ce-supporting-headline">What You Build Tomorrow Depends on Who You Hire Today</p>
           <p>Every breakthrough product, high-performing team, and successful company is built by exceptional people. We help ambitious companies hire them.</p>
-          <div className="ce-landing-ctas" aria-label="Explore ENTER">
+          <div className="ce-landing-ctas" aria-label="Explore enter">
             <button className="ce-landing-cta ce-landing-cta--companies" onClick={() => navigateToHiringSection('hire')}>For Companies <ArrowRight size={16} aria-hidden="true" /></button>
             <button className="ce-landing-cta ce-landing-cta--candidates" onClick={() => choose('candidate')}>For Candidates <ArrowRight size={16} aria-hidden="true" /></button>
           </div>

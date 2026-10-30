@@ -13,9 +13,9 @@ const testimonials: Testimonial[] = [
     name: 'Steve Francis',
     attribution: 'VP HR (ex-Practo, Licious)',
     paragraphs: [
-      "I've worked with Enter Recruitment, across the last 5 yrs in my corporate journey leading HR teams & my Fractional HR business services.",
+      "I've worked with enter Recruitment, across the last 5 yrs in my corporate journey leading HR teams & my Fractional HR business services.",
       "What sets Dikshita & team apart is ownership. She doesn't wait for job descriptions to land in her inbox, she invests time in understanding the business, the culture, and what a great hire actually looks like. The result is fewer CVs, better conversations, faster closes.",
-      "For any startup or growth-stage company building a team that matters, Enter Recruitment is the absolutely the go to partner I'd recommend.",
+      "For any startup or growth-stage company building a team that matters, enter Recruitment is the absolutely the go to partner I'd recommend.",
     ],
   },
   {
@@ -24,7 +24,7 @@ const testimonials: Testimonial[] = [
     name: 'Drushya Shetty',
     attribution: 'CRED',
     paragraphs: [
-      'The team at Enter did a fabulous job of understanding my requirements, pain points, and ideal candidate profile. This understanding translated into a strong pipeline of candidates who genuinely fit the bill.',
+      'The team at enter did a fabulous job of understanding my requirements, pain points, and ideal candidate profile. This understanding translated into a strong pipeline of candidates who genuinely fit the bill.',
       'I thoroughly enjoyed working with the team and Deekshitha, the founder. They were reliable, understood what I was looking for, and delivered quality results. Definitely a team I would recommend to anyone looking for a dependable recruitment partner!',
     ],
   },
@@ -45,8 +45,8 @@ const testimonials: Testimonial[] = [
     name: 'Prachi Sharma',
     attribution: 'Talent Acquisition Specialist',
     paragraphs: [
-      'It has been a pleasure working with the team at ENTER. We truly appreciate your responsiveness and the quality of support you have provided throughout our hiring process. Your ability to maintain a strong pace of placements without compromising on quality has been especially valuable.',
-      'While some roles were particularly challenging to fill due to the level of scrutiny involved, ENTER’s commitment, persistence, and enthusiasm consistently stood out. Despite the difficulties, your team remained dedicated to finding the right fit.',
+      'It has been a pleasure working with the team at enter. We truly appreciate your responsiveness and the quality of support you have provided throughout our hiring process. Your ability to maintain a strong pace of placements without compromising on quality has been especially valuable.',
+      'While some roles were particularly challenging to fill due to the level of scrutiny involved, enter’s commitment, persistence, and enthusiasm consistently stood out. Despite the difficulties, your team remained dedicated to finding the right fit.',
       'We sincerely appreciate you and your team of professionals for your continued support.',
       'Looking forward to our continued partnership.',
     ],

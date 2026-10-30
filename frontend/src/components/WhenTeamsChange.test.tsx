@@ -17,7 +17,7 @@ describe('WhenTeamsChange', () => {
 
     expect(Array.from(document.querySelectorAll('.when-teams-change__copy p'), paragraph => paragraph.textContent)).toEqual([
       'A layoff may be a business decision. For the person receiving it, it can change everything overnight.',
-      'ENTER helps you make that transition a little less difficult.',
+      'enter helps you make that transition a little less difficult.',
       'Give impacted employees a direct path into our hiring network, where their experience is understood, their work is represented with context, and they can be considered for opportunities where they genuinely belong.',
     ])
 

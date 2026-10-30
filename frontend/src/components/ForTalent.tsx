@@ -21,7 +21,7 @@ export default function ForTalent({ onJoin }: { onJoin: () => void }) {
         <p className="for-talent__description">Find opportunities with ambitious companies building what's next.</p>
         <p className="for-talent__category-line">AI &amp; ML · ENGINEERING · PRODUCT · LEADERSHIP</p>
         <button type="button" onClick={onJoin}>
-          Join ENTER’s talent network <ArrowRight size={16} aria-hidden="true" />
+          Join enter’s talent network <ArrowRight size={16} aria-hidden="true" />
         </button>
       </div>
 

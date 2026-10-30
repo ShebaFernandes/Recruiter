@@ -24,7 +24,7 @@ export default function AmbitionHires() {
 
     <div className="ambition-hires__inner">
       <header className="ambition-hires__header">
-        <p>BUILT WITH ENTER</p>
+        <p>BUILT WITH enter</p>
         <h2 id="ambition-hires-title">From ambition to hires.</h2>
       </header>
 

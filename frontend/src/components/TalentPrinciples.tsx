@@ -64,7 +64,7 @@ export default function TalentPrinciples() {
     <div className="talent-principles__inner">
       <div className="talent-principles__top">
         <header className="talent-principles__header">
-          <p className="talent-principles__eyebrow">HOW ENTER THINKS ABOUT TALENT</p>
+          <p className="talent-principles__eyebrow">HOW enter THINKS ABOUT TALENT</p>
           <h2 id="talent-principles-title">Getting it<br />wrong isn’t<br />an option.</h2>
         </header>
 

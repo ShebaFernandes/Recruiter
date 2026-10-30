@@ -12,7 +12,7 @@ describe('ForTalent', () => {
     expect(screen.getByText('AI & ML · ENGINEERING · PRODUCT · LEADERSHIP')).toBeTruthy()
     expect(screen.getAllByRole('listitem').map(item => item.textContent)).toEqual(['AI & ML', 'Engineering', 'Product', 'Leadership'])
 
-    fireEvent.click(screen.getByRole('button', { name: 'Join ENTER’s talent network' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Join enter’s talent network' }))
     expect(onJoin).toHaveBeenCalledOnce()
   })
 })

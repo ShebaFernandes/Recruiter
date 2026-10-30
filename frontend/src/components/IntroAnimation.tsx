@@ -91,7 +91,7 @@ export default function IntroAnimation({ children }: { children: ReactNode }) {
   return <div ref={shellRef} className={`enter-intro-shell${active ? ' is-active' : ''}`}>
     <div ref={contentRef} inert={active} className="enter-intro-content">{children}</div>
     {active && <div className="enter-intro-track">
-      <section ref={sceneRef} className="enter-intro" tabIndex={-1} aria-label="Welcome to ENTER" onKeyDown={event => { if (event.key === 'Escape') finish() }}>
+      <section ref={sceneRef} className="enter-intro" tabIndex={-1} aria-label="Welcome to enter" onKeyDown={event => { if (event.key === 'Escape') finish() }}>
         <div className="enter-intro-room" aria-hidden="true">
           <div className="enter-intro-floor" />
           <canvas ref={canvasRef} className="enter-intro-bloom" />

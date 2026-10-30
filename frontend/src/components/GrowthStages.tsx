@@ -77,7 +77,7 @@ export default function GrowthStages() {
         <h2 id="growth-stages-title">From the people who start it to the people who scale it.</h2>
         <p className="growth-stages__intro">
           Whether you're building your founding team, scaling fast, or strengthening your leadership,{' '}
-          <strong>ENTER helps you find the people you need at every stage of growth.</strong>
+          enter helps you find the people you need at every stage of growth.
         </p>
       </header>
 

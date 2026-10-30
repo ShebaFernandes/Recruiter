@@ -16,7 +16,7 @@ async function mount() {
 }
 it('opens automatically, releases focus and skips repeat visits', async () => {
   const view = await mount()
-  expect(screen.getByRole('region', { name:'Welcome to ENTER' })).toHaveFocus()
+  expect(screen.getByRole('region', { name:'Welcome to enter' })).toHaveFocus()
   act(() => { vi.advanceTimersByTime(1400) })
   const shell = view.container.querySelector('.enter-intro-shell') as HTMLElement
   expect(parseFloat(shell.style.getPropertyValue('--intro-rotation'))).toBeGreaterThan(0)
