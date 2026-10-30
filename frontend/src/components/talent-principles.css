@@ -468,7 +468,7 @@
 .talent-principles__eyebrow { color: var(--talent-blue); font: 400 16px/1.5 var(--enter-font-ui); letter-spacing: .06em; text-align: left; }
 .talent-principles .talent-principles__header h2 { color: #30394d; font-size: clamp(40px, 4.5vw, 64px); line-height: 1.1; font-weight: 300; }
 .talent-principles__list { width: 100%; border-left: 0; padding-left: 0; }
-.talent-principle { width: fit-content; max-width: 100%; padding: 22px 0; border-bottom: 1px solid #d8dfe8; }
+.talent-principle { width: 100%; max-width: 100%; padding: 22px 0; border-bottom: 1px solid #d8dfe8; }
 .talent-principle:first-child { padding-top: 0; }
 .talent-principle__comparison { font-size: clamp(13px, 1.15vw, 17px); gap: 6px 12px; }
 .talent-principle__enter { font-weight: 600; }
