@@ -4,7 +4,7 @@ import { ArrowRight } from 'lucide-react'
 import EnterLogo from './EnterLogo'
 import './closing-footer.css'
 
-type PendingDestination = 'Company access' | 'About' | 'Careers' | 'Opportunities'
+type PendingDestination = 'Company access' | 'Careers' | 'Opportunities'
 
 const companyLinks = [
   { label: 'Hire Talent', href: '#what-building-title', tab: 'hire' },
@@ -53,6 +53,7 @@ export default function ClosingFooter({ onCandidate }: { onCandidate: () => void
       </div>
     </div>
 
+    <div className="enter-footer-surface">
     <footer className="enter-footer">
       <div className="enter-footer__grid">
         <a className="enter-footer__brand" href="#enter-home" aria-label="enter home">
@@ -74,7 +75,7 @@ export default function ClosingFooter({ onCandidate }: { onCandidate: () => void
 
         <nav className="enter-footer__column" aria-label="enter">
           <h3>enter</h3>
-          <button type="button" title="Coming soon" onClick={() => comingSoon('About')}>About <span className="enter-footer__soon">Coming soon</span></button>
+          <a href="#talent-principles">About</a>
           <a href="mailto:sheba@enterrecruitment.com">Contact</a>
           <button type="button" title="Coming soon" onClick={() => comingSoon('Careers')}>Careers <span className="enter-footer__soon">Coming soon</span></button>
         </nav>
@@ -90,5 +91,6 @@ export default function ClosingFooter({ onCandidate }: { onCandidate: () => void
         </nav>
       </div>
     </footer>
+    </div>
   </section>
 }

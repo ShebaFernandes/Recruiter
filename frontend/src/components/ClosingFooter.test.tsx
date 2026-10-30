@@ -30,11 +30,10 @@ describe('ClosingFooter', () => {
     scrollTo.mockRestore()
   })
 
-  it('uses accessible coming-soon behavior for unfinished destinations', () => {
+  it('links About to the talent principles section', () => {
     render(<ClosingFooter onCandidate={vi.fn()} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'About Coming soon' }))
-    expect(screen.getByRole('status')).toHaveTextContent('About is coming soon.')
+    expect(screen.getByRole('link', { name: 'About' })).toHaveAttribute('href', '#talent-principles')
   })
 
   it('does not send Opportunities to an unrelated signup screen', () => {
