@@ -60,7 +60,7 @@ export default function TalentPrinciples() {
     if (section) return observeLandingReveal(section, 0.12)
   }, [])
 
-  return <section ref={sectionRef} className="talent-principles" aria-labelledby="talent-principles-title">
+  return <section ref={sectionRef} id="talent-principles" className="talent-principles" aria-labelledby="talent-principles-title">
     <div className="talent-principles__inner">
       <div className="talent-principles__top">
         <header className="talent-principles__header">
@@ -68,7 +68,7 @@ export default function TalentPrinciples() {
           <h2 id="talent-principles-title">Getting it<br />wrong isn’t<br />an option.</h2>
         </header>
 
-        <ol className="talent-principles__list">
+        <ul className="talent-principles__list">
           {principles.map((principle, index) => <li className="talent-principle" key={index}>
             <div className="talent-principle__comparison">
               <span className="talent-principle__conventional">{principle.conventional}</span>
@@ -77,12 +77,11 @@ export default function TalentPrinciples() {
             </div>
             <p>{principle.evidence}</p>
           </li>)}
-        </ol>
+        </ul>
       </div>
 
       <div className="talent-evidence">
         <h3>WHAT EVIDENCE LOOKS LIKE</h3>
-        <p>Illustrative examples of engineering evidence.</p>
 
         <div className="talent-evidence__cards">
           {evidenceCards.map(card => <article className="talent-evidence-card" key={card.label}>
