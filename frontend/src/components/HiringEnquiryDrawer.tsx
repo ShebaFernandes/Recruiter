@@ -38,9 +38,10 @@ export default function HiringEnquiryDrawer({ enquiry, minimumDate, opener, onCl
   const [company, setCompany] = useState('')
   const [email, setEmail] = useState('')
   const [selfDescription, setSelfDescription] = useState('')
-  const [role, setRole] = useState('')
+  const [role, setRole] = useState(enquiry.role ?? '')
   const [teamFocus, setTeamFocus] = useState('')
-  const [location, setLocation] = useState('')
+  const [location, setLocation] = useState(enquiry.location ?? '')
+  const [editingContext, setEditingContext] = useState(false)
   const [deadline, setDeadline] = useState('')
   const [headcount, setHeadcount] = useState('')
   const [selected, setSelected] = useState<string[]>([])
@@ -95,11 +96,11 @@ export default function HiringEnquiryDrawer({ enquiry, minimumDate, opener, onCl
     if (!name.trim()) next.name = 'Please enter your full name.'
     if (!company.trim()) next.company = 'Please enter your company name.'
     if (!validWorkEmail(email)) next.email = 'Please use your company or work email address.'
-    if (enquiry.kind !== 'team' && !(enquiry.role || role).trim()) next.role = 'Please enter a role or job title.'
+    if (enquiry.kind !== 'team' && !role.trim()) next.role = 'Please enter a role or job title.'
     if (enquiry.kind === 'team' && !(enquiry.teamFocus || teamFocus).trim()) next.teamFocus = 'Please enter your team focus.'
     if (!selected.length) next.departments = 'Please select at least one department.'
     if (!Number.isInteger(Number(enquiry.headcount || headcount)) || Number(enquiry.headcount || headcount) < 1 || Number(enquiry.headcount || headcount) > 10000) next.headcount = 'Enter a whole number between 1 and 10,000.'
-    if (enquiry.kind === 'drive' && !(enquiry.location || location).trim()) next.location = 'Please enter a hiring location.'
+    if (enquiry.kind === 'drive' && !location.trim()) next.location = 'Please enter a hiring location.'
     if (enquiry.kind === 'drive' && (!(enquiry.deadline || deadline) || (enquiry.deadline || deadline) < minimumDate)) next.deadline = 'Choose today or a future date.'
     setErrors(next)
     if (Object.keys(next).length) return
@@ -110,8 +111,8 @@ export default function HiringEnquiryDrawer({ enquiry, minimumDate, opener, onCl
     body.set('work_email', email.trim())
     if (selfDescription.trim()) body.set('self_description', selfDescription.trim())
     if (enquiry.kind === 'team') body.set('team_focus', (enquiry.teamFocus || teamFocus).trim())
-    else body.set('role', (enquiry.role || role).trim())
-    if (enquiry.kind !== 'team') body.set('location', (enquiry.location || location).trim())
+    else body.set('role', role.trim())
+    if (enquiry.kind !== 'team') body.set('location', location.trim())
     if (enquiry.kind === 'drive') body.set('deadline', enquiry.deadline || deadline)
     body.set('headcount', String(enquiry.headcount || headcount))
     selected.forEach(department => body.append('departments', department))
@@ -172,13 +173,13 @@ export default function HiringEnquiryDrawer({ enquiry, minimumDate, opener, onCl
   return createPortal(<div className={`enquiry-backdrop${closing ? ' is-closing' : ''}`} onMouseDown={event => { if (event.target === event.currentTarget) close() }}>
     <div className="enquiry-scene" onMouseDown={event => { if (event.target === event.currentTarget) close() }}>
     <div ref={panelRef} className={`enquiry-drawer enquiry-drawer--${enquiry.kind}`} role="dialog" aria-modal="true" aria-labelledby={titleId}>
-      <header className="enquiry-header"><div>{enquiry.kind === 'hire' && (enquiry.role || role) && <p className="enquiry-context">I'm looking for a {enquiry.role || role}{(enquiry.location || location) && <> in {enquiry.location || location}</>}.</p>}<h2 id={titleId}>{details.title}</h2><p>{details.description}</p></div><button ref={closeRef} className="enquiry-close" type="button" onClick={close} aria-label="Close hiring enquiry"><X size={14} aria-hidden="true" /></button></header>
+      <header className="enquiry-header"><div><h2 id={titleId}>{details.title}</h2><p>{details.description}</p>{enquiry.kind === 'hire' && role && <div className="enquiry-context"><span>I'm looking for a {role}{location && <> in {location}</>}.</span><button type="button" aria-expanded={editingContext} onClick={() => setEditingContext(current => !current)}>{editingContext ? 'Done' : 'Edit'}</button></div>}</div><button ref={closeRef} className="enquiry-close" type="button" onClick={close} aria-label="Close hiring enquiry"><X size={14} aria-hidden="true" /></button></header>
       <form className="enquiry-form" noValidate onSubmit={submit}>
         {field('name', 'Your name', name, setName)}
         {field('company', 'Company name', company, setCompany)}
         {field('email', 'Work email', email, setEmail, 'email')}
         {field('selfDescription', 'What best describes you?', selfDescription, setSelfDescription)}
-        {enquiry.kind === 'hire' && <>{!enquiry.role && field('role', 'Role or job title', role, setRole)}{!enquiry.location && field('location', 'Hiring location', location, setLocation)}{departmentField}{!enquiry.headcount && headcountField}</>}
+        {enquiry.kind === 'hire' && <>{(!enquiry.role || editingContext) && field('role', 'Role or job title', role, setRole)}{(!enquiry.location || editingContext) && field('location', 'Hiring location', location, setLocation)}{departmentField}{!enquiry.headcount && headcountField}</>}
         {enquiry.kind === 'team' && <>{!enquiry.teamFocus && field('teamFocus', 'Team or department focus', teamFocus, setTeamFocus)}{departmentField}{!enquiry.headcount && headcountField}</>}
         {enquiry.kind === 'drive' && <>{departmentField}{!enquiry.role && field('role', 'Role or job title', role, setRole)}{!enquiry.headcount && headcountField}{!enquiry.location && field('location', 'Hiring location', location, setLocation)}{!enquiry.deadline && <label className="enquiry-field"><span>Target hiring date</span><input type="date" min={minimumDate} value={deadline} onChange={event => setDeadline(event.target.value)} aria-invalid={!!errors.deadline} />{errors.deadline && <small className="enquiry-error" role="alert">{errors.deadline}</small>}</label>}</>}
         <fieldset className="enquiry-timing"><legend>How soon?</legend><div className="enquiry-pills">{['2 weeks', '30 days', 'Other'].map(option => <button key={option} type="button" aria-pressed={howSoon === option} onClick={() => setHowSoon(option)}>{option}</button>)}</div></fieldset>
@@ -186,7 +187,7 @@ export default function HiringEnquiryDrawer({ enquiry, minimumDate, opener, onCl
         {uploadField}
         {submitState === 'sent' && <p className="enquiry-notice" role="status">Thank you. Your request has been received. Our team will follow up at your work email.</p>}
         {submitError && <p className="enquiry-notice enquiry-notice--error" role="alert">{submitError}</p>}
-        <div className="enquiry-actions"><small>We’ll be in touch shortly.</small><button type="submit" className="enquiry-submit" disabled={submitState !== 'idle'}>{submitState === 'sending' ? 'Sending…' : submitState === 'sent' ? 'Sent' : details.action} {submitState === 'idle' && <ArrowRight size={16} aria-hidden="true" />}</button></div>
+        <div className="enquiry-actions"><button type="submit" className="enquiry-submit" disabled={submitState !== 'idle'}>{submitState === 'sending' ? 'Sending…' : submitState === 'sent' ? 'Sent' : details.action} {submitState === 'idle' && <ArrowRight size={16} aria-hidden="true" />}</button><small>We’ll be in touch shortly.</small></div>
       </form>
     </div>
     </div>

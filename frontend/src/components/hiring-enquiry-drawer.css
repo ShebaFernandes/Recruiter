@@ -1,11 +1,11 @@
 .enquiry-backdrop { position: fixed; z-index: 1500; inset: 0; display: flex; justify-content: center; align-items: center; padding: 18px; background: rgba(0, 0, 0, .6); backdrop-filter: blur(8px); animation: enquiry-fade 350ms ease both; }
 .enquiry-scene { --enquiry-scene-top: 56px; --enquiry-scene-bottom: 56px; display: flex; justify-content: center; box-sizing: border-box; width: min(564px, 100%); max-height: calc(100dvh - 36px); padding: var(--enquiry-scene-top) 56px var(--enquiry-scene-bottom); border: 1px solid rgba(255, 255, 255, .35); border-radius: 22px; background: #b6c6c2 url('/media/hiring-enquiry-landscape-v1.png') center / cover no-repeat; box-shadow: 0 24px 80px rgba(9, 20, 44, .28); animation: enquiry-enter 420ms cubic-bezier(.22, 1, .36, 1) both; }
-.enquiry-drawer { box-sizing: border-box; width: min(450px, 100%); height: auto; max-height: calc(100dvh - 36px - var(--enquiry-scene-top) - var(--enquiry-scene-bottom) - 2px); overflow-y: auto; overscroll-behavior: contain; padding: 18px 22px 12px; border-radius: 16px; background: #faf9f4; color: #17213b; box-shadow: 0 20px 60px rgba(0, 0, 0, .42); font-family: var(--enter-font-ui); }
+.enquiry-drawer { box-sizing: border-box; width: min(450px, 100%); height: auto; max-height: calc(100dvh - 36px - var(--enquiry-scene-top) - var(--enquiry-scene-bottom) - 2px); overflow-y: auto; overscroll-behavior: contain; padding: 18px 22px 12px; border-radius: 16px; background: #fff; color: #17213b; box-shadow: 0 20px 60px rgba(0, 0, 0, .42); font-family: var(--enter-font-ui); }
 .enquiry-backdrop.is-closing { animation: enquiry-fade 300ms ease reverse both; }
 .enquiry-backdrop.is-closing .enquiry-scene { animation: enquiry-exit 300ms ease both; }
 .enquiry-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .enquiry-header h2 { margin: 0; color: #17213b; font: 700 20px/1.25 var(--enter-font-ui); letter-spacing: -.025em; }
-.enquiry-header p:last-child { margin: 6px 0 0; color: #68748a; font-size: 12px; line-height: 1.45; }
+.enquiry-header h2 + p { margin: 6px 0 0; color: #68748a; font-size: 12px; line-height: 1.45; }
 .enquiry-close { display: grid; flex: none; place-items: center; width: 24px; height: 24px; border: 1px solid #dce1e8; border-radius: 50%; color: #17213b; background: transparent; cursor: pointer; }
 .enquiry-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; }
 .enquiry-form > :is(.enquiry-departments, .enquiry-headcount, .enquiry-upload, .enquiry-notice, .enquiry-actions), .enquiry-field:has(textarea) { grid-column: 1 / -1; }
@@ -57,17 +57,22 @@
 @media (max-width: 380px) { .enquiry-form { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { .enquiry-backdrop, .enquiry-scene, .enquiry-drawer, .enquiry-backdrop.is-closing, .enquiry-backdrop.is-closing .enquiry-scene, .enquiry-backdrop.is-closing .enquiry-drawer { animation: none; } .enquiry-drawer *, .enquiry-drawer *::before, .enquiry-drawer *::after { animation: none !important; transition: none !important; } }
 
-.enquiry-header .enquiry-context { margin: 0 0 12px; color: #465bb2; font-size: 13px; font-weight: 500; line-height: 1.5; }
+.enquiry-header .enquiry-context { margin: 10px 0 0; color: #465bb2; font-size: 13px; font-weight: 500; line-height: 1.5; }
 .enquiry-timing { grid-column: 1 / -1; margin: 0; padding: 0; border: 0; min-width: 0; }
 .enquiry-timing legend { margin-bottom: 6px; color: #465bb2; font-size: 12px; font-weight: 500; }
 .enquiry-pills button { border-color: #d5d9e2; background: #fff; color: #293247; }
 .enquiry-pills button[aria-pressed="true"] { border-color: #6374bd; background: #edf0fb; color: #465bb2; }
 .enquiry-timing .enquiry-pills { gap: 8px; }
-.enquiry-timing button { min-height: 30px; padding: 5px 12px; font-size: 11px; }
-.enquiry-upload { padding: 12px; border: 1px dashed #a9b3d2; border-radius: 10px; background: #f1f3fb; }
+.enquiry-timing button { min-height: 24px; padding: 2px 6px; font-size: 10px; }
+.enquiry-upload { box-sizing: border-box; width: fit-content; max-width: 100%; padding: 8px 12px; border: 1px dashed #a9b3d2; border-radius: 10px; background: #f1f3fb; }
 .enquiry-upload label { display: flex; color: #465bb2; font-size: 12px; }
 .enquiry-upload label small { display: block; margin-top: 4px; color: #74809b; font-size: 10px; font-weight: 400; }
 .enquiry-upload.is-dragging { background: #e5eafa; border-color: #465bb2; }
-.enquiry-actions { justify-content: space-between; }
+.enquiry-actions { justify-content: flex-start; gap: 12px; }
 .enquiry-actions > small { color: #74809b; font-size: 10px; }
 .enquiry-submit { background: #465bb2; }
+
+.enquiry-departments legend { color: #465bb2; font-weight: 500; }
+.enquiry-context { display: flex; align-items: baseline; gap: 8px; }
+.enquiry-context button { flex: none; padding: 0; border: 0; background: none; color: #465bb2; font: 500 11px/1.4 var(--enter-font-ui); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+@media (max-width: 600px) { .enquiry-timing button { min-height: 30px; } }
