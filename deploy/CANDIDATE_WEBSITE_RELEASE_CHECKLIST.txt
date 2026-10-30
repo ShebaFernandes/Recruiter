@@ -14,7 +14,9 @@ newer candidate fixes. Use the combined release.
 
 Both products use https://enter.careers. Recruiter access stays disabled. Company
 enquiries are public contact forms, not recruiter accounts or candidate access.
-No production deployment, remote push, real email or paid AI request was performed.
+The application release was deployed to production on 30 October 2026. No remote
+Git push, real test email or paid AI request was performed. See
+PRODUCTION_COMBINED_RELEASE_2026-10-30.txt for completed live checks.
 
 CHANGES
 - Correct worker subprocess database selection for file-backed SQLite; propagate
@@ -135,9 +137,12 @@ S3 objects as a code rollback. Preserve new enquiry tables and their records;
 reverting application images does not require destructive migration rollback.
 
 PRODUCTION STATUS
-Local preparation and verification only. Actual host configuration, DNS/TLS,
-production email/storage/queue behavior, backups and current live image identity
-have not been inspected or modified by this task.
+DEPLOYED: application commit a2afcd5 serves https://enter.careers. Live verification
+and exact image identities are recorded in PRODUCTION_COMBINED_RELEASE_2026-10-30.txt
+and release-evidence/production-release.json. The checklist above preserves the
+original paused first-launch procedure. This upgrade preserved already-open
+candidate intake and used a staged handover instead; it did not pause registration
+or uploads.
 
 FINAL OFFLINE SECURITY EVIDENCE
 Trivy 0.76.1 with freshly downloaded vulnerability DB; image scans used

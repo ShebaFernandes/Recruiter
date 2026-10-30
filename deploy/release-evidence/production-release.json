@@ -1,0 +1,22 @@
+{
+  "status": "deployed",
+  "application_commit": "a2afcd543e5b503dbc11ec9e7430a70e8fa604b2",
+  "completed_at": "2026-10-30T11:04:04.294884+05:30",
+  "public_origin": "https://enter.careers",
+  "release_directory": "/opt/enter/releases/a2afcd5",
+  "compose_overlay": "deploy/compose.combined-release.yaml",
+  "backend_image": "enter-backend:a2afcd5-amd64",
+  "backend_digest": "sha256:27a8ed33757670d48bd7bfeec87b248d81a4067f7f758bdb32498e442a9fc4f9",
+  "frontend_image": "enter-frontend:a2afcd5-amd64",
+  "frontend_digest": "sha256:0ec479b5046913b1e844c672ea36cb56c32b4eed6d75298fd67331ff0dac41c8",
+  "candidate_only": true,
+  "candidate_registration_paused": false,
+  "resume_uploads_paused": false,
+  "external_ai_enabled": false,
+  "existing_candidate_count_before": 20,
+  "existing_candidate_count_after": 20,
+  "existing_resume_count_before": 31,
+  "existing_resume_count_after": 31,
+  "availability_samples": 189,
+  "availability_failures": 0
+}

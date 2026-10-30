@@ -1,0 +1,96 @@
+DEPLOYED — COMPANY WEBSITE AND CANDIDATE PLATFORM
+30 October 2026, Asia/Kolkata
+
+Public website/platform: https://enter.careers
+Local preview: http://127.0.0.1:5173 (separate temporary local database/backend).
+Application commit: a2afcd543e5b503dbc11ec9e7430a70e8fa604b2.
+Release branch: codex/candidate-website-release. Both source branches preserved.
+Server release directory: /opt/enter/releases/a2afcd5.
+Production instance: i-08f84202dbb6b4cce, Sydney, t3.medium.
+Existing protected environment: /opt/enter/Recruiter/.env.production (unchanged).
+Use compose.production.yaml with deploy/compose.combined-release.yaml in that
+release directory. The override pins backend/worker/enquiry-notifier to
+enter-backend:a2afcd5-amd64 and frontend to enter-frontend:a2afcd5-amd64.
+Do not use an unrestricted whole-stack up command.
+
+HANDOVER
+A fresh production backup passed its isolated restore verification before rollout.
+Transferred source-package/image-archive SHA256 checks passed on the host.
+The additive website migrations and merge migration applied successfully.
+New API/frontend containers were started privately and checked before traffic
+changed. Their configuration inheritance was verified against the production
+base file; they never exposed public host ports.
+Caddy was gracefully reloaded to private staged containers; canonical application
+containers were then replaced while the staged release continued serving traffic.
+Caddy was gracefully reloaded back to canonical services. Temporary stage services
+are stopped. The database, scanner and edge container identities/start times were
+preserved; edge process was reloaded rather than recreated.
+Caddy reload method: https://caddyserver.com/docs/command-line#signals.
+
+CONTINUITY AND SECURITY
+Candidate registration and resume uploads stayed open. Candidate-only mode stayed
+true; recruiter AI, external resume AI and all paid AI stayed disabled. No
+production secret, domain, storage region, existing candidate record or legal text was
+changed as part of the rollout.
+A synthetic candidate logged in before handover. The same saved cookie session
+worked afterward, and profile reads/edits persisted. This exercised continuity
+without using a real candidate's account or credentials.
+PDF and DOCX synthetic resumes were uploaded through public HTTPS. Both completed
+via the live SQS/worker/ClamAV pipeline with clean scans. Authorized downloads
+matched the uploaded bytes; DOCX preview returned content.
+Live approved-recruiter login, pre-existing token/cookie authentication, recruiter
+resume downloads and public recruiter signup were denied. A second synthetic
+candidate could not download the first candidate's resume.
+Public recruiter pages/API families and admin returned 404. Homepage, privacy,
+terms and readiness returned 200; legal publication remained indexable and
+hash-pinned to the approved v1.0 documents.
+The public signup entry and current legal confirmations were checked in Chrome.
+The combined company homepage was visually inspected; screenshot retained.
+
+COMPANY ENQUIRIES
+Hiring and employee-transition forms accepted synthetic submissions through public
+HTTPS, scanned their attachments and persisted private files and notification
+outbox records. The notifier was briefly stopped for this test; synthetic records
+and files were removed before restarting it, so no test alert emails were sent.
+Durable real submissions remained queued during that short notifier pause.
+Final notifier state: running; unsent enquiry notification count: zero.
+
+STORAGE, CLEANUP AND BACKUPS
+Synthetic candidate deletion through the account API returned 204 and revoked its
+session. Both synthetic resume files were removed from S3; cleanup rows drained.
+Synthetic recruiter/isolation accounts and company enquiry records/files were
+removed. Final candidate/resume counts matched the pre-release baseline: 20/31.
+No original candidate or resume was removed. Final queued/processing/failed and
+overdue job counts were zero; worker healthy; cleanup pending/overdue zero.
+A fresh post-release production backup passed isolated restore verification.
+Hourly/daily/recovery evidence was fresh and private.
+The app IAM role cannot inspect the bucket-level public-access configuration
+(AccessDenied). No permission was broadened. A separate temporary non-personal
+object was used to verify actual AES256 encryption and anonymous HTTP 403, then
+removed. This verifies object behavior, not a full bucket-policy audit.
+
+AVAILABILITY AND LIMITS
+189 valid public readiness samples, all HTTP 200, from 30 October 2026
+10:55:14 to 11:02:16 Asia/Kolkata. No interruption was observed during this monitored
+handover; these samples are not a guarantee against every possible connection drop.
+The first local monitor attempt lacked the system certificate store and was
+replaced before handover; those local TLS errors are excluded from this evidence.
+Production check --deploy reported no issues. Runtime checks confirmed current
+production settings. The original first-launch checker expects paused intake and
+a public-only CSRF list; this upgrade instead explicitly verified open intake
+and the exact public + private-admin CSRF list. No CSRF protection was relaxed.
+SMTP authentication and NOOP passed (250), but actual email delivery and a new
+email-verification/reset round trip were not exercised: no test email was sent.
+No external AI requests were made.
+
+ARTIFACTS AND RECOVERY
+See release-evidence/production-release.json for exact running image identities,
+production-availability.json for samples, production-home.png for the published
+website, and the offline vulnerability reports for zero HIGH/CRITICAL findings.
+Old d987bd5 application images and the original protected environment/Caddyfile
+were retained on the host under /var/lib/enter-ops/pre-a2afcd5. Test credentials
+and transferred temporary archives were removed after verification.
+For application rollback retain the forward-current database and private files;
+use the preserved pinned prior application images and reviewed proxy configuration.
+Do not expose legacy images without candidate-only enforcement. Follow
+CANDIDATE_SAFE_ROLLBACK.txt and never roll back customer data as a code rollback.
