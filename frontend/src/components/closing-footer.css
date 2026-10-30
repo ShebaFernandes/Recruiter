@@ -312,3 +312,20 @@
 .enter-footer__legal { color: #a8b4b5; border-top-color: rgba(205, 218, 213, .18); }
 .enter-footer__column a:hover, .enter-footer__column button:hover, .enter-footer__legal a:hover { color: #b6e2d1; }
 .enter-footer :focus-visible { outline-color: #b6e2d1; }
+
+/* Quiet navigation headings share the same sans-serif voice as their links. */
+.enter-footer { padding-block: 40px 24px; }
+.enter-footer .enter-footer__column h3 {
+  margin: 0 0 10px;
+  color: #a8b4b5;
+  font: 400 11px/1.4 var(--enter-font-ui);
+  letter-spacing: .025em;
+}
+.enter-footer__column { gap: 10px; }
+.enter-footer__column a, .enter-footer__column button { font-size: 13px; line-height: 1.5; }
+.enter-footer__legal { margin-top: 32px; padding-top: 20px; }
+@media (max-width: 600px) {
+  .enter-footer { padding-block: 32px 24px; }
+  .enter-footer__grid { gap: 28px 24px; }
+  .enter-footer__legal { margin-top: 28px; }
+}
