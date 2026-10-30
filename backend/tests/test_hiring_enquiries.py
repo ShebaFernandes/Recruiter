@@ -232,7 +232,8 @@ def test_invalid_kind_dates_and_missing_categories_are_rejected():
 def test_hiring_cards_persist_self_description_and_other_department(kind):
     data = hire_data()
     data.update(
-        kind=kind, self_description="Engineering leader", departments=["Other"], how_soon="30 days"
+        kind=kind, self_description="Engineering leader", departments=["Other"],
+        how_soon="Other", other_department="Design", how_soon_details="6 weeks"
     )
     if kind == "team":
         data["team_focus"] = "Platform engineering"
@@ -242,7 +243,9 @@ def test_hiring_cards_persist_self_description_and_other_department(kind):
     assert response.status_code == 201
     details = HiringEnquiry.objects.get(pk=response.data["id"]).details
     assert details["self_description"] == "Engineering leader"
-    assert details["how_soon"] == "30 days"
+    assert details["how_soon"] == "Other"
+    assert details["how_soon_details"] == "6 weeks"
+    assert details["other_department"] == "Design"
     assert details["departments"] == ["Other"]
 
 
