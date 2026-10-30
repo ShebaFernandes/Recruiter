@@ -1,0 +1,136 @@
+/* A shared visual rhythm connects the individual landing chapters. */
+.simple-landing {
+  --flow-navy: #17213b;
+  --flow-ease: cubic-bezier(.22, 1, .36, 1);
+}
+.simple-landing .what-building {
+  background: radial-gradient(ellipse at 50% 0%, #263550, transparent 65%), #17213b;
+}
+.simple-landing .growth-stages {
+  background: radial-gradient(ellipse at 80% 0%, #263550, transparent 65%), #17213b;
+}
+.simple-landing :is(.brand-statement, .talent-principles, .ambition-hires, .testimonials-carousel, .for-talent) {
+  position: relative;
+}
+/* Edge washes soften the change in palette without hiding chapter boundaries. */
+.simple-landing .talent-principles {
+  background: linear-gradient(180deg, #e5e9ee, #faf9f6 110px, #faf9f6);
+}
+.simple-landing .testimonials-carousel {
+  background: radial-gradient(ellipse at 50% 0%, #303638, transparent 65%), #1d2123;
+}
+.simple-landing .for-talent {
+  background:
+    radial-gradient(ellipse at 82% 35%, rgba(214, 225, 214, .38), transparent 42%),
+    radial-gradient(ellipse at 15% 88%, rgba(244, 220, 194, .35), transparent 45%),
+    linear-gradient(125deg, #fffaf2, #f8f5ee 58%, #f1f2ec);
+}
+.simple-landing :is(.ambition-hires__panel, .testimonials-carousel__panel) {
+  box-shadow: 0 12px 38px rgba(28, 45, 72, .045);
+}
+.simple-landing :is(.growth-stages__inner, .talent-principles__inner, .ambition-hires__inner, .for-talent__inner) {
+  scroll-margin-top: 28px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.simple-landing) { scroll-behavior: smooth; }
+  .simple-landing :is(.is-reveal-ready) {
+    --growth-ease: var(--flow-ease);
+    --ambition-ease: var(--flow-ease);
+    --talent-ease: var(--flow-ease);
+    --change-ease: var(--flow-ease);
+    --testimonial-ease: var(--flow-ease);
+  }
+  .simple-landing :is(button, a) { transition: color 200ms ease, background-color 200ms ease, box-shadow 250ms ease, transform 250ms var(--flow-ease); }
+  .simple-landing :is(.ce-landing-cta, .for-talent__content button, .closing-cta__actions button):hover { transform: translateY(-3px); }
+  @supports (animation-timeline: view()) {
+    .simple-landing :is(.growth-stages__inner, .talent-principles__inner, .ambition-hires__inner, .when-teams-change__content, .testimonials-carousel__panel, .for-talent__inner) {
+      animation: flow-chapter-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 28%;
+    }
+    .simple-landing .ambition-hires__landscape {
+      animation: flow-image linear both;
+      animation-timeline: view();
+      animation-range: entry 0% exit 100%;
+    }
+    .simple-landing .closing-cta {
+      animation: flow-landscape linear both;
+      animation-timeline: view();
+      animation-range: entry 0% exit 100%;
+    }
+  }
+}
+@keyframes flow-chapter-in {
+  from { opacity: .65; translate: 0 28px; }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes flow-landscape {
+  from { background-position: center 44%; }
+  to { background-position: center 56%; }
+}
+
+@keyframes flow-image { from { transform: scale(1.04) translateY(10px); } to { transform: scale(1.04) translateY(-10px); } }
+
+/* Bespoke artwork for the hiring invitation and the statement below it. */
+.simple-landing .what-building { position: relative; isolation: isolate; }
+.what-building__art { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: radial-gradient(ellipse at 50% 55%, rgba(100, 145, 225, .13), transparent 62%); }
+.what-building__art svg { width: 100%; height: 100%; opacity: .42; }
+.what-building__art path { fill: none; stroke: #6689bd; stroke-width: .7; }
+.what-building__art circle { fill: #a6c6f7; }
+.simple-landing .what-building__tabs { width: fit-content; margin-inline: auto; padding: 5px 16px; border: 1px solid rgba(156, 184, 229, .16); border-radius: 999px; background: rgba(255, 255, 255, .025); }
+.simple-landing .brand-statement__copy em { position: relative; white-space: nowrap; }
+@media (prefers-reduced-motion: no-preference) {
+  .what-building__art svg { animation: invitation-drift 16s ease-in-out infinite alternate; }
+}
+@keyframes invitation-drift { from { transform: translateY(-8px); } to { transform: translateY(8px); } }
+@media (max-width: 600px) {
+  .simple-landing .what-building__tabs { border-radius: 16px; padding-inline: 6px; }
+  .what-building__art svg { opacity: .22; }
+}
+/* Keep every inline menu above the following animated chapters. */
+.simple-landing .what-building { z-index: 10; overflow: visible; }
+.simple-landing .what-building__inner { overflow: visible; }
+.simple-landing .what-building:has([aria-expanded="true"]) .what-building__sentence { transform: none; transition: none; }
+.simple-landing :is(.wb-listbox__menu, .wb-calendar__panel) { z-index: 100; }
+
+/* One image layer spans both chapters, so the landscape cannot reset at their boundary. */
+.simple-landing .evidence-to-hires {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: #faf9f6;
+}
+.simple-landing .evidence-to-hires > :is(.talent-principles, .ambition-hires) { background: transparent; }
+.simple-landing .evidence-to-hires .ambition-hires__landscape,
+.simple-landing .evidence-to-hires .ambition-hires__wash { display: none; }
+
+/* One gently drifting landscape connects the evidence and hiring results. */
+.simple-landing .evidence-to-hires::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -4%;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 42%, rgba(250, 250, 246, .95) 12%, rgba(247, 250, 244, .88) 56%, rgba(239, 246, 235, .76)),
+    url('/media/hiring-enquiry-landscape-v1.png') center 55% / cover no-repeat;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .simple-landing .evidence-to-hires::before { animation: talent-nature-drift 36s ease-in-out infinite alternate; }
+}
+@keyframes talent-nature-drift {
+  from { transform: translate3d(-1%, 0, 0) scale(1.02); }
+  to { transform: translate3d(1%, -1%, 0) scale(1.06); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+  .simple-landing button, .simple-landing a { transition: color 200ms ease, background-color 200ms ease, box-shadow 200ms ease; }
+  .simple-landing .growth-stage-card { transition: box-shadow 300ms ease, border-color 300ms ease; }
+  .simple-landing .growth-stage-card:hover { box-shadow: 0 18px 44px #17213b26; }
+}
+
+.simple-landing .ce-masthead .ce-audience-link,
+.simple-landing .ce-landing-cta { text-transform: uppercase; font-weight: 600; }
+.simple-landing .ce-uppercase-logo { font-size: 28px; font-weight: 600; letter-spacing: -.04em; line-height: 1; }
+.simple-landing .ce-uppercase-headline { font-weight: 600; }

@@ -1,0 +1,567 @@
+.when-teams-change {
+  --enter-font-sans: var(--enter-font-ui);
+  --change-navy: #17213b;
+  --change-navy-deep: #111a30;
+  --change-cream: #f5e9dc;
+  --change-ease: cubic-bezier(.22, 1, .36, 1);
+  width: 100%;
+  overflow: hidden;
+  color: #f8f8f5;
+  background: var(--change-navy-deep);
+}
+
+.when-teams-change__content {
+  width: min(1200px, calc(100% - 64px));
+  margin-inline: auto;
+  padding: clamp(76px, 6vw, 94px) 0 36px;
+  text-align: center;
+}
+
+.when-teams-change__header {
+  max-width: 1160px;
+  margin-inline: auto;
+}
+
+.when-teams-change__header > p {
+  margin: 0 0 18px;
+  color: #f2f3f5;
+  font: 500 13px/1.4 var(--enter-font-sans);
+  letter-spacing: .2em;
+}
+
+.when-teams-change .when-teams-change__header h2 {
+  margin: 0;
+  color: #fbfbf8;
+  font: 400 clamp(45px, 3.9vw, 54px)/1.1 var(--enter-font-editorial);
+  letter-spacing: -.035em;
+  text-wrap: balance;
+}
+
+.when-teams-change__supporting {
+  margin: 24px 0 0;
+  color: #f4f5f6;
+  font: 400 19px/1.6 var(--enter-font-sans);
+}
+
+.when-teams-change__copy {
+  display: grid;
+  gap: 12px;
+  max-width: 830px;
+  margin: 36px auto 0;
+  color: #f0f2f5;
+  font: 400 18px/1.58 var(--enter-font-sans);
+}
+
+.when-teams-change__copy p { margin: 0; }
+
+.when-teams-change__copy-group {
+  display: grid;
+  gap: 6px;
+}
+
+.when-teams-change__action {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  margin-top: 26px;
+}
+
+.when-teams-change__action button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 54px;
+  padding: 14px 30px;
+  border: 0;
+  border-radius: 9999px;
+  color: #17213b;
+  background: var(--change-cream);
+  font: 600 15px/1 var(--enter-font-sans);
+  cursor: pointer;
+  transition: background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.when-teams-change__action button:hover {
+  background: #fbf0e5;
+  box-shadow: 0 0 0 3px rgba(245, 233, 220, .12), 0 0 24px rgba(245, 233, 220, .22);
+  transform: translateY(-2px);
+}
+
+.when-teams-change__action button:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, .88);
+  outline-offset: 4px;
+  box-shadow: 0 0 0 7px rgba(110, 163, 247, .32);
+}
+
+.when-teams-change__action button:active { transform: translateY(0) scale(.98); }
+
+.when-teams-change__landscape {
+  position: relative;
+  min-height: clamp(190px, 16vw, 240px);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.when-teams-change__images {
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.when-teams-change__images img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.when-teams-change__images img:first-child { object-position: center 64%; }
+.when-teams-change__images img:last-child { object-position: center 53%; }
+
+.when-teams-change__landscape-wash {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(17, 26, 48, .96) 0%, rgba(17, 26, 48, .78) 42%, rgba(12, 21, 41, .68) 100%),
+    linear-gradient(90deg, rgba(20, 31, 57, .72), rgba(17, 29, 55, .62));
+}
+
+.when-teams-change__landscape > p {
+  position: relative;
+  z-index: 1;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 44px 20px 52px;
+  color: #f8f3ec;
+  font: italic 400 clamp(30px, 2.6vw, 36px)/1.25 var(--enter-font-editorial);
+  letter-spacing: -.025em;
+  text-align: center;
+}
+
+.when-teams-change__landscape > p em {
+  color: inherit;
+  font: inherit;
+  font-style: italic;
+}
+
+.when-teams-change.is-reveal-ready .when-teams-change__header > p,
+.when-teams-change.is-reveal-ready .when-teams-change__header h2,
+.when-teams-change.is-reveal-ready .when-teams-change__supporting,
+.when-teams-change.is-reveal-ready .when-teams-change__copy > .when-teams-change__copy-group,
+.when-teams-change.is-reveal-ready .when-teams-change__copy > p,
+.when-teams-change.is-reveal-ready .when-teams-change__action,
+.when-teams-change.is-reveal-ready .when-teams-change__landscape > p {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 650ms var(--change-ease), transform 650ms var(--change-ease);
+}
+
+.when-teams-change.is-reveal-ready.is-visible .when-teams-change__header > p,
+.when-teams-change.is-reveal-ready.is-visible .when-teams-change__header h2,
+.when-teams-change.is-reveal-ready.is-visible .when-teams-change__supporting,
+.when-teams-change.is-reveal-ready.is-visible .when-teams-change__copy > .when-teams-change__copy-group,
+.when-teams-change.is-reveal-ready.is-visible .when-teams-change__copy > p,
+.when-teams-change.is-reveal-ready.is-visible .when-teams-change__action,
+.when-teams-change.is-reveal-ready.is-visible .when-teams-change__landscape > p {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.when-teams-change.is-reveal-ready.is-visible .when-teams-change__header h2 { transition-delay: 70ms; }
+.when-teams-change.is-reveal-ready.is-visible .when-teams-change__supporting { transition-delay: 150ms; }
+.when-teams-change.is-reveal-ready.is-visible .when-teams-change__copy > .when-teams-change__copy-group { transition-delay: 240ms; }
+.when-teams-change.is-reveal-ready.is-visible .when-teams-change__copy > p:nth-child(2) { transition-delay: 320ms; }
+.when-teams-change.is-reveal-ready.is-visible .when-teams-change__copy > p:nth-child(3) { transition-delay: 400ms; }
+.when-teams-change.is-reveal-ready.is-visible .when-teams-change__copy > p:nth-child(4) { transition-delay: 480ms; }
+.when-teams-change.is-reveal-ready.is-visible .when-teams-change__action { transition-delay: 560ms; }
+
+@media (max-width: 900px) {
+  .when-teams-change__content { width: min(100% - 48px, 820px); padding-top: 70px; }
+  .when-teams-change .when-teams-change__header h2 { font-size: clamp(40px, 5.8vw, 50px); }
+  .when-teams-change__copy { max-width: 760px; font-size: 17px; }
+  .when-teams-change__landscape { min-height: 210px; }
+}
+
+@media (max-width: 600px) {
+  .when-teams-change__content { width: calc(100% - 32px); padding: 52px 0 30px; }
+  .when-teams-change__header { max-width: 520px; }
+  .when-teams-change__header > p { margin-bottom: 16px; font-size: 11px; }
+  .when-teams-change .when-teams-change__header h2 { font-size: clamp(34px, 9.4vw, 39px); line-height: 1.12; }
+  .when-teams-change .when-teams-change__header h2 br { display: none; }
+  .when-teams-change__supporting { margin-top: 20px; font-size: 17px; }
+  .when-teams-change__copy { gap: 14px; margin-top: 28px; font-size: 16px; line-height: 1.58; }
+  .when-teams-change__copy-group { gap: 8px; }
+  .when-teams-change__action { margin-top: 22px; }
+  .when-teams-change__action button { width: min(100%, 310px); }
+  .when-teams-change__landscape { min-height: 190px; }
+  .when-teams-change__images { grid-template-columns: 44% 56%; }
+  .when-teams-change__landscape > p { max-width: calc(100% - 44px); padding: 40px 0 48px; font-size: clamp(27px, 7.6vw, 32px); }
+}
+
+.when-teams-change__dialog-backdrop {
+  --enter-font-sans: var(--enter-font-ui);
+  --change-navy: #173b35;
+  position: fixed;
+  z-index: 1200;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(10, 31, 27, .64);
+  backdrop-filter: blur(7px);
+}
+
+.when-teams-change__dialog {
+  width: min(590px, 100%);
+  max-height: min(90dvh, 900px);
+  overflow: auto;
+  padding: clamp(20px, 2.5vw, 27px);
+  border: 1px solid rgba(49, 85, 72, .18);
+  border-radius: 22px;
+  color: var(--change-navy);
+  background: #fbfaf5;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .24);
+  font-family: var(--enter-font-sans);
+}
+
+.when-teams-change__dialog:focus { outline: none; }
+.when-teams-change__dialog :focus-visible { outline: 2px solid #3f7464; outline-offset: 3px; }
+
+.when-teams-change__dialog-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+
+.when-teams-change__dialog-heading p {
+  margin: 0 0 10px;
+  color: #3046c9;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .16em;
+}
+
+.when-teams-change__dialog h2 {
+  margin: 0;
+  font: 400 clamp(27px, 3.5vw, 31px)/1.15 var(--enter-font-editorial);
+  letter-spacing: -.025em;
+}
+
+.when-teams-change__dialog-heading > button {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #d3d7df;
+  border-radius: 50%;
+  color: var(--change-navy);
+  background: transparent;
+  font: 400 25px/1 var(--enter-font-sans);
+  cursor: pointer;
+}
+
+.when-teams-change__dialog > p,
+.when-teams-change__dialog li {
+  color: #50645c;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.when-teams-change__dialog > p:first-of-type { margin: 8px 0 14px; }
+.when-teams-change__dialog h3 { margin: 0 0 8px; font-size: 14px; }
+.when-teams-change__dialog ol { display: grid; gap: 7px; margin: 0; padding-left: 22px; }
+.when-teams-change__dialog .when-teams-change__dialog-note { margin: 20px 0 0; color: #17213b; font-size: 13px; font-weight: 600; }
+
+.when-teams-change__form { display: grid; gap: 11px; }
+.when-teams-change__form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; }
+.when-teams-change__visually-hidden { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
+.when-teams-change__date-field { display: flex !important; align-items: center; gap: 6px !important; min-width: 0; min-height: 38px; padding: 3px 8px 3px 12px; border: 1px solid #d6ded5; border-radius: 10px; background: #fff; color: #849389 !important; font: 400 12px/1.3 var(--enter-font-sans) !important; letter-spacing: normal !important; text-transform: none !important; }
+.when-teams-change__date-field span { white-space: nowrap; }
+.when-teams-change__form-grid .when-teams-change__date-field input { min-width: 0; min-height: 30px; padding: 0; border: 0; font-size: 11px; }
+.when-teams-change__form-grid label,
+.when-teams-change__file { display: grid; gap: 5px; color: #4d6158; font: 600 10px/1.3 var(--enter-font-sans); letter-spacing: .1em; text-transform: uppercase; }
+.when-teams-change__form-grid input,
+.when-teams-change__form-grid select,
+.when-teams-change__file input { width: 100%; min-height: 38px; padding: 7px 12px; border: 1px solid #d6ded5; border-radius: 10px; color: #173b35; background: #fff; font: 400 13px/1.35 var(--enter-font-sans); letter-spacing: normal; text-transform: none; }
+.when-teams-change__form-grid input::placeholder { color: #849389; }
+.when-teams-change__form-grid select { cursor: pointer; }
+.when-teams-change__reach { display: grid; gap: 7px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.when-teams-change__reach legend { margin-bottom: 8px; color: #4d6158; font: 600 10px/1.3 var(--enter-font-sans); letter-spacing: .1em; text-transform: uppercase; }
+.when-teams-change__reach > label { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border: 0; background: transparent; cursor: pointer; }
+
+.when-teams-change__reach input { flex: 0 0 auto; margin: 3px 0 0; accent-color: #3d7656; }
+.when-teams-change__reach span { display: grid; gap: 2px; }
+.when-teams-change__reach strong { color: #193d32; font: 600 13px/1.3 var(--enter-font-sans); }
+.when-teams-change__reach small { color: #61756a; font: 400 11px/1.3 var(--enter-font-sans); }
+.when-teams-change__file input { padding: 4px 7px; min-height: 34px; }
+.when-teams-change__situation { width: 100%; min-height: 64px; padding: 9px 12px; border: 1px solid #d6ded5; border-radius: 10px; color: #173b35; background: #fff; font: 400 13px/1.4 var(--enter-font-sans); resize: vertical; }
+.when-teams-change__situation::placeholder { color: #849389; }
+.when-teams-change__success { margin: 12px 0 0; padding: 16px; border-radius: 12px; background: #eff5ec; color: #214b38; font: 500 14px/1.5 var(--enter-font-sans); }
+.when-teams-change__consent { display: flex; align-items: flex-start; gap: 9px; color: #40584c; font: 400 11px/1.45 var(--enter-font-sans); cursor: pointer; }
+.when-teams-change__consent input { flex: 0 0 auto; margin: 2px 0 0; accent-color: #3d7656; }
+.when-teams-change__form-footer { display: flex; align-items: center; gap: 16px; }
+.when-teams-change__form-footer button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 9px 19px; border: 0; border-radius: 999px; color: #fff; background: #30634c; font: 600 12px/1 var(--enter-font-sans); cursor: pointer; transition: background-color 180ms ease, transform 180ms ease; }
+.when-teams-change__form-footer button:hover { background: #204c39; transform: translateY(-2px); }
+.when-teams-change__form-footer button:disabled { cursor: wait; opacity: .7; transform: none; }
+.when-teams-change__form-footer p { max-width: 340px; margin: 0; color: #687a70; font: 400 10px/1.4 var(--enter-font-sans); }
+@media (max-width: 540px) {
+  .when-teams-change__dialog-backdrop { padding: 12px; }
+  .when-teams-change__dialog { max-height: calc(100dvh - 24px); padding: 22px 18px; }
+  .when-teams-change__form-grid { grid-template-columns: 1fr; gap: 10px; }
+  .when-teams-change__form-footer { align-items: flex-start; flex-direction: column; gap: 9px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .when-teams-change *,
+  .when-teams-change *::before,
+  .when-teams-change *::after {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
+
+  .when-teams-change.is-reveal-ready .when-teams-change__header > p,
+  .when-teams-change.is-reveal-ready .when-teams-change__header h2,
+  .when-teams-change.is-reveal-ready .when-teams-change__supporting,
+  .when-teams-change.is-reveal-ready .when-teams-change__copy > .when-teams-change__copy-group,
+  .when-teams-change.is-reveal-ready .when-teams-change__copy > p,
+  .when-teams-change.is-reveal-ready .when-teams-change__action,
+  .when-teams-change.is-reveal-ready .when-teams-change__landscape > p {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Soft light section, with only a gentle ambient shift. */
+.when-teams-change {
+  position: relative;
+  isolation: isolate;
+  color: #1e3d35;
+  background: linear-gradient(180deg, #fafaf6 0%, #f4f7f1 60%, #eef3ec 100%);
+}
+.when-teams-change::before {
+  position: absolute;
+  z-index: -1;
+  top: -12%;
+  left: -20%;
+  width: 140%;
+  height: 85%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(159, 191, 163, .18), transparent 65%);
+  content: '';
+  animation: when-teams-change-light 16s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes when-teams-change-light {
+  from { transform: translateX(-4%) scale(.94); opacity: .55; }
+  to { transform: translateX(4%) scale(1.06); opacity: 1; }
+}
+.when-teams-change__content { padding-top: 64px; padding-bottom: 32px; }
+.when-teams-change__header > p { font-size: 10px; color: #5c7869; }
+.when-teams-change .when-teams-change__header h2 { color: #203e36; font-size: clamp(23px, 2.55vw, 35px); line-height: 1.35; letter-spacing: -.025em; }
+.when-teams-change__opening { display: block; white-space: nowrap; }
+.when-teams-change__human { display: block; margin-top: 8px; color: #274d40; }
+.when-teams-change__human em { color: #5e886a; font-style: italic; }
+.when-teams-change__supporting { margin-top: 26px; font-size: 15px; color: #3c5c4c; }
+.when-teams-change__copy { max-width: 760px; margin-top: 26px; gap: 16px; font-size: 14px; line-height: 1.8; color: #526b5f; }
+.when-teams-change__copy-group p { color: #2d4a3e; }
+.when-teams-change__action button { min-height: 44px; padding: 12px 24px; color: #fff; background: #326d50; box-shadow: 0 9px 24px rgba(42, 98, 71, .16); font-size: 13px; }
+.when-teams-change__action button:hover { color: #fff; background: #275b42; box-shadow: 0 11px 28px rgba(42, 98, 71, .22); }
+.when-teams-change__action button:focus-visible { outline-color: #326d50; box-shadow: 0 0 0 7px rgba(68, 130, 89, .18); }
+.when-teams-change__landscape { min-height: 130px; border-top: 0; background: linear-gradient(180deg, #eef3ec, #e7efe7); }
+.when-teams-change__landscape > p { max-width: 800px; padding-block: 34px 38px; color: #284b3c; font-size: clamp(22px, 2.2vw, 29px); }
+@media (max-width: 900px) {
+  .when-teams-change .when-teams-change__header h2 { font-size: clamp(21px, 2.6vw, 28px); }
+}
+@media (max-width: 600px) {
+  .when-teams-change__content { padding-top: 44px; }
+  .when-teams-change__opening { white-space: normal; }
+  .when-teams-change .when-teams-change__header h2 { font-size: 26px; }
+  .when-teams-change__copy { font-size: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .when-teams-change::before { animation: none; }
+  .when-teams-change__reach > label,
+  .when-teams-change__form-footer button { transition: none; }
+}
+
+
+.when-teams-change {
+  background-image: linear-gradient(180deg, rgba(244, 249, 251, .94), rgba(234, 242, 239, .88)), url('/media/ambition-hires-mountain.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+.when-teams-change__header > p { color: #75a9d7; }
+.when-teams-change__content { padding-bottom: 8px; }
+.when-teams-change__landscape { min-height: 0; background: transparent; }
+.when-teams-change__landscape > p { padding-block: 12px 28px; margin-block: 0; }
+@media (max-width: 760px), (prefers-reduced-motion: reduce) {
+  .when-teams-change { background-attachment: scroll; }
+}
+
+.when-teams-change__header > p { color: #3046c9; }
+
+.when-teams-change__dialog-description { margin: 0 0 16px; color: #68748a; font: 400 12px/1.5 var(--enter-font-ui); }
+.when-teams-change__field { display: grid; gap: 5px; min-width: 0; }
+.when-teams-change__field > span, .when-teams-change__reach legend { color: #465bb2; font: 500 10px/1.5 var(--enter-font-ui); text-transform: uppercase; letter-spacing: .04em; }
+.when-teams-change__reach legend { margin-bottom: 8px; }
+.when-teams-change__file { position: relative; display: grid; padding: 12px 16px; border: 1px dashed #a9b3d2; border-radius: 10px; background: #f1f3fb; color: #465bb2; cursor: pointer; }
+.when-teams-change__file small { display: block; margin-top: 4px; color: #788397; }
+.when-teams-change__file input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.when-teams-change__file:focus-within { outline: 2px solid #6374bd; outline-offset: 2px; }
+
+.when-teams-change__form-grid select { color-scheme: light; color: #849389; }
+.when-teams-change__form-grid select:valid { color: #173b35; }
+.when-teams-change__form-grid select option { color: #173b35; background: #fff; }
+
+.transition-select { position: relative; min-width: 0; }
+.transition-select > button { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 38px; padding: 7px 12px; border: 1px solid #d6ded5; border-radius: 10px; background: #fff; color: #849389; font: 400 13px/1.35 var(--enter-font-sans); cursor: pointer; text-align: left; }
+.transition-select > button.has-value { color: #173b35; }
+.transition-select__menu { position: absolute; z-index: 10; top: calc(100% + 4px); left: 0; right: 0; padding: 5px; border: 1px solid #d6ded5; border-radius: 10px; background: #fbfaf5; box-shadow: 0 8px 24px #173b3520; }
+.transition-select__menu > button { display: block; width: 100%; padding: 9px 12px; border: 0; border-radius: 6px; background: transparent; color: #173b35; text-align: left; font: 400 13px/1.35 var(--enter-font-sans); cursor: pointer; }
+.transition-select__menu > button:hover, .transition-select__menu > button:focus-visible, .transition-select__menu > button[aria-selected="true"] { background: #e5eee3; color: #214b38; }
+
+.transition-select__arrow { flex: 0 0 auto; margin-left: 10px; color: #8b948f; }
+
+/* Compact transition enquiry form. */
+.when-teams-change__dialog h2 { font-size: clamp(22px, 3vw, 26px); }
+.when-teams-change__dialog > .when-teams-change__dialog-description { font-size: 11px; line-height: 1.5; }
+.when-teams-change__dialog-heading > button { width: 28px; height: 28px; font-size: 20px; }
+.when-teams-change__form-grid { align-items: end; }
+.when-teams-change__form-grid input,
+.transition-select > button { min-height: 32px; padding: 5px 10px; font-size: 12px; border-radius: 8px; }
+.when-teams-change__form-grid .when-teams-change__date-field { display: grid !important; gap: 5px !important; min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; }
+.when-teams-change__date-field > span { color: #465bb2; font: 500 10px/1.5 var(--enter-font-ui); text-transform: uppercase; letter-spacing: .04em; }
+.when-teams-change__form-grid .when-teams-change__date-field input { min-height: 32px; padding: 5px 10px; border: 1px solid #d6ded5; font-size: 12px; }
+
+.when-teams-change__date-field > span,
+.when-teams-change__reach legend { font-size: 9px; }
+
+/* Stronger landscape color with black editorial copy and the brand action. */
+.when-teams-change {
+  background-image: linear-gradient(180deg, rgba(189, 204, 198, .76), rgba(164, 184, 174, .72)), url('/media/ambition-hires-mountain.jpg');
+}
+.when-teams-change .when-teams-change__header h2,
+.when-teams-change__human,
+.when-teams-change__human em,
+.when-teams-change__supporting,
+.when-teams-change__copy,
+.when-teams-change__copy-group p,
+.when-teams-change__landscape > p { color: #000; }
+.when-teams-change__action button { background: #3046c9; color: #fff; box-shadow: 0 9px 24px rgba(48, 70, 201, .18); }
+.when-teams-change__action button:hover { background: #2438a8; color: #fff; box-shadow: 0 11px 28px rgba(48, 70, 201, .24); }
+.when-teams-change__action button:focus-visible { outline-color: #3046c9; box-shadow: 0 0 0 7px rgba(48, 70, 201, .18); }
+
+/* Keep the transition message, action, and closing thought together. */
+.when-teams-change__supporting { margin-top: 18px; }
+.when-teams-change__copy { margin-top: 2px; gap: 8px; line-height: 1.6; }
+.when-teams-change__action { margin-top: 14px; }
+.when-teams-change__content { padding-bottom: 0; }
+.when-teams-change__landscape > p { padding-block: 10px 20px; }
+
+.when-teams-change__landscape > p { font-size: clamp(18px, 1.7vw, 22px); }
+
+/* Carry the section's black text and blue accents into its enquiry card. */
+.when-teams-change__dialog-backdrop { --change-navy: #000; background: rgba(23, 33, 59, .64); }
+.when-teams-change__dialog { background: #fff; border-color: #dce1e8; color: #000; }
+.when-teams-change__dialog h2,
+.when-teams-change__reach strong,
+.when-teams-change__consent { color: #000; }
+.when-teams-change__dialog > p,
+.when-teams-change__reach small,
+.when-teams-change__form-footer p { color: #68748a; }
+.when-teams-change__dialog :focus-visible { outline-color: #3046c9; }
+.when-teams-change__reach legend,
+.when-teams-change__date-field > span,
+.when-teams-change__field > span { color: #3046c9; }
+.when-teams-change__reach input,
+.when-teams-change__consent input { accent-color: #3046c9; }
+.when-teams-change__form-grid input,
+.when-teams-change__situation,
+.transition-select > button { border-color: #d5dce6; color: #17213b; }
+.when-teams-change__form-grid input::placeholder,
+.when-teams-change__situation::placeholder,
+.transition-select > button:not(.has-value) { color: #8995a8; }
+.transition-select__menu { background: #fff; border-color: #d5dce6; }
+.transition-select__menu > button { color: #17213b; }
+.transition-select__menu > button:hover,
+.transition-select__menu > button:focus-visible,
+.transition-select__menu > button[aria-selected="true"] { background: #edf0fb; color: #3046c9; }
+.when-teams-change__form-footer button { background: #3046c9; }
+.when-teams-change__form-footer button:hover { background: #2438a8; }
+.when-teams-change__dialog-heading > button { box-sizing: border-box; width: 20px; height: 20px; padding: 0; color: #3046c9; font-size: 16px; box-shadow: 0 0 8px rgba(48, 70, 201, .22); }
+
+.when-teams-change__upload-option { position: relative; }
+.when-teams-change__list-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.when-teams-change__upload-option:focus-within { outline: 2px solid #3046c9; outline-offset: 3px; border-radius: 6px; }
+
+.when-teams-change__reach > label > span { flex: 1; min-width: 0; }
+.when-teams-change__reach .when-teams-change__situation { box-sizing: border-box; display: block; width: 100%; margin-top: 8px; min-height: 80px; }
+
+/* Compact support card with a clear upload target and a soft text-field focus. */
+.when-teams-change__dialog { box-sizing: border-box; width: min(540px, 100%); padding: 22px; border-radius: 18px; }
+.when-teams-change__dialog-heading { margin-bottom: 10px; }
+.when-teams-change__dialog h2 { font-size: clamp(21px, 3vw, 24px); }
+.when-teams-change__dialog > .when-teams-change__dialog-description { margin: 0 0 12px; }
+.when-teams-change__form { gap: 9px; }
+.when-teams-change__reach { gap: 8px; }
+.when-teams-change__reach > label { padding: 8px 10px; border: 1px solid #e1e5ed; border-radius: 9px; }
+.when-teams-change__reach > .when-teams-change__upload-option { border: 1px dashed #a9b3d2; background: #f1f3fb; }
+.when-teams-change__upload-option strong { display: flex; align-items: center; gap: 6px; color: #3046c9; }
+.when-teams-change__reach > label.is-selected { border-color: #9aa7e0; }
+.when-teams-change__reach .when-teams-change__situation { min-height: 60px; margin-top: 6px; padding: 8px 10px; border-radius: 8px; resize: vertical; transition: border-color 180ms ease, box-shadow 180ms ease; }
+.when-teams-change__dialog .when-teams-change__situation:focus-visible { outline: none; border-color: #8191d8; box-shadow: 0 0 0 3px rgba(48, 70, 201, .10); }
+@media (max-width: 540px) { .when-teams-change__dialog { padding: 18px; } }
+
+.transition-contact-option { padding: 10px 12px; border: 1px solid #e1e5ed; border-radius: 10px; background: #fff; transition: border-color 180ms ease, background-color 180ms ease; }
+.transition-contact-option.is-selected { border-color: #b4bee7; background: #fafbff; }
+.transition-contact-option__choice { display: flex; align-items: flex-start; gap: 9px; cursor: pointer; }
+.transition-contact-option__choice > span { flex: 1; min-width: 0; }
+.transition-contact-option__upload { position: relative; display: flex; align-items: center; gap: 10px; margin-top: 9px; padding: 10px 12px; border: 1px dashed #a9b3d2; border-radius: 8px; background: #f1f3fb; color: #3046c9; cursor: pointer; }
+.transition-contact-option__upload input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.transition-contact-option__upload:focus-within { border-color: #3046c9; box-shadow: 0 0 0 3px rgba(48,70,201,.10); }
+.transition-contact-option__upload strong { color: #3046c9; overflow-wrap: anywhere; }
+.transition-contact-option .when-teams-change__situation { margin-top: 9px; resize: none; }
+.when-teams-change__form-grid input:focus-visible,
+.transition-select > button:focus-visible { outline: none; border-color: #8191d8; box-shadow: 0 0 0 3px rgba(48,70,201,.10); }
+@media (max-width: 540px) { .when-teams-change__dialog-backdrop { padding: 12px; } .when-teams-change__dialog { max-height: calc(100dvh - 24px); } }
+
+/* Editorial rhythm for the employee transition chapter. */
+.when-teams-change { background-attachment: scroll; background-position: center 58%; }
+.when-teams-change::before { display: none; }
+.when-teams-change__content { width: min(1080px, calc(100% - 64px)); padding-top: clamp(48px, 5vw, 72px); padding-bottom: 0; }
+.when-teams-change__header { max-width: 940px; }
+.when-teams-change__header > p { margin-bottom: 22px; font-size: 11px; letter-spacing: .18em; }
+.when-teams-change .when-teams-change__header h2 { font-size: clamp(28px, 3.1vw, 42px); line-height: 1.2; letter-spacing: -.03em; }
+.when-teams-change__opening { white-space: normal; }
+.when-teams-change__human { margin-top: 8px; }
+.when-teams-change__supporting { margin-top: 26px; font-size: 16px; font-weight: 500; }
+.when-teams-change__copy { max-width: 710px; margin-top: 4px; gap: 10px; font-size: 14px; line-height: 1.65; text-wrap: pretty; }
+.when-teams-change__action { margin-top: 20px; }
+.when-teams-change__action button { min-height: 44px; padding: 12px 24px; }
+.when-teams-change__landscape > p { max-width: 760px; padding: 14px 24px 38px; font-size: clamp(17px, 1.5vw, 20px); line-height: 1.45; }
+@media (max-width: 600px) {
+  .when-teams-change__content { width: calc(100% - 40px); padding-top: 40px; }
+  .when-teams-change .when-teams-change__header h2 { font-size: 28px; }
+  .when-teams-change__supporting { font-size: 15px; margin-top: 22px; }
+  .when-teams-change__copy { font-size: 13px; }
+  .when-teams-change__action button { width: auto; }
+}
+
+@media (min-width: 1100px) {
+  .when-teams-change__header { max-width: 1080px; }
+  .when-teams-change .when-teams-change__header h2 { font-size: clamp(28px, 2.6vw, 36px); }
+  .when-teams-change__opening { white-space: nowrap; }
+}
+
+/* Reference-style dividers for the support contact options. */
+.when-teams-change__reach { gap: 0; }
+.when-teams-change__reach legend { width: 100%; padding-bottom: 10px; margin-bottom: 0; border-bottom: 1px solid #dce1e8; }
+.transition-contact-option,
+.transition-contact-option.is-selected { padding: 14px 0; border: 0; border-bottom: 1px solid #dce1e8; border-radius: 0; background: transparent; }

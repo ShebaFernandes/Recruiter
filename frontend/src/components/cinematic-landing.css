@@ -4,7 +4,7 @@
 .cinematic-landing .ce-masthead { margin:0 auto; width:calc(100% - 80px); min-height:94px; border:0; display:grid; grid-template-columns:1fr auto 1fr; gap:20px; animation:ce-cinema-enter .65s var(--ce-ease) .08s both; }
 .cinematic-landing .ce-masthead-note { display:none; }
 .cinematic-landing .ce-masthead .ce-logo { animation:none; }
-.cinematic-landing .ce-logo img { filter:grayscale(1); }
+.cinematic-landing .ce-logo-mark { filter:grayscale(1); }
 .cinematic-landing .ce-masthead nav { margin:0; padding:5px; gap:4px; border:1px solid rgba(255,255,255,.55); border-radius:14px; background:rgba(250,248,244,.52); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); }
 .cinematic-landing .ce-masthead .ce-audience-link { padding:11px 18px; border-radius:10px; font-weight:550; transition:background .2s; }
 .cinematic-landing .ce-audience-link::after { display:none; }
@@ -42,7 +42,7 @@
 @media(max-width:768px) {
  .cinematic-landing .ce-masthead { width:calc(100% - 32px); gap:10px; min-height:84px; }
  .cinematic-landing .ce-masthead .ce-audience-link { padding:10px; font-size:11px; }
- .cinematic-landing .ce-logo img { width:72px; }
+ .cinematic-landing .ce-logo-mark { width:72px; }
  .cinematic-landing .ce-login { padding:10px; font-size:11px; }
  .cinematic-landing .ce-intro-grid { margin-top:36px; }
  .ce-product-preview { width:calc(100% - 32px); margin-top:40px; }

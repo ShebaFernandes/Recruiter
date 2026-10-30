@@ -20,7 +20,7 @@
 .ce-skip:focus { top: 12px; }
 .ce-masthead { min-height: 86px; margin-inline: 48px; border-bottom: 1px solid var(--ce-rule); display: flex; align-items: center; gap: 36px; }
 .ce-logo { display: inline-flex; flex: none; }
-.ce-logo img { width: 98px; height: 42px; object-fit: contain; }
+.ce-logo-mark { display: block; width: 82px; height: auto; aspect-ratio: 1110 / 310; }
 .ce-masthead .ce-logo { animation: ce-logo-reveal 380ms ease-out both; }
 .ce-masthead-note { font-size: 11px; color: var(--ce-muted); }
 .ce-masthead nav { display: flex; align-items: center; gap: 30px; margin-left: auto; }
@@ -94,7 +94,7 @@
   .ce-landscape-curves { display: none; }
   .ce-page-width { width: calc(100% - 40px); }
   .ce-masthead { margin-inline: 20px; gap: 15px; min-height: 74px; }
-  .ce-logo img { width: 73px; height: 33px; }
+  .ce-logo-mark { width: 64px; }
   .ce-masthead-note { display: none; }
   .ce-masthead nav { gap: 14px; }
   .ce-masthead .ce-audience-link { font-size: 10px; gap: 3px; }

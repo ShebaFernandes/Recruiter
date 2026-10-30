@@ -1,7 +1,159 @@
 /* af8e849 foreground, with the current background supplied independently. */
 .simple-landing { background:transparent; }
-.simple-landing .ce-company-preview { background:transparent; border-top-color:transparent; }
-.simple-landing .ce-company-logo img { opacity:.55; }
-.simple-landing .ce-nanonets-lockup { color:rgba(80,80,80,.65); }
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.simple-landing) { scroll-behavior: smooth; }
+}
+.simple-landing [id] { scroll-margin-top: 24px; }
+.simple-landing .ce-company-preview { z-index:1; margin-top:-64px; background:transparent; border-top-color:transparent; }
+.simple-landing .ce-company-preview .ce-company-logo img { filter: brightness(0) invert(.52); opacity:1; }
+.simple-landing .ce-nanonets-lockup { color:#858585; }
 .simple-landing .ce-masthead .ce-logo,
 .simple-landing .ce-intro h1 { animation:none; }
+
+/* Keep the logo's original header alignment; the tagline sits beneath it. */
+.simple-landing .ce-brand-lockup { position: relative; display: flex; flex: none; }
+.simple-landing .ce-intro-aside { position: relative; }
+.simple-landing .ce-brand-lockup .ce-masthead-note {
+  display: block;
+  position: absolute;
+  top: calc(100% + 7px);
+  left: 0;
+  white-space: nowrap;
+  font-size: 10px;
+  line-height: 1.3;
+}
+.simple-landing .ce-landing-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 32px;
+}
+.simple-landing .ce-landing-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 12px 24px;
+  border: 1px solid #3046C9;
+  border-radius: 9999px;
+  background: #3046C9;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+.simple-landing .ce-landing-cta--candidates {
+  gap: 14px;
+  padding: 12px 24px;
+  border-color: transparent;
+  background: linear-gradient(160deg, #4e5357, #2c3135) padding-box, linear-gradient(160deg, #899095, #3b4145) border-box;
+  color: #fbfcfa;
+  font-weight: 500;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 5px 14px rgba(30,35,38,.18);
+}
+.simple-landing .ce-landing-cta--companies {
+  gap: 14px;
+  padding: 12px 24px;
+  border-color: transparent;
+  background: linear-gradient(160deg, #263e65, #15243e) padding-box, linear-gradient(160deg, #657fa3, #253b5d) border-box;
+  color: #fbfcfa;
+  font-weight: 500;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 5px 14px rgba(21,36,62,.18);
+  transition-duration: 200ms;
+}
+.simple-landing .ce-masthead .ce-audience-link,
+.simple-landing .ce-login summary {
+  transition: color 200ms cubic-bezier(.22,1,.36,1);
+}
+.simple-landing .ce-masthead .ce-audience-link::after,
+.simple-landing .ce-login summary::after {
+  transition: transform 240ms cubic-bezier(.22,1,.36,1);
+}
+@media (hover: hover) {
+  .simple-landing .ce-landing-cta:hover {
+    background: #3b52da;
+    box-shadow: 0 0 0 3px rgba(48,70,201,.12), 0 0 20px rgba(48,70,201,.25);
+  }
+  .simple-landing .ce-landing-cta--candidates:hover { background: linear-gradient(160deg, #5a6166, #373e43) padding-box, linear-gradient(160deg, #a9b2b8, #586169) border-box; box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 8px 20px rgba(30,35,38,.23); }
+  .simple-landing .ce-landing-cta--companies:hover { background: linear-gradient(160deg, #304e79, #1e3455) padding-box, linear-gradient(160deg, #89a4c7, #3a5578) border-box; box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 8px 20px rgba(21,36,62,.23); }
+}
+.simple-landing .ce-landing-cta:focus-visible {
+  outline: 2px solid #3046C9;
+  outline-offset: 4px;
+  box-shadow: 0 0 0 3px rgba(48,70,201,.12);
+}
+.simple-landing .ce-landing-cta:active {
+  transform: scale(.98);
+  box-shadow: 0 0 0 3px rgba(48,70,201,.12), 0 0 12px rgba(48,70,201,.2);
+}
+.simple-landing .ce-company-availability {
+  position: absolute;
+  z-index: 2;
+  top: calc(100% + 14px);
+  left: 50%;
+  margin: 0;
+  padding: 9px 15px;
+  border: 1px solid rgba(48,70,201,.28);
+  border-radius: 9999px;
+  background: #fff;
+  color: #172344;
+  box-shadow: 0 8px 22px rgba(23,35,68,.12), 0 0 0 3px rgba(48,70,201,.07);
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -8px);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+.simple-landing .ce-company-availability.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+@media (max-width: 760px) {
+  .simple-landing .ce-brand-lockup .ce-masthead-note {
+    left: 0;
+    width: max-content;
+    white-space: nowrap;
+    font-size: 8px;
+  }
+  .simple-landing .ce-company-availability {
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    text-align: center;
+  }
+}
+@media (max-width: 400px) {
+  .simple-landing .ce-landing-ctas { flex-direction: column; align-items: center; }
+  .simple-landing .ce-landing-cta { min-width: 190px; }
+}
+/* Run once, without reserving space or overriding button press transforms. */
+@keyframes ce-polish-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ce-polish-rise {
+  from { opacity: 0; translate: 0 12px; }
+  to { opacity: 1; translate: 0 0; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .simple-landing .ce-brand-lockup,
+  .simple-landing .ce-masthead nav {
+    animation: ce-polish-fade 550ms cubic-bezier(.22,1,.36,1) backwards;
+  }
+  .simple-landing .ce-intro h1 {
+    animation: ce-polish-rise 650ms cubic-bezier(.22,1,.36,1) 80ms backwards;
+  }
+  .simple-landing .ce-intro-aside > p:not(.ce-company-availability) {
+    animation: ce-polish-fade 600ms cubic-bezier(.22,1,.36,1) 180ms backwards;
+  }
+  .simple-landing .ce-intro-aside > p:nth-child(2) { animation-delay: 240ms; }
+  .simple-landing .ce-landing-cta {
+    animation: ce-polish-rise 600ms cubic-bezier(.22,1,.36,1) 300ms backwards;
+  }
+  .simple-landing .ce-landing-cta--candidates { animation-delay: 370ms; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .simple-landing :is(.ce-landing-cta, .ce-company-availability, .ce-audience-link, .ce-login summary, .ce-audience-link::after, .ce-login summary::after) { transition: none; }
+  .simple-landing .ce-landing-cta:active { transform: none; }
+  .simple-landing .ce-company-availability { transform: translate(-50%, 0); }
+}
