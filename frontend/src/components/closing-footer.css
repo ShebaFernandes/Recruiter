@@ -318,8 +318,8 @@
 .enter-footer .enter-footer__column h3 {
   margin: 0 0 10px;
   color: #a8b4b5;
-  font: 400 11px/1.4 var(--enter-font-ui);
-  letter-spacing: .025em;
+  font: 400 13px/1.5 var(--enter-font-ui);
+  letter-spacing: 0;
 }
 .enter-footer__column { gap: 10px; }
 .enter-footer__column a, .enter-footer__column button { font-size: 13px; line-height: 1.5; }
