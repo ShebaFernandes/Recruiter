@@ -13,7 +13,7 @@ export type HiringEnquiry = {
   deadline?: string
 }
 
-const departments = ['Engineering', 'Product', 'Marketing', 'Sales', 'HR', 'Talent Acquisition']
+const departments = ['Engineering', 'Product', 'Marketing', 'Sales', 'HR', 'Other']
 const personalDomains = new Set(['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'live.com', 'icloud.com', 'aol.com', 'proton.me', 'protonmail.com', 'rediffmail.com'])
 const config = {
   hire: { title: "Let's find your next great hire.", description: "Tell us who you're looking for. We'll help you find the right people.", action: 'Find Talent', department: 'Role departments' },
@@ -37,6 +37,7 @@ export default function HiringEnquiryDrawer({ enquiry, minimumDate, opener, onCl
   const [name, setName] = useState('')
   const [company, setCompany] = useState('')
   const [email, setEmail] = useState('')
+  const [selfDescription, setSelfDescription] = useState('')
   const [role, setRole] = useState('')
   const [teamFocus, setTeamFocus] = useState('')
   const [location, setLocation] = useState('')
@@ -105,6 +106,7 @@ export default function HiringEnquiryDrawer({ enquiry, minimumDate, opener, onCl
     body.set('full_name', name.trim())
     body.set('company', company.trim())
     body.set('work_email', email.trim())
+    if (selfDescription.trim()) body.set('self_description', selfDescription.trim())
     if (enquiry.kind === 'team') body.set('team_focus', (enquiry.teamFocus || teamFocus).trim())
     else body.set('role', (enquiry.role || role).trim())
     if (enquiry.kind !== 'team') body.set('location', (enquiry.location || location).trim())
@@ -124,8 +126,8 @@ export default function HiringEnquiryDrawer({ enquiry, minimumDate, opener, onCl
     }
   }
 
-  const field = (key: string, label: string, value: string, change: (value: string) => void, type = 'text') => <label className="enquiry-field">
-    <span className={['name', 'company', 'email', 'role', 'location'].includes(key) ? 'enquiry-field__visually-hidden' : undefined}>{label}</span><input type={type} value={value} placeholder={label} onChange={event => change(event.target.value)} aria-invalid={!!errors[key]} aria-describedby={errors[key] ? `${titleId}-${key}-error` : undefined} />
+  const field = (key: string, label: string, value: string, change: (value: string) => void, type = 'text') => <label className={`enquiry-field${key === 'selfDescription' ? ' enquiry-field--description' : ''}`}>
+    <span className={['name', 'company', 'email', 'role', 'location', 'selfDescription'].includes(key) ? 'enquiry-field__visually-hidden' : undefined}>{label}</span><input type={type} value={value} placeholder={label} maxLength={key === 'selfDescription' ? 240 : undefined} onChange={event => change(event.target.value)} aria-invalid={!!errors[key]} aria-describedby={errors[key] ? `${titleId}-${key}-error` : undefined} />
     {errors[key] && <small id={`${titleId}-${key}-error`} className="enquiry-error">{errors[key]}</small>}
   </label>
 
@@ -153,18 +155,19 @@ export default function HiringEnquiryDrawer({ enquiry, minimumDate, opener, onCl
   return createPortal(<div className={`enquiry-backdrop${closing ? ' is-closing' : ''}`} onMouseDown={event => { if (event.target === event.currentTarget) close() }}>
     <div className="enquiry-scene" onMouseDown={event => { if (event.target === event.currentTarget) close() }}>
     <div ref={panelRef} className={`enquiry-drawer enquiry-drawer--${enquiry.kind}`} role="dialog" aria-modal="true" aria-labelledby={titleId}>
-      <header className="enquiry-header"><div><h2 id={titleId}>{details.title}</h2><p>{details.description}</p></div><button ref={closeRef} className="enquiry-close" type="button" onClick={close} aria-label="Close hiring enquiry"><X size={20} aria-hidden="true" /></button></header>
+      <header className="enquiry-header"><div><h2 id={titleId}>{details.title}</h2><p>{details.description}</p></div><button ref={closeRef} className="enquiry-close" type="button" onClick={close} aria-label="Close hiring enquiry"><X size={14} aria-hidden="true" /></button></header>
       <form className="enquiry-form" noValidate onSubmit={submit}>
         {field('name', 'Your name', name, setName)}
         {field('company', 'Company name', company, setCompany)}
         {field('email', 'Work email', email, setEmail, 'email')}
+        {field('selfDescription', 'What best describes you?', selfDescription, setSelfDescription)}
         {enquiry.kind === 'hire' && <>{!enquiry.role && field('role', 'Role or job title', role, setRole)}{!enquiry.location && field('location', 'Hiring location', location, setLocation)}{departmentField}{uploadField}{!enquiry.headcount && headcountField}</>}
         {enquiry.kind === 'team' && <>{!enquiry.teamFocus && field('teamFocus', 'Team or department focus', teamFocus, setTeamFocus)}{departmentField}{!enquiry.headcount && headcountField}{uploadField}</>}
         {enquiry.kind === 'drive' && <>{departmentField}{!enquiry.role && field('role', 'Role or job title', role, setRole)}{!enquiry.headcount && headcountField}{!enquiry.location && field('location', 'Hiring location', location, setLocation)}{!enquiry.deadline && <label className="enquiry-field"><span>Target hiring date</span><input type="date" min={minimumDate} value={deadline} onChange={event => setDeadline(event.target.value)} aria-invalid={!!errors.deadline} />{errors.deadline && <small className="enquiry-error" role="alert">{errors.deadline}</small>}</label>}{uploadField}</>}
         <label className="enquiry-field"><span>Notes</span><textarea aria-label="Notes" rows={2} maxLength={250} aria-describedby={`${titleId}-notes-limit`} placeholder="Tell us anything else about your hiring needs..." value={notes} onChange={event => setNotes(event.target.value.slice(0, 250))} /><small id={`${titleId}-notes-limit`} className="enquiry-notes-limit">{notes.length}/250 characters</small></label>
         {submitState === 'sent' && <p className="enquiry-notice" role="status">Thank you. Your request has been received. Our team will follow up at your work email.</p>}
         {submitError && <p className="enquiry-notice enquiry-notice--error" role="alert">{submitError}</p>}
-        <div className="enquiry-actions"><button type="button" className="enquiry-back" onClick={close}>Back</button><button type="submit" className="enquiry-submit" disabled={submitState !== 'idle'}>{submitState === 'sending' ? 'Sending…' : submitState === 'sent' ? 'Sent' : details.action} {submitState === 'idle' && <ArrowRight size={16} aria-hidden="true" />}</button></div>
+        <div className="enquiry-actions"><button type="submit" className="enquiry-submit" disabled={submitState !== 'idle'}>{submitState === 'sending' ? 'Sending…' : submitState === 'sent' ? 'Sent' : details.action} {submitState === 'idle' && <ArrowRight size={16} aria-hidden="true" />}</button></div>
       </form>
     </div>
     </div>

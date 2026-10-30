@@ -26,7 +26,7 @@ from .throttling import HiringEnquiryRateThrottle
 
 MAX_JD_BYTES = 10 * 1024 * 1024
 DEPARTMENTS = (
-    "Engineering", "Product", "Marketing", "Sales", "HR", "Talent Acquisition"
+    "Engineering", "Product", "Marketing", "Sales", "HR", "Talent Acquisition", "Other"
 )
 PERSONAL_EMAIL_DOMAINS = {
     "gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "live.com",
@@ -92,6 +92,9 @@ class BaseHiringSerializer(serializers.Serializer):
 
 
 class DepartmentHiringSerializer(BaseHiringSerializer):
+    self_description = serializers.CharField(
+        max_length=240, required=False, allow_blank=True, trim_whitespace=True
+    )
     headcount = serializers.IntegerField(min_value=1, max_value=10000)
     departments = serializers.ListField(
         child=serializers.ChoiceField(choices=DEPARTMENTS), allow_empty=False
@@ -208,6 +211,8 @@ def enquiry_details(kind, data):
             "phone", "website", "categories", "role_title", "outcome", "confidential",
             "compensation", "location_mode",
         )
+    if kind in {HiringEnquiry.Kind.HIRE, HiringEnquiry.Kind.TEAM, HiringEnquiry.Kind.DRIVE}:
+        fields = (*fields, "self_description")
     return {
         field: value.isoformat() if isinstance(value, date) else value
         for field in fields if (value := data.get(field)) is not None

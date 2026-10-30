@@ -225,3 +225,29 @@ def test_invalid_kind_dates_and_missing_categories_are_rejected():
     assert "categories" in response.data
     assert "start_month" in response.data
     assert HiringEnquiry.objects.count() == 0
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("kind", ["hire", "team", "drive"])
+def test_hiring_cards_persist_self_description_and_other_department(kind):
+    data = hire_data()
+    data.update(kind=kind, self_description="Engineering leader", departments=["Other"])
+    if kind == "team":
+        data["team_focus"] = "Platform engineering"
+    if kind == "drive":
+        data["deadline"] = (timezone.localdate() + timedelta(days=14)).isoformat()
+    response = APIClient().post(URL, data, format="multipart")
+    assert response.status_code == 201
+    details = HiringEnquiry.objects.get(pk=response.data["id"]).details
+    assert details["self_description"] == "Engineering leader"
+    assert details["departments"] == ["Other"]
+
+
+@pytest.mark.django_db
+def test_self_description_rejects_overlong_input():
+    data = hire_data()
+    data["self_description"] = "x" * 241
+    response = APIClient().post(URL, data, format="multipart")
+    assert response.status_code == 400
+    assert "self_description" in response.data
+    assert not HiringEnquiry.objects.exists()
