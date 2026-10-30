@@ -43,7 +43,7 @@ const testimonials: Testimonial[] = [
     id: 'prachi-sharma',
     excerpt: 'Your ability to maintain a strong pace of placements without compromising on quality has been especially valuable.',
     name: 'Prachi Sharma',
-    attribution: 'Talent Acquisition Specialist',
+    attribution: 'Talent Acquisition Specialist · Parspec',
     paragraphs: [
       'It has been a pleasure working with the team at enter. We truly appreciate your responsiveness and the quality of support you have provided throughout our hiring process. Your ability to maintain a strong pace of placements without compromising on quality has been especially valuable.',
       'While some roles were particularly challenging to fill due to the level of scrutiny involved, enter’s commitment, persistence, and enthusiasm consistently stood out. Despite the difficulties, your team remained dedicated to finding the right fit.',
