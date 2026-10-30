@@ -63,7 +63,6 @@ export default function TestimonialsCarousel() {
 
   return <section ref={sectionRef} className="testimonials-carousel" aria-labelledby="testimonials-heading">
     <div className="testimonials-carousel__intro">
-      <p className="testimonials-carousel__eyebrow">FROM THE PEOPLE WE BUILD WITH</p>
       <h2 id="testimonials-heading">Don’t take our word for it, here’s what our clients have to say.</h2>
     </div>
     <Marquee className="testimonials-carousel__viewport" pauseOnHover speed="slow" aria-label="Client testimonials">

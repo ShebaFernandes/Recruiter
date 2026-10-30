@@ -17,7 +17,7 @@
   background: linear-gradient(180deg, #e5e9ee, #faf9f6 110px, #faf9f6);
 }
 .simple-landing .testimonials-carousel {
-  background: linear-gradient(180deg, #e7efe7 0%, #f2f4f0 18%, #f7f7f4 70%, #fffaf2 100%);
+  background: radial-gradient(ellipse at 50% 0%, #303638, transparent 65%), #1d2123;
 }
 .simple-landing .for-talent {
   background:

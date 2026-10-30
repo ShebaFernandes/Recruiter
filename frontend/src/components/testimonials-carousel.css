@@ -2,21 +2,14 @@
   --enter-font-sans: var(--enter-font-ui);
   padding: clamp(28px, 3vw, 42px) 0 clamp(30px, 3vw, 42px);
   overflow: hidden;
-  color: #19243d;
-  background: #edf1f5;
+  color: #f3f2ee;
+  background: #1d2123;
 }
 
 .testimonials-carousel__intro {
   width: min(1120px, calc(100% - 48px));
-  margin: 0 auto 17px;
+  margin: 0 auto 30px;
   text-align: center;
-}
-
-.testimonials-carousel__eyebrow {
-  margin: 0 0 8px;
-  color: #657694;
-  font: 600 10px/1.4 var(--enter-font-sans);
-  letter-spacing: .18em;
 }
 
 .testimonials-carousel__intro h2 {
@@ -31,4 +24,27 @@
 
 @media (max-width: 640px) {
   .testimonials-carousel__intro { width: calc(100% - 36px); }
+}
+
+/* Warm typography and restrained glass surfaces on charcoal. */
+.testimonials-carousel__intro h2 { color: #f3f2ee; }
+.testimonials-carousel .testimonial-glass-card {
+  background: linear-gradient(145deg, #303537, #272c2e);
+  border-color: rgba(205, 218, 213, .18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), 0 12px 30px rgba(0, 0, 0, .18);
+}
+.testimonials-carousel .testimonial-glass-card::before { background: none; }
+.testimonials-carousel .testimonial-glass-card__content { padding: 20px; }
+.testimonials-carousel .testimonial-glass-card__identity strong { color: #f3f2ee; }
+.testimonials-carousel .testimonial-glass-card__identity span { color: #a8b4b5; }
+.testimonials-carousel .testimonial-glass-card__avatar {
+  color: #c6dfd7; background: #384946; border-color: #536b65;
+}
+.testimonials-carousel .testimonial-glass-card__quote { color: #91b3a8; }
+.testimonials-carousel .testimonial-glass-card blockquote { color: #d3dbd9; line-height: 1.55; }
+@media (hover: hover) {
+  .testimonials-carousel .testimonial-glass-card:hover {
+    border-color: #79958b;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07), 0 18px 36px rgba(0, 0, 0, .25);
+  }
 }
