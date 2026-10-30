@@ -46,10 +46,13 @@
   transition: background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 .simple-landing .ce-landing-cta--candidates {
-  border-color: #555e63;
-  background: linear-gradient(145deg, #50585d, #383f43);
-  color: #f6f7f5;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 4px 12px rgba(30,35,38,.12);
+  gap: 14px;
+  padding: 9px 10px 9px 22px;
+  border-color: transparent;
+  background: linear-gradient(160deg, #4e5357, #2c3135) padding-box, linear-gradient(160deg, #899095, #3b4145) border-box;
+  color: #fbfcfa;
+  font-weight: 500;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 5px 14px rgba(30,35,38,.18);
 }
 .simple-landing .ce-landing-cta--companies {
   background: #4055be;
@@ -69,7 +72,7 @@
     background: #3b52da;
     box-shadow: 0 0 0 3px rgba(48,70,201,.12), 0 0 20px rgba(48,70,201,.25);
   }
-  .simple-landing .ce-landing-cta--candidates:hover { background: linear-gradient(145deg, #5c656b, #454e53); box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 6px 16px rgba(30,35,38,.2); }
+  .simple-landing .ce-landing-cta--candidates:hover { background: linear-gradient(160deg, #5a6166, #373e43) padding-box, linear-gradient(160deg, #a9b2b8, #586169) border-box; box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 8px 20px rgba(30,35,38,.23); }
   .simple-landing .ce-landing-cta--companies:hover { background: #4b61cd; }
 }
 .simple-landing .ce-landing-cta:focus-visible {
@@ -148,4 +151,18 @@
   .simple-landing :is(.ce-landing-cta, .ce-company-availability, .ce-audience-link, .ce-login summary, .ce-audience-link::after, .ce-login summary::after) { transition: none; }
   .simple-landing .ce-landing-cta:active { transform: none; }
   .simple-landing .ce-company-availability { transform: translate(-50%, 0); }
+}
+
+.simple-landing .ce-landing-cta--candidates svg {
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  padding: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .12);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .simple-landing .ce-landing-cta--candidates svg { transition: transform 200ms ease, background-color 200ms ease; }
+  .simple-landing .ce-landing-cta--candidates:hover svg { transform: translateX(2px); background: rgba(255, 255, 255, .2); }
 }
