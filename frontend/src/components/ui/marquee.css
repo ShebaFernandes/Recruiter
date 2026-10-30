@@ -1,0 +1,33 @@
+.ui-marquee {
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
+}
+
+.ui-marquee__track,
+.ui-marquee__group {
+  display: flex;
+  width: max-content;
+  align-items: flex-start;
+}
+
+.ui-marquee__track { animation: ui-marquee-flow var(--marquee-duration, 90s) linear infinite; }
+.ui-marquee--slow { --marquee-duration: 110s; }
+.ui-marquee--normal { --marquee-duration: 75s; }
+.ui-marquee--fast { --marquee-duration: 35s; }
+.ui-marquee__group { gap: 12px; padding-right: 12px; }
+
+.ui-marquee--pause:hover .ui-marquee__track,
+.ui-marquee:focus-within .ui-marquee__track { animation-play-state: paused; }
+
+.ui-marquee:focus-visible { outline: 2px solid #7795d5; outline-offset: -3px; }
+
+@keyframes ui-marquee-flow {
+  to { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-marquee { overflow-x: auto; mask-image: none; scroll-snap-type: x mandatory; }
+  .ui-marquee__track { animation: none; }
+  .ui-marquee__group[aria-hidden='true'] { display: none; }
+  .ui-marquee__group > * { scroll-snap-align: center; }
+}

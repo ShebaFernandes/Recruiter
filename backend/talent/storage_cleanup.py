@@ -8,7 +8,13 @@ from django.core.files.storage import default_storage
 from django.db import transaction
 from django.utils import timezone
 
-from .models import CandidatePhoto, FileCleanupJob, Resume
+from .models import (
+    CandidatePhoto,
+    EmployeeTransitionEnquiry,
+    FileCleanupJob,
+    HiringEnquiryAttachment,
+    Resume,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -47,9 +53,11 @@ def drain_cleanup(limit=20):
                    .filter(available_at__lte=timezone.now()).order_by("available_at").first())
             if not job:
                 break
-            # Never remove an object still referenced by a live profile/resume.
+            # Never remove an object still referenced by a live record.
             if (Resume.objects.filter(file=job.name).exists()
-                    or CandidatePhoto.objects.filter(file=job.name).exists()):
+                    or CandidatePhoto.objects.filter(file=job.name).exists()
+                    or EmployeeTransitionEnquiry.objects.filter(employee_list=job.name).exists()
+                    or HiringEnquiryAttachment.objects.filter(file=job.name).exists()):
                 job.delete()
                 continue
             try:

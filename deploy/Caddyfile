@@ -11,6 +11,18 @@
         X-Frame-Options DENY
         Permissions-Policy "camera=(), geolocation=(), payment=()"
     }
+    handle /api/v1/hiring/enquiries/ {
+        request_body {
+            max_size 12MB
+        }
+        reverse_proxy backend:8000
+    }
+    handle /api/v1/support/employee-transition/ {
+        request_body {
+            max_size 3MB
+        }
+        reverse_proxy backend:8000
+    }
     @uploads path /api/v1/candidate/resumes/ /api/v1/candidate/photo/
     handle @uploads {
         request_body {

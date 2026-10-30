@@ -1,0 +1,170 @@
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
+import { createPortal } from 'react-dom'
+import { ArrowRight, Paperclip, X } from 'lucide-react'
+import { api } from '../api'
+import './hiring-enquiry-drawer.css'
+
+export type HiringEnquiry = {
+  kind: 'hire' | 'team' | 'drive'
+  role?: string
+  teamFocus?: string
+  location?: string
+  headcount: number
+  deadline?: string
+}
+
+const departments = ['Engineering', 'Product', 'Marketing', 'Sales', 'HR', 'Talent Acquisition']
+const personalDomains = new Set(['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'live.com', 'icloud.com', 'aol.com', 'proton.me', 'protonmail.com', 'rediffmail.com'])
+const config = {
+  hire: { title: "Let's find your next great hire.", description: "Tell us who you're looking for. We'll help you find the right people.", action: 'Find Talent', department: 'Role departments' },
+  team: { title: "Let's build your team.", description: "Tell us about the team you're creating and the people you need.", action: 'Build My Team', department: 'Team departments' },
+  drive: { title: "Let's plan your hiring drive.", description: 'Tell us about your hiring targets and timeline.', action: 'Plan My Drive', department: 'Hiring departments' },
+} as const
+
+function validWorkEmail(value: string) {
+  if (!/^[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/.test(value)) return false
+  return !personalDomains.has(value.split('@')[1].toLowerCase())
+}
+
+export default function HiringEnquiryDrawer({ enquiry, minimumDate, opener, onClose }: {
+  enquiry: HiringEnquiry; minimumDate: string; opener: HTMLButtonElement | null; onClose: () => void
+}) {
+  const panelRef = useRef<HTMLDivElement>(null)
+  const closeRef = useRef<HTMLButtonElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
+  const titleId = useId()
+  const [closing, setClosing] = useState(false)
+  const [name, setName] = useState('')
+  const [company, setCompany] = useState('')
+  const [email, setEmail] = useState('')
+  const [role, setRole] = useState('')
+  const [teamFocus, setTeamFocus] = useState('')
+  const [location, setLocation] = useState('')
+  const [deadline, setDeadline] = useState('')
+  const [headcount, setHeadcount] = useState('')
+  const [selected, setSelected] = useState<string[]>([])
+  const [file, setFile] = useState<File | null>(null)
+  const [notes, setNotes] = useState('')
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [submitState, setSubmitState] = useState<'idle' | 'sending' | 'sent'>('idle')
+  const [submitError, setSubmitError] = useState('')
+  const details = config[enquiry.kind]
+  const close = () => setClosing(true)
+
+  useEffect(() => {
+    const main = opener?.closest('main')
+    const oldInert = main?.inert
+    const oldOverflow = document.body.style.overflow
+    if (main) main.inert = true
+    document.body.style.overflow = 'hidden'
+    closeRef.current?.focus()
+    return () => {
+      if (main) main.inert = oldInert ?? false
+      document.body.style.overflow = oldOverflow
+      opener?.focus({ preventScroll: true })
+    }
+  }, [opener])
+
+  useEffect(() => {
+    if (!closing) return
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    const timer = window.setTimeout(onClose, reduced ? 0 : 300)
+    return () => window.clearTimeout(timer)
+  }, [closing, onClose])
+
+  useEffect(() => {
+    const keydown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); close(); return }
+      if (event.key !== 'Tab' || !panelRef.current) return
+      const items = Array.from(panelRef.current.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled):not([type="hidden"]), textarea:not(:disabled), [href]'))
+      const first = items[0]; const last = items[items.length - 1]
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus() }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus() }
+    }
+    document.addEventListener('keydown', keydown)
+    return () => document.removeEventListener('keydown', keydown)
+  }, [])
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault()
+    if (submitState !== 'idle') return
+    const next: Record<string, string> = {}
+    if (!name.trim()) next.name = 'Please enter your full name.'
+    if (!company.trim()) next.company = 'Please enter your company name.'
+    if (!validWorkEmail(email)) next.email = 'Please use your company or work email address.'
+    if (enquiry.kind !== 'team' && !(enquiry.role || role).trim()) next.role = 'Please enter a role or job title.'
+    if (enquiry.kind === 'team' && !(enquiry.teamFocus || teamFocus).trim()) next.teamFocus = 'Please enter your team focus.'
+    if (!selected.length) next.departments = 'Please select at least one department.'
+    if (!Number.isInteger(Number(enquiry.headcount || headcount)) || Number(enquiry.headcount || headcount) < 1 || Number(enquiry.headcount || headcount) > 10000) next.headcount = 'Enter a whole number between 1 and 10,000.'
+    if (enquiry.kind === 'drive' && !(enquiry.location || location).trim()) next.location = 'Please enter a hiring location.'
+    if (enquiry.kind === 'drive' && (!(enquiry.deadline || deadline) || (enquiry.deadline || deadline) < minimumDate)) next.deadline = 'Choose today or a future date.'
+    setErrors(next)
+    if (Object.keys(next).length) return
+    const body = new FormData()
+    body.set('kind', enquiry.kind)
+    body.set('full_name', name.trim())
+    body.set('company', company.trim())
+    body.set('work_email', email.trim())
+    if (enquiry.kind === 'team') body.set('team_focus', (enquiry.teamFocus || teamFocus).trim())
+    else body.set('role', (enquiry.role || role).trim())
+    if (enquiry.kind !== 'team') body.set('location', (enquiry.location || location).trim())
+    if (enquiry.kind === 'drive') body.set('deadline', enquiry.deadline || deadline)
+    body.set('headcount', String(enquiry.headcount || headcount))
+    selected.forEach(department => body.append('departments', department))
+    body.set('notes', notes.trim())
+    if (file) body.set('jd', file)
+    setSubmitState('sending')
+    setSubmitError('')
+    try {
+      await api.submitHiringEnquiry(body)
+      setSubmitState('sent')
+    } catch (error) {
+      setSubmitState('idle')
+      setSubmitError(error instanceof Error ? error.message : 'Your request could not be sent. Please try again.')
+    }
+  }
+
+  const field = (key: string, label: string, value: string, change: (value: string) => void, type = 'text') => <label className="enquiry-field">
+    <span className={['name', 'company', 'email', 'role', 'location'].includes(key) ? 'enquiry-field__visually-hidden' : undefined}>{label}</span><input type={type} value={value} placeholder={label} onChange={event => change(event.target.value)} aria-invalid={!!errors[key]} aria-describedby={errors[key] ? `${titleId}-${key}-error` : undefined} />
+    {errors[key] && <small id={`${titleId}-${key}-error`} className="enquiry-error">{errors[key]}</small>}
+  </label>
+
+  const departmentField = <fieldset className={`enquiry-departments enquiry-departments--${enquiry.kind}`}>
+    <legend>{details.department}</legend>
+    <div className="enquiry-pills">{departments.map(department => <button key={department} type="button" aria-pressed={selected.includes(department)} onClick={() => setSelected(current => current.includes(department) ? current.filter(item => item !== department) : [...current, department])}>{department}</button>)}</div>
+    {enquiry.kind === 'team' && selected.length > 1 && <p className="enquiry-summary">Selected: {selected.join(', ')}</p>}
+    {errors.departments && <small className="enquiry-error" role="alert">{errors.departments}</small>}
+  </fieldset>
+
+  const headcountField = <div className="enquiry-headcount">
+    <div className="enquiry-headcount__heading"><label htmlFor={`${titleId}-count`}>{enquiry.kind === 'drive' ? 'Number of openings' : 'Headcount'}</label><span>{headcount || '0'} openings</span></div>
+    <input aria-label="Headcount slider" type="range" min="1" max="10" value={Math.min(10, Math.max(1, Number(headcount) || 1))} onChange={event => setHeadcount(event.target.value)} />
+    <div className="enquiry-headcount__scale"><span>1</span><span>10</span></div>
+    <label className="enquiry-count-input">Exact openings <input id={`${titleId}-count`} type="number" min="1" max="10000" step="1" value={headcount} onChange={event => setHeadcount(event.target.value)} aria-invalid={!!errors.headcount} /></label>
+    {errors.headcount && <small className="enquiry-error" role="alert">{errors.headcount}</small>}
+  </div>
+
+  const uploadField = <div className="enquiry-upload"><input ref={fileRef} id={`${titleId}-file`} aria-label={file ? "Replace JD's" : "Upload JD's"} type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={event => { const chosen = event.target.files?.[0] ?? null; if (chosen && !/\.(pdf|docx)$/i.test(chosen.name)) { setErrors(current => ({ ...current, file: 'Choose a PDF or DOCX file.' })); event.target.value = ''; setFile(null); return } setErrors(current => { const next = { ...current }; delete next.file; return next }); setFile(chosen) }} />
+    <label htmlFor={`${titleId}-file`}><Paperclip size={18} aria-hidden="true" /> {file ? "Replace JD's" : "Upload JD's"} <span aria-hidden="true" className="enquiry-upload__arrow">↑</span></label>
+    {file && <div className="enquiry-upload__file"><span>{file.name}</span><button type="button" onClick={() => { setFile(null); if (fileRef.current) fileRef.current.value = '' }}>Remove</button></div>}
+    {errors.file && <small className="enquiry-error" role="alert">{errors.file}</small>}
+  </div>
+
+  return createPortal(<div className={`enquiry-backdrop${closing ? ' is-closing' : ''}`} onMouseDown={event => { if (event.target === event.currentTarget) close() }}>
+    <div ref={panelRef} className={`enquiry-drawer enquiry-drawer--${enquiry.kind}`} role="dialog" aria-modal="true" aria-labelledby={titleId}>
+      <header className="enquiry-header"><div><h2 id={titleId}>{details.title}</h2><p>{details.description}</p></div><button ref={closeRef} className="enquiry-close" type="button" onClick={close} aria-label="Close hiring enquiry"><X size={20} aria-hidden="true" /></button></header>
+      <form className="enquiry-form" noValidate onSubmit={submit}>
+        {field('name', 'Full name', name, setName)}
+        {field('company', 'Company name', company, setCompany)}
+        {field('email', 'Work email', email, setEmail, 'email')}
+        {enquiry.kind === 'hire' && <>{!enquiry.role && field('role', 'Role or job title', role, setRole)}{!enquiry.location && field('location', 'Hiring location', location, setLocation)}{departmentField}{uploadField}{!enquiry.headcount && headcountField}</>}
+        {enquiry.kind === 'team' && <>{!enquiry.teamFocus && field('teamFocus', 'Team or department focus', teamFocus, setTeamFocus)}{departmentField}{!enquiry.headcount && headcountField}{uploadField}</>}
+        {enquiry.kind === 'drive' && <>{departmentField}{!enquiry.role && field('role', 'Role or job title', role, setRole)}{!enquiry.headcount && headcountField}{!enquiry.location && field('location', 'Hiring location', location, setLocation)}{!enquiry.deadline && <label className="enquiry-field"><span>Target hiring date</span><input type="date" min={minimumDate} value={deadline} onChange={event => setDeadline(event.target.value)} aria-invalid={!!errors.deadline} />{errors.deadline && <small className="enquiry-error" role="alert">{errors.deadline}</small>}</label>}{uploadField}</>}
+        <label className="enquiry-field"><span>Notes</span><textarea rows={3} placeholder="Tell us anything else about your hiring needs..." value={notes} onChange={event => setNotes(event.target.value)} /></label>
+        {submitState === 'sent' && <p className="enquiry-notice" role="status">Thank you. Your request has been received. Our team will follow up at your work email.</p>}
+        {submitError && <p className="enquiry-notice enquiry-notice--error" role="alert">{submitError}</p>}
+        <div className="enquiry-actions"><button type="button" className="enquiry-back" onClick={close}>Back</button><button type="submit" className="enquiry-submit" disabled={submitState !== 'idle'}>{submitState === 'sending' ? 'Sending…' : submitState === 'sent' ? 'Sent' : details.action} {submitState === 'idle' && <ArrowRight size={16} aria-hidden="true" />}</button></div>
+      </form>
+    </div>
+  </div>, document.body)
+}

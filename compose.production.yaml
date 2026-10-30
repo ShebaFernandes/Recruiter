@@ -130,6 +130,16 @@ services:
     cpus: 1
     pids_limit: 64
 
+  enquiry-notifier:
+    <<: *app
+    command: [python, manage.py, run_enquiry_notifications]
+    depends_on:
+      db:
+        condition: service_healthy
+    mem_limit: 192m
+    cpus: 0.25
+    pids_limit: 32
+
   frontend:
     image: enter-frontend:${ENTER_RELEASE}
     platform: ${ENTER_PLATFORM:-linux/amd64}
@@ -138,7 +148,7 @@ services:
       dockerfile: frontend/Dockerfile
       args:
         VITE_API_URL: /api/v1
-        VITE_CANDIDATE_ONLY: ${CANDIDATE_ONLY:-false}
+        VITE_CANDIDATE_ONLY: ${CANDIDATE_ONLY:?Set candidate-only launch mode explicitly}
         VITE_LEGAL_CONTENT_APPROVED: ${LEGAL_CONTENT_APPROVED:-false}
     restart: unless-stopped
     mem_limit: 128m

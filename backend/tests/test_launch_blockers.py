@@ -4,6 +4,7 @@ import subprocess
 from datetime import timedelta
 from io import StringIO
 from unittest.mock import patch
+from urllib.parse import unquote, urlsplit
 
 import pytest
 from django.contrib.auth.models import User
@@ -225,9 +226,9 @@ def test_supervisor_timeout_is_bounded_retryable_and_exhausts(client, candidate_
         assert child.call_args.kwargs["timeout"] == 240
         from django.conf import settings
 
-        assert settings.DATABASES["default"]["NAME"] in (
-            child.call_args.kwargs["env"]["DATABASE_URL"]
-        )
+        assert unquote(urlsplit(child.call_args.kwargs["env"]["DATABASE_URL"]).path).lstrip(
+            "/"
+        ) == str(settings.DATABASES["default"]["NAME"]).lstrip("/")
         for _ in range(2):
             ResumeProcessingJob.objects.filter(pk=job.pk).update(available_at=timezone.now())
             result = run_bounded_job(job.pk)

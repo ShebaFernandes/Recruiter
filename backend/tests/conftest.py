@@ -53,3 +53,15 @@ def recruiter_account(client):
     assert response.status_code == 200
     client.credentials(HTTP_AUTHORIZATION=f"Token {response.data['token']}")
     return response.data
+
+
+@pytest.fixture(scope="session")
+def django_db_modify_db_settings(django_db_modify_db_settings_parallel_suffix, tmp_path_factory):
+    from django.conf import settings
+
+    database = settings.DATABASES["default"]
+    if database["ENGINE"] == "django.db.backends.sqlite3":
+        # Worker subprocess integration tests cannot share SQLite's in-memory DB.
+        database.setdefault("TEST", {})["NAME"] = str(
+            tmp_path_factory.mktemp("worker-db") / "test.sqlite3"
+        )

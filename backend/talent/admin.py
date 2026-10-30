@@ -4,8 +4,10 @@ from django.contrib.auth.admin import GroupAdmin, UserAdmin
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse
+from django.http import FileResponse, Http404, HttpResponse
+from django.urls import path, reverse
 from django.utils import timezone
+from django.utils.html import format_html, format_html_join
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.debug import sensitive_post_parameters
 from rest_framework.authtoken.models import Token
@@ -14,6 +16,8 @@ from .models import (
     CandidateProfile,
     CandidateStatus,
     CandidateUpdateNotification,
+    EmployeeTransitionEnquiry,
+    HiringEnquiry,
     ProfileView,
     Project,
     RecruiterProfile,
@@ -52,6 +56,139 @@ class SuperuserOnlyAdminMixin:
     has_add_permission = has_view_permission
     has_change_permission = has_view_permission
     has_delete_permission = has_view_permission
+
+
+class EnquiryFollowUpAdminMixin:
+    @admin.display(description="Alert")
+    def alert_status(self, obj):
+        alert = getattr(obj, "alert", None)
+        if alert is None:
+            return "Not queued"
+        if alert.sent_at:
+            return "Sent"
+        if alert.attempts:
+            return "Retrying"
+        return "Queued"
+
+    def save_model(self, request, obj, form, change):
+        if obj.status != "new" and obj.contacted_at is None:
+            obj.contacted_at = timezone.now()
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(EmployeeTransitionEnquiry)
+class EmployeeTransitionEnquiryAdmin(
+    EnquiryFollowUpAdminMixin, SuperuserOnlyAdminMixin, admin.ModelAdmin,
+):
+    list_display = [
+        "created_at", "company", "full_name", "work_email", "reach_method",
+        "status", "follow_up_due_at", "alert_status",
+    ]
+    list_filter = ["reach_method", "status", "created_at"]
+    search_fields = ["company", "full_name", "work_email"]
+    fields = [
+        "created_at", "company", "full_name", "work_email", "role",
+        "people_impacted", "last_working_day", "reach_method", "situation",
+        "consent_confirmed_at", "original_filename", "download_list",
+        "status", "internal_note", "follow_up_due_at", "contacted_at",
+        "updated_at", "alert_status",
+    ]
+    readonly_fields = [
+        field.name for field in EmployeeTransitionEnquiry._meta.fields
+        if field.name not in {
+            "employee_list", "status", "internal_note", "follow_up_due_at",
+        }
+    ] + ["download_list", "alert_status"]
+
+    def get_urls(self):
+        custom = [
+            path(
+                "<int:object_id>/list/",
+                self.admin_site.admin_view(self.download_employee_list),
+                name="talent_employeetransitionenquiry_list",
+            ),
+        ]
+        return custom + super().get_urls()
+
+    @admin.display(description="Employee list")
+    def download_list(self, obj):
+        if not obj.employee_list:
+            return "No list uploaded"
+        url = reverse("admin:talent_employeetransitionenquiry_list", args=[obj.pk])
+        return format_html('<a href="{}">Download {}</a>', url, obj.original_filename)
+
+    def download_employee_list(self, request, object_id):
+        if not self.has_view_permission(request):
+            raise PermissionDenied
+        obj = self.get_object(request, object_id)
+        if not obj or not obj.employee_list:
+            raise Http404
+        return FileResponse(
+            obj.employee_list.open("rb"), as_attachment=True,
+            filename=obj.original_filename or "employee-list",
+        )
+
+    def has_add_permission(self, request):
+        return False
+
+@admin.register(HiringEnquiry)
+class HiringEnquiryAdmin(
+    EnquiryFollowUpAdminMixin, SuperuserOnlyAdminMixin, admin.ModelAdmin,
+):
+    list_display = [
+        "created_at", "kind", "company", "full_name", "work_email", "status",
+        "follow_up_due_at", "alert_status",
+    ]
+    list_filter = ["kind", "status", "created_at"]
+    search_fields = ["company", "full_name", "work_email"]
+    readonly_fields = [
+        "kind", "company", "full_name", "work_email", "details", "notes",
+        "created_at", "updated_at", "contacted_at", "download_links", "alert_status",
+    ]
+
+    def get_urls(self):
+        custom = [
+            path(
+                "<int:object_id>/attachment/<int:attachment_id>/",
+                self.admin_site.admin_view(self.download_attachment),
+                name="talent_hiringenquiry_attachment",
+            ),
+        ]
+        return custom + super().get_urls()
+
+    @admin.display(description="Attachments")
+    def download_links(self, obj):
+        attachments = list(obj.attachments.all())
+        if not attachments:
+            return "No attachment uploaded"
+        links = [
+            (
+                reverse("admin:talent_hiringenquiry_attachment", args=[obj.pk, item.pk]),
+                item.original_filename,
+            )
+            for item in attachments
+        ]
+        return format_html_join("", '<div><a href="{}">Download {}</a></div>', links)
+
+    def download_attachment(self, request, object_id, attachment_id):
+        if not self.has_view_permission(request):
+            raise PermissionDenied
+        obj = self.get_object(request, object_id)
+        if not obj:
+            raise Http404
+        attachment = obj.attachments.filter(pk=attachment_id).first()
+        if not attachment:
+            raise Http404
+        return FileResponse(
+            attachment.file.open("rb"), as_attachment=True,
+            filename=attachment.original_filename,
+        )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 class ReadOnlyForStaffAdminMixin:

@@ -29,29 +29,16 @@ for (const width of [360, 390, 430, 1440]) {
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
 
-    await expect(page.locator('.ce-intro button')).toHaveCount(0)
-    if (width <= 768) {
-      await expect(heading).toHaveCSS('color', 'rgb(11, 31, 58)')
-      await expect(candidateNav).toHaveCSS('color', 'rgb(11, 31, 58)')
-      const layout = await page.evaluate(viewportHeight => {
-        const box = (selector: string) => {
-          const bounds = document.querySelector(selector)!.getBoundingClientRect()
-          return { top: bounds.top, right: bounds.right, bottom: bounds.bottom, left: bounds.left, width: bounds.width }
-        }
-        return {
-          heading: box('.ce-intro h1'),
-          copy: box('.ce-intro-aside'),
-          motion: box('.landing-motion-toggle'),
-          viewportHeight,
-        }
-      }, height)
-      expect(layout.heading.left + layout.heading.width / 2).toBeCloseTo(width / 2, 0)
-      expect(layout.copy.top).toBeGreaterThan(layout.heading.bottom)
-      expect(layout.copy.bottom).toBeLessThan(layout.viewportHeight * .55)
-      expect(layout.motion.top).toBeGreaterThan(layout.copy.bottom)
-    } else {
-      await expect(heading).toHaveCSS('color', 'rgb(48, 56, 66)')
+    await expect(page.locator('.ce-intro').getByRole('button', { name: 'For Companies' })).toBeVisible()
+    await expect(page.locator('.ce-intro').getByRole('button', { name: 'For Candidates' })).toBeVisible()
+    for (const section of ['#what-building-title', '#closing-section']) {
+      await page.locator(section).scrollIntoViewIfNeeded()
     }
+    await expect(page.getByRole('link', { name: 'Privacy', exact: true })).toHaveAttribute('href', '/privacy')
+    await expect(page.getByRole('link', { name: 'Terms', exact: true })).toHaveAttribute('href', '/terms')
+    await expect(page.getByRole('link', { name: 'Contact', exact: true })).toHaveAttribute('href', 'mailto:sheba@enterrecruitment.com')
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
+    await page.evaluate(() => window.scrollTo(0, 0))
 
     await motion.click()
     await expect(page.locator('.landing-background__scene')).toHaveCSS('animation-play-state', 'paused')
@@ -62,7 +49,7 @@ for (const width of [360, 390, 430, 1440]) {
   })
 }
 
-test('mobile navigation retains candidate signup and login without hero buttons', async ({ page }) => {
+test('mobile navigation retains candidate signup and login', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/')
   await page.getByText('Log in', { exact: true }).click()
@@ -81,7 +68,7 @@ test('reduced motion keeps the mobile landing static and candidate navigation us
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/')
   await expect(page.getByTestId('for-candidates')).toBeVisible()
-  await expect(page.locator('.ce-intro button')).toHaveCount(0)
+  await expect(page.locator('.ce-intro').getByRole('button', { name: 'For Candidates' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Pause background animation' })).toHaveCount(0)
   await expect(page.locator('.landing-background__scene')).toHaveCSS('animation-name', 'none')
 })

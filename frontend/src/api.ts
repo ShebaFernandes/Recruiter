@@ -63,6 +63,12 @@ async function request<T>(path: string, options: RequestInit = {}, binary = fals
 }
 
 export const api = {
+  submitHiringEnquiry: (body: FormData) => request<{ id: number; detail: string }>(
+    '/hiring/enquiries/', { method: 'POST', body },
+  ),
+  submitEmployeeTransitionEnquiry: (body: FormData) => request<{ id: number; detail: string }>(
+    '/support/employee-transition/', { method: 'POST', body },
+  ),
   legalStatus: () => request<{ accepted: Record<'age' | 'terms', boolean>; versions: Record<'age' | 'terms', string> }>('/candidate/legal/accept/', { cache: 'no-store' }),
   // Public publication must remain readable even when a saved session has expired.
   legalDocuments: () => request<{ enabled: boolean; documents?: LegalDocuments }>('/legal/documents/', { cache: 'no-store', credentials: 'omit' }),

@@ -16,7 +16,11 @@
 .upload-chapter-panel>header>svg { width:24px; height:24px; flex:none; color:var(--enter-primary); }
 .upload-chapter-panel h2 { font-size:18px; margin:0 0 5px; }
 .upload-chapter-panel header p { color:var(--enter-text-muted); font-size:13px; margin:0; }
-.candidate-experience .upload-chapter .cp-upload { padding:20px; background:rgb(255 255 255 / 12%); }
+.candidate-experience .upload-chapter .cp-upload { padding:20px; background:rgb(255 255 255 / 12%); transition:background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease; }
+.candidate-experience .upload-chapter .cp-upload:focus-within { border-color:var(--enter-primary); box-shadow:var(--enter-focus-halo); }
+@media (hover:hover) and (pointer:fine) {
+  .candidate-experience .upload-chapter .cp-upload:hover { border-color:var(--enter-primary); background:rgb(237 242 248 / 55%); }
+}
 .candidate-experience .upload-chapter .cp-upload.dragging { background:rgb(237 242 248 / 75%); border-color:var(--enter-primary); box-shadow:var(--enter-focus-halo); }
 .upload-chapter .upload-chapter-panel p,.upload-chapter .cp-file small { color:var(--enter-text-muted); }
 .upload-chapter .cp-upload .cp-file { width:100%; max-width:none; }
@@ -33,4 +37,7 @@
   .upload-chapter .upload-chapter-panel { padding:16px; }
   .upload-chapter .cp-upload { padding:18px 10px; }
   .upload-chapter .upload-privacy { align-items:flex-start; line-height:1.5; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .candidate-experience .upload-chapter .cp-upload { transition:none; }
 }

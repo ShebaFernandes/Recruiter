@@ -1,0 +1,151 @@
+COMPANY WEBSITE + CANDIDATE PLATFORM — COMBINED RELEASE
+30 October 2026
+
+SOURCE AND SCOPE
+Release branch: codex/candidate-website-release.
+Candidate base: feature/candidate-ui-final-polish at d987bd5, preserving its newer
+candidate/resume fixes. Website source: website-design at 080e353 PLUS its existing
+uncommitted website/enquiry work from /Users/enter/Desktop/recruiter-website-design.
+The website source worktree was read only and remains unchanged. Initial landing
+edits from this checkout were backed up at /private/tmp/enter-release-starting-edits.
+This is a reviewed integration of working files, not a merge of committed website
+history. Deploying website-design at 080e353 alone would omit the new website and
+newer candidate fixes. Use the combined release.
+
+Both products use https://enter.careers. Recruiter access stays disabled. Company
+enquiries are public contact forms, not recruiter accounts or candidate access.
+No production deployment, remote push, real email or paid AI request was performed.
+
+CHANGES
+- Correct worker subprocess database selection for file-backed SQLite; propagate
+  test mode, use a disposable file-backed test database and decode connection URLs
+  when checking database isolation. PostgreSQL worker behavior remains covered.
+- Integrate the complete company website, enquiries, private admin follow-up and
+  durable enquiry email notification worker, keeping current candidate code.
+- Preserve both migration histories and join them with
+  0030_merge_candidate_and_website; no existing migration was renamed.
+- Public privacy/terms links and contact email, candidate-focused search metadata,
+  illustrative evidence label, accessible footer link names.
+- Public enquiry attachments are scanned before storage/admin availability;
+  malware returns 400; scanner outage returns 503 without creating an enquiry.
+- Caddy/nginx limits allow supported 10 MiB hiring and 2 MiB employee-list files
+  with multipart overhead. Other API request limits remain narrow.
+- Production Compose requires an explicit CANDIDATE_ONLY build setting and adds
+  enquiry-notifier. Production template includes internal enquiry alert recipients.
+
+VALIDATION
+- Full PostgreSQL backend suite: 681 passed, 8 skipped; real worker subprocesses,
+  candidate isolation, authentication, legal and enquiry persistence included.
+- After upload scanning additions, targeted PostgreSQL run: 48 passed, including
+  scanner failure rejection and enquiry availability with recruiter access blocked.
+- Local SQLite worker/enquiry regression run: 25 passed after scanner fixes.
+- Frontend suite: 201 passed. ESLint: zero errors, one existing website hot-reload
+  export warning in AmbitionHires.tsx. Ruff: all checks passed.
+- 6 browser checks passed at 360/390/430/1440px: no horizontal overflow, company
+  navigation, candidate signup/login, legal/contact links and reduced motion.
+  Mobile full-page screenshot visually inspected. Browser used Vite preview.
+- Production linux/amd64 frontend/backend images built successfully:
+  enter-frontend:candidate-website-review
+  enter-backend:candidate-website-review
+- Actual built nginx configuration validated; homepage HTTP 200; /recruiter and
+  /recruiter/account HTTP 404. Candidate-only nginx include verified in image.
+- Built backend migrated a disposable PostgreSQL database through both histories;
+  migrate --check and makemigrations --check --dry-run passed.
+- Packaged v1.0 legal manifest matches deploy/production.env.example hashes.
+- Builds still report a frontend bundle-size advisory; no build error.
+- Docker Scout was rejected by automatic approval review due to potential external
+  disclosure of private image metadata. Offline scanner evidence is recorded below
+  below; no Scout upload was performed.
+
+DEPLOYMENT CHECKLIST — USE THE EXISTING PRODUCTION STACK
+[ ] Review this integrated source, record release commit and exact image digests.
+    Preserve both source branches and source worktrees. Do not deploy the old
+    website branch pointer or rebuild only its committed files.
+[ ] Confirm the production target/account/region and current per-service digests.
+    Preserve current environment, volumes, image tags, migration state and rollback
+    configuration. Never copy development data or secrets into production.
+[ ] Verify a current restore-tested backup, worker queue drain, disk/RAM, scanner
+    signatures, SQS/DLQ, private encrypted S3, SES sender and alert delivery.
+[ ] Confirm public company enquiry notices cover the new contact details and
+    employee-list uploads. Approved candidate legal snapshots are preserved; no
+    legal text or approval status was changed by this integration.
+[ ] Copy only approved settings into the protected production environment:
+    APP_ENV=production; DEBUG=false; TESTING=false; CANDIDATE_ONLY=true;
+    CANDIDATE_REGISTRATION_PAUSED=true; RESUME_UPLOADS_PAUSED=true;
+    CANDIDATE_REGISTRATION_COUNTRIES=IN; LEGAL_CONTENT_APPROVED=true;
+    LEGAL_WORKFLOW_PREVIEW=false; AI_PROVIDER=disabled; RESUME_AI_ENABLED=false;
+    RESUME_AI_EXTERNAL_PROCESSING_APPROVED=false; RESUME_AI_ALLOW_PAID=false.
+    Retain exact packaged legal versions, effective date and hashes.
+[ ] Keep ENTER_DOMAIN and ALLOWED_HOSTS=enter.careers; FRONTEND_URL, CORS and CSRF
+    origins=https://enter.careers. Existing launch checker pins these values and
+    Sydney ap-southeast-2 for S3/SQS/SMTP. Do not introduce app/www hosts silently.
+[ ] Confirm ENQUIRY_NOTIFICATION_EMAILS and production SMTP. Notifications contain
+    a protected admin link, not uploaded files or personal details. Test actual
+    alert delivery only to authorized recipients. Private admin remains loopback.
+[ ] Scan exact release images using current advisories; preserve machine-readable
+    evidence. Update the release image pins if images are rebuilt.
+[ ] Export ENTER_ENV_FILE=/absolute/path/to/.env.production and
+    ENTER_PINNED_IMAGES=/absolute/path/to/reviewed-per-service-images.yaml.
+    Include backend, worker and enquiry-notifier pins to the SAME backend image;
+    frontend to its reviewed image; retain existing DB/scanner/edge image digests.
+    Using one changed ENTER_RELEASE for the whole stack can accidentally select
+    different infrastructure images. No stack teardown is needed.
+[ ] Transfer reviewed source/config and images to the approved target. Keep public
+    recruiter mode disabled throughout. Run this one-off migration before rollout:
+    docker compose --project-name recruiter --env-file "$ENTER_ENV_FILE" -f compose.production.yaml -f "$ENTER_PINNED_IMAGES" run --rm --no-deps migrate
+    Require success. The project name recruiter identifies existing resources;
+    it does not enable recruiter access. These are additive website migrations.
+[ ] After safe worker drain, update only the pinned application services:
+    docker compose --project-name recruiter --env-file "$ENTER_ENV_FILE" -f compose.production.yaml -f "$ENTER_PINNED_IMAGES" up -d --no-deps --no-build --pull never backend worker enquiry-notifier frontend
+[ ] Install reviewed deploy/Caddyfile and validate it with the existing edge image.
+    Reload Caddy gracefully so new enquiry upload limits take effect. Keep database,
+    scanner and edge image versions unchanged. No public backend ports are added.
+[ ] Run migrate --check and check --deploy inside the deployed backend. Verify
+    HTTPS readiness, runtime candidate-only settings and worker/notifier health.
+[ ] Export ENTER_BACKUP_STATE_FILE to the private absolute backup marker base path.
+    From repository root on the production host run:
+    uv run python scripts/candidate_launch_check.py
+    Require PASS with intake paused. Marker ages: hourly <=2h, daily <=26h,
+    recovery <=35 days. The checker expects Compose project recruiter and uses
+    the base production Compose file to reach the existing backend container.
+[ ] Over public HTTPS verify /recruiter and descendants=404; recruiter API families
+    GET/POST=404; recruiter login=403; existing recruiter token/cookie auth and
+    shared resume downloads rejected; public /admin=404; no bypass listeners.
+[ ] Verify candidate login/profile/polling continue while signup/uploads=503; queued
+    jobs still complete. Check company links, assets, public legal pages, enquiry
+    form success/error states, admin persistence and authorized notification delivery.
+[ ] In isolated production-style staging run synthetic signup, verification,
+    password reset, PDF/DOCX processing, profile persistence, cross-candidate denial,
+    account deletion/object cleanup, enquiry attachment scanning and notification
+    retry. Keep CANDIDATE_ONLY=true, even when candidate intake is enabled.
+[ ] Open intake only after all gates pass: set the two pause flags=false and
+    recreate backend only, using the same pinned backend image. Do not restart the
+    resume worker for an intake flag change; do not rebuild frontend unnecessarily.
+[ ] Run one designated synthetic production smoke test, delete the test identity,
+    verify cleanup and recheck recruiter denial. Monitor email failures, worker
+    heartbeat, scanner, queue age/DLQ, notifier backlog, disk and backup freshness.
+    The paused launch checker is expected to fail after intake opens; use readiness
+    and operational health checks for ongoing monitoring.
+
+ROLLBACK
+Re-pause signup/upload by recreating backend only; preserve candidate login and
+allow queued jobs to drain. Follow deploy/CANDIDATE_SAFE_ROLLBACK.txt. Never expose
+an old backend that lacks candidate-only controls. Do not reverse the DB or remove
+S3 objects as a code rollback. Preserve new enquiry tables and their records;
+reverting application images does not require destructive migration rollback.
+
+PRODUCTION STATUS
+Local preparation and verification only. Actual host configuration, DNS/TLS,
+production email/storage/queue behavior, backups and current live image identity
+have not been inspected or modified by this task.
+
+FINAL OFFLINE SECURITY EVIDENCE
+Trivy 0.76.1 with freshly downloaded vulnerability DB; image scans used
+--network none, --offline-scan, --skip-db-update, --skip-java-db-update and
+--scanners vuln. Both exited successfully with zero HIGH/CRITICAL findings.
+This does not claim zero lower-severity findings or cover future advisories.
+Reports: deploy/release-evidence/frontend-vulnerabilities.json and
+deploy/release-evidence/backend-vulnerabilities.json.
+Frontend image index: sha256:0ec479b5046913b1e844c672ea36cb56c32b4eed6d75298fd67331ff0dac41c8
+Backend image index: sha256:27a8ed33757670d48bd7bfeec87b248d81a4067f7f758bdb32498e442a9fc4f9
+No external scan approval remains pending; a safe offline alternative completed.
