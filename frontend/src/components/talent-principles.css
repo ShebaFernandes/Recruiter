@@ -463,12 +463,12 @@
 
 /* Center the editorial heading and unnumbered evidence criteria with equal page gutters. */
 .talent-principles__inner { width: min(1280px, calc(100% - clamp(64px, 12vw, 192px))); }
-.talent-principles__top { grid-template-columns: minmax(240px, .85fr) minmax(0, 1.65fr); gap: clamp(36px, 5vw, 72px); align-items: center; }
+.talent-principles__top { width: fit-content; max-width: min(100%, 1080px); margin-inline: auto; grid-template-columns: minmax(0, max-content) minmax(0, max-content); gap: clamp(28px, 3vw, 44px); align-items: center; }
 .talent-principles__header { padding: 0; text-align: left; }
 .talent-principles__eyebrow { color: var(--talent-blue); font: 400 16px/1.5 var(--enter-font-ui); letter-spacing: .06em; text-align: left; }
-.talent-principles .talent-principles__header h2 { font-size: clamp(43px, 4.9vw, 72px); line-height: 1.08; font-weight: 400; }
+.talent-principles .talent-principles__header h2 { color: #30394d; font-size: clamp(40px, 4.5vw, 64px); line-height: 1.1; font-weight: 300; }
 .talent-principles__list { width: 100%; border-left: 0; padding-left: 0; }
-.talent-principle { padding: 22px 0; border-bottom: 1px solid #d8dfe8; }
+.talent-principle { width: fit-content; max-width: 100%; padding: 22px 0; border-bottom: 1px solid #d8dfe8; }
 .talent-principle:first-child { padding-top: 0; }
 .talent-principle__comparison { font-size: clamp(13px, 1.15vw, 17px); gap: 6px 12px; }
 .talent-principle__enter { font-weight: 600; }
