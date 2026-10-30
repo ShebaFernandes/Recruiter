@@ -61,8 +61,8 @@ export default function Landing({ choose }: {
           <p className="ce-supporting-headline">What You Build Tomorrow Depends on Who You Hire Today</p>
           <p>Every breakthrough product, high-performing team, and successful company is built by exceptional people. We help ambitious companies hire them.</p>
           <div className="ce-landing-ctas" aria-label="Explore enter">
-            <button className="ce-landing-cta ce-landing-cta--companies" onClick={() => navigateToHiringSection('hire')}>For Companies <ArrowRight size={16} aria-hidden="true" /></button>
-            <button className="ce-landing-cta ce-landing-cta--candidates" onClick={() => choose('candidate')}>For Candidates <ArrowRight size={16} aria-hidden="true" /></button>
+            <button className="ce-landing-cta ce-landing-cta--companies" onClick={() => navigateToHiringSection('hire')}>For Companies</button>
+            <button className="ce-landing-cta ce-landing-cta--candidates" onClick={() => choose('candidate')}>For Candidates</button>
           </div>
         </div>
       </div>

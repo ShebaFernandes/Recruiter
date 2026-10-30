@@ -47,7 +47,7 @@
 }
 .simple-landing .ce-landing-cta--candidates {
   gap: 14px;
-  padding: 9px 10px 9px 22px;
+  padding: 12px 24px;
   border-color: transparent;
   background: linear-gradient(160deg, #4e5357, #2c3135) padding-box, linear-gradient(160deg, #899095, #3b4145) border-box;
   color: #fbfcfa;
@@ -56,7 +56,7 @@
 }
 .simple-landing .ce-landing-cta--companies {
   gap: 14px;
-  padding: 9px 10px 9px 22px;
+  padding: 12px 24px;
   border-color: transparent;
   background: linear-gradient(160deg, #263e65, #15243e) padding-box, linear-gradient(160deg, #657fa3, #253b5d) border-box;
   color: #fbfcfa;
@@ -156,18 +156,4 @@
   .simple-landing :is(.ce-landing-cta, .ce-company-availability, .ce-audience-link, .ce-login summary, .ce-audience-link::after, .ce-login summary::after) { transition: none; }
   .simple-landing .ce-landing-cta:active { transform: none; }
   .simple-landing .ce-company-availability { transform: translate(-50%, 0); }
-}
-
-.simple-landing .ce-landing-cta svg {
-  box-sizing: border-box;
-  width: 28px;
-  height: 28px;
-  padding: 6px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, .12);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1);
-}
-@media (prefers-reduced-motion: no-preference) {
-  .simple-landing .ce-landing-cta svg { transition: transform 200ms ease, background-color 200ms ease; }
-  .simple-landing .ce-landing-cta:hover svg { transform: translateX(2px); background: rgba(255, 255, 255, .2); }
 }
