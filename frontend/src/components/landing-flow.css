@@ -102,35 +102,26 @@
 .simple-landing .evidence-to-hires {
   position: relative;
   isolation: isolate;
+  overflow: hidden;
   background: #faf9f6;
-}
-.simple-landing .evidence-to-hires::before {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  inset: 34% 0 0;
-  pointer-events: none;
-  background: linear-gradient(180deg, rgba(250, 249, 246, .86), rgba(250, 249, 246, .72)), url('/media/ambition-hires-mountain.jpg') center bottom / cover no-repeat;
-  mask-image: linear-gradient(to bottom, transparent, #000 26%);
 }
 .simple-landing .evidence-to-hires > :is(.talent-principles, .ambition-hires) { background: transparent; }
 .simple-landing .evidence-to-hires .ambition-hires__landscape,
 .simple-landing .evidence-to-hires .ambition-hires__wash { display: none; }
 
-/* A drifting forest landscape gives the talent chapter a calm, natural backdrop. */
-.simple-landing .talent-principles { isolation: isolate; }
-.simple-landing .talent-principles::before {
+/* One gently drifting landscape connects the evidence and hiring results. */
+.simple-landing .evidence-to-hires::before {
   content: '';
   position: absolute;
   z-index: -1;
   inset: -4%;
   pointer-events: none;
   background:
-    radial-gradient(ellipse at 50% 42%, rgba(250, 250, 246, .94) 12%, rgba(247, 250, 244, .83) 56%, rgba(239, 246, 235, .62)),
+    radial-gradient(ellipse at 50% 42%, rgba(250, 250, 246, .95) 12%, rgba(247, 250, 244, .88) 56%, rgba(239, 246, 235, .76)),
     url('/media/hiring-enquiry-landscape-v1.png') center 55% / cover no-repeat;
 }
 @media (prefers-reduced-motion: no-preference) {
-  .simple-landing .talent-principles::before { animation: talent-nature-drift 36s ease-in-out infinite alternate; }
+  .simple-landing .evidence-to-hires::before { animation: talent-nature-drift 36s ease-in-out infinite alternate; }
 }
 @keyframes talent-nature-drift {
   from { transform: translate3d(-1%, 0, 0) scale(1.02); }
