@@ -71,7 +71,7 @@
   top: 52%;
   right: 0;
   left: 0;
-  height: 1px;
+  height: 2px;
   background: var(--talent-coral);
   transform: rotate(-.6deg);
   transform-origin: left center;
@@ -462,16 +462,15 @@
 }
 
 /* Center the editorial heading and unnumbered evidence criteria with equal page gutters. */
-.talent-principles__inner { width: min(1280px, calc(100% - 96px)); }
+.talent-principles__inner { width: min(1280px, calc(100% - clamp(64px, 12vw, 192px))); }
 .talent-principles__top { grid-template-columns: minmax(240px, .85fr) minmax(0, 1.65fr); gap: clamp(36px, 5vw, 72px); align-items: center; }
 .talent-principles__header { padding: 0; text-align: left; }
-.talent-principles__eyebrow { color: var(--talent-blue); font: 600 16px/1.5 var(--enter-font-ui); letter-spacing: .06em; text-align: left; }
+.talent-principles__eyebrow { color: var(--talent-blue); font: 400 16px/1.5 var(--enter-font-ui); letter-spacing: .06em; text-align: left; }
 .talent-principles .talent-principles__header h2 { font-size: clamp(43px, 4.9vw, 72px); line-height: 1.08; font-weight: 400; }
 .talent-principles__list { width: 100%; border-left: 0; padding-left: 0; }
 .talent-principle { padding: 22px 0; border-bottom: 1px solid #d8dfe8; }
 .talent-principle:first-child { padding-top: 0; }
 .talent-principle__comparison { font-size: clamp(13px, 1.15vw, 17px); gap: 6px 12px; }
-.talent-principle__arrow { color: #d59a90; font-size: 24px; line-height: 1; }
 .talent-principle__enter { font-weight: 600; }
 .talent-principles .talent-principle > p { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9px; line-height: 1.8; letter-spacing: .035em; }
 @media (max-width: 900px) {
@@ -484,7 +483,6 @@
 @media (max-width: 600px) {
   .talent-principles__inner { width: calc(100% - 40px); }
   .talent-principle__enter { flex-basis: 100%; }
-  .talent-principle__arrow { display: none; }
 }
 
 /* Keep the comparison list open at its left edge. */

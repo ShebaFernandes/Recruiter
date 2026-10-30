@@ -72,7 +72,6 @@ export default function TalentPrinciples() {
           {principles.map((principle, index) => <li className="talent-principle" key={index}>
             <div className="talent-principle__comparison">
               <span className="talent-principle__conventional">{principle.conventional}</span>
-              <span className="talent-principle__arrow" aria-hidden="true">→</span>
               <span className="talent-principle__enter">{principle.enter}</span>
             </div>
             <p>{principle.evidence}</p>
