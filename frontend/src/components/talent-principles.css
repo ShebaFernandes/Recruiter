@@ -492,7 +492,7 @@
 /* Evidence cards and connected timeline from the supplied reference. */
 .talent-evidence { width: 100%; }
 .talent-evidence__cards { gap: clamp(24px, 7.5vw, 108px); padding-inline: 20px; }
-.talent-evidence-card { min-height: 136px; padding: 14px 16px; border-radius: 8px; background: rgba(255, 255, 255, .65); box-shadow: none; }
+.talent-evidence-card { width: 88%; max-width: 280px; justify-self: center; min-height: 136px; padding: 14px 16px; border-radius: 8px; background: rgba(255, 255, 255, .65); box-shadow: none; }
 .talent-principles .talent-evidence-card__label { font-family: var(--enter-font-sans); font-size: 10px; font-weight: 500; }
 .talent-principles .talent-evidence-card > p { margin: 12px 0 15px; font-size: 12px; line-height: 1.5; }
 .talent-principles .talent-evidence-card li { font-family: var(--enter-font-sans); font-size: 8px; padding: 4px 5px; }
@@ -505,9 +505,9 @@
 .talent-timeline__reference-labels { display: grid; grid-template-columns: repeat(6, 1fr); list-style: none; margin: 8px 0 0; padding: 0; color: #637087; font: 500 10px/1.4 var(--enter-font-ui); letter-spacing: .08em; }
 .talent-timeline__reference-labels li:nth-child(2) { text-align: left; }
 .talent-timeline__reference-labels li:last-child { text-align: right; }
-.talent-principles__closing > div { font-size: 12px; letter-spacing: .025em; }
+.talent-principles__closing > div { font-size: clamp(16px, 1.5vw, 20px); line-height: 1.5; letter-spacing: .025em; }
 @media (max-width: 760px) {
   .talent-evidence__cards { grid-template-columns: 1fr; padding-inline: 0; gap: 14px; }
-  .talent-evidence-card { min-height: 0; }
+  .talent-evidence-card { width: 100%; max-width: none; min-height: 0; }
   .talent-evidence-card::before, .talent-evidence-card::after, .talent-timeline { display: none; }
 }
