@@ -29,7 +29,7 @@
 }
 
 .brand-statement .brand-statement__copy em {
-  color: #6ea3f7;
+  color: #3046c9;
   font-family: inherit;
   font-style: italic;
   font-weight: 400;
@@ -47,8 +47,7 @@
 }
 
 .brand-statement.is-reveal-ready .brand-statement__copy em {
-  color: #17213b;
-  transition: color 600ms cubic-bezier(.22, 1, .36, 1) 220ms;
+  color: #3046c9;
 }
 
 .brand-statement.is-reveal-ready.is-visible .brand-statement__word {
@@ -56,7 +55,7 @@
   transform: translateY(0);
 }
 
-.brand-statement.is-reveal-ready.is-visible .brand-statement__copy em { color: #6ea3f7; }
+.brand-statement.is-reveal-ready.is-visible .brand-statement__copy em { color: #3046c9; }
 
 @media (max-width: 900px) {
   .brand-statement { min-height: 360px; }
@@ -77,5 +76,5 @@
     transform: none;
     transition: none;
   }
-  .brand-statement.is-reveal-ready .brand-statement__copy em { color: #6ea3f7; transition: none; }
+  .brand-statement.is-reveal-ready .brand-statement__copy em { color: #3046c9; transition: none; }
 }

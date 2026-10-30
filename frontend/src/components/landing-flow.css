@@ -79,8 +79,6 @@
 .what-building__art circle { fill: #a6c6f7; }
 .simple-landing .what-building__tabs { width: fit-content; margin-inline: auto; padding: 5px 16px; border: 1px solid rgba(156, 184, 229, .16); border-radius: 999px; background: rgba(255, 255, 255, .025); }
 .simple-landing .brand-statement__copy em { position: relative; white-space: nowrap; }
-.simple-landing .brand-statement__copy em::after { content: ''; position: absolute; bottom: -8px; left: 0; right: 0; height: 2px; background: #8caef0; border-radius: 999px; transform: scaleX(0) rotate(-1.5deg); transform-origin: left center; transition: transform 900ms cubic-bezier(.22, 1, .36, 1) 300ms; }
-.simple-landing .brand-statement.is-visible .brand-statement__copy em::after { transform: scaleX(1) rotate(-1.5deg); }
 @media (prefers-reduced-motion: no-preference) {
   .what-building__art svg { animation: invitation-drift 16s ease-in-out infinite alternate; }
 }
@@ -88,9 +86,6 @@
 @media (max-width: 600px) {
   .simple-landing .what-building__tabs { border-radius: 16px; padding-inline: 6px; }
   .what-building__art svg { opacity: .22; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .simple-landing .brand-statement__copy em::after { transform: scaleX(1) rotate(-1.5deg); transition: none; }
 }
 /* Keep every inline menu above the following animated chapters. */
 .simple-landing .what-building { z-index: 10; overflow: visible; }
