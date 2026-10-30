@@ -171,18 +171,22 @@ describe('WhatAreYouBuilding', () => {
     fireEvent.change(within(dialog).getByLabelText('Company name'), { target: { value: 'Example' } })
     fireEvent.change(within(dialog).getByLabelText('Work email'), { target: { value: 'alex@gmail.com' } })
     fireEvent.click(within(dialog).getByRole('button', { name: 'Engineering' }))
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Other' }))
+    fireEvent.click(within(within(dialog).getByRole('group', { name: 'Role departments' })).getByRole('button', { name: 'Other' }))
+    fireEvent.click(within(dialog).getByRole('button', { name: '2 weeks' }))
+    fireEvent.click(within(dialog).getByRole('button', { name: '30 days' }))
+    expect(within(dialog).getByRole('button', { name: '2 weeks' })).toHaveAttribute('aria-pressed', 'false')
     fireEvent.click(within(dialog).getByRole('button', { name: 'Find Talent' }))
     expect(screen.getByText('Please use your company or work email address.')).toBeVisible()
     fireEvent.change(within(dialog).getByPlaceholderText('Work email'), { target: { value: 'alex@example.com' } })
-    fireEvent.change(within(dialog).getByLabelText("Upload JD's"), {
-      target: { files: [new File(['%PDF-1.4'], 'role.pdf', { type: 'application/pdf' })] },
+    fireEvent.drop(dialog.querySelector('.enquiry-upload')!, {
+      dataTransfer: { files: [new File(['%PDF-1.4'], 'role.pdf', { type: 'application/pdf' })] },
     })
     fireEvent.click(within(dialog).getByRole('button', { name: 'Find Talent' }))
     expect(await screen.findByRole('status')).toHaveTextContent('Your request has been received.')
     expect(submit).toHaveBeenCalledOnce()
     const body = submit.mock.calls[0][0]
     expect(body.get('self_description')).toBe('Engineering leader')
+    expect(body.get('how_soon')).toBe('30 days')
     expect(body.get('kind')).toBe('hire')
     expect(body.get('role')).toBe('Senior Frontend Engineer')
     expect(body.get('location')).toBe('Hyderabad')

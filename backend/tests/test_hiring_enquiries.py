@@ -231,7 +231,9 @@ def test_invalid_kind_dates_and_missing_categories_are_rejected():
 @pytest.mark.parametrize("kind", ["hire", "team", "drive"])
 def test_hiring_cards_persist_self_description_and_other_department(kind):
     data = hire_data()
-    data.update(kind=kind, self_description="Engineering leader", departments=["Other"])
+    data.update(
+        kind=kind, self_description="Engineering leader", departments=["Other"], how_soon="30 days"
+    )
     if kind == "team":
         data["team_focus"] = "Platform engineering"
     if kind == "drive":
@@ -240,6 +242,7 @@ def test_hiring_cards_persist_self_description_and_other_department(kind):
     assert response.status_code == 201
     details = HiringEnquiry.objects.get(pk=response.data["id"]).details
     assert details["self_description"] == "Engineering leader"
+    assert details["how_soon"] == "30 days"
     assert details["departments"] == ["Other"]
 
 
@@ -250,4 +253,14 @@ def test_self_description_rejects_overlong_input():
     response = APIClient().post(URL, data, format="multipart")
     assert response.status_code == 400
     assert "self_description" in response.data
+    assert not HiringEnquiry.objects.exists()
+
+
+@pytest.mark.django_db
+def test_hiring_timing_rejects_unknown_choice():
+    data = hire_data()
+    data["how_soon"] = "invalid"
+    response = APIClient().post(URL, data, format="multipart")
+    assert response.status_code == 400
+    assert "how_soon" in response.data
     assert not HiringEnquiry.objects.exists()

@@ -46,6 +46,8 @@ export default function HiringEnquiryDrawer({ enquiry, minimumDate, opener, onCl
   const [selected, setSelected] = useState<string[]>([])
   const [file, setFile] = useState<File | null>(null)
   const [notes, setNotes] = useState('')
+  const [howSoon, setHowSoon] = useState('')
+  const [dragging, setDragging] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitState, setSubmitState] = useState<'idle' | 'sending' | 'sent'>('idle')
   const [submitError, setSubmitError] = useState('')
@@ -114,6 +116,7 @@ export default function HiringEnquiryDrawer({ enquiry, minimumDate, opener, onCl
     body.set('headcount', String(enquiry.headcount || headcount))
     selected.forEach(department => body.append('departments', department))
     body.set('notes', notes.trim())
+    if (howSoon) body.set('how_soon', howSoon)
     if (file) body.set('jd', file)
     setSubmitState('sending')
     setSubmitError('')
@@ -146,8 +149,22 @@ export default function HiringEnquiryDrawer({ enquiry, minimumDate, opener, onCl
     {errors.headcount && <small className="enquiry-error" role="alert">{errors.headcount}</small>}
   </div>
 
-  const uploadField = <div className="enquiry-upload"><input ref={fileRef} id={`${titleId}-file`} aria-label={file ? "Replace JD's" : "Upload JD's"} type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={event => { const chosen = event.target.files?.[0] ?? null; if (chosen && !/\.(pdf|docx)$/i.test(chosen.name)) { setErrors(current => ({ ...current, file: 'Choose a PDF or DOCX file.' })); event.target.value = ''; setFile(null); return } setErrors(current => { const next = { ...current }; delete next.file; return next }); setFile(chosen) }} />
-    <label htmlFor={`${titleId}-file`}><Paperclip size={18} aria-hidden="true" /> {file ? "Replace JD's" : "Upload JD's"}</label>
+  const chooseFile = (chosen: File | null) => {
+    if (chosen && !/\.(pdf|docx)$/i.test(chosen.name)) {
+      setErrors(current => ({ ...current, file: 'Choose a PDF or DOCX file.' }))
+      setFile(null)
+      return
+    }
+    setErrors(current => { const next = { ...current }; delete next.file; return next })
+    setFile(chosen)
+  }
+
+  const uploadField = <div className={`enquiry-upload${dragging ? ' is-dragging' : ''}`}
+    onDragOver={event => { event.preventDefault(); setDragging(true) }}
+    onDragLeave={() => setDragging(false)}
+    onDrop={event => { event.preventDefault(); setDragging(false); chooseFile(event.dataTransfer.files[0] ?? null) }}>
+    <input ref={fileRef} id={`${titleId}-file`} aria-label={file ? "Replace JD's" : "Upload JD's"} type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={event => { chooseFile(event.target.files?.[0] ?? null); event.target.value = '' }} />
+    <label htmlFor={`${titleId}-file`}><Paperclip size={18} aria-hidden="true" /><span>{file ? 'Replace JD' : 'Have JD? Drop it here'}<small>We will read it for you · PDF or DOCX</small></span></label>
     {file && <div className="enquiry-upload__file"><span>{file.name}</span><button type="button" onClick={() => { setFile(null); if (fileRef.current) fileRef.current.value = '' }}>Remove</button></div>}
     {errors.file && <small className="enquiry-error" role="alert">{errors.file}</small>}
   </div>
@@ -155,19 +172,21 @@ export default function HiringEnquiryDrawer({ enquiry, minimumDate, opener, onCl
   return createPortal(<div className={`enquiry-backdrop${closing ? ' is-closing' : ''}`} onMouseDown={event => { if (event.target === event.currentTarget) close() }}>
     <div className="enquiry-scene" onMouseDown={event => { if (event.target === event.currentTarget) close() }}>
     <div ref={panelRef} className={`enquiry-drawer enquiry-drawer--${enquiry.kind}`} role="dialog" aria-modal="true" aria-labelledby={titleId}>
-      <header className="enquiry-header"><div><h2 id={titleId}>{details.title}</h2><p>{details.description}</p></div><button ref={closeRef} className="enquiry-close" type="button" onClick={close} aria-label="Close hiring enquiry"><X size={14} aria-hidden="true" /></button></header>
+      <header className="enquiry-header"><div>{enquiry.kind === 'hire' && (enquiry.role || role) && <p className="enquiry-context">I'm looking for a {enquiry.role || role}{(enquiry.location || location) && <> in {enquiry.location || location}</>}.</p>}<h2 id={titleId}>{details.title}</h2><p>{details.description}</p></div><button ref={closeRef} className="enquiry-close" type="button" onClick={close} aria-label="Close hiring enquiry"><X size={14} aria-hidden="true" /></button></header>
       <form className="enquiry-form" noValidate onSubmit={submit}>
         {field('name', 'Your name', name, setName)}
         {field('company', 'Company name', company, setCompany)}
         {field('email', 'Work email', email, setEmail, 'email')}
         {field('selfDescription', 'What best describes you?', selfDescription, setSelfDescription)}
-        {enquiry.kind === 'hire' && <>{!enquiry.role && field('role', 'Role or job title', role, setRole)}{!enquiry.location && field('location', 'Hiring location', location, setLocation)}{departmentField}{uploadField}{!enquiry.headcount && headcountField}</>}
-        {enquiry.kind === 'team' && <>{!enquiry.teamFocus && field('teamFocus', 'Team or department focus', teamFocus, setTeamFocus)}{departmentField}{!enquiry.headcount && headcountField}{uploadField}</>}
-        {enquiry.kind === 'drive' && <>{departmentField}{!enquiry.role && field('role', 'Role or job title', role, setRole)}{!enquiry.headcount && headcountField}{!enquiry.location && field('location', 'Hiring location', location, setLocation)}{!enquiry.deadline && <label className="enquiry-field"><span>Target hiring date</span><input type="date" min={minimumDate} value={deadline} onChange={event => setDeadline(event.target.value)} aria-invalid={!!errors.deadline} />{errors.deadline && <small className="enquiry-error" role="alert">{errors.deadline}</small>}</label>}{uploadField}</>}
-        <label className="enquiry-field"><span>Notes</span><textarea aria-label="Notes" rows={2} maxLength={250} aria-describedby={`${titleId}-notes-limit`} placeholder="Tell us anything else about your hiring needs..." value={notes} onChange={event => setNotes(event.target.value.slice(0, 250))} /><small id={`${titleId}-notes-limit`} className="enquiry-notes-limit">{notes.length}/250 characters</small></label>
+        {enquiry.kind === 'hire' && <>{!enquiry.role && field('role', 'Role or job title', role, setRole)}{!enquiry.location && field('location', 'Hiring location', location, setLocation)}{departmentField}{!enquiry.headcount && headcountField}</>}
+        {enquiry.kind === 'team' && <>{!enquiry.teamFocus && field('teamFocus', 'Team or department focus', teamFocus, setTeamFocus)}{departmentField}{!enquiry.headcount && headcountField}</>}
+        {enquiry.kind === 'drive' && <>{departmentField}{!enquiry.role && field('role', 'Role or job title', role, setRole)}{!enquiry.headcount && headcountField}{!enquiry.location && field('location', 'Hiring location', location, setLocation)}{!enquiry.deadline && <label className="enquiry-field"><span>Target hiring date</span><input type="date" min={minimumDate} value={deadline} onChange={event => setDeadline(event.target.value)} aria-invalid={!!errors.deadline} />{errors.deadline && <small className="enquiry-error" role="alert">{errors.deadline}</small>}</label>}</>}
+        <fieldset className="enquiry-timing"><legend>How soon?</legend><div className="enquiry-pills">{['2 weeks', '30 days', 'Other'].map(option => <button key={option} type="button" aria-pressed={howSoon === option} onClick={() => setHowSoon(option)}>{option}</button>)}</div></fieldset>
+        <label className="enquiry-field"><span>Notes</span><textarea aria-label="Notes" rows={2} maxLength={250} aria-describedby={`${titleId}-notes-limit`} placeholder="Anything else we should know to help you hire better?" value={notes} onChange={event => setNotes(event.target.value.slice(0, 250))} /><small id={`${titleId}-notes-limit`} className="enquiry-notes-limit">{notes.length}/250 characters</small></label>
+        {uploadField}
         {submitState === 'sent' && <p className="enquiry-notice" role="status">Thank you. Your request has been received. Our team will follow up at your work email.</p>}
         {submitError && <p className="enquiry-notice enquiry-notice--error" role="alert">{submitError}</p>}
-        <div className="enquiry-actions"><button type="submit" className="enquiry-submit" disabled={submitState !== 'idle'}>{submitState === 'sending' ? 'Sending…' : submitState === 'sent' ? 'Sent' : details.action} {submitState === 'idle' && <ArrowRight size={16} aria-hidden="true" />}</button></div>
+        <div className="enquiry-actions"><small>We’ll be in touch shortly.</small><button type="submit" className="enquiry-submit" disabled={submitState !== 'idle'}>{submitState === 'sending' ? 'Sending…' : submitState === 'sent' ? 'Sent' : details.action} {submitState === 'idle' && <ArrowRight size={16} aria-hidden="true" />}</button></div>
       </form>
     </div>
     </div>

@@ -92,6 +92,7 @@ class BaseHiringSerializer(serializers.Serializer):
 
 
 class DepartmentHiringSerializer(BaseHiringSerializer):
+    how_soon = serializers.ChoiceField(choices=["2 weeks", "30 days", "Other"], required=False)
     self_description = serializers.CharField(
         max_length=240, required=False, allow_blank=True, trim_whitespace=True
     )
@@ -212,7 +213,7 @@ def enquiry_details(kind, data):
             "compensation", "location_mode",
         )
     if kind in {HiringEnquiry.Kind.HIRE, HiringEnquiry.Kind.TEAM, HiringEnquiry.Kind.DRIVE}:
-        fields = (*fields, "self_description")
+        fields = (*fields, "self_description", "how_soon")
     return {
         field: value.isoformat() if isinstance(value, date) else value
         for field in fields if (value := data.get(field)) is not None
