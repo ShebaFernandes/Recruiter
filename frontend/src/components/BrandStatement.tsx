@@ -15,7 +15,6 @@ export default function BrandStatement() {
   }, [])
 
   return <section ref={sectionRef} className="brand-statement" aria-labelledby="brand-statement-title">
-    <div className="brand-statement__orbit" aria-hidden="true"><span /><span /><i /></div>
     <div className="brand-statement__inner">
       <h2 id="brand-statement-title" className="brand-statement__copy">
         {beforeHighlight.map((text, index) => <Fragment key={index}>{word(text, index)}{' '}</Fragment>)}

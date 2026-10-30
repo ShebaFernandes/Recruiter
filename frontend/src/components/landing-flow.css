@@ -13,9 +13,6 @@
   position: relative;
 }
 /* Edge washes soften the change in palette without hiding chapter boundaries. */
-.simple-landing .brand-statement {
-  background: linear-gradient(180deg, #e5e9ee, #faf9f6 100px, #faf9f6 calc(100% - 80px), #e5e9ee);
-}
 .simple-landing .talent-principles {
   background: linear-gradient(180deg, #e5e9ee, #faf9f6 110px, #faf9f6);
 }
@@ -81,30 +78,16 @@
 .what-building__art path { fill: none; stroke: #6689bd; stroke-width: .7; }
 .what-building__art circle { fill: #a6c6f7; }
 .simple-landing .what-building__tabs { width: fit-content; margin-inline: auto; padding: 5px 16px; border: 1px solid rgba(156, 184, 229, .16); border-radius: 999px; background: rgba(255, 255, 255, .025); }
-.simple-landing .brand-statement { background: radial-gradient(ellipse at 50% 50%, #fffefa 0%, #f0f3f8 100%); }
-.brand-statement__orbit { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
-.brand-statement__orbit span { position: absolute; width: min(760px, calc(100vw - 64px)); height: 170px; left: 50%; top: 50%; border: 1px solid rgba(105, 139, 192, .27); border-radius: 50%; transform: translate(-50%, -50%) rotate(-7deg); }
-.brand-statement__orbit span + span { width: min(940px, calc(100vw - 32px)); height: 210px; border-color: rgba(105, 139, 192, .16); }
-.brand-statement__orbit i { position: absolute; width: 7px; height: 7px; border-radius: 50%; background: #8bace0; top: 32%; left: 79%; box-shadow: 0 0 0 6px rgba(139, 172, 224, .1); }
 .simple-landing .brand-statement__copy em { position: relative; white-space: nowrap; }
 .simple-landing .brand-statement__copy em::after { content: ''; position: absolute; bottom: -8px; left: 0; right: 0; height: 2px; background: #8caef0; border-radius: 999px; transform: scaleX(0) rotate(-1.5deg); transform-origin: left center; transition: transform 900ms cubic-bezier(.22, 1, .36, 1) 300ms; }
 .simple-landing .brand-statement.is-visible .brand-statement__copy em::after { transform: scaleX(1) rotate(-1.5deg); }
 @media (prefers-reduced-motion: no-preference) {
   .what-building__art svg { animation: invitation-drift 16s ease-in-out infinite alternate; }
-  .brand-statement__orbit i { animation: statement-glow 4s ease-in-out infinite alternate; }
-  @supports (animation-timeline: view()) {
-    .brand-statement__orbit span { animation: statement-orbit-drift linear both; animation-timeline: view(); animation-range: entry 0% exit 100%; }
-  }
 }
 @keyframes invitation-drift { from { transform: translateY(-8px); } to { transform: translateY(8px); } }
-@keyframes statement-glow { from { opacity: .45; } to { opacity: 1; } }
-@keyframes statement-orbit-drift { from { translate: 0 -8px; } to { translate: 0 8px; } }
 @media (max-width: 600px) {
   .simple-landing .what-building__tabs { border-radius: 16px; padding-inline: 6px; }
   .what-building__art svg { opacity: .22; }
-  .brand-statement__orbit span { width: min(460px, calc(100vw - 48px)); height: 150px; }
-  .brand-statement__orbit span + span { width: min(540px, calc(100vw - 24px)); height: 190px; }
-  .brand-statement__orbit i { left: 84%; }
 }
 @media (prefers-reduced-motion: reduce) {
   .simple-landing .brand-statement__copy em::after { transform: scaleX(1) rotate(-1.5deg); transition: none; }

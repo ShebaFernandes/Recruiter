@@ -6,10 +6,7 @@
   min-height: clamp(340px, 44svh, 440px);
   overflow: hidden;
   isolation: isolate;
-  background:
-    radial-gradient(ellipse at 10% 90%, rgba(151, 181, 229, .17), transparent 36%),
-    radial-gradient(ellipse at 93% 12%, rgba(232, 220, 203, .35), transparent 32%),
-    linear-gradient(120deg, #faf9f6 0%, #fbfaf7 52%, #f8f6f1 100%);
+  background: linear-gradient(90deg, rgba(248, 250, 247, .65), rgba(248, 250, 247, .8) 50%, rgba(248, 250, 247, .65)), url('/media/hiring-enquiry-landscape-v1.png') center 68% / cover no-repeat;
 }
 
 .brand-statement__inner {
