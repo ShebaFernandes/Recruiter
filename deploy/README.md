@@ -394,7 +394,7 @@ docker compose --env-file .env.production -f compose.production.yaml build --pul
 docker compose --env-file .env.production -f compose.production.yaml up -d db
 docker compose --env-file .env.production -f compose.production.yaml run --rm migrate
 docker compose --env-file .env.production -f compose.production.yaml run --rm migrate python manage.py check --deploy
-docker compose --env-file .env.production -f compose.production.yaml up -d backend scanner worker frontend edge
+docker compose --env-file .env.production -f compose.production.yaml up -d backend scanner worker enquiry-notifier frontend edge
 ```
 
 Never run `down -v`, prune volumes, or restore a development dump here. Migration
@@ -1096,3 +1096,17 @@ signature-test data and scan reports are temporary local artifacts.
 No infrastructure provisioning, Git commits/pushes, deployments, external AI calls
 or external emails were performed. Signature/package/advisory downloads were the
 only required external security-update traffic. Local SMTP used Mailpit only.
+
+
+## Careers and enquiry upload release checks
+
+The public Careers, hiring enquiry and employee-transition endpoints accept multipart
+uploads. Caddy and nginx reserve 11 MB request bodies for these routes; Django retains
+the stricter per-file limits. All three flows scan files with the configured scanner
+before storing them. Keep the scanner healthy before enabling intake; an unavailable
+scanner returns a retryable 503 without saving an application or attachment.
+
+Apply migrations through `0030_careerapplication` during an approved release.
+Careers applications and private resume downloads are available to superusers in Django
+admin. Validate the real private storage and scanner using synthetic files in staging.
+See `READINESS_2026-11-02.txt` for local validation evidence and outstanding launch gates.

@@ -753,3 +753,184 @@
 .growth-enquiry__heading button { flex: none; box-sizing: border-box; align-self: flex-start; width: 20px; height: 20px; padding: 0; border: 1px solid #dce1e8; color: #465bb2; box-shadow: 0 0 8px rgba(70, 91, 178, .22); transition: box-shadow 180ms ease, background 180ms ease; }
 .growth-enquiry__heading button svg { display: block; width: 11px; height: 11px; }
 .growth-enquiry__heading button:hover { background: #f4f5ff; box-shadow: 0 0 12px rgba(70, 91, 178, .35); }
+
+.growth-enquiry .growth-enquiry__field .growth-dropdown details[open] .growth-dropdown__menu { background: rgba(255, 255, 255, .78); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-color: rgba(255, 255, 255, .55); }
+.growth-dropdown__menu button { background-color: transparent; }
+.growth-dropdown__menu button:hover, .growth-dropdown__menu button:focus-visible { background-color: rgba(225, 234, 255, .65); }
+
+.growth-enquiry-modal { width: min(680px, calc(100vw - 32px)); max-height: calc(100dvh - 40px); padding: 0; border: 0; border-radius: 22px; background: #fff; color: #17213b; overflow-y: auto; box-shadow: 0 24px 90px #0006; }
+.growth-enquiry-modal::backdrop { background: #0b1327b3; backdrop-filter: blur(8px); }
+.growth-enquiry-modal .growth-enquiry { box-sizing: border-box; width: 100%; height: auto; min-height: 0; max-height: none; padding: 28px; margin: 0; overflow: visible; }
+.growth-enquiry-modal .growth-enquiry__heading h3 { font-size: 24px; }
+@media (prefers-reduced-motion: no-preference) { .growth-enquiry-modal[open] { animation: growth-modal-open 220ms ease-out; } }
+@keyframes growth-modal-open { from { opacity: 0; transform: translateY(12px) scale(.97); } to { opacity: 1; transform: none; } }
+@media (max-width: 600px) { .growth-enquiry-modal .growth-enquiry { padding: 20px 16px; } }
+
+.growth-enquiry-modal { width: min(1120px, calc(100vw - 40px)); background: transparent; }
+.growth-enquiry-modal__layout { display: grid; grid-template-columns: 1.15fr 1fr; gap: 24px; align-items: stretch; }
+.growth-enquiry-modal .growth-enquiry { background: #fff; border-radius: 22px; }
+.growth-enquiry-modal .growth-stage-card { min-height: 100%; border-radius: 22px; }
+.growth-enquiry-modal--leadership .growth-enquiry-modal__layout { grid-template-columns: 1fr 1.15fr; }
+.growth-enquiry-modal--leadership .growth-stage-card { grid-column: 1; grid-row: 1; }
+.growth-enquiry-modal--leadership .growth-enquiry { grid-column: 2; grid-row: 1; }
+@media (max-width: 760px) {
+  .growth-enquiry-modal__layout, .growth-enquiry-modal--leadership .growth-enquiry-modal__layout { grid-template-columns: 1fr; }
+  .growth-enquiry-modal--leadership .growth-enquiry, .growth-enquiry-modal--leadership .growth-stage-card { grid-column: auto; grid-row: auto; }
+  .growth-enquiry-modal .growth-stage-card { min-height: 320px; }
+}
+
+/* Size popup pairs from the form rather than the scenic card's fixed rows. */
+.growth-enquiry-modal .growth-stage-card { position: relative; min-height: 0; height: auto; display: block; grid-template-rows: none; }
+.growth-enquiry-modal .growth-stage-card__body { position: relative; z-index: 1; min-height: 0; padding: 24px; }
+.growth-enquiry-modal .growth-stage-card__image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.growth-enquiry-modal .growth-enquiry { align-self: start; padding-bottom: 24px; }
+@media (max-width: 760px) { .growth-enquiry-modal .growth-stage-card { min-height: 300px; } }
+
+/* Keep scenic popup copy clear of the landscape. */
+.growth-enquiry-modal .growth-stage-card { overflow: hidden; }
+.growth-enquiry-modal .growth-stage-card__body { padding: 24px; background: linear-gradient(180deg, rgba(238, 228, 210, .98) 0%, rgba(238, 228, 210, .94) 78%, rgba(238, 228, 210, .72) 100%); }
+.growth-enquiry-modal .growth-stage-card--leadership .growth-stage-card__body { background: linear-gradient(180deg, rgba(216, 225, 239, .98) 0%, rgba(216, 225, 239, .94) 78%, rgba(216, 225, 239, .72) 100%); }
+.growth-enquiry-modal .growth-stage-card__image { z-index: 0; object-position: center bottom; }
+.growth-enquiry-modal .growth-stage-card__description { color: #435064; }
+
+/* Matched, larger panels for both growth enquiry popups. */
+.growth-enquiry-modal { width:min(1320px,calc(100vw - 48px)); }
+.growth-enquiry-modal .growth-enquiry-modal__layout { grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; }
+.growth-enquiry-modal .growth-enquiry,
+.growth-enquiry-modal .growth-stage-card { box-sizing:border-box; height:700px; min-height:700px; max-height:700px; align-self:stretch; }
+.growth-enquiry-modal .growth-enquiry { padding:32px; overflow-y:auto; }
+.growth-enquiry-modal .growth-stage-card { display:flex; flex-direction:column; background:#eee4d2; }
+.growth-enquiry-modal .growth-stage-card--leadership { background:#d8e1ef; }
+.growth-enquiry-modal .growth-stage-card__body { flex:0 0 auto; padding:30px; background:none; }
+.growth-enquiry-modal .growth-stage-card__image { position:static; display:block; flex:1 1 auto; min-height:0; width:100%; height:auto; object-fit:contain; object-position:center; mask-image:none; transform:none; }
+@media(max-width:760px){
+ .growth-enquiry-modal { width:calc(100vw - 24px); }
+ .growth-enquiry-modal .growth-enquiry-modal__layout { grid-template-columns:minmax(0,1fr); gap:16px; }
+ .growth-enquiry-modal .growth-enquiry,.growth-enquiry-modal .growth-stage-card { height:640px; min-height:640px; max-height:640px; }
+ .growth-enquiry-modal .growth-enquiry { padding:24px 20px; }
+ .growth-enquiry-modal .growth-stage-card__body { padding:24px; }
+}
+
+/* Carry the original scenic-card treatment into the enlarged dialogs. */
+.growth-enquiry-modal .growth-stage-card { display:block; background:linear-gradient(155deg,#f1dfca,#f7e9dc 56%,#eee4db); }
+.growth-enquiry-modal .growth-stage-card--leadership { background:linear-gradient(155deg,#c8d5ec,#d9e1ef 56%,#dce2e7); }
+.growth-enquiry-modal .growth-stage-card__body,
+.growth-enquiry-modal .growth-stage-card--leadership .growth-stage-card__body { position:relative; z-index:1; background:transparent; padding:30px; }
+.growth-enquiry-modal .growth-stage-card__image {
+ position:absolute; inset:auto 0 0; display:block; width:100%; height:48%;
+ object-fit:cover; object-position:center bottom; flex:none;
+ mask-image:linear-gradient(to bottom,transparent,#000 24%);
+ -webkit-mask-image:linear-gradient(to bottom,transparent,#000 24%);
+ transform:none;
+}
+.growth-enquiry-modal .growth-stage-card:hover .growth-stage-card__image { transform:none; }
+@media(max-width:760px){ .growth-enquiry-modal .growth-stage-card__body { padding:24px; } }
+
+/* Keep the larger width while removing unused vertical space. */
+.growth-enquiry-modal .growth-enquiry,
+.growth-enquiry-modal .growth-stage-card {
+ height:auto; min-height:560px; max-height:none;
+}
+.growth-enquiry-modal .growth-enquiry { padding:28px 32px; }
+.growth-enquiry-modal .growth-enquiry__fields { gap:12px; }
+.growth-enquiry-modal .growth-enquiry__field input,
+.growth-enquiry-modal .growth-dropdown summary { min-height:38px; }
+.growth-enquiry-modal .growth-enquiry textarea { min-height:58px; }
+.growth-enquiry-modal .growth-enquiry__actions { margin-top:18px; }
+.growth-enquiry-modal .growth-stage-card__image { height:62%; }
+.growth-enquiry-modal .growth-stage-card__body { padding:28px 30px; }
+@media(max-width:760px){
+ .growth-enquiry-modal .growth-enquiry { min-height:0; height:auto; padding:24px 20px; }
+ .growth-enquiry-modal .growth-stage-card { min-height:480px; height:480px; }
+ .growth-enquiry-modal .growth-stage-card__body { padding:24px; }
+ .growth-enquiry-modal .growth-stage-card__image { height:58%; }
+}
+
+/* Let the form determine pair height instead of reserving blank space. */
+.growth-enquiry-modal .growth-enquiry { height:auto; min-height:0; max-height:none; }
+.growth-enquiry-modal .growth-stage-card { height:auto; min-height:0; max-height:none; align-self:stretch; }
+@media(max-width:760px){
+ .growth-enquiry-modal .growth-stage-card { height:440px; min-height:440px; }
+}
+
+/* One shared panel size across both enquiry variants. */
+.growth-enquiry-modal { --growth-panel-height:540px; }
+.growth-enquiry-modal .growth-enquiry,
+.growth-enquiry-modal .growth-stage-card {
+ height:var(--growth-panel-height);
+ min-height:var(--growth-panel-height);
+ max-height:var(--growth-panel-height);
+ width:100%;
+}
+.growth-enquiry-modal .growth-enquiry {
+ display:flex;
+ flex-direction:column;
+ justify-content:space-between;
+ gap:8px;
+}
+.growth-enquiry-modal .growth-enquiry > * { flex-shrink:0; }
+.growth-enquiry-modal .growth-enquiry__actions { margin-top:10px; }
+@media(max-width:760px){
+ .growth-enquiry-modal { --growth-panel-height:620px; }
+ .growth-enquiry-modal .growth-enquiry { justify-content:flex-start; }
+}
+
+.growth-stages__eyebrow { font-size:16px; line-height:1.5; }
+@media(max-width:480px){ .growth-stages__eyebrow { font-size:14px; } }
+
+/* Readable subheadings in both enlarged growth forms. */
+.growth-enquiry-modal .growth-enquiry h4,
+.growth-enquiry-modal .growth-enquiry__field > span,
+.growth-enquiry-modal .growth-enquiry__confidential > span {
+ font-size:14px; font-weight:500; line-height:1.5;
+}
+.growth-enquiry-modal .growth-enquiry__upload > span { font-size:13px; }
+.growth-enquiry-modal .growth-enquiry__confidential small { font-size:12px; line-height:1.5; }
+@media(max-width:480px){
+ .growth-enquiry-modal .growth-enquiry h4,
+ .growth-enquiry-modal .growth-enquiry__field > span,
+ .growth-enquiry-modal .growth-enquiry__confidential > span { font-size:13px; }
+}
+
+.growth-enquiry-modal .growth-enquiry .growth-enquiry__field:has(input[name="founder_role"]) > span,
+.growth-enquiry-modal .growth-enquiry .growth-enquiry__field:has(input[name="location"]) > span,
+.growth-enquiry-modal .growth-enquiry .growth-enquiry__field:has(input[name="location_mode"]) > span,
+.growth-enquiry-modal .growth-enquiry h4 { font-size:14px; font-weight:500; line-height:1.5; }
+@media(max-width:480px){
+ .growth-enquiry-modal .growth-enquiry .growth-enquiry__field:has(.growth-dropdown) > span,
+ .growth-enquiry-modal .growth-enquiry h4 { font-size:13px; }
+}
+
+/* Show the complete enquiry without a separate scrolling form. */
+.growth-enquiry-modal .growth-enquiry,
+.growth-enquiry-modal .growth-stage-card { height:auto; min-height:520px; max-height:none; }
+.growth-enquiry-modal .growth-enquiry { overflow:visible; padding:24px 28px; gap:8px; justify-content:flex-start; }
+.growth-enquiry-modal .growth-enquiry__heading { margin-bottom:4px; }
+.growth-enquiry-modal .growth-enquiry h4 { margin:6px 0 2px; }
+.growth-enquiry-modal .growth-enquiry__fields { margin:0; gap:10px 12px; }
+.growth-enquiry-modal .growth-enquiry fieldset { margin:0; padding:0; }
+.growth-enquiry-modal .growth-enquiry__upload { margin:0; min-height:36px; }
+.growth-enquiry-modal .growth-enquiry textarea { height:52px; min-height:52px; margin:0; }
+.growth-enquiry-modal .growth-enquiry__confidential { margin:4px 0; padding-block:10px; }
+.growth-enquiry-modal .growth-enquiry__actions { margin-top:8px; }
+@media(max-width:760px){
+ .growth-enquiry-modal .growth-enquiry { min-height:0; padding:22px 18px; }
+ .growth-enquiry-modal .growth-stage-card { height:420px; min-height:420px; }
+}
+
+.growth-enquiry-modal .growth-enquiry h4 { margin:4px 0 0; }
+.growth-enquiry-modal .growth-enquiry__field { gap:3px; }
+.growth-enquiry-modal .growth-enquiry__upload--top { display:flex; align-items:center; gap:12px; padding:14px 16px; min-height:66px; background:#f4f5fc; border:1px dashed #a8b3d3; border-radius:12px; color:#465bb2; box-sizing:border-box; }
+.growth-enquiry-modal .growth-enquiry__upload--top > span { font-size:14px; font-weight:600; }
+.growth-enquiry-modal .growth-enquiry__upload--top small { display:block; margin-top:4px; font-size:12px; font-weight:400; color:#74819c; }
+.growth-enquiry-modal .growth-enquiry__upload--top svg { flex:none; }
+
+.growth-enquiry-modal .growth-enquiry h4 { margin:4px 0 -5px; }
+.growth-enquiry-modal .growth-enquiry__field { gap:2px; }
+.growth-enquiry-modal .growth-enquiry__field > span { margin-bottom:0; }
+
+/* Simple field edges without the extra outer focus ring. */
+.growth-enquiry-modal .growth-enquiry :is(input,textarea,select,summary):focus,
+.growth-enquiry-modal .growth-enquiry :is(input,textarea,select,summary):focus-visible {
+ outline:none; outline-offset:0; box-shadow:none; border-color:#9da7ba;
+}

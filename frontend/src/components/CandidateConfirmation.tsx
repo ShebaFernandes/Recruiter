@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { ArrowRight, CircleCheck, MessageCircle, Search } from 'lucide-react'
+import { CircleCheck, MessageCircle, Search } from 'lucide-react'
 import { AnimatedTicket } from './ui/ticket-confirmation-card'
 import './candidate-confirmation.css'
 import { legalPublished } from '../legalReview'
@@ -27,7 +27,7 @@ export default function CandidateConfirmation({ onViewProfile }: { onViewProfile
           <li><MessageCircle aria-hidden="true" /><div><h5>We'll be in touch</h5><p>If there's a relevant opportunity, you'll be contacted according to your saved preferences.</p></div></li>
         </ul>
       </section>
-      <button type="button" className="cp-confirmation-profile" onClick={onViewProfile}>View my profile <ArrowRight aria-hidden="true" /></button>
+      <button type="button" className="cp-confirmation-profile" onClick={onViewProfile}>View my profile </button>
     </div>
     </AnimatedTicket>
   </section>

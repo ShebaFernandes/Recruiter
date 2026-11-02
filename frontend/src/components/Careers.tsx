@@ -1,0 +1,89 @@
+import { type FormEvent, useRef, useState } from 'react'
+import { ChevronDown, Check, LogOut } from 'lucide-react'
+import { api } from '../api'
+import EnterLogo from './EnterLogo'
+import './careers.css'
+import { careerPositions, careerDepartments, careerLocations } from './careerPositions'
+
+export default function Careers() {
+  const [department, setDepartment] = useState('All departments')
+  const [location, setLocation] = useState('All locations')
+  const [position, setPosition] = useState('')
+  const visiblePositions = careerPositions.filter(job => (department === 'All departments' || job.department === department) && (location === 'All locations' || job.location === location))
+  const [message, setMessage] = useState('')
+  const [sending, setSending] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+  const submitting = useRef(false)
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (submitting.current || submitted) return
+    const form = event.currentTarget
+    const body = new FormData(form)
+    if (position) body.set('motivation', `Position: ${position}\n\n${body.get('motivation') ?? ''}`)
+    const resume = body.get('resume')
+    if (resume instanceof File && (resume.size > 10 * 1024 * 1024 || !/\.(pdf|docx)$/i.test(resume.name))) {
+      setMessage('Choose a PDF or DOCX resume smaller than 10 MB.')
+      return
+    }
+    submitting.current = true
+    setSending(true)
+    setMessage('')
+    try {
+      const result = await api.submitCareerApplication(body)
+      setMessage(result.detail)
+      setSubmitted(true)
+      form.reset()
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Please try again.')
+    } finally {
+      submitting.current = false
+      setSending(false)
+    }
+  }
+  return <main className="enter-careers">
+    <a className="careers-skip" href="#positions">Skip to open positions</a>
+    <div className="careers-hero-surface"><MountainScene /><header><a href="/" aria-label="Enter home"><EnterLogo /><span className="careers-tagline">Humanity. Integrity and Possibility.</span></a><nav aria-label="Careers navigation"><a href="/careers" aria-current="page">Careers</a><a href="/">Back to enter <LogOut size={16} strokeWidth={1.5} aria-hidden="true" /></a></nav></header>
+    <section className="careers-hero"><p className="careers-eyebrow">CAREERS</p><h1 tabIndex={-1}>Hiring as We Know It Is Broken.<br /><span>Be a Part of the Team Fixing It.</span></h1><p>Be a part of enter.</p></section></div>
+    <div className="careers-workspace"><section id="positions" className="careers-positions"><div><p className="careers-eyebrow">BUILD WHAT COMES NEXT</p><h2>Open Positions</h2></div><div className="careers-filters"><CareerFilter label="Department" value="All departments" options={careerDepartments} onChange={setDepartment} /><CareerFilter label="Location" value="All locations" options={careerLocations} onChange={setLocation} /></div><div className="careers-job-list" aria-live="polite">{visiblePositions.map(job => <details className="careers-job" key={job.id}><summary><div><h3>{job.title}</h3><p>{job.summary}</p></div><span>{job.department}<br />{job.location}</span><ChevronDown size={18} aria-hidden="true" /></summary><div className="careers-job-description">{job.sections.map(section => <section key={section.title}><h4>{section.title}</h4>{'text' in section && <p>{section.text}</p>}{'items' in section && <ul>{section.items?.map(item => <li key={item}>{item}</li>)}</ul>}</section>)}<button type="button" className="careers-action" onClick={() => { setPosition(`${job.title} · ${job.department} · ${job.location}`); document.getElementById('career-application')?.scrollIntoView({behavior:'smooth',block:'start'}) }}>Apply for this role</button></div></details>)}{visiblePositions.length === 0 && <div className="careers-empty"><h3>No matching positions</h3><p>Try another department or location, or send us your details below.</p></div>}</div></section>
+    <section className="careers-application"><aside className="careers-story"><MountainScene /><div><p className="careers-eyebrow">PEOPLE DRIVE POSSIBILITY</p><h2>Great people<br /> create a brighter<br /> tomorrow.</h2><span className="careers-story-rule" /><p>At enter, we believe in the power of people to build, to solve, to create a more human future of work.</p></div></aside><form id="career-application" onSubmit={submit} aria-busy={sending}><p className="careers-eyebrow">APPLY</p><h2>Apply to enter</h2><p className="careers-note">Send us your details and resume to be considered for future opportunities at enter.</p><div className="careers-fields"><label className="careers-wide">Position<select aria-label="Position" value={position} onChange={event => setPosition(event.target.value)}><option value="">Future opportunities</option>{careerPositions.map(job => { const value = `${job.title} · ${job.department} · ${job.location}`; return <option key={job.id} value={value}>{value}</option> })}</select></label><label>Name<input placeholder="Your full name" name="name" autoComplete="name" required /></label><label>Email<input placeholder="you@example.com" name="email" type="email" autoComplete="email" required /></label><label>Phone<input placeholder="Your phone number" name="phone" type="tel" autoComplete="tel" required /></label><label>LinkedIn Profile<input name="linkedin" type="url" placeholder="https://www.linkedin.com/in/your-profile" required /></label><label className="careers-wide">Resume Upload<input name="resume" type="file" accept=".pdf,.docx" required /><small>PDF or DOCX · Maximum 10 MB</small></label><label className="careers-wide">Why ENTER?<textarea name="motivation" rows={4} required placeholder="Tell us what you would love to build with us." /></label></div><button className="careers-action" type="submit" disabled={sending || submitted}>{sending ? 'Submitting…' : submitted ? 'Application received ✓' : 'Apply Now'}</button><p role="status">{message}</p></form></section></div><footer><a href="/" aria-label="Enter home"><EnterLogo /></a><span>Humanity. Integrity and Possibility.</span><a href="https://www.linkedin.com/company/enterrecruitment/">LinkedIn ↗</a></footer>
+  </main>
+}
+
+
+function MountainScene() {
+  return <div className="careers-scene" aria-hidden="true"><img src="/media/section10-closing-mountain-lush.png" alt="" width={2048} height={819} /></div>
+}
+
+
+function CareerFilter({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
+  const [selected, setSelected] = useState(value)
+  const [open, setOpen] = useState(false)
+  const trigger = useRef<HTMLButtonElement>(null)
+  const option = useRef<HTMLButtonElement>(null)
+  return <div className="careers-filter" onBlur={event => {
+    if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false)
+  }} onKeyDown={event => {
+    if (event.key === 'Escape') { setOpen(false); trigger.current?.focus() }
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      setOpen(true)
+      const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('.careers-filter-panel button'))
+      const current = buttons.indexOf(document.activeElement as HTMLButtonElement)
+      const next = event.key === 'ArrowDown' ? (current + 1) % buttons.length : (current <= 0 ? buttons.length - 1 : current - 1)
+      requestAnimationFrame(() => buttons[next]?.focus())
+    }
+  }}>
+    <span id={`careers-filter-${label}`}>{label}</span>
+    <button ref={trigger} type="button" className="careers-filter-trigger"
+      aria-labelledby={`careers-filter-${label} careers-filter-value-${label}`}
+      aria-expanded={open} aria-controls={`careers-filter-panel-${label}`}
+      onClick={() => setOpen(current => !current)}>
+      <span id={`careers-filter-value-${label}`}>{selected}</span><ChevronDown size={16} aria-hidden="true" />
+    </button>
+    <div id={`careers-filter-panel-${label}`} className={`careers-filter-panel${open ? ' is-open' : ''}`} inert={!open}>
+      {[value, ...options].map((item, index) => <button key={item} ref={index === 0 ? option : undefined} type="button" aria-pressed={selected === item} onClick={() => { setSelected(item); onChange(item); setOpen(false); trigger.current?.focus() }}>
+        {item}{selected === item && <Check size={15} aria-hidden="true" />}
+      </button>)}
+    </div>
+  </div>
+}

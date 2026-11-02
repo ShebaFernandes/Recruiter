@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { ArrowRight, ChevronDown, X } from 'lucide-react'
+import { ChevronDown, Paperclip, X } from 'lucide-react'
 import { api } from '../api'
 
 type GrowthKind = 'founding' | 'leadership'
 
-const foundingOptions = ['Founding Engineer', 'Founding AI / ML', 'Early Technical Leader (CTO / Head of Eng)', 'Founding Designer', 'Other +']
+const foundingOptions = ['Founding Engineer', 'Founding AI / ML', 'Leadership', 'Founding Designer', 'Other +']
 const leadershipOptions = ['Engineering Leader', 'Product Leader', 'Business Leader', 'Other +']
 
 function GrowthDropdown({ label, name, options, optional }: { label: string; name: string; options: string[]; optional: boolean }) {
@@ -64,18 +64,18 @@ export default function GrowthEnquiry({ kind, onClose }: { kind: GrowthKind; onC
   return <form className={`growth-enquiry growth-enquiry--founding${!founding ? ' growth-enquiry--leadership' : ''}`} aria-label={founding ? 'Founding team enquiry' : 'Leadership enquiry'} onSubmit={submit}>
     {founding && <p className="growth-enquiry__step">Founding team</p>}
     <div className="growth-enquiry__heading"><h3>{founding ? "Let’s build your founding team." : 'Tell us about the leader you need.'}</h3><button type="button" onClick={onClose} aria-label="Close growth enquiry"><X size={11} aria-hidden="true" /></button></div>
-    {<label className="growth-enquiry__upload growth-enquiry__upload--top"><span>Upload JD(s)</span><small>{attachment ? attachment.name : 'PDF or DOCX'}</small><input aria-label="Upload JD or notes" name="attachment" type="file" accept=".pdf,.docx" onChange={event => setAttachment(event.target.files?.[0] ?? null)} /></label>}
+    {<label className="growth-enquiry__upload growth-enquiry__upload--top"><Paperclip size={20} aria-hidden="true" /><span>Upload JD(s)<small>{attachment ? attachment.name : 'Click to upload or drag and drop · PDF or DOCX'}</small></span><input aria-label="Upload JD or notes" name="attachment" type="file" accept=".pdf,.docx" onChange={event => setAttachment(event.target.files?.[0] ?? null)} /></label>}
     <div className="growth-enquiry__fields">
       {input('Company', 'company', 'Company name', true)}{input('Your name', 'full_name', 'Your name', true)}
       {input('Work email', 'work_email', 'name@company.com', true, 'email')}
       {input('Phone / WhatsApp', 'phone', '+91', false, 'tel')}
-      {founding && select('Your role', 'founder_role', ['Founder', 'Founding team', 'HR team', 'Leadership'])}
-      {founding && select('Location', 'location', ['Bengaluru', 'Mumbai', 'Delhi NCR', 'Hyderabad', 'Pune', 'Remote — India', 'Other'])}
+      {founding && select('Designation', 'founder_role', ['Founder', 'Founding team', 'HR team', 'Leadership'])}
+      {founding && select('Location', 'location', ['Bengaluru', 'Mumbai', 'Delhi NCR', 'Hyderabad', 'Pune', 'Remote', 'Other'])}
     </div>
     {founding && <h4>What are you building?</h4>}
     {founding && <textarea className="growth-enquiry__wide" aria-label="What are you building?" name="product" required placeholder="The product in a sentence or two. What problem, for whom?" rows={2} />}
     <h4>{founding ? 'Who do you need first?' : 'Which leader do you need?'}</h4>
-    <fieldset aria-label={founding ? 'Who do you need first?' : 'Which leader do you need?'}><div className="growth-enquiry__pills">{options.map(option => <button type="button" key={option} aria-pressed={selected.includes(option)} onClick={() => { setSelected(values => values.includes(option) ? values.filter(value => value !== option) : [...values, option]); setNotice('') }}>{option}</button>)}{selected.includes('Other +') && <input aria-label="Other role" placeholder="Which role do you need?" value={otherRole} required maxLength={160} onChange={event => setOtherRole(event.target.value)} />}</div></fieldset>
+    <fieldset aria-label={founding ? 'Who do you need first?' : 'Which leader do you need?'}><div className="growth-enquiry__pills">{options.map(option => <button type="button" key={option} aria-pressed={selected.includes(option)} onClick={() => { setSelected(values => values.includes(option) ? values.filter(value => value !== option) : [...values, option]); setNotice('') }}>{option}</button>)}{selected.includes('Other +') && <input aria-label="Which role do you need?" placeholder="Which role do you need?" value={otherRole} required maxLength={160} onChange={event => setOtherRole(event.target.value)} />}</div></fieldset>
     {!founding && <><h4>What needs to be fundamentally different 12 months after this person joins for you to call them an exceptional hire?</h4><textarea className="growth-enquiry__wide" aria-label="What needs to be fundamentally different in 12 months?" name="outcome" required rows={2} placeholder="Raise the bar, build a team, fix delivery, take on a new market…" /><label className="growth-enquiry__confidential"><span>Keep this search confidential<small>We won’t name your company to candidates until you say so.</small></span><input aria-label="Keep this search confidential" type="checkbox" role="switch" name="confidential" defaultChecked /></label></>}
     <div className="growth-enquiry__fields">
       
@@ -83,7 +83,6 @@ export default function GrowthEnquiry({ kind, onClose }: { kind: GrowthKind; onC
     </div>
     {notice && <p className="growth-enquiry__notice" role="status">{notice}</p>}
     {error && <p className="growth-enquiry__notice growth-enquiry__notice--error" role="alert">{error}</p>}
-    <div className="growth-enquiry__actions"><button className="growth-enquiry__submit" type="submit" disabled={submitState !== 'idle'}>{submitState === 'sending' ? 'Sending…' : submitState === 'sent' ? 'Sent' : founding ? 'Build Your Founding Team' : 'Find Leadership'}{!founding && <ArrowRight size={14} aria-hidden="true" />}</button><small className="growth-enquiry__privacy">Confidential by default. Your details stay private.</small></div>
-    <label className="growth-enquiry__legal"><input type="checkbox" required /><span>Your details are private. I agree to the <a href="/terms" target="_blank" rel="noopener noreferrer">Terms</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</span></label>
+    <div className="growth-enquiry__actions"><button className="growth-enquiry__submit" type="submit" disabled={submitState !== 'idle'}>{submitState === 'sending' ? 'Sending…' : submitState === 'sent' ? 'Sent' : founding ? 'Build Your Founding Team' : 'Find Leadership'}</button><small className="growth-enquiry__privacy">Confidential by default. Your details stay private.</small></div>
   </form>
 }

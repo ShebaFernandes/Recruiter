@@ -2,7 +2,7 @@ import observeLandingReveal from './observeLandingReveal'
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowRight, ChevronDown, Paperclip } from 'lucide-react'
+import { ChevronDown, Paperclip } from 'lucide-react'
 import { api } from '../api'
 import './when-teams-change.css'
 
@@ -154,7 +154,7 @@ export default function WhenTeamsChange() {
           aria-controls="employee-transition-dialog"
           onClick={() => { setSubmitState('idle'); setSubmitError(''); setSupportOpen(true) }}
         >
-          Support Your People <ArrowRight size={17} aria-hidden="true" />
+          Support your Impacted Employees
         </button>
       </div>
     </div>
@@ -189,7 +189,7 @@ export default function WhenTeamsChange() {
               <label className="when-teams-change__field"><input aria-label="Company" name="company" type="text" placeholder="Your company name" required /></label>
               <label className="when-teams-change__field"><input aria-label="Your name" name="name" type="text" placeholder="Your name" autoComplete="name" required /></label>
               <label className="when-teams-change__field"><input aria-label="Work email" name="email" type="email" placeholder="Work email" autoComplete="email" required /></label>
-              <label className="when-teams-change__field"><TransitionSelect name="role" label="Your role" options={["HR", "People", "Founder", "Other"]} /></label>
+              <label className="when-teams-change__field"><TransitionSelect name="role" label="Your role" options={["Founder", "HR/TA", "Founding team", "Leadership", "Other"]} /></label>
               <label className="when-teams-change__field"><TransitionSelect name="peopleImpacted" label="People impacted" options={["1–10", "11–40", "41–100", "More than 100"]} /></label>
               <label className="when-teams-change__field"><input aria-label="Phone number" name="phone" type="tel" autoComplete="tel" placeholder="Phone number" maxLength={40} required /></label>
             </div>
@@ -204,9 +204,9 @@ export default function WhenTeamsChange() {
               </div>
             </fieldset>
 
-            <label className="when-teams-change__consent"><input type="checkbox" name="consent" required /><span>I confirm affected employees know about this, and nothing is shared without their consent.</span></label>
+            <label className="when-teams-change__consent"><input type="checkbox" name="consent" required /><span>You confirm that you are authorised to share the impacted employees’ details with ENTER and that the necessary consent has been obtained for ENTER to contact them regarding relevant career opportunities.</span></label>
             <div className="when-teams-change__form-footer">
-              <button type="submit" disabled={submitState === 'sending'}>{submitState === 'sending' ? 'Sending…' : 'Submit'} {submitState !== 'sending' && <ArrowRight size={16} aria-hidden="true" />}</button>
+              <button type="submit" disabled={submitState === 'sending'}>{submitState === 'sending' ? 'Sending…' : 'Submit'} </button>
             </div>
             {submitError && <p className="when-teams-change__dialog-note" role="alert">{submitError}</p>}
           </form>}

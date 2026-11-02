@@ -24,6 +24,7 @@ export default function useInlinePopover(
       const desiredTop = below + bounds.height <= top + height - 12 ? below : rect.top - bounds.height - 10
       panel.style.setProperty('left', `${Math.max(left + 12, Math.min(rect.left + rect.width / 2 - bounds.width / 2, left + width - bounds.width - 12))}px`)
       panel.style.setProperty('top', `${Math.max(top + 12, Math.min(desiredTop, top + height - bounds.height - 12))}px`)
+
     }
     const outside = (event: PointerEvent) => {
       if (!anchor.closest('.wb-inline-field')?.contains(event.target as Node)) setOpen(false)

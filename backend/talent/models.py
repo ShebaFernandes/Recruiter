@@ -325,7 +325,7 @@ class ResumeProcessingJob(models.Model):
     # Informational only; terminal success still requires the atomic profile commit.
     phase = models.CharField(max_length=20, blank=True)
     idempotency_key = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
-    attempts = models.PositiveSmallIntegerField(default=0)
+    attempts = models.PositiveIntegerField(default=0)
     max_attempts = models.PositiveSmallIntegerField(default=3)
     available_at = models.DateTimeField(default=timezone.now)
     locked_at = models.DateTimeField(null=True, blank=True)
@@ -408,6 +408,126 @@ class FileCleanupJob(models.Model):
     attempts = models.PositiveIntegerField(default=0)
     available_at = models.DateTimeField(default=timezone.now, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class EmployeeTransitionEnquiry(models.Model):
+    class Status(models.TextChoices):
+        NEW = "new", "New"
+        CONTACTED = "contacted", "Contacted"
+        IN_PROGRESS = "in_progress", "In progress"
+        CLOSED = "closed", "Closed"
+
+    class ReachMethod(models.TextChoices):
+        LIST = "list", "Upload a list"
+        TALK = "talk", "Talk to us first"
+
+    company = models.CharField(max_length=180)
+    full_name = models.CharField(max_length=180)
+    work_email = models.EmailField()
+    role = models.CharField(max_length=40)
+    people_impacted = models.CharField(max_length=30)
+    last_working_day = models.DateField()
+    reach_method = models.CharField(max_length=10, choices=ReachMethod.choices)
+    employee_list = models.FileField(max_length=500, blank=True)
+    original_filename = models.CharField(max_length=255, blank=True)
+    situation = models.TextField(blank=True)
+    consent_confirmed_at = models.DateTimeField()
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.NEW)
+    internal_note = models.TextField(blank=True)
+    follow_up_due_at = models.DateTimeField(null=True, blank=True)
+    contacted_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+
+class HiringEnquiry(models.Model):
+    class Kind(models.TextChoices):
+        HIRE = "hire", "Find Talent"
+        TEAM = "team", "Build My Team"
+        DRIVE = "drive", "Plan My Drive"
+        FOUNDING = "founding", "Founding Team"
+        LEADERSHIP = "leadership", "Leadership"
+
+    class Status(models.TextChoices):
+        NEW = "new", "New"
+        CONTACTED = "contacted", "Contacted"
+        IN_PROGRESS = "in_progress", "In progress"
+        CLOSED = "closed", "Closed"
+
+    kind = models.CharField(max_length=20, choices=Kind.choices)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.NEW)
+    company = models.CharField(max_length=180)
+    full_name = models.CharField(max_length=180)
+    work_email = models.EmailField()
+    details = models.JSONField(default=dict)
+    notes = models.TextField(blank=True)
+    internal_note = models.TextField(blank=True)
+    follow_up_due_at = models.DateTimeField(null=True, blank=True)
+    contacted_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+
+class HiringEnquiryAttachment(models.Model):
+    enquiry = models.ForeignKey(
+        HiringEnquiry, on_delete=models.CASCADE, related_name="attachments"
+    )
+    file = models.FileField(max_length=500)
+    original_filename = models.CharField(max_length=255)
+    size = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class EnquiryNotification(models.Model):
+    """Retryable internal alert for one public enquiry."""
+
+    hiring_enquiry = models.OneToOneField(
+        HiringEnquiry, null=True, blank=True, on_delete=models.CASCADE,
+        related_name="alert",
+    )
+    transition_enquiry = models.OneToOneField(
+        EmployeeTransitionEnquiry, null=True, blank=True, on_delete=models.CASCADE,
+        related_name="alert",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    available_at = models.DateTimeField(default=timezone.now, db_index=True)
+    locked_until = models.DateTimeField(null=True, blank=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    last_error_code = models.CharField(max_length=60, blank=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(hiring_enquiry__isnull=False, transition_enquiry__isnull=True)
+                    | models.Q(hiring_enquiry__isnull=True, transition_enquiry__isnull=False)
+                ),
+                name="one_enquiry_per_notification",
+            ),
+        ]
+
+
+@receiver(post_delete, sender=HiringEnquiryAttachment)
+def delete_hiring_enquiry_attachment(sender, instance, **kwargs):
+    if instance.file:
+        from .storage_cleanup import schedule_cleanup
+
+        schedule_cleanup(instance.file.name)
+
+
+@receiver(post_delete, sender=EmployeeTransitionEnquiry)
+def delete_employee_transition_list(sender, instance, **kwargs):
+    if instance.employee_list:
+        from .storage_cleanup import schedule_cleanup
+
+        schedule_cleanup(instance.employee_list.name)
 
 
 class WorkerHeartbeat(models.Model):
@@ -545,3 +665,20 @@ class CandidateUpdateNotification(models.Model):
                 fields=["recruiter", "resume"], name="unique_recruiter_resume_notification"
             )
         ]
+
+
+class CareerApplication(models.Model):
+    name = models.CharField(max_length=180)
+    email = models.EmailField()
+    phone = models.CharField(max_length=40)
+    linkedin = models.URLField(max_length=500)
+    motivation = models.TextField()
+    resume = models.FileField(upload_to="career-applications/")
+    original_filename = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+@receiver(post_delete, sender=CareerApplication)
+def cleanup_career_resume(sender, instance, **kwargs):
+    from .storage_cleanup import schedule_cleanup
+    schedule_cleanup(instance.resume.name)

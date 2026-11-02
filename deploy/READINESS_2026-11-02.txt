@@ -1,0 +1,47 @@
+DEPLOYMENT PREPARATION — 2 NOVEMBER 2026
+Branch/workspace: website-design, recruiter-website-design
+Status: Local release artifacts validated. NOT DEPLOYED. No images pushed.
+
+Changes made during this review
+- Updated pypdf from 6.21.2 to patched 6.21.4 and refreshed uv.lock.
+- Added malware scanning before saving Careers, hiring and employee-list attachments.
+  Infected documents return 400; scanner outages return 503 without saving the upload.
+- Production backend now waits for a healthy scanner.
+- Caddy and nginx allow 11 MB multipart requests on enquiry/application routes,
+  retaining application file limits of 10 MB (documents) and 2 MB (employee lists).
+- Excluded local runtime logs/caches from Docker build context.
+- Moved static hiring results into a data module to eliminate the frontend lint warning.
+
+Validation completed
+- Backend: 662 passed, 8 skipped against an isolated PostgreSQL database using the patched lockfile.
+- Frontend: 189 passed, lint clean, production build passed.
+- Ruff clean; Django checks passed; no migration drift.
+- Production Compose configuration parsed using the example environment only.
+- linux/amd64 production images built locally:
+  enter-backend:local-readiness-20261102
+  enter-frontend:local-readiness-20261102
+- Docker Scout scans: no vulnerable packages detected in either final image.
+- Django check --deploy passed inside the backend image with dummy staging values,
+  production-style security settings, and no network access.
+- nginx configuration and production Caddy configuration validated locally.
+
+Required before an actual deployment
+- Select and review the final commit/release tag; changes remain uncommitted.
+- Populate real production secrets, exact domain/origins, private storage, SQS and SMTP settings.
+  Do not publish the example placeholder environment.
+- Preserve the existing legal approval/hash gates and paused intake controls until authorized.
+  This review did not approve legal publication or activate intake.
+- Confirm release scope: the supplied production template is candidate-only and hides recruiter access.
+- Verify actual S3 privacy/encryption, queue permissions, scanner health/signatures,
+  SMTP delivery, HTTPS/DNS, backup restore and production worker health in staging.
+- Run staged browser acceptance for candidate/recruiter access as applicable, enquiries,
+  Careers uploads, resume processing and permission-protected downloads.
+- Apply migrations through 0030_careerapplication as part of the eventual approved release.
+- The local preview resume worker was previously offline; local web/API uptime is not
+  evidence that the production queue worker is configured.
+
+Limits of this review
+No production server was changed. No credentials or actual cloud services were validated.
+Eight backend tests were skipped by their environment guards. The build still emits
+an advisory about a large frontend bundle; this does not prevent a production build.
+Container scans reflect the advisory database available at review time.

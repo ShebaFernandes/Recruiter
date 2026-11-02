@@ -8,10 +8,13 @@ import './marquee-card.css'
 type MarqueeCardProps = {
   name: string
   role: string
+  company?: string
+  logo?: string
+  videoUrl?: string
   paragraphs: string[]
 }
 
-export function MarqueeCard({ name, role, paragraphs }: MarqueeCardProps) {
+export function MarqueeCard({ name, role, paragraphs, logo, videoUrl }: MarqueeCardProps) {
   const duplicate = useContext(MarqueeDuplicate)
   const [highlighted, setHighlighted] = useState(false)
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -28,7 +31,7 @@ export function MarqueeCard({ name, role, paragraphs }: MarqueeCardProps) {
   return <><LiquidCard className={`testimonial-glass-card${highlighted ? ' is-highlighted' : ''}`} tabIndex={duplicate ? undefined : 0} onClick={() => setHighlighted(value => !value)} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setHighlighted(value => !value) } }} role="article" aria-label={`${name} testimonial`}>
     <CardContent className="testimonial-glass-card__content">
       <div className="testimonial-glass-card__person">
-        <span className="testimonial-glass-card__avatar" aria-hidden="true">{initials}</span>
+        <span className={`testimonial-glass-card__avatar${logo ? ' has-logo' : ''}`} aria-hidden="true">{logo ? <img src={logo} alt="" /> : initials}</span>
         <div className="testimonial-glass-card__identity">
           <strong>{name}</strong>
           <span>{role}</span>
@@ -41,5 +44,6 @@ export function MarqueeCard({ name, role, paragraphs }: MarqueeCardProps) {
     <button type="button" className="testimonial-reader__close" aria-label="Close testimonial" onClick={() => setHighlighted(false)}>×</button>
     <h2>{name}</h2><p className="testimonial-reader__role">{role}</p>
     <blockquote>{paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}</blockquote>
+    {videoUrl && <a href={videoUrl} target="_blank" rel="noopener noreferrer">Watch Joseph’s video testimonial</a>}
   </dialog>, document.body)}</>
 }

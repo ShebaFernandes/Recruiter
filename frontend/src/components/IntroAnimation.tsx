@@ -104,7 +104,7 @@ export default function IntroAnimation({ children }: { children: ReactNode }) {
           </div></div>
         </div>
         <div className="enter-intro-wash" aria-hidden="true" />
-        <button type="button" className="enter-intro-skip" onClick={() => finish()}>Skip intro <span aria-hidden="true">→</span></button>
+        <button type="button" className="enter-intro-skip" onClick={() => finish()}>Skip intro </button>
       </section>
     </div>}
   </div>

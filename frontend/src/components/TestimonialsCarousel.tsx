@@ -1,10 +1,14 @@
+import mobikwikLogo from '../../..//design-references/prepared/trusted-by-review/assets/expanded/mobikwik.svg'
+import doqfyLogo from '../../../design-references/prepared/trusted-by-review/assets/doqfy-official.svg'
+import { previewCompanies } from './company-preview/companies'
+import HiringEnquiryDrawer from './HiringEnquiryDrawer'
 import observeLandingReveal from './observeLandingReveal'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Marquee } from './ui/marquee'
 import { MarqueeCard } from './ui/marquee-card'
 import './testimonials-carousel.css'
 
-export type Testimonial = { id: string; excerpt: string; paragraphs: string[]; name: string; attribution: string }
+export type Testimonial = { id: string; excerpt: string; paragraphs: string[]; name: string; attribution: string; company?: string; videoUrl?: string }
 
 const testimonials: Testimonial[] = [
   {
@@ -33,7 +37,7 @@ const testimonials: Testimonial[] = [
     id: 'drushya-shetty',
     excerpt: 'This understanding translated into a strong pipeline of candidates who genuinely fit the bill.',
     name: 'Drushya Shetty',
-    attribution: 'CRED',
+    attribution: 'Lead Talent Partner · CRED',
     paragraphs: [
       'The team at enter did a fabulous job of understanding my requirements, pain points, and ideal candidate profile. This understanding translated into a strong pipeline of candidates who genuinely fit the bill.',
       'I thoroughly enjoyed working with the team and Deekshitha, the founder. They were reliable, understood what I was looking for, and delivered quality results. Definitely a team I would recommend to anyone looking for a dependable recruitment partner!',
@@ -56,16 +60,22 @@ const testimonials: Testimonial[] = [
     name: 'Prachi Sharma',
     attribution: 'Talent Acquisition Specialist · Parspec',
     paragraphs: [
-      'It has been a pleasure working with the team at enter. We truly appreciate your responsiveness and the quality of support you have provided throughout our hiring process. Your ability to maintain a strong pace of placements without compromising on quality has been especially valuable.',
-      'While some roles were particularly challenging to fill due to the level of scrutiny involved, enter’s commitment, persistence, and enthusiasm consistently stood out. Despite the difficulties, your team remained dedicated to finding the right fit.',
-      'We sincerely appreciate you and your team of professionals for your continued support.',
-      'Looking forward to our continued partnership.',
+      'While some roles were particularly challenging to fill due to the level of scrutiny involved, ENTER’s commitment, persistence, and enthusiasm consistently stood out. Despite the difficulties, your team remained dedicated to finding the right fit. It has been a pleasure working with the team at ENTER. We truly appreciate your responsiveness and the quality of support you have provided throughout our hiring process. Your ability to maintain a strong pace of placements without compromising on quality has been especially valuable.',
     ],
   },
+  { id:'nitika-thukral', name:'Nitika Thukral', attribution:'Senior Talent Analyst · MobiKwik', company:'MobiKwik', excerpt:'A valued extension of our Information Technology team.', paragraphs:["Enter has proven themselves as a valuable tech hiring partner to Mobikwik diverse hiring process. They go extra mile to consistently provide highly qualified candidates. Their proven, personalised process understands our culture and requirements and has resulted in outstanding hires for us. We are very pleased to consider them a valued extension of our Information Technology team."] },
+  { id:'joseph-kim', name:'Joseph Kim', attribution:'CEO · LILA GAMES', company:'LILA GAMES', excerpt:'Enter has delivered!', videoUrl:'https://www.dropbox.com/s/gbw6at5nmsptl9x/joseph_kim-2021-8-27__18-7-11.mp4?dl=0', paragraphs:["Enter has been an incredible resource for us to help source very high quality candidates. We have a very high bar for candidates and Enter has delivered! Dikshita is one of the most effective recruiters I have ever worked with and the thoroughness of her work is really great. We have had a fantastic experience and we hope to work with ENTER for as long as we can."] },
+  { id:'alka-ladhani', name:'Alka Ladhani', attribution:'Head HR · Airtel', company:'Airtel', excerpt:'The most screened and relevant profiles.', paragraphs:["We have received the most screened and relevant profiles from ENTER for our Engineering team."] },
+
 ]
 
 export default function TestimonialsCarousel() {
   const sectionRef = useRef<HTMLElement>(null)
+  const startRef = useRef<HTMLButtonElement>(null)
+  const [email, setEmail] = useState('')
+  const [enquiryOpen, setEnquiryOpen] = useState(false)
+  const today = new Date()
+  const minimumDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
 
   useEffect(() => {
     const section = sectionRef.current
@@ -75,15 +85,28 @@ export default function TestimonialsCarousel() {
   return <section ref={sectionRef} className="testimonials-carousel" aria-labelledby="testimonials-heading">
     <div className="testimonials-carousel__intro">
       <p className="testimonials-carousel__eyebrow">TESTIMONIALS</p>
-      <h2 id="testimonials-heading">Don’t take our word for it</h2>
+      <h2 id="testimonials-heading">Don’t take our word for it.</h2>
+      <p className="testimonials-carousel__subtitle">Hear from the teams we’ve built with.</p>
     </div>
-    <Marquee className="testimonials-carousel__viewport" pauseOnHover speed="fast" aria-label="Client testimonials">
+    <Marquee className="testimonials-carousel__viewport" speed="normal" aria-label="Client testimonials">
       {testimonials.map(testimonial => <MarqueeCard
         key={testimonial.id}
         name={testimonial.name}
         role={testimonial.attribution}
         paragraphs={testimonial.paragraphs}
+        company={testimonial.company ?? ({'githin-joseph':'Nanonets','steve-francis':'Practo','drushya-shetty':'CRED','divya-v':'DOQFY','prachi-sharma':'Parspec'}[testimonial.id])}
+        logo={({'prachi-sharma':'/media/testimonial-logos/parspec.png','nitika-thukral':mobikwikLogo,'divya-v':doqfyLogo,'joseph-kim':'/media/testimonial-logos/lila-supplied.png','alka-ladhani':'/media/testimonial-logos/airtel.png'}[testimonial.id]) ?? previewCompanies.find(company => testimonial.attribution.toLowerCase().includes(company.name.toLowerCase()))?.logo}
+        videoUrl={testimonial.videoUrl}
       />)}
     </Marquee>
+    <div className="testimonials-carousel__start">
+      <h3>Build the team that takes you further.</h3>
+      <p>From your next critical hire to the team that takes you to the next stage, start with ENTER.</p>
+      <form className="testimonials-carousel__email" aria-label="Start building your team" onSubmit={event => { event.preventDefault(); setEnquiryOpen(true) }}>
+        <input type="email" name="work_email" aria-label="Work email" autoComplete="email" placeholder="Enter your work email" required value={email} onChange={event => setEmail(event.target.value)} />
+        <button ref={startRef} type="submit">Get Started </button>
+      </form>
+    </div>
+    {enquiryOpen && <HiringEnquiryDrawer enquiry={{ kind: 'hire', headcount: 1, showStats: true, workEmail: email.trim() }} minimumDate={minimumDate} opener={startRef.current} onClose={() => setEnquiryOpen(false)} />}
   </section>
 }

@@ -30,3 +30,7 @@ backups/
 *.sql
 *.mov
 *.mp4
+
+.local-*.log
+.pytest_cache
+.ruff_cache

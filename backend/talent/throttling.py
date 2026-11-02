@@ -97,6 +97,14 @@ class ResumeUploadRateThrottle(DatabaseRateThrottle):
     scope = "resume_upload"
 
 
+class EmployeeTransitionRateThrottle(DatabaseRateThrottle):
+    scope = "employee_transition"
+
+
+class HiringEnquiryRateThrottle(DatabaseRateThrottle):
+    scope = "hiring_enquiry"
+
+
 class RecruiterSearchRateThrottle(DatabaseRateThrottle):
     scope = "recruiter_search"
 

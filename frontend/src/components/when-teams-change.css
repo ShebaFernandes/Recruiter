@@ -565,3 +565,21 @@
 .when-teams-change__reach legend { width: 100%; padding-bottom: 10px; margin-bottom: 0; border-bottom: 1px solid #dce1e8; }
 .transition-contact-option,
 .transition-contact-option.is-selected { padding: 14px 0; border: 0; border-bottom: 1px solid #dce1e8; border-radius: 0; background: transparent; }
+
+.transition-select__menu { background: rgba(255, 255, 255, .78); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-color: rgba(255, 255, 255, .55); }
+.transition-select__menu > button { background-color: transparent; }
+.transition-select__menu > button:hover, .transition-select__menu > button:focus-visible { background-color: rgba(225, 234, 255, .65); }
+
+.when-teams-change__reach legend { border: 0; padding: 0; margin-bottom: 12px; color: #465bb2; font: 400 12px/1.5 var(--enter-font-ui); text-transform: none; letter-spacing: 0; }
+
+.when-teams-change__reach { margin-top: 18px; }
+
+.when-teams-change__supporting { font-weight:400; }
+.when-teams-change__header > p { font-size:16px; line-height:1.5; }
+@media(max-width:480px){ .when-teams-change__header > p { font-size:14px; } }
+
+.when-teams-change .when-teams-change__supporting,
+.when-teams-change .when-teams-change__copy,
+.when-teams-change .when-teams-change__copy p {
+ font-family:var(--enter-font-ui); font-size:15px; font-weight:400; line-height:1.7;
+}

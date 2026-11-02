@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import AmbitionHires, { ambitionHireResults } from './AmbitionHires'
+import AmbitionHires from './AmbitionHires'
+import { ambitionHireResults } from './ambitionHireResults'
 
 describe('AmbitionHires', () => {
   it('renders the centralized reference results', () => {

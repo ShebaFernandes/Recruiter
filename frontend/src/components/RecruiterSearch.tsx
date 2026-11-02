@@ -1,5 +1,5 @@
 import { useRef, type FormEvent } from 'react'
-import { ArrowRight, BriefcaseBusiness, Mic } from 'lucide-react'
+import { BriefcaseBusiness, Mic } from 'lucide-react'
 import type { Search } from '../types'
 import './recruiter-search.css'
 
@@ -66,7 +66,7 @@ export default function RecruiterSearch({ query, setQuery, search, answer, setAn
               onClick={() => option === 'Let me type it' ? answerRef.current?.focus() : clarify(option)} disabled={busy}>{option}</button>)}
           </div>}
           <div className="clarification-input"><input ref={answerRef} value={answer} onChange={event => setAnswer(event.target.value)} placeholder="Type a different answer" aria-label="Clarification answer" />
-            <button className="primary" disabled={!answer.trim() || busy}>Continue <ArrowRight size={14} aria-hidden="true" /></button>
+            <button className="primary" disabled={!answer.trim() || busy}>Continue </button>
           </div>
         </div>
       </form>

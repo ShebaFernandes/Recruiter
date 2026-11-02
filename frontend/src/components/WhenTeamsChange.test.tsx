@@ -26,7 +26,7 @@ describe('WhenTeamsChange', () => {
 
   it('opens the compact support form and restores focus after Escape', () => {
     render(<WhenTeamsChange />)
-    const trigger = screen.getByRole('button', { name: /support your people/i })
+    const trigger = screen.getByRole('button', { name: /support your impacted employees/i })
     fireEvent.click(trigger)
 
     const dialog = screen.getByRole('dialog', { name: 'Help your people find what’s next.' })
@@ -45,7 +45,7 @@ describe('WhenTeamsChange', () => {
   it('submits the talk path without a file', async () => {
     vi.mocked(api.submitEmployeeTransitionEnquiry).mockResolvedValue({ id: 1, detail: 'Received' })
     render(<WhenTeamsChange />)
-    fireEvent.click(screen.getByRole('button', { name: /support your people/i }))
+    fireEvent.click(screen.getByRole('button', { name: /support your impacted employees/i }))
     fireEvent.click(screen.getByRole('radio', { name: /Talk to us first/i }))
     expect(screen.queryByLabelText('Choose an Excel or CSV list')).toBeNull()
     fireEvent.change(screen.getByLabelText('Tell us about the situation'), { target: { value: 'Help our team find new roles.' } })

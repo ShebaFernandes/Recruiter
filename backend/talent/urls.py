@@ -1,13 +1,16 @@
 from django.urls import path
 
-from . import candidate_views, legal_views, views
+from . import candidate_views, career_views, hiring_views, legal_views, support_views, views
 
 urlpatterns = [
+    path("careers/applications/", career_views.career_application),
     path("legal/documents/", legal_views.legal_documents),
     path("candidate/legal/accept/", legal_views.accept_terms),
     path("candidate/activity/", legal_views.renew_activity),
     path("health/", views.health),
     path("health/ready/", views.readiness),
+    path("support/employee-transition/", support_views.employee_transition_enquiry),
+    path("hiring/enquiries/", hiring_views.hiring_enquiry),
     path("auth/csrf/", views.csrf_token),
     path("auth/signup/", views.signup),
     path("auth/login/", views.login),

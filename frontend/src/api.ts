@@ -63,6 +63,9 @@ async function request<T>(path: string, options: RequestInit = {}, binary = fals
 }
 
 export const api = {
+  submitCareerApplication: (body: FormData) => request<{ id: number; detail: string }>(
+    '/careers/applications/', { method: 'POST', body },
+  ),
   submitHiringEnquiry: (body: FormData) => request<{ id: number; detail: string }>(
     '/hiring/enquiries/', { method: 'POST', body },
   ),

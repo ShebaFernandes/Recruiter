@@ -157,3 +157,7 @@
   .simple-landing .ce-landing-cta:active { transform: none; }
   .simple-landing .ce-company-availability { transform: translate(-50%, 0); }
 }
+
+.simple-landing .ce-header-logo { display: block; width: 110px; height: auto; aspect-ratio: 1110 / 310; }
+
+.simple-landing .ce-headline-logo { display: inline-block; width: 2.8em; height: auto; aspect-ratio: 1110 / 310; vertical-align: -.03em; }

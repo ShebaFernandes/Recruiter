@@ -1,6 +1,5 @@
 import observeLandingReveal from './observeLandingReveal'
 import { useEffect, useRef } from 'react'
-import { ArrowRight } from 'lucide-react'
 import './for-talent.css'
 
 const talentCategories = ['AI & ML', 'Engineering', 'Product', 'Leadership'] as const
@@ -21,7 +20,7 @@ export default function ForTalent({ onJoin }: { onJoin: () => void }) {
         <p className="for-talent__description">Find opportunities with ambitious companies building what's next.</p>
         <p className="for-talent__category-line">AI &amp; ML · ENGINEERING · PRODUCT · LEADERSHIP</p>
         <button type="button" onClick={onJoin}>
-          Join enter’s talent network <ArrowRight size={16} aria-hidden="true" />
+          Join enter’s talent network
         </button>
       </div>
 

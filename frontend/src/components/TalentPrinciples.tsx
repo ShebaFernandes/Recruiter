@@ -1,5 +1,5 @@
 import observeLandingReveal from './observeLandingReveal'
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import './talent-principles.css'
 
 const principles = [
@@ -60,11 +60,33 @@ export default function TalentPrinciples() {
     if (section) return observeLandingReveal(section, 0.12)
   }, [])
 
+  useLayoutEffect(() => {
+    const section = sectionRef.current
+    if (!section) return
+    const update = () => {
+      const cards = section.querySelectorAll<HTMLElement>('.talent-evidence-card')
+      const segments = section.querySelectorAll<HTMLElement>('.talent-timeline__reference-segments .is-evidence')
+      cards.forEach((card, index) => {
+        const segment = segments[index]
+        if (!segment) return
+        const box = card.getBoundingClientRect()
+        const target = segment.getBoundingClientRect()
+        card.style.setProperty('--connector-x', `${target.left + target.width / 2 - box.left}px`)
+        card.style.setProperty('--connector-height', `${Math.max(0, target.top + target.height / 2 - box.bottom)}px`)
+      })
+    }
+    update()
+    const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(update) : null
+    observer?.observe(section)
+    window.addEventListener('resize', update)
+    return () => { observer?.disconnect(); window.removeEventListener('resize', update) }
+  }, [])
+
   return <section ref={sectionRef} id="talent-principles" className="talent-principles" aria-labelledby="talent-principles-title">
     <div className="talent-principles__inner">
-      <p className="talent-principles__eyebrow">HOW ENTER THINKS ABOUT TALENT</p>
       <div className="talent-principles__top">
         <header className="talent-principles__header">
+          <p className="talent-principles__eyebrow">HOW ENTER THINKS ABOUT TALENT</p>
           <h2 id="talent-principles-title">Getting it<br />wrong isn’t<br />an option.</h2>
         </header>
 

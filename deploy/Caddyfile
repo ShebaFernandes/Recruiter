@@ -18,6 +18,13 @@
         }
         reverse_proxy backend:8000
     }
+    @enquiry_uploads path /api/v1/careers/applications/ /api/v1/hiring/enquiries/ /api/v1/support/employee-transition/
+    handle @enquiry_uploads {
+        request_body {
+            max_size 11MB
+        }
+        reverse_proxy backend:8000
+    }
     handle /api/* {
         request_body {
             max_size 1MB

@@ -29,6 +29,7 @@ const stages = [
 ] as const
 
 export default function GrowthStages() {
+  const dialogRef = useRef<HTMLDialogElement>(null)
   const sectionRef = useRef<HTMLElement>(null)
   const movingCard = useRef<{ tone: 'founding' | 'leadership'; rect: DOMRect } | null>(null)
   const [active, setActive] = useState<'founding' | 'leadership' | null>(null)
@@ -39,22 +40,15 @@ export default function GrowthStages() {
   }, [])
 
   useLayoutEffect(() => {
-    const previous = movingCard.current
-    movingCard.current = null
-    if (!previous || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
-
-    const card = sectionRef.current?.querySelector<HTMLElement>(`.growth-stage-card--${previous.tone}`)
-    if (!card?.animate) return
-    const next = card.getBoundingClientRect()
-    const offsetX = previous.rect.left - next.left
-    const offsetY = previous.rect.top - next.top
-    const scaleX = previous.rect.width / next.width
-    const scaleY = previous.rect.height / next.height
-
-    card.animate([
-      { transform: `translate(${offsetX}px, ${offsetY}px) scale(${scaleX}, ${scaleY})` },
-      { transform: 'translate(0, 0) scale(1, 1)' },
-    ], { duration: 620, easing: 'cubic-bezier(.22, 1, .36, 1)' })
+    if (!active) return
+    const opener = document.activeElement as HTMLElement | null
+    dialogRef.current?.showModal()
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previousOverflow
+      opener?.focus({ preventScroll: true })
+    }
   }, [active])
 
   const openEnquiry = (tone: 'founding' | 'leadership', card: HTMLElement) => {
@@ -70,7 +64,7 @@ export default function GrowthStages() {
     setActive(null)
   }
 
-  return <section ref={sectionRef} className={`growth-stages${active ? ' growth-stages--enquiry' : ''}`} aria-labelledby="growth-stages-title">
+  return <section ref={sectionRef} className="growth-stages" aria-labelledby="growth-stages-title">
     <div className="growth-stages__inner">
       <header className="growth-stages__header">
         <p className="growth-stages__eyebrow">TAILORED FOR EVERY STAGE OF GROWTH</p>
@@ -87,9 +81,9 @@ export default function GrowthStages() {
         <span>SCALE →</span>
       </div>
 
-      <div className={`growth-stages__grid${active ? ` growth-stages__grid--enquiry growth-stages__grid--${active}` : ''}`}>
-        {active && <GrowthEnquiry key={active} kind={active} onClose={closeEnquiry} />}
-        {stages.filter(stage => !active || stage.tone === active).map(stage => <article className={`growth-stage-card growth-stage-card--${stage.tone}`} key={stage.category}>
+      <div className="growth-stages__grid">
+
+        {stages.map(stage => <article className={`growth-stage-card growth-stage-card--${stage.tone}`} key={stage.category}>
           <div className="growth-stage-card__body">
             <p className="growth-stage-card__marker">{stage.marker}</p>
             <p className="growth-stage-card__category">{stage.category}</p>
@@ -104,7 +98,20 @@ export default function GrowthStages() {
         </article>)}
       </div>
 
-
+      {active && <dialog ref={dialogRef} className={`growth-enquiry-modal growth-enquiry-modal--${active}`} aria-label={active === 'founding' ? 'Build your founding team' : 'Find leadership'} onCancel={event => { event.preventDefault(); closeEnquiry() }} onClick={event => { if (event.target === event.currentTarget) closeEnquiry() }}>
+        <div className="growth-enquiry-modal__layout">
+          <GrowthEnquiry key={active} kind={active} onClose={closeEnquiry} />
+          {stages.filter(stage => stage.tone === active).map(stage => <article className={`growth-stage-card growth-stage-card--${stage.tone}`} key={stage.tone}>
+            <div className="growth-stage-card__body">
+              <p className="growth-stage-card__marker">{stage.marker}</p>
+              <p className="growth-stage-card__category">{stage.category}</p>
+              <h3>{stage.heading}</h3>
+              <p className="growth-stage-card__description">{stage.description}</p>
+            </div>
+            <img className="growth-stage-card__image" src={stage.image} alt={stage.imageAlt} />
+          </article>)}
+        </div>
+      </dialog>}
     </div>
   </section>
 }

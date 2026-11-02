@@ -1,8 +1,12 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from '../api'
 import GrowthStages from './GrowthStages'
+
+beforeEach(() => {
+  Object.defineProperty(HTMLDialogElement.prototype, 'showModal', { configurable: true, value: vi.fn(function (this: HTMLDialogElement) { this.setAttribute('open', '') }) })
+})
 
 afterEach(() => { cleanup(); vi.restoreAllMocks() })
 
@@ -12,9 +16,9 @@ describe('GrowthStages', () => {
     fireEvent.click(screen.getByRole('button', { name: /build your founding team/i }))
     const form = screen.getByRole('form', { name: 'Founding team enquiry' })
     expect(within(form).getByLabelText('Company')).toBeRequired()
-    expect(within(form).getByLabelText('Your role')).toBeRequired()
-    expect(screen.getByRole('heading', { name: /your first few people/i })).toBeVisible()
-    expect(screen.queryByRole('heading', { name: /the right leader changes/i })).not.toBeInTheDocument()
+    expect(within(form).getByLabelText('Designation')).toBeRequired()
+    expect(within(screen.getByRole('dialog')).getByRole('heading', { name: /your first few people/i })).toBeVisible()
+    expect(within(screen.getByRole('dialog')).queryByRole('heading', { name: /the right leader changes/i })).not.toBeInTheDocument()
     fireEvent.click(within(form).getByRole('button', { name: 'Founding Engineer' }))
     expect(within(form).getByRole('button', { name: 'Founding Engineer' })).toHaveAttribute('aria-pressed', 'true')
     fireEvent.click(screen.getByRole('button', { name: 'Close growth enquiry' }))
@@ -30,14 +34,15 @@ describe('GrowthStages', () => {
     fireEvent.change(within(form).getByLabelText('Company'), { target: { value: 'Example Co' } })
     fireEvent.change(within(form).getByLabelText('Your name'), { target: { value: 'Alex Example' } })
     fireEvent.change(within(form).getByLabelText('Work email'), { target: { value: 'alex@example.com' } })
+    fireEvent.click(within(form).getByText('Choose designation'))
     fireEvent.click(within(form).getByRole('button', { name: 'Founder' }))
     fireEvent.change(within(form).getByLabelText('What are you building?'), { target: { value: 'A useful product' } })
     fireEvent.click(within(form).getByRole('button', { name: 'Founding Engineer' }))
+    fireEvent.click(within(form).getByText('Choose location'))
     fireEvent.click(within(form).getByRole('button', { name: 'Bengaluru' }))
     fireEvent.change(within(form).getByLabelText('Upload JD or notes'), {
       target: { files: [new File(['Early team notes'], 'notes.txt', { type: 'text/plain' })] },
     })
-    fireEvent.click(within(form).getByRole('checkbox', { name: /Your details are private/ }))
     fireEvent.submit(form)
     expect(await screen.findByRole('status')).toHaveTextContent('Your request has been received.')
     const body = submit.mock.calls[0][0]
@@ -53,7 +58,7 @@ describe('GrowthStages', () => {
     render(<GrowthStages />)
     fireEvent.click(screen.getByRole('button', { name: 'Find Leadership' }))
     const form = screen.getByRole('form', { name: 'Leadership enquiry' })
-    expect(within(form).getByLabelText(/Keep this search confidential/)).toBeChecked()
+    expect(within(form).getByRole('switch', { name: 'Keep this search confidential' })).toBeChecked()
     fireEvent.submit(form)
     expect(screen.getByRole('status')).toHaveTextContent('Please select at least one hiring category.')
     fireEvent.change(within(form).getByLabelText('Company'), { target: { value: 'Example Co' } })
@@ -62,7 +67,6 @@ describe('GrowthStages', () => {
     fireEvent.click(within(form).getByRole('button', { name: 'Engineering Leader' }))
     fireEvent.change(within(form).getByLabelText('What needs to be fundamentally different in 12 months?'), { target: { value: 'Raise the bar' } })
     fireEvent.click(within(form).getByLabelText('Keep this search confidential'))
-    fireEvent.click(within(form).getByRole('checkbox', { name: /Your details are private/ }))
     fireEvent.submit(form)
     expect(await screen.findByRole('status')).toHaveTextContent('Your request has been received.')
     const body = submit.mock.calls[0][0]
@@ -71,6 +75,6 @@ describe('GrowthStages', () => {
     expect(body.get('role_title')).toBe('Engineering Leader')
     expect(body.get('confidential')).toBe('false')
     expect(body.get('outcome')).toBe('Raise the bar')
-    expect(screen.queryByRole('heading', { name: /your first few people/i })).not.toBeInTheDocument()
+    expect(within(screen.getByRole('dialog')).queryByRole('heading', { name: /your first few people/i })).not.toBeInTheDocument()
   })
 })

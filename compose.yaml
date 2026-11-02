@@ -71,6 +71,30 @@ services:
       migrate:
         condition: service_completed_successfully
 
+  enquiry-notifier:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: ["python", "manage.py", "run_enquiry_notifications"]
+    environment:
+      DEBUG: "true"
+      DJANGO_SECRET_KEY: local-compose-only
+      DATABASE_URL: postgresql://enter:enter@db:5432/enter
+      EMAIL_BACKEND: ${EMAIL_BACKEND:-django.core.mail.backends.locmem.EmailBackend}
+      EMAIL_HOST: ${EMAIL_HOST:-}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+      EMAIL_USE_TLS: ${EMAIL_USE_TLS:-true}
+      EMAIL_USE_SSL: ${EMAIL_USE_SSL:-false}
+      EMAIL_TIMEOUT: ${EMAIL_TIMEOUT:-10}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-noreply@enter.example}
+      ENQUIRY_NOTIFICATION_EMAILS: ${ENQUIRY_NOTIFICATION_EMAILS:-dikshita@enterrecruitment.com,sheba@enterrecruitment.com}
+      PRIVATE_ADMIN_ORIGIN: ${PRIVATE_ADMIN_ORIGIN:-http://127.0.0.1:8010}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
   frontend:
     build:
       context: .

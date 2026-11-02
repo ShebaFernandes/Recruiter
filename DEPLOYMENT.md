@@ -136,13 +136,13 @@ the application must not be described as fully AI-powered while using rules.
 
 Use Route 53 and ACM for `app.example.com`. Serve the versioned React build from a private S3 origin through CloudFront and route CloudFront's `/api/*` behavior to an ALB in front of Django. Forward all API methods, the auth/CSRF cookies, `X-CSRFToken`, `Content-Type`, and required query strings; disable caching for authenticated API responses. This same-origin design permits a strict `connect-src 'self'` CSP and avoids cross-site auth cookies. Run separate Django **web** and **resume-worker** ECS/Fargate services in private subnets. Use RDS PostgreSQL Multi-AZ as budget permits, a private S3 resume bucket with Block Public Access, SQS with a dead-letter queue, SES/SMTP for account email, Secrets Manager or SSM Parameter Store for secrets, and CloudWatch for logs, metrics, and alarms.
 
-The browser never receives a permanent resume URL. Django authorizes `/api/v1/resumes/<id>/download/` and reads the private object. Web and worker task roles should be separate and least-privileged. No AWS resources are created by this repository.
+The browser never receives a permanent resume URL. Django authorizes `/api/v1/resumes/<id>/download/` and reads the private object. Web and worker task roles should be separate and least-privileged. No AWS resources are created by this repository. Run the enquiry notifier as a third service using the same backend image and database, with the SMTP configuration described below.
 
 ### Resource checklist (create only after approval)
 
 - Route 53 DNS record(s), one ACM certificate, and one CloudFront distribution with an Origin Access Control and a response-headers policy mirroring `frontend/nginx.conf`.
 - One private S3 frontend-artifact bucket and one separate private resume bucket with Block Public Access and encryption.
-- One ECR repository for the backend image; one ECS cluster with web and worker task definitions/services plus a one-off migration task definition.
+- One ECR repository for the backend image; one ECS cluster with web, resume-worker, and enquiry-notifier task definitions/services plus a one-off migration task definition.
 - One ALB, HTTPS listener, web target group, VPC, public/private subnets, route tables, security groups, and only the endpoints/NAT egress the chosen design requires.
 - One RDS PostgreSQL instance/cluster, subnet group, parameter group, credentials secret, automated backups, and deletion protection according to the approved environment tier.
 - One encrypted standard SQS queue and one encrypted DLQ with a redrive policy.
@@ -151,7 +151,7 @@ The browser never receives a permanent resume URL. Django authorizes `/api/v1/re
 
 ## Images and services
 
-Build `backend/Dockerfile` once and run it with two commands:
+Build `backend/Dockerfile` once and run it with three commands:
 
 ```bash
 # Web service
@@ -159,6 +159,9 @@ gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 60
 
 # Worker service
 python manage.py run_resume_worker
+
+# Enquiry alert service
+python manage.py run_enquiry_notifications
 ```
 
 The image collects static files at build time. It intentionally does **not** migrate on startup. Build the frontend with `VITE_API_URL=/api/v1`; deploy its immutable output or `frontend/Dockerfile`. If a separately hosted API is unavoidable, replace the CSP with the exact API origin and configure exact CORS/CSRF origins—never broaden `connect-src` to all HTTPS destinations.
@@ -343,6 +346,30 @@ Set `DATABASE_URL`, `PLAYWRIGHT_API_URL`, `PLAYWRIGHT_BASE_URL`, and
 `RUN_CONNECTION_AUDIT=1`. Use `TESTING=true AI_PROVIDER=deterministic` on that
 test server only; keep real provider configuration untouched. Candidate tests
 still register, verify, upload, process and submit through the real APIs.
+
+### Hiring and employee-transition request alerts
+
+Every public hiring or employee-transition submission saves the request and a
+pending alert together. Run `python manage.py run_enquiry_notifications` as a
+separate long-running process (or the `enquiry-notifier` Compose service) after
+migrations. The worker sends one short email to each address in
+`ENQUIRY_NOTIFICATION_EMAILS`, then marks the alert sent. Failed sends are
+retried with backoff; submissions still succeed while email is unavailable.
+The email links to the protected Django admin and contains no applicant data or
+uploaded files. Set `PRIVATE_ADMIN_ORIGIN` to the admin's HTTPS origin in a
+deployment so links open correctly. The default internal recipients are
+`dikshita@enterrecruitment.com` and `sheba@enterrecruitment.com`.
+
+In Django admin, open **Hiring enquiries** or **Employee transition enquiries**
+to see each request and its alert state. Superusers can update status, private
+notes, and the next follow-up date; the first status change out of New records
+the contact timestamp. Uploaded files remain available through protected
+download links. Follow-up dates are tracked in admin; this version does not send
+date-based reminders. Local Django uses an in-memory email backend by default;
+the notifier leaves alerts queued until a delivering backend is configured.
+Configure the existing SMTP variables below, then run the notifier for real
+delivery. Use `python manage.py run_enquiry_notifications --once` for a one-time
+delivery check after SMTP is configured.
 
 ### Candidate verification and transactional email
 

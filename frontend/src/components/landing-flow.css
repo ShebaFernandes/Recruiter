@@ -130,7 +130,207 @@
   .simple-landing .growth-stage-card:hover { box-shadow: 0 18px 44px #17213b26; }
 }
 
-.simple-landing .ce-masthead .ce-audience-link,
 .simple-landing .ce-landing-cta { text-transform: uppercase; font-weight: 600; }
+.simple-landing .ce-masthead .ce-audience-link { font-family: var(--enter-font-ui); font-size: 13px; font-weight: 400; letter-spacing: 0; line-height: 1.4; text-transform: none; }
 .simple-landing .ce-uppercase-logo { font-size: 28px; font-weight: 600; letter-spacing: -.04em; line-height: 1; }
 .simple-landing .ce-uppercase-headline { font-weight: 600; }
+
+/* One light mountain landscape spans both opening chapters. */
+.simple-landing .opening-landscape-wrap {
+  position: relative;
+  background: linear-gradient(180deg, #ecebf0 0%, #ecebf000 12%, #20364c55 27%, #20364c66 58%, #f7f8f299 84%, #f7f8f2cc 100%), url('/media/hiring-misty-mountains.webp') center / cover no-repeat;
+}
+.simple-landing .opening-landscape-wrap .what-building { background: transparent; border: 0; box-shadow: none; }
+.simple-landing .opening-landscape-wrap .what-building__inner { padding-top: clamp(86px, 9vw, 126px); padding-bottom: 76px; }
+.simple-landing .opening-landscape-wrap .what-building__art { background: none; opacity: .16; }
+.simple-landing .opening-landscape-wrap .what-building h2,
+.simple-landing .opening-landscape-wrap .what-building__sentence { text-shadow: 0 2px 16px #132a4080; }
+.simple-landing .opening-landscape-wrap .what-building__intro { color: #f1f3f5; text-shadow: 0 1px 8px #132a4099; }
+.simple-landing .opening-landscape-wrap .what-building__tabs { background: #1c30475c; border-color: #d9e6f34d; backdrop-filter: blur(10px); }
+.simple-landing .opening-landscape-wrap .what-building__eyebrow { color: #d1e2ff; text-shadow: 0 1px 8px #132a40; }
+@media(min-width:901px) and (prefers-reduced-motion:no-preference) {
+  .simple-landing .opening-landscape-wrap { background-attachment: scroll, fixed; }
+}
+@media(max-width:640px) {
+  .simple-landing .opening-landscape-wrap { background-position: center, 45% center; }
+  .simple-landing .opening-landscape-wrap .what-building__inner { padding-top: 76px; padding-bottom: 54px; }
+}
+.simple-landing .opening-landscape-wrap::before { content: ''; position: absolute; left: 0; right: 0; top: -48px; height: 49px; background: linear-gradient(180deg, #ecebf000, #ecebf0); pointer-events: none; z-index: 1; }
+.simple-landing .opening-landscape-wrap .what-building { --wb-blue: #b4ceff; }
+.simple-landing .opening-landscape-wrap .wb-inline-field > button { text-shadow: 0 2px 8px #11263c; }
+
+/* Pale mountain invitation with clear, neutral typography. */
+.simple-landing .opening-landscape-wrap{background-image:linear-gradient(180deg,#ecebf0 0%,#f4f6f1a8 25%,#f4f6f1c7 65%,#f4f6f1b8 100%),url('/media/hiring-misty-mountains.webp')}
+.simple-landing .opening-landscape-wrap .what-building{--wb-ink:#303842;--wb-muted:#535f6a;--wb-blue:#3046a5}
+.simple-landing .opening-landscape-wrap .what-building h2{font-size:clamp(36px,4vw,52px);line-height:1.12;letter-spacing:-.035em;text-shadow:none}
+.simple-landing .opening-landscape-wrap .what-building__sentence{font-size:clamp(28px,2.8vw,38px);line-height:1.5;text-shadow:none}
+.simple-landing .opening-landscape-wrap .what-building__intro{color:#535f6a;text-shadow:none;font-size:15px;max-width:650px}
+.simple-landing .opening-landscape-wrap .what-building__eyebrow{color:#3046a5;text-shadow:none;letter-spacing:.22em}
+.simple-landing .opening-landscape-wrap .what-building__tabs{padding:6px 22px;background:#ffffff85;border-color:#52627433;backdrop-filter:blur(14px);box-shadow:0 3px 16px #23384905}
+.simple-landing .opening-landscape-wrap .what-building__tabs button{color:#515d68;font-weight:500}
+.simple-landing .opening-landscape-wrap .what-building__tabs button[aria-selected=true]{color:#3046a5}
+.simple-landing .opening-landscape-wrap .wb-inline-field>button{text-shadow:none}
+.simple-landing .opening-landscape-wrap .what-building__cta{background:#3046c9;color:white;border-color:#3046c9;box-shadow:0 4px 14px #3046c925}
+.simple-landing .opening-landscape-wrap .what-building__cta:hover{background:#263bb3;border-color:#263bb3}
+@media(max-width:640px){.simple-landing .opening-landscape-wrap .what-building__tabs{padding:6px 12px}.simple-landing .opening-landscape-wrap .what-building__sentence{font-size:27px}}
+
+/* Feather the landscape join instead of drawing a straight mist band. */
+.simple-landing .opening-landscape-wrap::before {
+  top: -100px;
+  height: 200px;
+  background: linear-gradient(180deg, transparent 0%, rgba(236,235,240,.45) 30%, #ecebf0 50%, rgba(236,235,240,.45) 70%, transparent 100%);
+  filter: blur(18px);
+  left: -24px;
+  right: -24px;
+}
+.simple-landing .opening-landscape-wrap::before { left: 0; right: 0; clip-path: inset(-30px 0); }
+@media(max-width:640px){.simple-landing .opening-landscape-wrap::before{top:-70px;height:140px;filter:blur(14px)}}
+.simple-landing .landing-background::after { content: ''; position: absolute; inset: auto 0 0; height: 160px; background: linear-gradient(180deg, transparent, #ecebf0); pointer-events: none; }
+
+/* Scroll-linked atmosphere for the hiring invitation only. */
+@media (prefers-reduced-motion: no-preference) {
+  .simple-landing .opening-landscape-wrap .what-building__tabs {
+    transition: box-shadow 350ms ease, border-color 350ms ease;
+  }
+  .simple-landing .opening-landscape-wrap .what-building__tabs:hover {
+    box-shadow: 0 8px 28px #263b5014, inset 0 1px 0 #ffffffa6;
+    border-color: #52627455;
+  }
+  .simple-landing .opening-landscape-wrap .what-building__cta {
+    transition: background-color 220ms ease, box-shadow 220ms ease, translate 220ms ease;
+  }
+  .simple-landing .opening-landscape-wrap .what-building__cta:hover {
+    translate: 0 -2px;
+    box-shadow: 0 8px 22px #30384230;
+  }
+  .simple-landing .opening-landscape-wrap .what-building__cta svg {
+    transition: translate 220ms ease;
+  }
+  .simple-landing .opening-landscape-wrap .what-building__cta:hover svg { translate: 3px 0; }
+  .simple-landing .opening-landscape-wrap .what-building.is-reveal-ready .what-building__tabs {
+    opacity: .25;
+    translate: 0 16px;
+    transition: opacity 800ms ease 180ms, translate 800ms cubic-bezier(.22,1,.36,1) 180ms, box-shadow 350ms ease;
+  }
+  .simple-landing .opening-landscape-wrap .what-building.is-visible .what-building__tabs { opacity: 1; translate: 0 0; }
+  @supports (animation-timeline: view()) {
+    .simple-landing .opening-landscape-wrap {
+      background-attachment: scroll;
+      background-size: cover, cover;
+      animation: hiring-landscape-scroll linear both;
+      animation-timeline: view();
+      animation-range: entry 0% exit 100%;
+    }
+    .simple-landing .opening-landscape-wrap::before {
+      animation: hiring-mist-scroll linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 100%;
+    }
+  }
+}
+@keyframes hiring-landscape-scroll {
+  from { background-position: center, 50% 35%; }
+  to { background-position: center, 50% 65%; }
+}
+@keyframes hiring-mist-scroll {
+  from { opacity: .9; }
+  to { opacity: .4; }
+}
+@media (max-width:640px) and (prefers-reduced-motion:no-preference) {
+  @supports(animation-timeline:view()) {
+    .simple-landing .opening-landscape-wrap { background-size:cover,cover; }
+  }
+}
+
+/* Let the two separate mountain scenes meet through a shared mist tone. */
+.simple-landing .opening-landscape-wrap::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 92px;
+  background: linear-gradient(180deg, transparent, #edf1f2);
+  pointer-events: none;
+  z-index: 0;
+}
+.simple-landing .opening-landscape-wrap + .brand-statement::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 92px;
+  background: linear-gradient(180deg, #edf1f2, transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+@media(max-width:640px){
+  .simple-landing .opening-landscape-wrap::after,
+  .simple-landing .opening-landscape-wrap + .brand-statement::before { height: 64px; }
+}
+
+/* Scroll gradually brings out bright mist and deep mountain shadows. */
+.simple-landing .opening-landscape-wrap { isolation: isolate; }
+.simple-landing .hiring-scroll-light {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(160deg, #fff 0%, #ffffffb3 24%, transparent 48%, #25364f99 78%, #15273c 100%);
+  mix-blend-mode: soft-light;
+  opacity: .16;
+}
+@media(prefers-reduced-motion:no-preference) {
+  @supports(animation-timeline:view()) {
+    .simple-landing .hiring-scroll-light {
+      animation: hiring-scroll-contrast linear both;
+      animation-timeline: view();
+      animation-range: entry 0% exit 85%;
+    }
+  }
+}
+@keyframes hiring-scroll-contrast {
+  0% { opacity: .06; }
+  45% { opacity: .3; }
+  100% { opacity: .65; }
+}
+@media(prefers-reduced-motion:reduce){.simple-landing .hiring-scroll-light{opacity:.16;animation:none}}
+
+
+/* Restore the midnight hiring scene from the reference. */
+.simple-landing .opening-landscape-wrap {
+  background:radial-gradient(ellipse at 50% 42%,#2c3853 0%,#1a233b 75%);
+  animation:none;
+}
+.simple-landing .opening-landscape-wrap::before,
+.simple-landing .opening-landscape-wrap::after,
+.simple-landing .opening-landscape-wrap .hiring-scroll-light,
+.simple-landing .opening-landscape-wrap + .brand-statement::before { display:none; }
+.simple-landing .opening-landscape-wrap .what-building { --wb-ink:#f5f4f0; --wb-muted:#c4c9d3; --wb-blue:#79a6f0; }
+.simple-landing .opening-landscape-wrap .what-building__inner { padding-block:76px 82px; width:min(1240px,calc(100% - 48px)); }
+.simple-landing .opening-landscape-wrap .what-building h2 { font-size:clamp(36px,4vw,52px); color:var(--wb-ink); }
+.simple-landing .opening-landscape-wrap .what-building__intro { color:var(--wb-muted); font-size:16px; }
+.simple-landing .opening-landscape-wrap .what-building__eyebrow { color:var(--wb-blue); }
+.simple-landing .opening-landscape-wrap .what-building__tabs { width:fit-content; max-width:100%; box-sizing:border-box; margin:32px auto 0; border:1px solid #a0b3d433; border-radius:40px; background:#ffffff03; box-shadow:none; }
+.simple-landing .opening-landscape-wrap .what-building__tabs button { color:#d6dbe5; }
+.simple-landing .opening-landscape-wrap .what-building__tabs button[aria-selected=true] { color:var(--wb-blue); }
+.simple-landing .opening-landscape-wrap .what-building__sentence { font-size:clamp(28px,3vw,40px); }
+.simple-landing .opening-landscape-wrap .what-building__cta { background:#79a6f0; border-color:#79a6f0; color:#17213b; }
+.simple-landing .opening-landscape-wrap .what-building__cta:hover { background:#99bdf6; border-color:#99bdf6; }
+.simple-landing .opening-landscape-wrap .wb-listbox__menu { min-width:240px; border-radius:14px; border:1px solid #526079; background:#222e46; color:#f5f4f0; box-shadow:0 16px 40px #090f2380; padding:8px; }
+.simple-landing .opening-landscape-wrap .wb-listbox__menu [role=option] { color:#e0e5ee; border-radius:8px; }
+.simple-landing .opening-landscape-wrap .wb-listbox__menu [role=option]:is(:hover,:focus-visible,[aria-selected=true]) { color:#fff; background:#3b5074; }
+@media(max-width:640px){
+ .simple-landing .opening-landscape-wrap .what-building__inner { width:calc(100% - 36px); padding-block:56px 64px; }
+ .simple-landing .opening-landscape-wrap .what-building__tabs { flex-wrap:wrap; flex-direction:row; gap:6px 18px; border-radius:24px; }
+ .simple-landing .opening-landscape-wrap .what-building__sentence { font-size:27px; }
+ .simple-landing .opening-landscape-wrap .wb-listbox__trigger { white-space:normal; }
+}
+/* Keep open menus above the following mountain statement. */
+.simple-landing .opening-landscape-wrap { z-index:10; overflow:visible; }
+
+.simple-landing .opening-landscape-wrap .wb-listbox__menu {
+  background:rgba(34,46,70,.82);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  border-color:rgba(177,194,224,.28);
+}
+
+.simple-landing .growth-stages { background:#24282a; }

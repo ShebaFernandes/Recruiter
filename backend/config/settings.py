@@ -321,6 +321,10 @@ EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "false").lower() == "true"
 EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "10"))
 if not 1 <= EMAIL_TIMEOUT <= 60:
     raise ImproperlyConfigured("EMAIL_TIMEOUT must be between 1 and 60 seconds.")
+ENQUIRY_NOTIFICATION_EMAILS = env_list(
+    "ENQUIRY_NOTIFICATION_EMAILS",
+    "dikshita@enterrecruitment.com,sheba@enterrecruitment.com",
+)
 if EMAIL_USE_TLS and EMAIL_USE_SSL:
     raise ImproperlyConfigured("Choose either SMTP STARTTLS or implicit SSL, not both.")
 EXPOSE_LOCAL_EMAIL_LINKS = (
@@ -652,6 +656,12 @@ REST_FRAMEWORK = {
         ),
         "resume_upload": os.getenv(
             "RESUME_UPLOAD_RATE_LIMIT", "1000/hour" if DEBUG else "10/hour"
+        ),
+        "employee_transition": os.getenv(
+            "EMPLOYEE_TRANSITION_RATE_LIMIT", "1000/hour" if DEBUG else "5/hour"
+        ),
+        "hiring_enquiry": os.getenv(
+            "HIRING_ENQUIRY_RATE_LIMIT", "1000/hour" if DEBUG else "5/hour"
         ),
         "recruiter_search": os.getenv(
             "RECRUITER_SEARCH_RATE_LIMIT", "1000/hour" if DEBUG else "120/hour"
