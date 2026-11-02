@@ -1,8 +1,10 @@
 from django.urls import path
+from . import opportunity_views
 
 from . import candidate_views, career_views, hiring_views, legal_views, support_views, views
 
 urlpatterns = [
+    path("opportunities/applications/", opportunity_views.apply),
     path("careers/applications/", career_views.career_application),
     path("legal/documents/", legal_views.legal_documents),
     path("candidate/legal/accept/", legal_views.accept_terms),

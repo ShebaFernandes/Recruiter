@@ -22,8 +22,8 @@ export default function Landing({ choose }: {
   useLandingMotion()
   // Candidate screens are selected in app state, so lower-page CTAs must reset the scroll.
   const openCandidate = () => {
-    choose('candidate')
-    window.scrollTo({ top: 0, behavior: 'instant' })
+    sessionStorage.removeItem('enter-opportunity-intent')
+    window.location.assign('/opportunities')
   }
 
   return <main className="career-edition simple-landing"><LandingBackground>
@@ -37,7 +37,7 @@ export default function Landing({ choose }: {
       <nav aria-label="Main navigation">
         {import.meta.env.VITE_CANDIDATE_ONLY !== 'true' && <button className="ce-audience-link" data-testid="for-recruiters" onClick={() => choose('recruiter', 'login')}>For Recruiters</button>}
         <button className="ce-audience-link" data-testid="for-companies" onClick={() => navigateToHiringSection('hire')}>For Companies</button>
-        <button className="ce-audience-link" data-testid="for-candidates" onClick={() => choose('candidate')}>For Candidates</button>
+        <a className="ce-audience-link" data-testid="for-candidates" href="/opportunities">For Candidates</a>
       </nav>
     </header>
 
@@ -49,7 +49,7 @@ export default function Landing({ choose }: {
           <p>Every breakthrough product, high-performing team, and successful company is built by exceptional people. We help ambitious companies hire them.</p>
           <div className="ce-landing-ctas" aria-label="Explore enter">
             <button className="ce-landing-cta ce-landing-cta--companies" onClick={() => navigateToHiringSection('hire')}>For Companies</button>
-            <button className="ce-landing-cta ce-landing-cta--candidates" onClick={() => choose('candidate')}>For Candidates</button>
+            <button className="ce-landing-cta ce-landing-cta--candidates" onClick={openCandidate}>For Candidates</button>
           </div>
         </div>
       </div>

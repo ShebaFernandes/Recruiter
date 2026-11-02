@@ -1,7 +1,7 @@
 import { flushSync } from 'react-dom'
+import EnterLogo from './EnterLogo'
 import observeLandingReveal from './observeLandingReveal'
 import { useEffect, useRef, useState } from 'react'
-import EnterLogo from './EnterLogo'
 import './closing-footer.css'
 
 type PendingDestination = 'Company access' | 'Opportunities'
@@ -74,7 +74,7 @@ export default function ClosingFooter({ onCandidate }: { onCandidate: () => void
         <nav className="enter-footer__column" aria-label="For candidates">
           <h3>FOR CANDIDATES</h3>
           <button type="button" onClick={onCandidate}>Join enter's Talent network</button>
-          <button type="button" title="Coming soon" onClick={() => comingSoon('Opportunities')}>Opportunities <span className="enter-footer__soon">Coming soon</span></button>
+          <a href="/opportunities">Opportunities</a>
         </nav>
 
         <nav className="enter-footer__column" aria-label="enter">

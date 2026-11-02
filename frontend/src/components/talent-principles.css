@@ -604,3 +604,11 @@
 /* Centre the connector on its evidence card. */
 .talent-evidence-card::after { left:50%; }
 .talent-evidence-card::before { left:50%; }
+
+/* Shared thirds keep every card, connector and highlighted segment on one axis. */
+@media(min-width:761px){
+.talent-evidence__cards{grid-template-columns:repeat(3,minmax(0,1fr));gap:0;padding-inline:0}
+.talent-evidence-card{justify-self:center;translate:none}
+.talent-timeline__reference-segments{grid-template-columns:repeat(3,minmax(0,1fr) minmax(0,2fr) minmax(0,.5fr) minmax(0,.5fr));column-gap:0}
+.talent-timeline__reference-segments span{margin-inline:2px}
+}

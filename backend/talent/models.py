@@ -682,3 +682,15 @@ class CareerApplication(models.Model):
 def cleanup_career_resume(sender, instance, **kwargs):
     from .storage_cleanup import schedule_cleanup
     schedule_cleanup(instance.resume.name)
+
+
+class OpportunityApplication(models.Model):
+    candidate = models.ForeignKey(CandidateProfile, on_delete=models.CASCADE)
+    opportunity_id = models.CharField(max_length=100)
+    note = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(
+            fields=["candidate", "opportunity_id"], name="unique_candidate_opportunity"
+        )]

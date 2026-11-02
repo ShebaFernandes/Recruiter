@@ -69,9 +69,11 @@ export default function TalentPrinciples() {
       cards.forEach((card, index) => {
         const segment = segments[index]
         if (!segment) return
+        card.style.removeProperty('translate')
         const box = card.getBoundingClientRect()
         const target = segment.getBoundingClientRect()
-        card.style.setProperty('--connector-x', `${target.left + target.width / 2 - box.left}px`)
+        card.style.translate = 'none'
+        card.style.setProperty('--connector-x', '50%')
         card.style.setProperty('--connector-height', `${Math.max(0, target.top + target.height / 2 - box.bottom)}px`)
       })
     }

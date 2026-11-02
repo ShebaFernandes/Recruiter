@@ -11,6 +11,7 @@ import type { Candidate, Notification, Project, ProjectDetail, Search, SearchRes
 import { Badge, Button, Card, FormField } from './components/ui'
 import Landing from './components/Landing'
 import Careers from './components/Careers'
+import Opportunities from './components/Opportunities'
 import PlatformBackground from './components/PlatformBackground'
 import RecruiterSearch from './components/RecruiterSearch'
 import ResumeAccess from './components/ResumeAccess'
@@ -644,6 +645,7 @@ export default function App() {
   async function logout() { try { await api.logout() } catch { /* local logout still applies */ } auth.clear(); setUser(null); navigate('/') }
   const query = new URLSearchParams(window.location.search)
   if (import.meta.env.VITE_CANDIDATE_ONLY === 'true' && (path.startsWith('/recruiter') || screen === 'recruiter')) return <PlatformBackground><main className="auth-page"><section className="auth-card"><h1>This platform is not available</h1><button onClick={() => { setUser(null); navigate('/') }}>Return to Enter</button></section></main></PlatformBackground>
+  if (path === '/opportunities' && !choice) return <Opportunities key={user?.role || 'public'} loggedIn={user?.role === 'candidate'} onLogin={() => { setAuthMode('login'); setChoice('candidate') }} />
   if (path === '/careers') return <Careers />
   if (path === '/privacy') return <LegalPlaceholder kind="privacy" />
   if (path === '/terms') return <LegalPlaceholder kind="terms" />
@@ -654,6 +656,6 @@ export default function App() {
   if (user === undefined) return <PlatformBackground>{<main className="auth-page"><div className="candidate-profile-loading" role="status">Opening Enter…</div></main>}</PlatformBackground>
   if (accountRemoved) return <PlatformBackground>{<main className="auth-page"><section className="auth-card auth-state-card"><Brand /><div className="auth-state-icon"><CheckCircle2 /></div><h1>Your account has been deleted</h1><p>Your profile is no longer accessible. Private file cleanup has been scheduled securely.</p><button className="primary" onClick={() => { setAccountRemoved(false); setChoice(null) }}>Return to Enter</button></section></main>}</PlatformBackground>
   if (!screen) return <Landing choose={(role, mode = 'signup') => { if (role === 'recruiter') navigate('/recruiter'); else { setAuthMode(mode); setChoice(role) } }} />
-  if (!user) return <PlatformBackground>{<AuthScreen role={screen} initialMode={authMode} back={() => navigate('/')} onDone={payload => setUser(payload.user)} />}</PlatformBackground>
+  if (!user) return <PlatformBackground>{<AuthScreen role={screen} initialMode={authMode} back={() => navigate('/')} onDone={payload => { setUser(payload.user); if(path === '/opportunities') setChoice(null) }} />}</PlatformBackground>
   return <PlatformBackground>{user.role === 'candidate' ? <CandidatePortal user={user} logout={logout} accountDeleted={() => { setUser(null); setChoice(null); setAccountRemoved(true) }} /> : <RecruiterPortal user={user} logout={logout} />}</PlatformBackground>
 }
