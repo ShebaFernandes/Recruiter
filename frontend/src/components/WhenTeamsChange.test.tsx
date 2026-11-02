@@ -30,7 +30,7 @@ describe('WhenTeamsChange', () => {
     fireEvent.click(trigger)
 
     const dialog = screen.getByRole('dialog', { name: 'Help your people find what’s next.' })
-    expect(dialog.textContent).not.toContain('How should we reach your people?')
+    expect(dialog.textContent).toContain('How should we reach your people?')
     expect(screen.getByRole('textbox', { name: 'Company' })).toBeTruthy()
     expect(screen.getByRole('radio', { name: /Upload a list/i })).toBeTruthy()
     expect(screen.getByRole('radio', { name: /Talk to us first/i })).toBeTruthy()
@@ -48,12 +48,12 @@ describe('WhenTeamsChange', () => {
     fireEvent.click(screen.getByRole('button', { name: /support your people/i }))
     fireEvent.click(screen.getByRole('radio', { name: /Talk to us first/i }))
     expect(screen.queryByLabelText('Choose an Excel or CSV list')).toBeNull()
-    fireEvent.change(screen.getByLabelText('Tell us about the situation'), { target: { value: 'Please call us.' } })
+    fireEvent.change(screen.getByLabelText('Tell us about the situation'), { target: { value: 'Help our team find new roles.' } })
     fireEvent.submit(screen.getByRole('button', { name: 'Submit' }).closest('form')!)
     await waitFor(() => expect(api.submitEmployeeTransitionEnquiry).toHaveBeenCalledOnce())
     const body = vi.mocked(api.submitEmployeeTransitionEnquiry).mock.calls[0][0]
     expect(body.get('reach_method')).toBe('talk')
-    expect(body.get('situation')).toBe('Please call us.')
+    expect(body.get('situation')).toBe('Help our team find new roles.')
     expect(body.has('employee_list')).toBe(false)
     expect(await screen.findByText(/Your request has been received/)).toBeTruthy()
   })

@@ -233,3 +233,16 @@
     transform: none;
   }
 }
+
+.ambition-hires::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, #101b32 90%);
+  opacity: var(--ambition-darkness, 0);
+}
+.ambition-hires__inner { position: relative; z-index: 2; }
+.ambition-hires__header h2 { color: var(--ambition-heading, #17213b); }
+.ambition-hires__header > p { color: var(--ambition-blue); }

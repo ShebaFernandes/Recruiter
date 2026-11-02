@@ -122,3 +122,15 @@
   from { transform: translate3d(-1%, 0, 0) scale(1.02); }
   to { transform: translate3d(1%, -1%, 0) scale(1.06); }
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+  .simple-landing button, .simple-landing a { transition: color 200ms ease, background-color 200ms ease, box-shadow 200ms ease; }
+  .simple-landing .growth-stage-card { transition: box-shadow 300ms ease, border-color 300ms ease; }
+  .simple-landing .growth-stage-card:hover { box-shadow: 0 18px 44px #17213b26; }
+}
+
+.simple-landing .ce-masthead .ce-audience-link,
+.simple-landing .ce-landing-cta { text-transform: uppercase; font-weight: 600; }
+.simple-landing .ce-uppercase-logo { font-size: 28px; font-weight: 600; letter-spacing: -.04em; line-height: 1; }
+.simple-landing .ce-uppercase-headline { font-weight: 600; }

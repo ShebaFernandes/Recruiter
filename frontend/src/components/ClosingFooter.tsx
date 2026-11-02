@@ -32,7 +32,7 @@ export default function ClosingFooter({ onCandidate }: { onCandidate: () => void
   return <section ref={sectionRef} id="closing-section" className="closing-section" aria-label="Build with enter">
     <div className="closing-cta" aria-labelledby="closing-cta-title">
       <div className="closing-cta__content">
-        <p className="closing-cta__eyebrow">THE BEST TEAMS ARE BUILT BY enter.</p>
+        <p className="closing-cta__eyebrow">THE BEST TEAMS ARE BUILT BY ENTER.</p>
         <h2 id="closing-cta-title">Who are you building next?</h2>
         <div className="closing-cta__actions">
           <button type="button" onClick={() => {
@@ -74,10 +74,10 @@ export default function ClosingFooter({ onCandidate }: { onCandidate: () => void
         </nav>
 
         <nav className="enter-footer__column" aria-label="enter">
-          <h3>enter</h3>
+          <h3>ENTER</h3>
           <a href="#talent-principles">About</a>
-          <a href="mailto:sheba@enterrecruitment.com">Contact</a>
           <button type="button" title="Coming soon" onClick={() => comingSoon('Careers')}>Careers <span className="enter-footer__soon">Coming soon</span></button>
+          <a href="mailto:sheba@enterrecruitment.com">Contact</a>
         </nav>
       </div>
 

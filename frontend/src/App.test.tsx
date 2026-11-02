@@ -69,7 +69,7 @@ describe('Enter Talent landing', () => {
   it('opens the existing candidate signup from the For Talent section', async () => {
     render(<App />)
     const forTalent = (await screen.findByRole('heading', { name: "Let's find work that feels great." })).closest('section') as HTMLElement
-    fireEvent.click(within(forTalent).getByRole('button', { name: 'Join ENTER’s talent network' }))
+    fireEvent.click(within(forTalent).getByRole('button', { name: 'Join enter’s talent network' }))
     expect(screen.getByRole('heading', { name: 'Create your account' })).toBeVisible()
     expect(window.location.pathname).toBe('/')
   })
@@ -121,7 +121,7 @@ describe('Enter Talent landing', () => {
 
   it('uses the existing transparent headline mark and direct candidate entry', async () => {
     render(<App />)
-    const heading = await screen.findByRole('heading', { name: 'The best teams are built by ENTER.' })
+    const heading = await screen.findByRole('heading', { name: 'The best teams are built by enter.' })
     expect(heading.querySelector('image')).toHaveAttribute('href', '/enter-wordmark.svg')
     const nav = screen.getByRole('navigation', { name: 'Main navigation' })
     expect(within(nav).getByRole('button', { name: 'For Candidates' })).toBeVisible()

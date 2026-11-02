@@ -8,6 +8,17 @@ export type Testimonial = { id: string; excerpt: string; paragraphs: string[]; n
 
 const testimonials: Testimonial[] = [
   {
+    id: 'githin-joseph',
+    excerpt: 'They act like an extension of the in-house recruitment team.',
+    name: 'Githin Joseph',
+    attribution: 'Sr. TA Partner, Nanonets',
+    paragraphs: [
+      "I've worked with ENTER at both MPL and Mayhem Studios. They act like an extension of the in-house recruitment team and are very particular about quality. They are quick to understand the brief, and they also help shape the job brief and advise on the talent pool.",
+      "Dikshita is lovely to work with. They're the best partners if you want to build your team from the ground up or if you are scaling your team.",
+      "They understand your brief, help sharpen it, and guide you on where the right talent is. They have a good understanding of the talent market.",
+    ],
+  },
+  {
     id: 'steve-francis',
     excerpt: 'What sets Dikshita & team apart is ownership.',
     name: 'Steve Francis',
@@ -63,9 +74,10 @@ export default function TestimonialsCarousel() {
 
   return <section ref={sectionRef} className="testimonials-carousel" aria-labelledby="testimonials-heading">
     <div className="testimonials-carousel__intro">
-      <h2 id="testimonials-heading">Don’t take our word for it, here’s what our clients have to say.</h2>
+      <p className="testimonials-carousel__eyebrow">TESTIMONIALS</p>
+      <h2 id="testimonials-heading">Don’t take our word for it</h2>
     </div>
-    <Marquee className="testimonials-carousel__viewport" pauseOnHover speed="slow" aria-label="Client testimonials">
+    <Marquee className="testimonials-carousel__viewport" pauseOnHover speed="fast" aria-label="Client testimonials">
       {testimonials.map(testimonial => <MarqueeCard
         key={testimonial.id}
         name={testimonial.name}

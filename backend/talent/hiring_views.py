@@ -37,7 +37,8 @@ FOUNDING_CATEGORIES = (
     "Early Technical Leader (CTO / Head of Eng)", "Founding Designer",
 )
 LEADERSHIP_CATEGORIES = (
-    "Engineering Leader", "Product Leader", "Functional Leader (Data, Design, GTM)",
+    "Engineering Leader", "Product Leader", "Business Leader",
+    "Functional Leader (Data, Design, GTM)",
 )
 PEOPLE_COUNTS = ("1", "2", "3", "4", "5", "6–10", "10+")
 ROLE_TITLES = (
@@ -135,21 +136,23 @@ class RecruitmentDriveSerializer(DepartmentHiringSerializer):
 
 
 class FoundingTeamSerializer(BaseHiringSerializer):
-    founder_role = serializers.ChoiceField(choices=("Founder", "CEO", "CTO", "Other"))
+    founder_role = serializers.ChoiceField(
+        choices=("Founder", "CEO", "CTO", "Other", "Founding team", "HR team", "Leadership")
+    )
     phone = serializers.CharField(max_length=40, required=False, allow_blank=True)
     website = serializers.CharField(max_length=300, required=False, allow_blank=True)
     product = serializers.CharField(max_length=3000)
     categories = serializers.ListField(
-        child=serializers.ChoiceField(choices=FOUNDING_CATEGORIES), allow_empty=False
+        child=serializers.CharField(max_length=160), allow_empty=False
     )
-    people_count = serializers.ChoiceField(choices=PEOPLE_COUNTS)
+    people_count = serializers.ChoiceField(choices=PEOPLE_COUNTS, required=False)
     attachment = serializers.FileField(required=False)
     cash_range = serializers.ChoiceField(choices=CASH_RANGES, required=False, allow_blank=True)
     equity_range = serializers.ChoiceField(
         choices=EQUITY_RANGES, required=False, allow_blank=True
     )
     location = serializers.CharField(max_length=160)
-    start_month = serializers.CharField(max_length=7)
+    start_month = serializers.CharField(max_length=7, required=False)
 
     def validate_categories(self, value):
         return list(dict.fromkeys(value))
@@ -174,15 +177,15 @@ class LeadershipSerializer(BaseHiringSerializer):
     phone = serializers.CharField(max_length=40, required=False, allow_blank=True)
     website = serializers.CharField(max_length=300, required=False, allow_blank=True)
     categories = serializers.ListField(
-        child=serializers.ChoiceField(choices=LEADERSHIP_CATEGORIES), allow_empty=False
+        child=serializers.CharField(max_length=160), allow_empty=False
     )
-    role_title = serializers.ChoiceField(choices=ROLE_TITLES)
+    role_title = serializers.CharField(max_length=240)
     outcome = serializers.CharField(max_length=3000)
     confidential = serializers.BooleanField()
     compensation = serializers.ChoiceField(
         choices=CASH_RANGES, required=False, allow_blank=True
     )
-    location_mode = serializers.CharField(max_length=160)
+    location_mode = serializers.CharField(max_length=160, required=False, allow_blank=True)
 
     def validate_categories(self, value):
         return list(dict.fromkeys(value))

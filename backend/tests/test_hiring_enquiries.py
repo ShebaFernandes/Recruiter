@@ -267,3 +267,37 @@ def test_hiring_timing_rejects_unknown_choice():
     assert response.status_code == 400
     assert "how_soon" in response.data
     assert not HiringEnquiry.objects.exists()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("role", ["Founder", "Founding team", "HR team", "Leadership"])
+def test_simplified_founding_form_saves_without_removed_fields(role):
+    data = {
+        "kind": "founding", "company": "Example Co", "full_name": "Alex Example",
+        "work_email": "alex@example.com", "founder_role": role,
+        "product": "A useful product", "categories": ["Custom founding role"],
+        "location": "Bengaluru",
+    }
+    response = APIClient().post(URL, data, format="multipart")
+    assert response.status_code == 201, response.data
+    enquiry = HiringEnquiry.objects.get(pk=response.data["id"])
+    assert enquiry.details["founder_role"] == role
+    assert enquiry.details["categories"] == ["Custom founding role"]
+    assert "people_count" not in enquiry.details
+    assert "start_month" not in enquiry.details
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("category", ["Engineering Leader", "Product Leader", "Business Leader"])
+def test_simplified_leadership_form_saves_editable_location(category):
+    data = {
+        "kind": "leadership", "company": "Example Co", "full_name": "Alex Example",
+        "work_email": "alex@example.com", "categories": [category], "role_title": category,
+        "outcome": "Build a strong team", "confidential": "true",
+        "location_mode": "Chennai, flexible hybrid",
+    }
+    response = APIClient().post(URL, data, format="multipart")
+    assert response.status_code == 201, response.data
+    enquiry = HiringEnquiry.objects.get(pk=response.data["id"])
+    assert enquiry.details["role_title"] == category
+    assert enquiry.details["location_mode"] == "Chennai, flexible hybrid"

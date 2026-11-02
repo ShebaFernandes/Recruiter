@@ -300,10 +300,11 @@ export default function WhatAreYouBuilding() {
   const [enquiry, setEnquiry] = useState<HiringEnquiry | null>(null)
   const [activeTab, setActiveTab] = useState<TabId>('hire')
   const [hireRole, setHireRole] = useState(roles[1])
+  const [teamLocation, setTeamLocation] = useState(locations[3])
   const [hireLocation, setHireLocation] = useState(locations[3])
   const [teamDiscipline, setTeamDiscipline] = useState(teamDisciplines[0])
   const [teamSize, setTeamSize] = useState(teamSizes[1])
-  const [driveCount, setDriveCount] = useState(driveCounts[3])
+  const [driveCount] = useState(driveCounts[3])
   const [driveRole, setDriveRole] = useState(driveRoles[0])
   const [driveLocation, setDriveLocation] = useState(locations[0])
   const [today, setToday] = useState(() => localDay())
@@ -395,9 +396,9 @@ export default function WhatAreYouBuilding() {
         hidden={activeTab !== 'team'}
       >
         <div className="what-building__sentence">
-          I'm building a <InlineListbox label="Team discipline" value={teamDiscipline} options={teamDisciplines} onChange={setTeamDiscipline} /> team of <InlineListbox label="Team size" value={teamSize} options={teamSizes} onChange={setTeamSize} />
+          I'm building a <InlineListbox label="Team discipline" value={teamDiscipline} options={teamDisciplines} onChange={setTeamDiscipline} /> team of <InlineListbox label="Team size" value={teamSize} options={teamSizes} onChange={setTeamSize} /> in <InlineListbox label="Team location" value={teamLocation} options={locations} onChange={setTeamLocation} />
         </div>
-        <button className="what-building__cta" type="button" onClick={event => { setOpener(event.currentTarget); setEnquiry({ kind: 'team', teamFocus: teamDiscipline, headcount: Number.parseInt(teamSize, 10) }) }}>Build My Team <ArrowRight size={16} aria-hidden="true" /></button>
+        <button className="what-building__cta" type="button" onClick={event => { setOpener(event.currentTarget); setEnquiry({ kind: 'team', location: teamLocation, teamFocus: teamDiscipline, headcount: Number.parseInt(teamSize, 10) }) }}>Build My Team <ArrowRight size={16} aria-hidden="true" /></button>
       </div>
 
       <div
@@ -408,7 +409,7 @@ export default function WhatAreYouBuilding() {
         hidden={activeTab !== 'drive'}
       >
         <div className="what-building__sentence what-building__sentence--drive">
-          We need <InlineListbox label="Number of hires" value={driveCount} options={driveCounts} onChange={setDriveCount} /> <InlineListbox label="Role for recruitment drive" value={driveRole} options={driveRoles} onChange={setDriveRole} /> in <InlineListbox label="Recruitment drive location" value={driveLocation} options={locations} onChange={setDriveLocation} /> by <InlineCalendar value={safeDeadline} minimum={today} onChange={setDeadline} />
+          I am looking for <InlineListbox label="Role for recruitment drive" value={driveRole} options={driveRoles} onChange={setDriveRole} /> in <InlineListbox label="Recruitment drive location" value={driveLocation} options={locations} onChange={setDriveLocation} /> by <InlineCalendar value={safeDeadline} minimum={today} onChange={setDeadline} />
         </div>
         <button className="what-building__cta" type="button" onClick={event => { setOpener(event.currentTarget); setEnquiry({ kind: 'drive', role: driveRole, location: driveLocation, headcount: Number(driveCount), deadline: safeDeadline }) }}>Plan My Drive <ArrowRight size={16} aria-hidden="true" /></button>
       </div>

@@ -511,3 +511,19 @@
   .talent-evidence-card { width: 100%; max-width: none; min-height: 0; }
   .talent-evidence-card::before, .talent-evidence-card::after, .talent-timeline { display: none; }
 }
+
+.talent-principles__header { padding-top: 0; align-self: start; transform: translateY(-20px); }
+@media (max-width: 900px) { .talent-principles__header { transform: none; } }
+
+/* Align both section labels to the same content gutter. */
+.talent-principles__inner > .talent-principles__eyebrow { width: 100%; margin: 0 0 32px; text-align: left; }
+
+/* Keep the editorial heading directly beneath the section label. */
+.talent-principles__top { width: 100%; max-width: none; margin-inline: 0; }
+.talent-principles__header { transform: none; }
+
+/* Leave a clear gutter between the heading and the evidence criteria. */
+.talent-principles__top { grid-template-columns: minmax(0, .85fr) minmax(0, 1.4fr); gap: clamp(48px, 7vw, 104px); align-items: start; }
+@media (max-width: 900px) {
+  .talent-principles__top { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+}

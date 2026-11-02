@@ -6,7 +6,7 @@
   min-height: clamp(340px, 44svh, 440px);
   overflow: hidden;
   isolation: isolate;
-  background: linear-gradient(90deg, rgba(248, 250, 247, .65), rgba(248, 250, 247, .8) 50%, rgba(248, 250, 247, .65)), url('/media/hiring-enquiry-landscape-v1.png') center 68% / cover no-repeat;
+  background: linear-gradient(90deg, rgba(248, 250, 247, .12), rgba(248, 250, 247, .30) 50%, rgba(248, 250, 247, .12)), url('/media/hiring-enquiry-landscape-v1.png') center 10% / cover no-repeat;
 }
 
 .brand-statement__inner {

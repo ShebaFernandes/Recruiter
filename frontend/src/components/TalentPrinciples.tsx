@@ -62,9 +62,9 @@ export default function TalentPrinciples() {
 
   return <section ref={sectionRef} id="talent-principles" className="talent-principles" aria-labelledby="talent-principles-title">
     <div className="talent-principles__inner">
+      <p className="talent-principles__eyebrow">HOW ENTER THINKS ABOUT TALENT</p>
       <div className="talent-principles__top">
         <header className="talent-principles__header">
-          <p className="talent-principles__eyebrow">HOW enter THINKS ABOUT TALENT</p>
           <h2 id="talent-principles-title">Getting it<br />wrong isn’t<br />an option.</h2>
         </header>
 

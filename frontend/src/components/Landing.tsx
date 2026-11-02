@@ -1,3 +1,4 @@
+import useLandingMotion from './useLandingMotion'
 import { ArrowRight } from 'lucide-react'
 import LandingBackground from './LandingBackground'
 import CompanyLogoMarquee from './company-preview/CompanyLogoPreview'
@@ -10,7 +11,6 @@ import WhenTeamsChange from './WhenTeamsChange'
 import TestimonialsCarousel from './TestimonialsCarousel'
 import ForTalent from './ForTalent'
 import ClosingFooter from './ClosingFooter'
-import EnterLogo from './EnterLogo'
 import { navigateToHiringSection } from './hiringSectionNavigation'
 import './landing.css'
 import './simple-landing.css'
@@ -19,6 +19,7 @@ import './landing-flow.css'
 export default function Landing({ choose }: {
   choose: (role: 'recruiter' | 'candidate', mode?: 'signup' | 'login') => void
 }) {
+  useLandingMotion()
   // Candidate screens are selected in app state, so lower-page CTAs must reset the scroll.
   const openCandidate = () => {
     choose('candidate')
@@ -30,7 +31,7 @@ export default function Landing({ choose }: {
     <div className="ce-mountain-hero">
     <header className="ce-masthead">
       <div className="ce-brand-lockup">
-      <a className="ce-logo" href="#enter-home" aria-label="enter home"><EnterLogo className="ce-logo-mark" decorative /></a>
+      <a className="ce-logo" href="#enter-home" aria-label="enter home"><span className="ce-uppercase-logo">ENTER</span></a>
       <span className="ce-masthead-note">Humanity. Integrity and Possibility.</span>
       </div>
       <nav aria-label="Main navigation">
@@ -56,7 +57,7 @@ export default function Landing({ choose }: {
 
     <section className="ce-intro ce-page-width" id="enter-home" tabIndex={-1} aria-labelledby="ce-title">
       <div className="ce-intro-grid">
-        <h1 id="ce-title" aria-label="The best teams are built by enter.">The best teams are<br />built by <span className="ce-headline-brand" aria-hidden="true"><EnterLogo className="ce-headline-wordmark" decorative />.</span></h1>
+        <h1 id="ce-title" aria-label="The best teams are built by enter.">The best teams are<br />built by <span className="ce-headline-brand" aria-hidden="true"><span className="ce-uppercase-headline">ENTER</span>.</span></h1>
         <div className="ce-intro-aside">
           <p className="ce-supporting-headline">What You Build Tomorrow Depends on Who You Hire Today</p>
           <p>Every breakthrough product, high-performing team, and successful company is built by exceptional people. We help ambitious companies hire them.</p>

@@ -1,3 +1,4 @@
+import { MarqueeDuplicate } from './marquee-context'
 import type { ComponentPropsWithoutRef, ReactNode } from 'react'
 import './marquee.css'
 
@@ -21,7 +22,7 @@ export function Marquee({
   >
     <div className="ui-marquee__track">
       <div className="ui-marquee__group">{children}</div>
-      <div className="ui-marquee__group" aria-hidden="true">{children}</div>
+      <div className="ui-marquee__group" aria-hidden="true"><MarqueeDuplicate.Provider value={true}>{children}</MarqueeDuplicate.Provider></div>
     </div>
   </div>
 }

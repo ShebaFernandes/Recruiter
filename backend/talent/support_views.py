@@ -36,7 +36,8 @@ class EmployeeTransitionEnquirySerializer(serializers.Serializer):
     people_impacted = serializers.ChoiceField(
         choices=["1–10", "11–40", "41–100", "More than 100"]
     )
-    last_working_day = serializers.DateField()
+    last_working_day = serializers.DateField(required=False, allow_null=True)
+    phone = serializers.CharField(max_length=40, required=False, allow_blank=True)
     reach_method = serializers.ChoiceField(choices=EmployeeTransitionEnquiry.ReachMethod.choices)
     employee_list = serializers.FileField(required=False)
     situation = serializers.CharField(max_length=2000, required=False, allow_blank=True)
@@ -104,7 +105,8 @@ def employee_transition_enquiry(request):
             work_email=data["work_email"],
             role=data["role"],
             people_impacted=data["people_impacted"],
-            last_working_day=data["last_working_day"],
+            last_working_day=data.get("last_working_day"),
+            phone=data.get("phone", ""),
             reach_method=data["reach_method"],
             employee_list=stored_name,
             original_filename=uploaded.name if uploaded else "",

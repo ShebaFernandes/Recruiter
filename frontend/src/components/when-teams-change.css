@@ -293,8 +293,8 @@
 .when-teams-change__form-grid select { cursor: pointer; }
 .when-teams-change__reach { display: grid; gap: 7px; min-width: 0; margin: 0; padding: 0; border: 0; }
 .when-teams-change__reach legend { margin-bottom: 8px; color: #4d6158; font: 600 10px/1.3 var(--enter-font-sans); letter-spacing: .1em; text-transform: uppercase; }
-.when-teams-change__reach > label { display: flex; align-items: flex-start; gap: 10px; padding: 7px 10px; border: 1px solid #dbe4da; border-radius: 11px; background: rgba(255, 255, 255, .65); cursor: pointer; transition: border-color 180ms ease, background-color 180ms ease; }
-.when-teams-change__reach > label.is-selected { border-color: #9cba9d; background: #eff5ec; }
+.when-teams-change__reach > label { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border: 0; background: transparent; cursor: pointer; }
+
 .when-teams-change__reach input { flex: 0 0 auto; margin: 3px 0 0; accent-color: #3d7656; }
 .when-teams-change__reach span { display: grid; gap: 2px; }
 .when-teams-change__reach strong { color: #193d32; font: 600 13px/1.3 var(--enter-font-sans); }
@@ -390,3 +390,178 @@
   .when-teams-change__form-footer button { transition: none; }
 }
 
+
+.when-teams-change {
+  background-image: linear-gradient(180deg, rgba(244, 249, 251, .94), rgba(234, 242, 239, .88)), url('/media/ambition-hires-mountain.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+.when-teams-change__header > p { color: #75a9d7; }
+.when-teams-change__content { padding-bottom: 8px; }
+.when-teams-change__landscape { min-height: 0; background: transparent; }
+.when-teams-change__landscape > p { padding-block: 12px 28px; margin-block: 0; }
+@media (max-width: 760px), (prefers-reduced-motion: reduce) {
+  .when-teams-change { background-attachment: scroll; }
+}
+
+.when-teams-change__header > p { color: #3046c9; }
+
+.when-teams-change__dialog-description { margin: 0 0 16px; color: #68748a; font: 400 12px/1.5 var(--enter-font-ui); }
+.when-teams-change__field { display: grid; gap: 5px; min-width: 0; }
+.when-teams-change__field > span, .when-teams-change__reach legend { color: #465bb2; font: 500 10px/1.5 var(--enter-font-ui); text-transform: uppercase; letter-spacing: .04em; }
+.when-teams-change__reach legend { margin-bottom: 8px; }
+.when-teams-change__file { position: relative; display: grid; padding: 12px 16px; border: 1px dashed #a9b3d2; border-radius: 10px; background: #f1f3fb; color: #465bb2; cursor: pointer; }
+.when-teams-change__file small { display: block; margin-top: 4px; color: #788397; }
+.when-teams-change__file input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.when-teams-change__file:focus-within { outline: 2px solid #6374bd; outline-offset: 2px; }
+
+.when-teams-change__form-grid select { color-scheme: light; color: #849389; }
+.when-teams-change__form-grid select:valid { color: #173b35; }
+.when-teams-change__form-grid select option { color: #173b35; background: #fff; }
+
+.transition-select { position: relative; min-width: 0; }
+.transition-select > button { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 38px; padding: 7px 12px; border: 1px solid #d6ded5; border-radius: 10px; background: #fff; color: #849389; font: 400 13px/1.35 var(--enter-font-sans); cursor: pointer; text-align: left; }
+.transition-select > button.has-value { color: #173b35; }
+.transition-select__menu { position: absolute; z-index: 10; top: calc(100% + 4px); left: 0; right: 0; padding: 5px; border: 1px solid #d6ded5; border-radius: 10px; background: #fbfaf5; box-shadow: 0 8px 24px #173b3520; }
+.transition-select__menu > button { display: block; width: 100%; padding: 9px 12px; border: 0; border-radius: 6px; background: transparent; color: #173b35; text-align: left; font: 400 13px/1.35 var(--enter-font-sans); cursor: pointer; }
+.transition-select__menu > button:hover, .transition-select__menu > button:focus-visible, .transition-select__menu > button[aria-selected="true"] { background: #e5eee3; color: #214b38; }
+
+.transition-select__arrow { flex: 0 0 auto; margin-left: 10px; color: #8b948f; }
+
+/* Compact transition enquiry form. */
+.when-teams-change__dialog h2 { font-size: clamp(22px, 3vw, 26px); }
+.when-teams-change__dialog > .when-teams-change__dialog-description { font-size: 11px; line-height: 1.5; }
+.when-teams-change__dialog-heading > button { width: 28px; height: 28px; font-size: 20px; }
+.when-teams-change__form-grid { align-items: end; }
+.when-teams-change__form-grid input,
+.transition-select > button { min-height: 32px; padding: 5px 10px; font-size: 12px; border-radius: 8px; }
+.when-teams-change__form-grid .when-teams-change__date-field { display: grid !important; gap: 5px !important; min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; }
+.when-teams-change__date-field > span { color: #465bb2; font: 500 10px/1.5 var(--enter-font-ui); text-transform: uppercase; letter-spacing: .04em; }
+.when-teams-change__form-grid .when-teams-change__date-field input { min-height: 32px; padding: 5px 10px; border: 1px solid #d6ded5; font-size: 12px; }
+
+.when-teams-change__date-field > span,
+.when-teams-change__reach legend { font-size: 9px; }
+
+/* Stronger landscape color with black editorial copy and the brand action. */
+.when-teams-change {
+  background-image: linear-gradient(180deg, rgba(189, 204, 198, .76), rgba(164, 184, 174, .72)), url('/media/ambition-hires-mountain.jpg');
+}
+.when-teams-change .when-teams-change__header h2,
+.when-teams-change__human,
+.when-teams-change__human em,
+.when-teams-change__supporting,
+.when-teams-change__copy,
+.when-teams-change__copy-group p,
+.when-teams-change__landscape > p { color: #000; }
+.when-teams-change__action button { background: #3046c9; color: #fff; box-shadow: 0 9px 24px rgba(48, 70, 201, .18); }
+.when-teams-change__action button:hover { background: #2438a8; color: #fff; box-shadow: 0 11px 28px rgba(48, 70, 201, .24); }
+.when-teams-change__action button:focus-visible { outline-color: #3046c9; box-shadow: 0 0 0 7px rgba(48, 70, 201, .18); }
+
+/* Keep the transition message, action, and closing thought together. */
+.when-teams-change__supporting { margin-top: 18px; }
+.when-teams-change__copy { margin-top: 2px; gap: 8px; line-height: 1.6; }
+.when-teams-change__action { margin-top: 14px; }
+.when-teams-change__content { padding-bottom: 0; }
+.when-teams-change__landscape > p { padding-block: 10px 20px; }
+
+.when-teams-change__landscape > p { font-size: clamp(18px, 1.7vw, 22px); }
+
+/* Carry the section's black text and blue accents into its enquiry card. */
+.when-teams-change__dialog-backdrop { --change-navy: #000; background: rgba(23, 33, 59, .64); }
+.when-teams-change__dialog { background: #fff; border-color: #dce1e8; color: #000; }
+.when-teams-change__dialog h2,
+.when-teams-change__reach strong,
+.when-teams-change__consent { color: #000; }
+.when-teams-change__dialog > p,
+.when-teams-change__reach small,
+.when-teams-change__form-footer p { color: #68748a; }
+.when-teams-change__dialog :focus-visible { outline-color: #3046c9; }
+.when-teams-change__reach legend,
+.when-teams-change__date-field > span,
+.when-teams-change__field > span { color: #3046c9; }
+.when-teams-change__reach input,
+.when-teams-change__consent input { accent-color: #3046c9; }
+.when-teams-change__form-grid input,
+.when-teams-change__situation,
+.transition-select > button { border-color: #d5dce6; color: #17213b; }
+.when-teams-change__form-grid input::placeholder,
+.when-teams-change__situation::placeholder,
+.transition-select > button:not(.has-value) { color: #8995a8; }
+.transition-select__menu { background: #fff; border-color: #d5dce6; }
+.transition-select__menu > button { color: #17213b; }
+.transition-select__menu > button:hover,
+.transition-select__menu > button:focus-visible,
+.transition-select__menu > button[aria-selected="true"] { background: #edf0fb; color: #3046c9; }
+.when-teams-change__form-footer button { background: #3046c9; }
+.when-teams-change__form-footer button:hover { background: #2438a8; }
+.when-teams-change__dialog-heading > button { box-sizing: border-box; width: 20px; height: 20px; padding: 0; color: #3046c9; font-size: 16px; box-shadow: 0 0 8px rgba(48, 70, 201, .22); }
+
+.when-teams-change__upload-option { position: relative; }
+.when-teams-change__list-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.when-teams-change__upload-option:focus-within { outline: 2px solid #3046c9; outline-offset: 3px; border-radius: 6px; }
+
+.when-teams-change__reach > label > span { flex: 1; min-width: 0; }
+.when-teams-change__reach .when-teams-change__situation { box-sizing: border-box; display: block; width: 100%; margin-top: 8px; min-height: 80px; }
+
+/* Compact support card with a clear upload target and a soft text-field focus. */
+.when-teams-change__dialog { box-sizing: border-box; width: min(540px, 100%); padding: 22px; border-radius: 18px; }
+.when-teams-change__dialog-heading { margin-bottom: 10px; }
+.when-teams-change__dialog h2 { font-size: clamp(21px, 3vw, 24px); }
+.when-teams-change__dialog > .when-teams-change__dialog-description { margin: 0 0 12px; }
+.when-teams-change__form { gap: 9px; }
+.when-teams-change__reach { gap: 8px; }
+.when-teams-change__reach > label { padding: 8px 10px; border: 1px solid #e1e5ed; border-radius: 9px; }
+.when-teams-change__reach > .when-teams-change__upload-option { border: 1px dashed #a9b3d2; background: #f1f3fb; }
+.when-teams-change__upload-option strong { display: flex; align-items: center; gap: 6px; color: #3046c9; }
+.when-teams-change__reach > label.is-selected { border-color: #9aa7e0; }
+.when-teams-change__reach .when-teams-change__situation { min-height: 60px; margin-top: 6px; padding: 8px 10px; border-radius: 8px; resize: vertical; transition: border-color 180ms ease, box-shadow 180ms ease; }
+.when-teams-change__dialog .when-teams-change__situation:focus-visible { outline: none; border-color: #8191d8; box-shadow: 0 0 0 3px rgba(48, 70, 201, .10); }
+@media (max-width: 540px) { .when-teams-change__dialog { padding: 18px; } }
+
+.transition-contact-option { padding: 10px 12px; border: 1px solid #e1e5ed; border-radius: 10px; background: #fff; transition: border-color 180ms ease, background-color 180ms ease; }
+.transition-contact-option.is-selected { border-color: #b4bee7; background: #fafbff; }
+.transition-contact-option__choice { display: flex; align-items: flex-start; gap: 9px; cursor: pointer; }
+.transition-contact-option__choice > span { flex: 1; min-width: 0; }
+.transition-contact-option__upload { position: relative; display: flex; align-items: center; gap: 10px; margin-top: 9px; padding: 10px 12px; border: 1px dashed #a9b3d2; border-radius: 8px; background: #f1f3fb; color: #3046c9; cursor: pointer; }
+.transition-contact-option__upload input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.transition-contact-option__upload:focus-within { border-color: #3046c9; box-shadow: 0 0 0 3px rgba(48,70,201,.10); }
+.transition-contact-option__upload strong { color: #3046c9; overflow-wrap: anywhere; }
+.transition-contact-option .when-teams-change__situation { margin-top: 9px; resize: none; }
+.when-teams-change__form-grid input:focus-visible,
+.transition-select > button:focus-visible { outline: none; border-color: #8191d8; box-shadow: 0 0 0 3px rgba(48,70,201,.10); }
+@media (max-width: 540px) { .when-teams-change__dialog-backdrop { padding: 12px; } .when-teams-change__dialog { max-height: calc(100dvh - 24px); } }
+
+/* Editorial rhythm for the employee transition chapter. */
+.when-teams-change { background-attachment: scroll; background-position: center 58%; }
+.when-teams-change::before { display: none; }
+.when-teams-change__content { width: min(1080px, calc(100% - 64px)); padding-top: clamp(48px, 5vw, 72px); padding-bottom: 0; }
+.when-teams-change__header { max-width: 940px; }
+.when-teams-change__header > p { margin-bottom: 22px; font-size: 11px; letter-spacing: .18em; }
+.when-teams-change .when-teams-change__header h2 { font-size: clamp(28px, 3.1vw, 42px); line-height: 1.2; letter-spacing: -.03em; }
+.when-teams-change__opening { white-space: normal; }
+.when-teams-change__human { margin-top: 8px; }
+.when-teams-change__supporting { margin-top: 26px; font-size: 16px; font-weight: 500; }
+.when-teams-change__copy { max-width: 710px; margin-top: 4px; gap: 10px; font-size: 14px; line-height: 1.65; text-wrap: pretty; }
+.when-teams-change__action { margin-top: 20px; }
+.when-teams-change__action button { min-height: 44px; padding: 12px 24px; }
+.when-teams-change__landscape > p { max-width: 760px; padding: 14px 24px 38px; font-size: clamp(17px, 1.5vw, 20px); line-height: 1.45; }
+@media (max-width: 600px) {
+  .when-teams-change__content { width: calc(100% - 40px); padding-top: 40px; }
+  .when-teams-change .when-teams-change__header h2 { font-size: 28px; }
+  .when-teams-change__supporting { font-size: 15px; margin-top: 22px; }
+  .when-teams-change__copy { font-size: 13px; }
+  .when-teams-change__action button { width: auto; }
+}
+
+@media (min-width: 1100px) {
+  .when-teams-change__header { max-width: 1080px; }
+  .when-teams-change .when-teams-change__header h2 { font-size: clamp(28px, 2.6vw, 36px); }
+  .when-teams-change__opening { white-space: nowrap; }
+}
+
+/* Reference-style dividers for the support contact options. */
+.when-teams-change__reach { gap: 0; }
+.when-teams-change__reach legend { width: 100%; padding-bottom: 10px; margin-bottom: 0; border-bottom: 1px solid #dce1e8; }
+.transition-contact-option,
+.transition-contact-option.is-selected { padding: 14px 0; border: 0; border-bottom: 1px solid #dce1e8; border-radius: 0; background: transparent; }
