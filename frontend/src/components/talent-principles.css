@@ -556,7 +556,7 @@
 .talent-principles__top { grid-template-columns: minmax(0, .8fr) minmax(0, 1.4fr); gap: clamp(40px, 6vw, 88px); }
 .talent-principles__header .talent-principles__eyebrow { font-size: 11px; font-weight: 500; letter-spacing: .16em; line-height: 1.7; color: var(--talent-blue); margin-bottom: 22px; }
 .talent-principles .talent-principles__header h2 { font-size: clamp(44px, 5vw, 66px); line-height: 1.02; letter-spacing: -.045em; color: #303842; }
-.talent-principles__list { padding: 0 0 0 28px; border-left: 1px solid #b8c9c76b; }
+.talent-principles__list { padding: 0 0 0 28px; border-left: 1px solid transparent; }
 .talent-principle { padding: 20px 0; border-bottom: 1px solid #bdcac96b; }
 .talent-principle:last-child { padding-bottom: 0; border-bottom: 0; }
 .talent-principle__comparison,

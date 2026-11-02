@@ -7,11 +7,10 @@ from .permissions import IsCandidate
 
 OPPORTUNITY_IDS = [
     "backend-engineer",
-    "senior-ai-engineer",
-    "founding-engineer",
-    "product-manager",
-    "director-engineering",
-    "enterprise-sales-manager",
+    "senior-backend-engineer",
+    "frontend-engineer-sde-iii",
+    "mobile-engineer-flutter",
+    "senior-sre-devops-engineer"
 ]
 
 

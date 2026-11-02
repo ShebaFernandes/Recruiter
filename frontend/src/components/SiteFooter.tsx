@@ -1,3 +1,4 @@
+import { navigateSmoothly } from './smoothPageNavigation'
 import EnterLogo from './EnterLogo'
 import './site-footer.css'
 
@@ -6,7 +7,7 @@ export default function SiteFooter({ compact = false }: { compact?: boolean }) {
     <a className="site-footer-brand" href="/" aria-label="Enter home"><EnterLogo /></a>
     <p className="site-footer-tagline">Humanity. Integrity and Possibility.</p>
     <nav className="site-footer-links" aria-label="Footer navigation">
-      {!compact && <><a href="/opportunities">Opportunities</a>
+      {!compact && <><a href="/opportunities" onClick={navigateSmoothly}>Opportunities</a>
       <a href="/careers">Careers</a>
       <a href="mailto:sheba@enterrecruitment.com">Contact</a></>}
       <a href="https://www.linkedin.com/company/enterrecruitment/" target="_blank" rel="noopener noreferrer">LinkedIn</a>

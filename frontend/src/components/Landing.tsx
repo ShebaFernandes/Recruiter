@@ -70,7 +70,7 @@ export default function Landing({ choose }: {
     </div>
     <WhenTeamsChange />
     <TestimonialsCarousel />
-    <ForTalent onJoin={openCandidate} />
+    <ForTalent onJoin={() => { sessionStorage.removeItem('enter-opportunity-intent'); window.scrollTo(0, 0); choose('candidate', 'signup') }} />
     <ClosingFooter onCandidate={openCandidate} />
   </main>
 }

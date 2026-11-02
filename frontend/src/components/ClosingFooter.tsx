@@ -1,3 +1,4 @@
+import { navigateSmoothly } from './smoothPageNavigation'
 import { flushSync } from 'react-dom'
 import EnterLogo from './EnterLogo'
 import observeLandingReveal from './observeLandingReveal'
@@ -74,7 +75,7 @@ export default function ClosingFooter({ onCandidate }: { onCandidate: () => void
         <nav className="enter-footer__column" aria-label="For candidates">
           <h3>FOR CANDIDATES</h3>
           <button type="button" onClick={onCandidate}>Join enter's Talent network</button>
-          <a href="/opportunities">Opportunities</a>
+          <a href="/opportunities" onClick={navigateSmoothly}>Opportunities</a>
         </nav>
 
         <nav className="enter-footer__column" aria-label="enter">

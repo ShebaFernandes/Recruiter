@@ -29,3 +29,201 @@
 .opp-footer{display:grid;grid-template-columns:1fr auto 1fr;gap:24px}.opp-footer-tagline{text-align:center;white-space:nowrap}.opp-footer nav{font-size:11px;gap:12px;justify-content:flex-end}@media(max-width:760px){.opp-footer{grid-template-columns:1fr;text-align:center;justify-items:center}.opp-footer nav{justify-content:center}.opp-footer-tagline{white-space:normal}}
 
 .opp-footer{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);padding-block:32px}.opp-footer nav{gap:20px;font-size:12px;line-height:1.7}.opp-footer-tagline{font-size:12px;line-height:1.7}@media(max-width:900px){.opp-footer{grid-template-columns:1fr auto}.opp-footer-tagline{grid-column:1/-1;grid-row:2}.opp-footer nav{gap:16px}}@media(max-width:600px){.opp-footer{grid-template-columns:1fr;gap:20px}.opp-footer nav{justify-content:center}.opp-footer-tagline{grid-column:1;grid-row:2}}
+
+.opp-header .opp-back-home{display:inline-flex;align-items:center;gap:8px;border:1px solid #d6d3cc;border-radius:999px;padding:10px 16px;font-size:13px}
+.opp-header .opp-back-home svg{width:16px;height:16px}
+.has-opportunity-panel .opp-results{grid-template-columns:1fr}
+.has-opportunity-panel .opp-detail{position:fixed;inset:20px 20px 20px auto;width:min(660px,calc(100vw - 40px));height:calc(100dvh - 40px);z-index:50;padding:28px 32px 40px;border:1px solid #dedacf;border-radius:12px;box-shadow:0 12px 80px #1c253d30;overflow-y:auto;overscroll-behavior:contain}
+@media(max-width:760px){.has-opportunity-panel .opp-detail{inset:0;width:100%;height:100dvh;border:0;border-radius:0;padding:24px}}
+
+/* Match the careers navigation bar. */
+.opportunities-page .opp-header{position:relative;isolation:isolate;padding:18px 12px;border-bottom:1px solid #ffffff20;color:#f6f3ee}
+.opportunities-page .opp-header:before{content:"";position:absolute;z-index:-1;top:0;bottom:-1px;left:calc((1160px - 100vw)/2);right:calc((1160px - 100vw)/2);background:radial-gradient(ellipse at 85% -20%,#42425555,transparent 60%),#1f1f21}
+.opportunities-page .opp-header>a svg{filter:brightness(0) invert(1);width:112px;height:36px}
+.opportunities-page .opp-header .opp-back-home{border-color:#ffffff30;color:#f6f3ee;font-size:12px;padding:10px 16px}
+.opportunities-page .opp-header .opp-back-home:hover{background:#ffffff12}
+@media(max-width:1208px){.opportunities-page .opp-header:before{left:-24px;right:-24px}}
+
+/* The listing and JD panel share the same role facts. */
+.opp-row{grid-template-columns:minmax(190px,.8fr) minmax(0,1.6fr) 145px;gap:24px}
+.opp-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 20px;margin:0 0 22px}
+.opp-facts div{min-width:0}
+.opp-facts dt{font-size:10px;line-height:1.5;letter-spacing:.04em;color:var(--opp-muted);margin-bottom:5px}
+.opp-facts dd{font-size:12px;line-height:1.6;color:var(--opp-ink);margin:0}
+.opp-detail .opp-facts{padding:20px 0;border-block:1px solid #e3ded2;margin-bottom:24px}
+@media(max-width:760px){.opp-row{grid-template-columns:1fr}.opp-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Consistent charcoal framing with restrained spacing. */
+.opportunities-page .opp-header{padding:20px 0;border-bottom:0}
+.opportunities-page .opp-header:before{background:#222224;border-bottom:1px solid #ffffff16}
+.opportunities-page .opp-header>a svg{width:106px;height:34px}
+.opportunities-page .opp-header .opp-back-home{padding:9px 16px;border-color:#ffffff26;gap:9px}
+.opportunities-page>.site-footer-surface{position:relative;isolation:isolate;color:#bdbdbd;margin-top:36px}
+.opportunities-page>.site-footer-surface:before{content:"";position:absolute;inset:0 calc((1160px - 100vw)/2);z-index:-1;background:#222224;border-top:1px solid #ffffff16}
+.opportunities-page .site-footer-surface .site-footer{max-width:none;padding:30px 0;border:0;grid-template-columns:1fr auto 1fr;gap:28px}
+.opportunities-page .site-footer-brand svg{filter:brightness(0) invert(1);width:106px;height:34px}
+.opportunities-page .site-footer .site-footer-tagline{color:#bdbdbd;font-size:12px;text-align:center}
+.opportunities-page .site-footer .site-footer-links{color:#bdbdbd;font-size:12px;gap:10px 18px}
+.opportunities-page .site-footer .site-footer-links a:hover{color:#eee;text-decoration:none}
+@media(max-width:1208px){.opportunities-page>.site-footer-surface:before{left:-24px;right:-24px}}
+@media(max-width:1000px){.opportunities-page .site-footer-surface .site-footer{grid-template-columns:1fr auto}.opportunities-page .site-footer .site-footer-tagline{grid-column:1/-1;grid-row:2}}
+@media(max-width:600px){.opportunities-page .site-footer-surface .site-footer{grid-template-columns:1fr;justify-items:center;gap:18px;padding:28px 0}.opportunities-page .site-footer .site-footer-links{justify-content:center}.opportunities-page .site-footer .site-footer-tagline{grid-column:1;grid-row:2}}
+
+/* A quieter, evenly spaced next-steps section. */
+.opp-next{padding:64px 0 48px}
+.opp-next>.opp-eyebrow{font-size:10px;letter-spacing:.18em;margin-bottom:14px}
+.opp-next>h2{font-size:clamp(28px,3vw,38px);line-height:1.2}
+.opp-steps{margin-top:40px;gap:28px}
+.opp-steps li{border-top:0;padding:0;min-width:0}
+.opp-steps li:before{display:none}
+.opp-step-number{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border:1px solid #d8d5cc;border-radius:50%;font-size:11px;color:#686d79;letter-spacing:0;margin-bottom:8px}
+.opp-steps li:last-child .opp-step-number{color:#3046c9;border-color:#c5c9ee;background:#3046c908}
+.opp-steps h3{font-size:20px;line-height:1.3;margin:12px 0 10px;max-width:240px}
+.opp-steps p{font-size:13px;line-height:1.7;max-width:235px}
+.opp-bottom-actions{justify-content:space-between;gap:24px;padding:28px 0;border-bottom:0}
+.opportunities-page .opp-bottom-actions .opp-network-button{padding:13px 22px;border-radius:6px;font-size:13px}
+.opp-bottom-actions .opp-link{font-size:13px!important}
+@media(max-width:760px){.opp-next{padding:44px 0 32px}.opp-steps{grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 20px;margin-top:30px}.opp-steps li{border:0;margin:0;padding:0}.opp-steps h3{font-size:19px}.opp-bottom-actions{flex-direction:row;flex-wrap:wrap;align-items:center}}
+@media(max-width:420px){.opp-steps{grid-template-columns:1fr}.opp-steps h3,.opp-steps p{max-width:none}}
+
+/* Connected timeline matching the supplied reference. */
+.opp-steps{gap:0;margin-top:48px}
+.opp-steps li{border-top:1px solid #acb0b9;padding:32px 24px 0 0}
+.opp-steps li:before{display:block;content:"";position:absolute;top:-6px;left:0;width:11px;height:11px;border:1px solid #394155;border-radius:50%;background:var(--opp-bg)}
+.opp-steps li:last-child:before{background:#354bd9;border-color:#354bd9}
+.opp-step-number,.opp-steps li:last-child .opp-step-number{display:block;width:auto;height:auto;border:0;border-radius:0;background:transparent;color:var(--opp-muted);font-size:12px;letter-spacing:.06em;margin:0}
+.opp-steps h3{max-width:none;font-size:21px;font-weight:400;margin:12px 0}
+.opp-steps p{font-size:14px;max-width:250px}
+@media(max-width:760px){.opp-steps{grid-template-columns:1fr;gap:0;margin-top:32px}.opp-steps li{border-top:0;border-left:1px solid #acb0b9;margin-left:6px;padding:0 0 28px 24px}.opp-steps li:before{top:0;left:-6px}.opp-steps li:last-child{border-left-color:transparent;padding-bottom:0}.opp-steps p{max-width:none}}
+
+/* Keep the closing sections compact and connected. */
+.opp-discover{margin-top:20px;padding:42px 0;gap:48px;align-items:center}
+.opp-discover .opp-eyebrow{margin-bottom:14px}
+.opp-discover-copy p{margin-bottom:16px}
+.opportunities-page .opp-discover .opp-network-button{margin-top:4px}
+.opp-next{padding:36px 0 28px}
+.opp-steps{margin-top:32px;margin-bottom:0}
+.opp-steps li{padding-top:24px}
+.opp-bottom-actions{padding:22px 0}
+.opportunities-page>.site-footer-surface{margin-top:18px}
+@media(max-width:760px){.opp-discover{margin-top:12px;padding:30px 0;gap:22px}.opp-next{padding:30px 0 24px}.opp-steps li{padding-top:0}.opp-bottom-actions{padding:20px 0}}
+
+.opp-hero>.opp-eyebrow{font-size:16px}
+
+.opportunities-page .opp-tools input:focus-visible{outline:none;border-bottom-color:#3046c9;box-shadow:none}
+
+/* Use the same typography contract as the main website. */
+.opportunities-page{font-family:var(--enter-font-ui)}
+.opportunities-page :is(h1,h2,h3){font-family:var(--enter-font-editorial);font-weight:500}
+.opportunities-page :is(button,input,select,textarea),
+.opportunities-page .site-footer{font-family:var(--enter-font-ui)}
+.opportunities-page .opp-row h2 button{font-family:inherit;font-weight:inherit}
+
+/* Editorial role rows with aligned facts and blue skill tags. */
+.opp-row{grid-template-columns:minmax(210px,.95fr) minmax(0,1.9fr) 150px;gap:32px;padding:32px 0}
+.opportunities-page .opp-row h2{font-size:29px;line-height:1.15;font-weight:600;margin:0 0 16px}
+.opp-row .opp-role-context{font-size:12px;line-height:1.6;margin:0;color:#747987}
+.opp-row .opp-facts{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:24px}
+.opp-row .opp-facts dt{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px}
+.opp-row .opp-facts dd{font-size:14px;font-weight:500;line-height:1.5}
+.opp-list-skills{display:flex;flex-wrap:wrap;gap:7px}
+.opp-list-skills span{padding:6px 10px;background:#e8e8fb;color:#3944ac;font-size:12px;line-height:1.5;border-radius:7px}
+.opp-row .opp-actions{justify-content:flex-start;padding-top:16px}
+.opp-row .opp-actions .opp-link{color:#354bd9;font-size:13px!important}
+@media(max-width:1000px){.opp-row{grid-template-columns:minmax(180px,.8fr) minmax(0,1.5fr)}.opp-row .opp-actions{grid-column:2;padding-top:0}}
+@media(max-width:760px){.opp-row{grid-template-columns:1fr;gap:20px}.opportunities-page .opp-row h2{font-size:27px}.opp-row .opp-actions{grid-column:1}.opp-row .opp-facts{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.opp-row .opp-facts dd{font-size:13px}}
+
+/* Reveal role accents only on interaction. */
+.opp-list-skills span{background:#eeece6;color:#687080;transition:background .18s,color .18s}
+.opp-row .opp-actions .opp-link{color:#747987}
+
+
+
+/* Rounded category pills and a unified search toolbar. */
+.opp-tabs{border-bottom:0;gap:10px;flex-wrap:wrap;overflow:visible}
+.opportunities-page .opp-tabs button{border:1px solid #d5d2c8;border-radius:999px;padding:10px 19px;color:var(--opp-ink);font-size:14px;font-weight:500;line-height:1.4}
+.opportunities-page .opp-tabs [aria-selected=true]{background:#1c253d;color:#fff;border-color:#1c253d}
+.opp-tools{gap:12px;padding:18px 0 26px;align-items:stretch}
+.opportunities-page .opp-tools input{background:#fff;border:1px solid #d5d2c8;border-radius:10px;padding:13px 18px;font:400 16px/1.5 var(--enter-font-ui)}
+.opportunities-page .opp-tools input::placeholder{color:#898989}
+.opportunities-page .opp-tools input:focus-visible{outline:none;border-color:#949bb4;box-shadow:none}
+.opportunities-page .opp-tools select{max-width:160px;min-width:130px;border:1px solid #d5d2c8;border-radius:10px;padding:12px;color:var(--opp-ink);font-size:13px;background:transparent}
+@media(max-width:760px){.opp-tabs{gap:8px}.opportunities-page .opp-tabs button{padding:8px 13px;font-size:12px}.opp-tools{flex-wrap:wrap;gap:10px}.opportunities-page .opp-tools input{flex-basis:100%;font-size:15px}.opportunities-page .opp-tools select{min-width:0;max-width:none;flex:1;padding:10px 8px;font-size:12px}}
+
+/* Lightweight filters and a tighter introduction. */
+.opportunities-page .opp-tools select{appearance:none;border:0;border-radius:0;background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%2390959d' stroke-width='1.5'%3E%3Cpath d='m1 1 5 5 5-5'/%3E%3C/svg%3E") no-repeat right 10px center;padding-right:30px}
+.opportunities-page .opp-tools select:focus-visible{outline:none;box-shadow:inset 0 -1px #949ba6}
+.opp-hero{padding:36px 0 24px}
+.opp-hero>.opp-eyebrow{margin-bottom:16px}
+.opportunities-page .opp-hero h1{margin-bottom:22px}
+.opp-hero>p:not(.opp-eyebrow){margin-bottom:24px}
+@media(max-width:760px){.opp-hero{padding:28px 0 22px}.opportunities-page .opp-hero h1{margin-bottom:18px}}
+
+.opportunities-page .opp-tools select{border:0;border-radius:10px;background-color:#eeece6}
+
+.opp-hero>p:not(.opp-eyebrow){font-size:15px}
+
+.opportunities-page .opp-network-button{background:#3046c9;color:#fff}
+.opportunities-page .opp-network-button:hover{background:#293db3}
+
+.opportunities-page .opp-network-button,
+.opportunities-page .opp-bottom-actions .opp-network-button{border-radius:999px;padding:11px 20px;font-size:12px;line-height:1.5}
+
+.opportunities-page .opp-apply{background:#3046c9!important;border-radius:999px;padding:11px 22px!important;font-size:13px}
+.opportunities-page .opp-apply:hover{background:#293db3!important}
+
+/* Readable, consistent opportunity details. */
+.has-opportunity-panel .opp-detail{width:min(720px,calc(100vw - 40px));padding:28px 40px 36px;background:#faf8f4;border-color:#e4dfd6;border-radius:16px;box-shadow:0 16px 70px #20243126}
+.opp-detail>.opp-link{font-size:12px!important;color:#747987;border-bottom:0!important;margin:8px 0 28px;gap:8px}
+.opportunities-page .opp-detail .opp-panel-close{border:1px solid #dedbd3;border-radius:50%;width:32px;height:32px;background:#faf8f4!important;top:0}
+.opp-detail>.opp-eyebrow{clear:both;font-size:10px;letter-spacing:.15em;margin-bottom:12px;color:#3046c9}
+.opportunities-page .opp-detail .opp-detail-title{font-size:36px;font-weight:500;line-height:1.15;margin:0 0 24px;max-width:540px}
+.opp-detail .opp-facts{background:#f0ede6;border:0;border-radius:10px;padding:18px 20px;gap:16px 24px;margin-bottom:24px}
+.opp-detail .opp-facts dt{font-size:10px;letter-spacing:.04em;color:#7a7c83}
+.opp-detail .opp-facts dd{font-size:13px;font-weight:500;color:#414651}
+.opp-detail>p{font-size:14px;line-height:1.85;color:#666c77;margin-bottom:20px}
+.opportunities-page .opp-detail h2:not(.opp-detail-title){font-family:var(--enter-font-ui);font-size:14px;font-weight:600;line-height:1.5;letter-spacing:0;margin:28px 0 12px;color:#414651}
+.opp-detail .opp-tags{gap:8px}
+.opp-detail .opp-tags span{background:#eeece6;border-radius:6px;padding:7px 10px;font-size:12px;color:#606672;line-height:1.5}
+.opp-detail .opp-apply{margin-top:28px}
+.opp-detail .opp-application{border-top:1px solid #e0ddd5;margin-top:28px;padding-top:4px}
+.opp-detail .opp-application p{font-size:13px;line-height:1.7;color:#747987}
+.opp-detail .opp-application label{display:grid;gap:10px;font-size:12px;color:#606672}
+.opp-detail .opp-application textarea{width:100%;padding:12px;border:1px solid #dedbd3;border-radius:8px;background:#fffefa;font:14px/1.6 var(--enter-font-ui);resize:vertical}
+@media(max-width:760px){.has-opportunity-panel .opp-detail{inset:0;width:100%;height:100dvh;border:0;border-radius:0;padding:22px 24px 32px}.opportunities-page .opp-detail .opp-detail-title{font-size:30px}.opp-detail .opp-facts{grid-template-columns:repeat(2,minmax(0,1fr));padding:16px}}
+
+/* Extend the charcoal header through the introduction. */
+.opp-hero{position:relative;isolation:isolate;color:#f6f3ee;padding-bottom:32px;margin-bottom:24px}
+.opp-hero:before{content:"";position:absolute;z-index:-1;inset:0 calc(-1 * max(24px,(100vw - 1160px)/2));background:#222224}
+.opportunities-page .opp-hero h1{color:#f6f3ee}
+.opportunities-page .opp-hero h1 span{color:#b4afa7}
+.opp-hero>p:not(.opp-eyebrow){color:#b4afa7;margin-bottom:0}
+
+/* Minimal directory navigation from the supplied reference. */
+.opp-tabs{border-bottom:1px solid #dedacf;gap:32px;flex-wrap:nowrap;overflow-x:auto}
+.opportunities-page .opp-tabs button{border:0;border-bottom:1px solid transparent;border-radius:0;background:transparent;color:var(--opp-muted);padding:0 0 20px;font-size:14px;font-weight:400;white-space:nowrap}
+.opportunities-page .opp-tabs [aria-selected=true]{background:transparent;color:var(--opp-ink);border-color:#3046c9}
+.opp-tools{padding:28px 0;gap:24px;align-items:center}
+.opportunities-page .opp-tools input{border:0;border-bottom:1px solid #9699a2;border-radius:0;background:transparent;padding:0 0 12px;font:400 24px/1.3 var(--enter-font-editorial)}
+.opportunities-page .opp-tools input::placeholder{color:#979dac}
+.opportunities-page .opp-tools input:focus-visible{border-bottom-color:#3046c9;outline:none}
+.opportunities-page .opp-tools select{background-color:transparent;border:0;border-radius:0;color:var(--opp-muted);padding:8px 26px 8px 0;min-width:110px;font-size:13px}
+@media(max-width:760px){.opp-tabs{gap:24px}.opportunities-page .opp-tabs button{font-size:13px;padding-bottom:16px}.opp-tools{gap:14px;padding:24px 0}.opportunities-page .opp-tools input{font-size:21px}.opportunities-page .opp-tools select{min-width:0;font-size:12px}}
+
+.opportunities-page .opp-hero h1{font-size:clamp(32px,4vw,54px)}
+
+.opportunities-page .opp-header .opp-back-home{border:0;border-radius:0;padding:8px 0;background:transparent}
+.opportunities-page .opp-header .opp-back-home:hover{background:transparent;color:#fff}
+
+/* Warm editorial introduction from the supplied reference. */
+.opp-hero{color:var(--opp-ink);padding:44px 0 32px}
+.opp-hero:before{background:var(--opp-bg)}
+.opp-hero>.opp-eyebrow{color:#737b8c;font-size:14px;margin-bottom:24px}
+.opportunities-page .opp-hero h1{color:var(--opp-ink);font-size:clamp(40px,6vw,78px);font-weight:400;line-height:1.04;letter-spacing:-.035em;margin-bottom:30px}
+.opp-hero>p:not(.opp-eyebrow){color:#737b8c;font-size:16px;line-height:1.65}
+@media(max-width:760px){.opp-hero{padding:32px 0 24px}.opp-hero>p:not(.opp-eyebrow){font-size:14px}}
+
+.opp-hero:before{background:#222224}
+.opportunities-page .opp-hero h1{color:#f6f3ee}
+.opp-hero>.opp-eyebrow{color:#8c96ff}
+.opp-hero>p:not(.opp-eyebrow){color:#b4afa7}
