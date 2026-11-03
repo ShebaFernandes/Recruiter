@@ -28,7 +28,7 @@ export default function ForTalent({ onJoin, onLogin }: { onJoin: () => void; onL
     <div className="for-talent__inner">
       <div className="for-talent__content">
         <p className="for-talent__eyebrow">FOR TALENT</p>
-        <h2 id="for-talent-title" >Join ambitious AI and <br />engineering teams.</h2>
+        <h2 id="for-talent-title" >Join ambitious <br /><span className="for-talent__heading-line">AI and engineering teams.</span></h2>
         <p className="for-talent__description">enter connects talent with companies building what’s next. Browse open roles and apply directly, or tell us what you’re looking for.</p>
         <div className="for-talent__tracks">{['AI and ML', 'Engineering', 'Product', 'Leadership'].map(track => <span key={track}>{track}</span>)}</div>
         <a className="for-talent__browse" href="/opportunities" onClick={event => {
