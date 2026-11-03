@@ -521,3 +521,13 @@
 .opportunity-application-page.is-profile .candidate-experience #settings-editor-email {
   border-bottom-color: transparent;
 }
+
+/* Avoid duplicate dividers below inline settings editors. */
+.opportunity-application-page.is-profile .candidate-experience .cp-settings-panel .cp-settings-inline-editor {
+  border-bottom-color: transparent;
+  box-shadow: none;
+}
+.opportunity-application-page.is-profile .candidate-experience .cp-settings-panel :is(#settings-editor-current, #settings-editor-availability, #settings-editor-notice_period_days, #settings-editor-work_preferences, #settings-editor-email, #settings-editor-linkedin) {
+  border-bottom-color: transparent;
+  box-shadow: none;
+}
