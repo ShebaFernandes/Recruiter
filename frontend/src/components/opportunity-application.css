@@ -280,3 +280,13 @@
 .opportunity-application-page.is-profile .candidate-experience :is(.cp-identity-card, .cp-career-surface) {
   background: #fffefa;
 }
+
+/* Inset the status header evenly within the settings card. */
+.opportunity-application-page.is-profile .candidate-experience .cp-settings-summary {
+  padding-top: 12px;
+}
+.opportunity-application-page.is-profile .candidate-experience .cp-settings-panel [data-setting="availability"] {
+  border-radius: 8px;
+  border-bottom-color: transparent;
+  box-shadow: inset 0 0 0 1px #d7e5dc;
+}
