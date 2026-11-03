@@ -3,8 +3,9 @@ import { useEffect, useRef, useState } from 'react'
 import { api } from '../api'
 import type { Candidate } from '../types'
 import CandidateExperience from './CandidateExperience'
-import { ArrowLeft, FileText, LockKeyhole, UploadCloud } from 'lucide-react'
+import { LogOut, FileText, LockKeyhole, UploadCloud } from 'lucide-react'
 import EnterLogo from './EnterLogo'
+import SiteFooter from './SiteFooter'
 import './opportunity-application.css'
 
 
@@ -61,7 +62,7 @@ export default function OpportunityApplication({ role, onBack }: {
     finally { setBusy(false) }
   }
   return <div className={`opportunity-application-page is-${step}`}>
-    <header className="opp-header"><div className="opp-application-brand"><a href="/" aria-label="Enter home"><EnterLogo /></a><span>Talent Platform</span></div><div className="opp-application-navigation">{profile && <span className="opp-applicant-name">{profile.full_name}</span>}<button type="button" disabled={busy} onClick={() => void back()}><ArrowLeft size={16} aria-hidden="true" />Back to opportunities</button></div></header>
+    <header className="opp-header"><div className="opp-application-brand"><a href="/" aria-label="Enter home"><EnterLogo /></a></div><div className="opp-application-navigation"><button type="button" disabled={busy} onClick={() => void back()}>Back to opportunities<LogOut size={16} aria-hidden="true" /></button></div></header>
     <section className="opp-application-shell">
       <p className="opp-eyebrow">{step === 'success' ? 'APPLICATION RECEIVED' : 'YOUR APPLICATION'}</p>
       <h1 ref={heading} tabIndex={-1}>{step === 'cv' ? 'ENTER what’s next?' : role.title}</h1>
@@ -92,6 +93,6 @@ export default function OpportunityApplication({ role, onBack }: {
       {step === 'success' && <div role="status"><h2>{message}</h2><p>Role: {role.title}</p><p>Your application is linked to your candidate profile.</p><button className="primary" onClick={onBack}>Explore more opportunities</button></div>}
     </section>
     {step === 'profile' && <CandidateExperience beforeLeaveRef={beforeLeave} opportunity={{ title: role.title, onContinue: value => { if (applicationProfileReady(value)) { setProfile(value); setConfirmed(false); setError(''); setStep('confirm') } } }} />}
-    <footer className="opp-application-footer"><EnterLogo /><nav aria-label="Application help"><a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a><a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Use</a></nav></footer>
+    <SiteFooter compact />
   </div>
 }

@@ -65,9 +65,6 @@
 .opp-current-cv { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding: 0 0 22px; }
 .opp-current-cv span { font-size: 10px; letter-spacing: .15em; color: #74797c; }
 .opp-current-cv p { margin: 6px 0 0; font-size: 14px; overflow-wrap: anywhere; }
-.opp-application-footer { width: calc(100% - 48px); max-width: 1160px; margin: auto auto 24px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 22px 26px; border: 1px solid #e6e2da; border-radius: 14px; background: #fffdfa; }
-.opp-application-footer > svg { width: 88px; height: 30px; }
-.opp-application-footer nav { display: flex; gap: 24px; font-size: 12px; }
 .opportunity-application-page .candidate-experience { font-family: var(--enter-font-ui); color: #575b5c; }
 .opportunity-application-page .candidate-experience h2 { font-family: var(--enter-font-editorial); font-weight: 400; }
 @media (max-width: 600px) {
@@ -85,11 +82,25 @@
   .opp-cv-dropzone { padding: 26px 14px; }
   .opp-cv-privacy { align-items: flex-start; line-height: 1.5; }
   .opp-cv-privacy svg { flex: 0 0 auto; margin-top: 1px; }
-  .opp-application-footer { width: calc(100% - 32px); padding: 18px; }
-  .opp-application-footer nav { gap: 14px; font-size: 11px; }
   .opp-current-cv .primary { width: 100%; }
 }
 .opportunity-application-page .opp-application-navigation button { width: auto; min-width: 0; flex-shrink: 0; white-space: nowrap; line-height: 20px; }
 .opportunity-application-page .opp-application-navigation button svg { width: 16px; height: 16px; flex: 0 0 16px; }
-.opp-application-footer a { color: #656c70; text-decoration: none; }
-.opp-application-footer a:hover { text-decoration: underline; }
+
+/* Use the shared Careers header and footer treatment. */
+.opportunity-application-page > .opp-header { background: #1f1f21; border-bottom: 0; padding-block: 20px; }
+.opportunity-application-page .opp-application-brand svg { width: 106px; height: 34px; filter: brightness(0) invert(1); }
+.opportunity-application-page .opp-application-navigation button { color: #eee; }
+.opportunity-application-page .opp-application-navigation button:focus-visible { outline: 2px solid #eee; outline-offset: 5px; }
+.opportunity-application-page > .site-footer-surface { margin-top: auto; background: #1f1f21; color: #bdbdbd; border-top: 1px solid #444446; }
+.opportunity-application-page > .site-footer-surface .site-footer { width: calc(100% - 48px); max-width: 1160px; padding: 26px 0; border: 0; }
+.opportunity-application-page .site-footer-brand svg { width: 106px; height: 34px; filter: brightness(0) invert(1); }
+.opportunity-application-page .site-footer-links a { color: #bdbdbd; }
+@media (max-width: 600px) {
+  .opportunity-application-page > .opp-header { flex-wrap: nowrap; padding: 18px; }
+  .opportunity-application-page .opp-application-navigation { width: auto; }
+  .opportunity-application-page .opp-application-navigation button { font-size: 12px; }
+  .opportunity-application-page .opp-application-brand svg { width: 90px; height: 30px; }
+  .opportunity-application-page > .site-footer-surface .site-footer { width: calc(100% - 36px); padding: 26px 0; }
+}
+.opportunity-application-page > .opp-header > .opp-application-navigation button { color: #eee; }
