@@ -396,3 +396,14 @@
   border-bottom-color: #779b88;
   box-shadow: none;
 }
+
+/* Keep compensation editing on the panel's existing neutral surface. */
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-current,
+.opportunity-application-page.is-profile .candidate-experience .cp-settings-panel [data-setting="current"],
+.opportunity-application-page.is-profile .candidate-experience .cp-settings-panel [data-setting="current"]:hover,
+.opportunity-application-page.is-profile .candidate-experience .cp-settings-panel [data-setting="current"][aria-expanded="true"] {
+  background: transparent;
+}
+
+.opportunity-application-page.is-profile .candidate-experience .cp-settings-panel button.cp-setting-row[data-setting="current"][aria-expanded="true"],
+.opportunity-application-page.is-profile .candidate-experience .cp-settings-panel button.cp-setting-row[data-setting="current"]:hover { background: transparent; }
