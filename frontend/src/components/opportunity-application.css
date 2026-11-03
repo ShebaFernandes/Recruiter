@@ -407,3 +407,18 @@
 
 .opportunity-application-page.is-profile .candidate-experience .cp-settings-panel button.cp-setting-row[data-setting="current"][aria-expanded="true"],
 .opportunity-application-page.is-profile .candidate-experience .cp-settings-panel button.cp-setting-row[data-setting="current"]:hover { background: transparent; }
+
+/* Use simple underlines for professional links. */
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-linkedin input {
+  background: transparent;
+  border-color: transparent;
+  border-bottom-color: #929995;
+  border-radius: 0;
+  box-shadow: none;
+}
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-linkedin input:focus {
+  outline: none;
+  border-color: transparent;
+  border-bottom-color: #526f60;
+  box-shadow: none;
+}
