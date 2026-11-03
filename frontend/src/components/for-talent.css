@@ -237,7 +237,7 @@
 @media(max-width:600px){.for-talent .for-talent__content h2{font-size:38px}}
 
 .for-talent__heading-line { white-space: nowrap; }
-.for-talent .for-talent__network { align-self: start; }
+.for-talent .for-talent__network { align-self: center; }
 @media (max-width: 400px) {
   .for-talent .for-talent__content h2 { font-size: clamp(28px, 8.5vw, 34px); }
 }
