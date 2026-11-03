@@ -236,12 +236,8 @@
 .for-talent .for-talent__content h2{font-size:clamp(40px,4.5vw,62px);line-height:1.08}
 @media(max-width:600px){.for-talent .for-talent__content h2{font-size:38px}}
 
-@media (min-width: 1100px) {
-  .for-talent__heading-line { white-space: nowrap; }
-  .for-talent .for-talent__network {
-    align-self: start;
-    margin-top: 240px;
-    position: relative;
-    top: -24px;
-  }
+.for-talent__heading-line { white-space: nowrap; }
+.for-talent .for-talent__network { align-self: start; }
+@media (max-width: 400px) {
+  .for-talent .for-talent__content h2 { font-size: clamp(28px, 8.5vw, 34px); }
 }
