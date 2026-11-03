@@ -290,3 +290,21 @@
   border-bottom-color: transparent;
   box-shadow: inset 0 0 0 1px #d7e5dc;
 }
+
+/* Indicate that Job Search Status opens its existing choices. */
+.opportunity-application-page.is-profile .candidate-experience .cp-settings-panel [data-setting="availability"]::after {
+  content: '';
+  width: 7px;
+  height: 7px;
+  justify-self: end;
+  margin-right: 4px;
+  border-right: 1.5px solid #858b88;
+  border-bottom: 1.5px solid #858b88;
+  transform: rotate(45deg);
+}
+.opportunity-application-page.is-profile .candidate-experience .cp-settings-panel [data-setting="availability"][aria-expanded="true"]::after {
+  transform: rotate(225deg);
+}
+
+.opportunity-application-page.is-profile .candidate-experience .cp-settings-panel [data-setting="availability"] { position: relative; padding-right: 28px; }
+.opportunity-application-page.is-profile .candidate-experience .cp-settings-panel [data-setting="availability"]::after { position: absolute; right: 12px; top: 50%; margin-top: -5px; margin-right: 0; }
