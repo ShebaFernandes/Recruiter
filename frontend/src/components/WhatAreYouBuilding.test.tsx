@@ -175,7 +175,7 @@ describe('WhatAreYouBuilding', () => {
     expect(within(dialog).getByRole('button', { name: '2 weeks' })).toHaveAttribute('aria-pressed', 'false')
     fireEvent.change(within(dialog).getByLabelText('Your timeline'), { target: { value: '6 weeks' } })
     fireEvent.click(within(dialog).getByRole('button', { name: 'Find Talent' }))
-    expect(screen.getByText('Please use your company or work email address.')).toBeVisible()
+    expect(screen.getByText('Please use your work email address.')).toBeVisible()
     fireEvent.change(within(dialog).getByPlaceholderText('Work email'), { target: { value: 'alex@example.com' } })
     fireEvent.drop(dialog.querySelector('.enquiry-upload')!, {
       dataTransfer: { files: [new File(['%PDF-1.4'], 'role.pdf', { type: 'application/pdf' })] },

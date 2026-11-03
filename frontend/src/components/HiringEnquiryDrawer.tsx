@@ -99,7 +99,7 @@ export default function HiringEnquiryDrawer({ enquiry, minimumDate, opener, onCl
     const next: Record<string, string> = {}
     if (!name.trim()) next.name = 'Please enter your full name.'
     if (!company.trim()) next.company = 'Please enter your company name.'
-    if (!validWorkEmail(email)) next.email = 'Please use your company or work email address.'
+    if (!validWorkEmail(email)) next.email = 'Please use your work email address.'
     if (enquiry.kind !== 'team' && !role.trim()) next.role = 'Please enter a role or job title.'
     if (enquiry.kind === 'team' && !teamFocus.trim()) next.teamFocus = 'Please enter your team focus.'
     if (selected.includes('Other') && !otherDepartment.trim()) next.otherDepartment = 'Please describe the department.'

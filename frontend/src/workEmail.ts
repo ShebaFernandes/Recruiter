@@ -4,5 +4,5 @@ export function validWorkEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !personalDomains.has(email.split('@')[1].toLowerCase())
 }
 export function validateWorkEmailInput(input: HTMLInputElement) {
-  input.setCustomValidity(validWorkEmail(input.value) ? '' : 'Please use your company or work email address.')
+  input.setCustomValidity(validWorkEmail(input.value) ? '' : 'Please use your work email address.')
 }
