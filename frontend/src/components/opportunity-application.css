@@ -275,8 +275,3 @@
   background: linear-gradient(110deg, #e8f3ec, #f3f8f3);
   box-shadow: inset 3px 0 #739e88;
 }
-
-/* Match the settings card background to its status box. */
-.opportunity-application-page.is-profile .candidate-experience .cp-settings-panel .cp-settings {
-  background: linear-gradient(110deg, #e8f3ec, #f3f8f3);
-}
