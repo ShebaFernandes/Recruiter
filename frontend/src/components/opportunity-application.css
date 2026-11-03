@@ -499,3 +499,19 @@
 @media (max-width: 600px) {
   .opportunity-application-page.is-profile .candidate-experience #settings-editor-linkedin input { min-height: 44px; height: 44px; }
 }
+
+/* Remove unused vertical space from compensation editing. */
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-current {
+  padding-block: 6px;
+}
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-current .cp-fields { gap: 4px; }
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-current label { gap: 2px; }
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-current input {
+  min-height: 28px;
+  height: 28px;
+  padding-block: 3px;
+}
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-current .cp-autosave-status:empty { display: none; }
+@media (max-width: 600px) {
+  .opportunity-application-page.is-profile .candidate-experience #settings-editor-current input { min-height: 44px; height: 44px; }
+}
