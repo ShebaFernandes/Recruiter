@@ -500,7 +500,14 @@ export default function CandidateExperience({ beforeLeaveRef, opportunity }: { a
     focusControl('.cp-settings-inline-editor input:not([type=hidden]), .cp-settings-inline-editor select')
     return true
   }
-  const settingsAction = (field: string) => { void openSettings(field) }
+  const settingsAction = async (field: string) => {
+    if (field === 'availability' && editingSettings && editingSettingsField === field) {
+      if (settingsAutosave.current && !await settingsAutosave.current.flush()) return
+      setEditingSettings(false)
+      return
+    }
+    void openSettings(field)
+  }
   async function navigateMissing(field: string) {
     const settingsFields: Record<string, string> = { availability: 'availability', notice_period_days: 'notice_period_days', current_salary_lpa: 'current', expected_salary_lpa: 'current', work_preferences: 'work_preferences', preferred_locations: 'work_preferences', employment_type: 'work_preferences', email: 'email', phone: 'email', contact_preferences: 'email', linkedin_url: 'linkedin', github_url: 'linkedin' }
     if (settingsFields[field]) {
