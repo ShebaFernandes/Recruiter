@@ -183,3 +183,38 @@ def test_letter_spaced_sections_and_title_date_before_employer(extension):
     assert parsed["standout_signal"] == (
         "Developed a training platform that reduced onboarding time by 40% across service teams."
     )
+
+
+@pytest.mark.parametrize("heading", [
+    "EXPERIENCE", "PROFESSIONAL EXPERIENCE", "CAREER HISTORY",
+    "SELECTED EXPERIENCE", "E X P E R I E N C E",
+])
+@pytest.mark.parametrize("dates", [
+    "Jan 2021 - Present", "January 2021 - Current", "2021-01 - Present", "01/2021 - Present",
+])
+@pytest.mark.parametrize("layout", ["pipe", "at", "separate", "title_first", "employer_first"])
+def test_hundred_pdf_structure_combinations(heading, dates, layout):
+    role, company = "Senior Software Engineer", "Fictional Cedar Systems"
+    layouts = {
+        "pipe": [f"{role} | {company} | {dates}"],
+        "at": [f"{role} at {company}", dates],
+        "separate": [company, role, dates],
+        "title_first": [f"{role}          {dates}", company],
+        "employer_first": [f"{company}          {dates}", role],
+    }
+    achievement = "Reduced payment processing time by 30% through queue optimisation."
+    lines = [
+        "Name: Fictional Candidate", "PROFESSIONAL SUMMARY",
+        "Senior engineer building reliable payment platforms.", heading,
+        *layouts[layout], "- " + achievement, "EDUCATION", "Example University",
+    ]
+    parsed = parse_resume(BytesIO(_fixture_bytes("pdf", lines)), "fictional.pdf")
+    assert parsed["headline"] == role
+    assert parsed["summary"] == "Senior engineer building reliable payment platforms."
+    assert parsed["standout_signal"] == achievement
+    assert len(parsed["work_experiences"]) == 1
+    job = parsed["work_experiences"][0]
+    assert (job["company"], job["role"]) == (company, role)
+    assert job["start_date"] == "2021-01-01"
+    assert job["end_date"] is None
+    assert job["is_current"]
