@@ -384,3 +384,30 @@
     padding: 15px !important;
   }
 }
+
+/* Compact the focused pair within a centered, comfortably inset layout. */
+@media (min-width: 1101px) {
+  .has-opportunity-panel .opp-row.is-selected {
+    left: max(40px, calc((100vw - 1120px) / 2));
+    top: 56px;
+    width: 340px;
+    padding: 24px;
+    gap: 16px;
+    border-radius: 16px;
+    max-height: calc(100dvh - 112px);
+  }
+  .has-opportunity-panel .opp-row.is-selected h2 button { font-size: 18px; }
+  .has-opportunity-panel .opp-row.is-selected .opp-facts { padding: 16px; gap: 16px; }
+  .has-opportunity-panel .opp-row.is-selected .opp-list-skills { margin-top: 16px; }
+  .has-opportunity-panel .opp-detail {
+    inset: 56px max(40px, calc((100vw - 1120px) / 2)) auto auto;
+    width: min(752px, calc(100vw - 448px));
+    height: calc(100dvh - 112px);
+    padding: 24px 28px 32px;
+    border-radius: 16px;
+  }
+  .opportunities-page .opp-detail .opp-detail-title { font-size: 24px; margin-bottom: 20px; }
+  .opp-detail .opp-facts { padding: 16px 20px; gap: 16px; }
+  .opportunities-page .opp-detail > p:not(.opp-eyebrow) { line-height: 1.7; margin-bottom: 16px; }
+  .opportunities-page .opp-detail h2:not(.opp-detail-title) { margin-top: 22px; }
+}
