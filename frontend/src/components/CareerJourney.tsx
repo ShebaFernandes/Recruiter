@@ -42,7 +42,9 @@ export default function CareerJourney({ items, extraction, onEditRole, detailed 
     return () => observer.disconnect()
   }, [items.length])
   const fillDatedAxis = (showCompanyLabels || profilePresentation) && layout.datedEnd > 0 && layout.rows.every(row => row.dated)
-  const calendarWidth = Math.max(layout.width, viewportWidth - 48)
+  const calendarWidth = profilePresentation && viewportWidth > 0
+    ? Math.max(240, viewportWidth - 48)
+    : Math.max(layout.width, viewportWidth - 48)
   const stretch = fillDatedAxis ? calendarWidth / layout.datedEnd : Math.max(1, (viewportWidth - 48) / layout.width)
   const contentWidth = fillDatedAxis ? calendarWidth : layout.width * stretch
   const [active, setActive] = useState<OpenDetail | null>(null)
@@ -108,6 +110,8 @@ export default function CareerJourney({ items, extraction, onEditRole, detailed 
   const endYear = Number.isFinite(lastDatedEnd) ? new Date(lastDatedEnd).getUTCFullYear() : null
   const showEndYear = endYear !== null && !sorted.some((item, index) =>
     layout.rows[index].dated && careerStartYear(item) === String(endYear))
+  const endYearNeedsLane = profilePresentation && layout.rows.some(row =>
+    row.dated && (layout.datedEnd - row.left) * stretch < 48)
   return <div className="career-history">
     <EmploymentHistoryStatus items={items} extraction={extraction} />
     {items.length > 0 && <>
@@ -153,7 +157,7 @@ export default function CareerJourney({ items, extraction, onEditRole, detailed 
               </div>
             </div>
           })}
-          {showEndYear && <span className="career-end-year" style={{ left:layout.datedEnd * stretch }} aria-hidden="true">{endYear}</span>}
+          {showEndYear && <span className="career-end-year" style={{ left:layout.datedEnd * stretch, top:endYearNeedsLane ? 88 : undefined }} aria-hidden="true">{endYear}</span>}
         </div>
       </div>
     </>}

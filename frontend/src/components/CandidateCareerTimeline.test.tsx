@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, expect, it } from 'vitest'
+import { afterEach, expect, it, vi } from 'vitest'
 import type { WorkExperience } from '../types'
 import CandidateCareerTimeline from './CandidateCareerTimeline'
 import CareerJourney from './CareerJourney'
@@ -90,4 +90,24 @@ it('reveals genuine gap details only on interaction', () => {
   expect(container.querySelector('.career-journey')).not.toHaveTextContent('gap')
   fireEvent.click(screen.getByRole('button', { name:/Career gap/ }))
   expect(screen.getByRole('tooltip')).toHaveTextContent('Study break')
+})
+
+
+it('fits a long candidate career in its card and separates the final year label', () => {
+  vi.stubGlobal('ResizeObserver', class {
+    constructor(private callback: (entries: unknown[]) => void) {}
+    observe() { this.callback([{ target: { clientWidth: 390 } }]) }
+    disconnect() {}
+  })
+  try {
+    const { container } = render(<CareerJourney profilePresentation items={[
+      role({ start_date: '2009-03-01', end_date: '2016-12-01' }),
+      role({ start_date: '2016-12-01', end_date: '2020-04-01' }),
+      role({ start_date: '2020-04-01', end_date: '2025-01-01' }),
+      role({ start_date: '2025-01-01', end_date: null, is_current: true }),
+    ]} />)
+    expect(container.querySelector('.career-calendar')).toHaveStyle({ width: '342px' })
+    expect(container.querySelectorAll('.career-period>.career-job')).toHaveLength(4)
+    expect(container.querySelector('.career-end-year')).toHaveStyle({ top: '88px' })
+  } finally { vi.unstubAllGlobals() }
 })
