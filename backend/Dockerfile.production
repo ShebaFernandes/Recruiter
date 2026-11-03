@@ -19,11 +19,10 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 COPY backend ./backend
-# Package the published legal and resume-AI consent files used by the running
-# production release. Their approved content and hashes are unchanged here.
-COPY deploy/PRIVACY_POLICY_PUBLICATION.txt \
-    deploy/TERMS_PUBLICATION.txt \
-    deploy/RESUME_AI_CONSENT_PUBLICATION.txt ./deploy/
+# Preserve the exact v1.0 snapshots approved by production integrity settings.
+# The newer root documents and optional AI consent are not this AI-disabled release.
+COPY deploy/live-legal-v1.0/PRIVACY_POLICY_PUBLICATION.txt \
+    deploy/live-legal-v1.0/TERMS_PUBLICATION.txt ./deploy/
 WORKDIR /app/backend
 RUN mkdir -p media staticfiles \
     && python manage.py collectstatic --noinput \

@@ -5,7 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(os.getenv("ENTER_CHECK_PROJECT_ROOT", Path(__file__).resolve().parents[1]))
 
 environment = {
     "PATH": os.environ.get("PATH", ""),
@@ -13,7 +13,9 @@ environment = {
     "APP_ENV": "production",
     "TESTING": "false",
     "LEGAL_CONTENT_APPROVED": "true",  # synthetic check, NOT real approval
-    "LEGAL_DOCUMENT_ROOT": str(ROOT / "deploy" / "live-legal-v1.0"),
+    "LEGAL_DOCUMENT_ROOT": os.getenv(
+        "ENTER_CHECK_LEGAL_DOCUMENT_ROOT", str(ROOT / "deploy" / "live-legal-v1.0")
+    ),
     "LEGAL_EFFECTIVE_DATE": "2026-10-22",
     "LEGAL_PRIVACY_VERSION": "enter-candidate-privacy-v1.0",
     "LEGAL_TERMS_VERSION": "enter-candidate-terms-v1.0",
@@ -48,6 +50,21 @@ environment = {
 }
 result = subprocess.run(
     [sys.executable, "manage.py", "check", "--deploy"],
+    cwd=ROOT / "backend",
+    env=environment,
+    check=False,
+)
+if result.returncode:
+    raise SystemExit(result.returncode)
+# Settings checks alone do not verify the packaged public-text/hash binding.
+result = subprocess.run(
+    [
+        sys.executable,
+        "manage.py",
+        "shell",
+        "-c",
+        "from talent import legal; legal.documents(); print('Published legal integrity passed.')",
+    ],
     cwd=ROOT / "backend",
     env=environment,
     check=False,
