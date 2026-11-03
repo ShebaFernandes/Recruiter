@@ -981,3 +981,9 @@
 .growth-enquiry-modal .growth-enquiry .growth-enquiry__field:has(input[name="founder_role"]) > span,
 .growth-enquiry-modal .growth-enquiry .growth-enquiry__field:has(input[name="location"]) > span,
 .growth-enquiry-modal .growth-enquiry--leadership .growth-enquiry__confidential > span{font-size:12px}
+
+/* Warm ivory only for the founding and leadership enquiry card surfaces. */
+.growth-enquiry-modal .growth-enquiry--founding,
+.growth-enquiry-modal .growth-enquiry--leadership {
+  background: #fff8eb;
+}
