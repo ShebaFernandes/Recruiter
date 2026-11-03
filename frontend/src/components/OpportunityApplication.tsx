@@ -69,7 +69,6 @@ export default function OpportunityApplication({ role, onBack }: {
       <p className="opp-eyebrow">{step === 'success' ? 'APPLICATION RECEIVED' : 'YOUR APPLICATION'}</p>
       <h1 ref={heading} tabIndex={-1}>{step === 'cv' ? 'ENTER what’s next?' : role.title}</h1>
       {step === 'cv' && <><p className="opp-application-intro">Somewhere, there’s something worth building.</p><p className="opp-selected-role">Applying for <strong>{role.title}</strong></p></>}
-      {step !== 'success' && <ol className="opp-application-steps" aria-label="Application progress">{['Choose CV', 'Review profile', 'Submit application'].map((label, index) => <li key={label} aria-current={index === ['cv', 'profile', 'confirm'].indexOf(step) ? 'step' : undefined}>{index + 1}. {label}</li>)}</ol>}
       {error && <p role="alert" className="error">{error}</p>}
       {step === 'cv' && (!profile ? <><p role="status">{error ? 'Your profile could not be loaded.' : 'Opening your profile…'}</p>{error && <button onClick={() => { setError(''); setAttempt(value => value + 1) }}>Try again</button>}</> : <>
         <section className="opp-cv-panel" aria-labelledby="opp-cv-title">
