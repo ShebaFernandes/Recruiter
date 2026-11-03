@@ -131,3 +131,26 @@
   .opportunity-application-page .site-footer .site-footer-tagline { grid-column: 1 / -1; grid-row: 2; font-size: 10px; }
   .opportunity-application-page .site-footer .site-footer-links { justify-content: flex-end; gap: 12px; font-size: 11px; }
 }
+
+/* Match the Careers page's editorial headings and restrained UI type. */
+.opportunity-application-page { font: 400 14px/1.5 var(--enter-font-ui); }
+.opportunity-application-page .opp-application-shell > h1,
+.opportunity-application-page .opp-profile-step h1 { font: 400 36px/1.08 var(--enter-font-editorial); letter-spacing: -.025em; }
+.opportunity-application-page .opp-application-shell .opp-eyebrow { font: 500 14px/1.5 var(--enter-font-ui); letter-spacing: .2em; color: #3046c9; }
+.opportunity-application-page .opp-application-intro { font: 400 18px/1.5 var(--enter-font-editorial); }
+.opportunity-application-page .opp-selected-role { font: 400 14px/1.5 var(--enter-font-ui); }
+.opportunity-application-page .opp-selected-role strong { font-weight: 500; }
+.opportunity-application-page .opp-application-steps { font: 400 12px/1.5 var(--enter-font-ui); }
+.opportunity-application-page .opp-application-steps [aria-current="step"] { font-weight: 500; }
+.opportunity-application-page .opp-application-shell h2,
+.opportunity-application-page .opp-cv-panel > header h2 { font: 400 30px/1.15 var(--enter-font-editorial); letter-spacing: -.025em; }
+.opportunity-application-page .opp-cv-panel > header p { font: 400 14px/1.5 var(--enter-font-ui); }
+.opportunity-application-page .opp-cv-dropzone > p { font: 500 15px/1.5 var(--enter-font-ui); letter-spacing: -.01em; }
+.opportunity-application-page .opp-cv-upload { font: 500 14px/1.5 var(--enter-font-ui); }
+.opportunity-application-page .opp-cv-dropzone small,
+.opportunity-application-page .opp-cv-privacy { font: 400 12px/1.5 var(--enter-font-ui); }
+@media (max-width: 760px) {
+  .opportunity-application-page .opp-application-shell > h1,
+  .opportunity-application-page .opp-profile-step h1 { font-size: 30px; }
+  .opportunity-application-page .opp-cv-panel > header h2 { font-size: 26px; }
+}
