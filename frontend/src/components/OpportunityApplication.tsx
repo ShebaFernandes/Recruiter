@@ -66,7 +66,7 @@ export default function OpportunityApplication({ role, onBack }: {
     <header className="opp-header"><div className="opp-application-brand"><a href="/" aria-label="Enter home"><EnterLogo /></a></div><div className="opp-application-navigation"><button type="button" disabled={busy} onClick={() => void back()}>Back to opportunities<LogOut size={16} aria-hidden="true" /></button></div></header>
     <div ref={workspace} className="opportunity-application-workspace">
     <section className="opp-application-shell">
-      <p className="opp-eyebrow">{step === 'success' ? 'APPLICATION RECEIVED' : 'YOUR APPLICATION'}</p>
+      <p className="opp-eyebrow">{step === 'success' ? 'APPLICATION RECEIVED' : 'APPLYING FOR'}</p>
       <h1 ref={heading} tabIndex={-1}>{step === 'cv' ? 'ENTER what’s next?' : role.title}</h1>
       {step === 'cv' && <><p className="opp-application-intro">Somewhere, there’s something worth building.</p><p className="opp-selected-role">Applying for <strong>{role.title}</strong></p></>}
       {error && <p role="alert" className="error">{error}</p>}
