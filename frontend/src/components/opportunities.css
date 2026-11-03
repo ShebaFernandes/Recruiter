@@ -411,3 +411,22 @@
   .opportunities-page .opp-detail > p:not(.opp-eyebrow) { line-height: 1.7; margin-bottom: 16px; }
   .opportunities-page .opp-detail h2:not(.opp-detail-title) { margin-top: 22px; }
 }
+
+/* A landscape summary with facts across one row. */
+@media (min-width: 1101px) {
+  .has-opportunity-panel .opp-row.is-selected {
+    left: max(32px, calc((100vw - 1240px) / 2));
+    width: 460px;
+    padding: 22px 24px;
+  }
+  .has-opportunity-panel .opp-row.is-selected .opp-facts {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding: 14px;
+    gap: 12px;
+  }
+  .has-opportunity-panel .opp-row.is-selected .opp-facts dd { font-size: 12px; }
+  .has-opportunity-panel .opp-detail {
+    right: max(32px, calc((100vw - 1240px) / 2));
+    width: min(752px, calc(100vw - 552px));
+  }
+}
