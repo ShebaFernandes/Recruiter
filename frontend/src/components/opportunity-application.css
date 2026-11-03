@@ -204,3 +204,35 @@
   overflow-wrap: anywhere;
 }
 .is-cv .opp-selected-role strong { color: #343c39; font-weight: 600; }
+
+/* Give the candidate workspace a more cohesive visual hierarchy. */
+.opportunity-application-page.is-profile .candidate-experience :is(.cp-identity-card, .cp-career-surface, .cp-settings) {
+  border-color: #dce2dd;
+  box-shadow: 0 4px 16px rgb(33 49 41 / 4%);
+}
+.opportunity-application-page.is-profile .candidate-experience .cp-identity h3 {
+  color: #263c34;
+  letter-spacing: -.025em;
+}
+.opportunity-application-page.is-profile .candidate-experience .cp-professional-title {
+  color: #52615a;
+}
+.opportunity-application-page.is-profile .candidate-experience :is(.cp-professional-read, .cp-highlight) {
+  background: linear-gradient(120deg, #edf6f2, #f5f9f6);
+  box-shadow: inset 0 0 0 1px #e6efea;
+}
+.opportunity-application-page.is-profile .candidate-experience .cp-settings-panel .cp-setting-row > span:first-child,
+.opportunity-application-page.is-profile .candidate-experience .cp-settings-panel .cp-setting-edit {
+  color: #23776e;
+}
+.opportunity-application-page.is-profile .candidate-experience .cp-settings-panel button.cp-setting-row:hover {
+  background: #f4f8f5;
+}
+.opportunity-application-page.is-profile .candidate-experience .cp-setting-resume .cp-replace-control {
+  background: #edf5f1;
+  border-color: #d6e5dc;
+}
+.opportunity-application-page.is-profile .candidate-experience .cp-skill-chips span {
+  background: #286d64;
+  border-color: #286d64;
+}
