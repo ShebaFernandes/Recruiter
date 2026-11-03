@@ -356,3 +356,29 @@
 .opportunity-application-page.is-profile .candidate-experience .cp-resume-toolbar {
   background: #fffefa;
 }
+
+/* Bring compensation fields into the settings panel palette. */
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-current {
+  background: #f5f8f5;
+  border-color: #dce4dd;
+  border-radius: 0 0 8px 8px;
+}
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-current label {
+  color: #43564b;
+}
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-current input {
+  background: #fffefa;
+  border-color: #cdd9d0;
+  color: #303e36;
+  border-radius: 8px;
+  box-shadow: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-current input:focus {
+  outline: 2px solid #779b88;
+  outline-offset: 1px;
+  border-color: #779b88;
+}
+@media (prefers-reduced-motion: reduce) {
+  .opportunity-application-page.is-profile .candidate-experience #settings-editor-current input { transition: none; }
+}
