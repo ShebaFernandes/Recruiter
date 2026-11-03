@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { api } from '../api'
+import { applicationProfileReady } from '../opportunityApplication'
 import { sortCareerHistory } from '../careerHistory'
 import type { Candidate, CareerPreferences, WorkExperience, Resume } from '../types'
 import { CandidateProcessing } from './CandidatePresentation'
@@ -540,7 +541,12 @@ export default function CandidateExperience({ beforeLeaveRef, opportunity }: { a
     if (busyRef.current) return
     if (!await flushAnswer()) return
     if (legalPublished && !legalDocuments) return
-    if (await run(() => api.submitCandidate(true, legalDocuments?.submission.version), '')) { setSuccess(true); setReview(false); setEditingSettings(false); setMeaningfulDraft(null) }
+    let confirmedProfile: Candidate | null = null
+    if (await run(async () => { const saved = await api.submitCandidate(true, legalDocuments?.submission.version); confirmedProfile = saved; return saved }, '')) {
+      setReview(false); setEditingSettings(false); setMeaningfulDraft(null)
+      if (opportunity && confirmedProfile && applicationProfileReady(confirmedProfile)) opportunity.onContinue(confirmedProfile)
+      else setSuccess(true)
+    }
   }
   const settingsEditor = (field: string) => editingSettings && editingSettingsField === field ? <SettingsAutosave ref={settingsAutosave} formRef={settingsForm} dirty={settingsDirty} flight={settingsFlight} save={saveSettings} onSaved={() => setSettingsSaved(Date.now())} closeOnSave={field === 'availability' || field === 'notice_period_days'} close={() => {
     const restoreFocus = settingsForm.current?.contains(document.activeElement)
@@ -617,7 +623,7 @@ export default function CandidateExperience({ beforeLeaveRef, opportunity }: { a
         <CustomChoice label="Your own exclusion" disabled={busy} add={value => prefs({ custom_exclusions: [...new Set([...(preferences.custom_exclusions || []), value])], exclusions: [...new Set([...(preferences.exclusions || []), value])] })} /></div>
         </div>
       </section>}
-      {!editing && <div className="cp-final-confirm"><button type="button" className="primary" disabled={busy || processing} onClick={() => { setReview(true) }}>Confirm my profile</button>{opportunity && <button type="button" className="primary" disabled={busy || editing || editingSettings || processing || !p.can_submit || p.profile_status !== 'submitted' || !p.latest_resume || p.latest_resume.processing_status !== 'completed' || p.latest_resume.scan_status !== 'clean' || !!p.resume_identity_warning || !!p.resume_review} onClick={() => void leave(() => opportunity.onContinue(p))}>Review application</button>}</div>}
+      {!editing && <div className="cp-final-confirm"><button type="button" className="primary" disabled={busy || processing || editingSettings} onClick={() => { if (opportunity && applicationProfileReady(p)) void leave(() => opportunity.onContinue(p)); else setReview(true) }}>Confirm my profile</button></div>}
     </>)}</div>
     {resume && settingsPanel}</div>}
     {review && !focusedProcessing && <section className="cp-section cp-brief"><h2>Here's how we'll remember you</h2><h3>{p.full_name}</h3><p>{title}{p.location && ` · ${p.location}`}</p><p>{skills.join(' · ')}</p>{preferences.standout_signal && <p>{preferences.standout_signal}</p>}<p>{preferences.availability || 'Availability not specified'} · {p.work_preferences.join(' / ') || 'Work mode to confirm'}</p>{preferences.motivators?.length ? <p>Drawn to {preferences.motivators.join(', ')}</p> : null}{preferences.exclusions?.length ? <p>Not interested in {preferences.exclusions.join(', ')}</p> : null}
