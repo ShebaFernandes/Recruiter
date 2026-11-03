@@ -515,3 +515,9 @@
 @media (max-width: 600px) {
   .opportunity-application-page.is-profile .candidate-experience #settings-editor-current input { min-height: 44px; height: 44px; }
 }
+
+/* Field underlines provide separation without an extra editor divider. */
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-linkedin,
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-email {
+  border-bottom-color: transparent;
+}
