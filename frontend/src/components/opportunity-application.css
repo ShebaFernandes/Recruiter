@@ -308,3 +308,10 @@
 
 .opportunity-application-page.is-profile .candidate-experience .cp-settings-panel [data-setting="availability"] { position: relative; padding-right: 28px; }
 .opportunity-application-page.is-profile .candidate-experience .cp-settings-panel [data-setting="availability"]::after { position: absolute; right: 12px; top: 50%; margin-top: -5px; margin-right: 0; }
+
+/* Keep required-profile notices clear within the neutral card palette. */
+.opportunity-application-page.is-profile .candidate-experience :is(.cp-profile-required, .cp-brief > div[role="status"]) {
+  background: #f0f3f1;
+  border-color: #d7dfda;
+  color: #43564b;
+}
