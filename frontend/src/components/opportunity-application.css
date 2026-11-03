@@ -475,3 +475,19 @@
   font-size: 12px;
   line-height: 1.4;
 }
+
+/* A compact footer leaves more room for the application workspace. */
+.opportunity-application-page > .site-footer-surface .site-footer {
+  min-height: 0;
+  padding-block: 12px;
+}
+.opportunity-application-page > .site-footer-surface .site-footer .enter-logo {
+  width: 76px;
+}
+@media (max-width: 600px) {
+  .opportunity-application-page > .site-footer-surface .site-footer {
+    padding-block: 10px;
+    gap: 8px;
+  }
+}
+.opportunity-application-page .site-footer-brand svg { width: 76px; height: 25px; }
