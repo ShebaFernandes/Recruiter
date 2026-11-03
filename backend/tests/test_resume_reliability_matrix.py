@@ -111,3 +111,50 @@ def test_fictional_resume_fixture_matrix(
         row["role"].casefold() == "personal project"
         for row in parsed["work_experiences"]
     )
+
+
+@pytest.mark.parametrize("columns", [1, 2])
+def test_layout_table_preserves_employment_paragraphs(columns):
+    document = Document()
+    document.add_paragraph("Name: Fictional Candidate")
+    table = document.add_table(rows=1, cols=columns)
+    if columns == 2:
+        table.cell(0, 0).text = "CONTACT\nfictional@example.com"
+    cell = table.cell(0, columns - 1)
+    for line in [
+        "PROFESSIONAL EXPERIENCE",
+        "Senior Software Engineer at Cedar Software",
+        "Jan 2021 - Present",
+        "Built payment systems that reduced processing time by 30%.",
+    ]:
+        cell.add_paragraph(line)
+    output = BytesIO()
+    document.save(output)
+    parsed = parse_resume(BytesIO(output.getvalue()), "layout.docx")
+    assert parsed["headline"] == "Senior Software Engineer"
+    assert len(parsed["work_experiences"]) == 1
+    role = parsed["work_experiences"][0]
+    assert role["role"] == "Senior Software Engineer"
+    assert role["company"] == "Cedar Software"
+    assert role["start_date"] == "2021-01-01"
+    assert role["end_date"] is None
+    assert parsed["standout_signal"] == (
+        "Built payment systems that reduced processing time by 30%."
+    )
+
+
+@pytest.mark.parametrize("extension", ["pdf", "docx"])
+def test_summary_heading_and_bullet_achievement_keep_source_facts(extension):
+    summary = "Senior engineer with experience building reliable payment platforms."
+    achievement = "Reduced payment processing time by 30% through queue optimisation."
+    lines = [
+        "Name: Fictional Candidate", "PROFESSIONAL SUMMARY", summary,
+        "PROFESSIONAL EXPERIENCE", "Senior Software Engineer at Cedar Software",
+        "Jan 2021 - Present", "- " + achievement,
+        "EDUCATION", "Example University",
+    ]
+    parsed = parse_resume(BytesIO(_fixture_bytes(extension, lines)), f"sample.{extension}")
+    assert parsed["summary"] == summary
+    assert parsed["standout_signal"] == achievement
+    assert parsed["headline"] == "Senior Software Engineer"
+    assert len(parsed["work_experiences"]) == 1

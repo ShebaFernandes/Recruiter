@@ -286,9 +286,14 @@ def extract_text(file_obj, filename):
                 lines.extend(block.text.splitlines())
                 continue
             for row in block.rows:
-                cells = [" ".join(cell.text.split()) for cell in row.cells]
-                populated = [cell for cell in cells if cell]
-                if populated:
+                # Layout tables often contain whole sections in one cell. Keep
+                # paragraph boundaries so headings, titles and dates stay distinct.
+                cells = [cell.text.strip() for cell in row.cells]
+                populated = list(dict.fromkeys(cell for cell in cells if cell))
+                if any("\n" in cell for cell in populated):
+                    for cell in populated:
+                        lines.extend(line.strip() for line in cell.splitlines() if line.strip())
+                elif populated:
                     lines.append(" | ".join(populated))
         return "\n".join(lines)
     return file_obj.read().decode("utf-8", errors="ignore")
@@ -854,11 +859,14 @@ def parse_resume(file_obj, filename):
             else None
         )
     )
+    summary = _value_after_label(text, "Summary") or " ".join(
+        _section_lines(lines, {"summary", "professional summary"})
+    )[:2000]
     standout = _value_after_label(text, "Achievement")
     if not standout:
         # Select an intact evidence sentence, not an invented summary or a cut-off line.
         for line in _section_lines(lines, EXPERIENCE_HEADINGS):
-            sentence = re.split(r"(?<=[.!?])\s+", line)[0]
+            sentence = re.split(r"(?<=[.!?])\s+", line.lstrip(" •●▪-*\t"))[0]
             if (
                 40 <= len(sentence) <= 300
                 and sentence.endswith((".", "!"))
@@ -996,7 +1004,7 @@ def parse_resume(file_obj, filename):
         "notice_period_days": int(notice_match.group(1)) if notice_match else None,
         "current_salary_lpa": float(current_salary.group(1)) if current_salary else None,
         "expected_salary_lpa": float(expected_salary.group(1)) if expected_salary else None,
-        "summary": _value_after_label(text, "Summary"),
+        "summary": summary,
         "raw_text": text[:RESUME_RAW_TEXT_LIMIT],
         "_text_truncated": len(text) > RESUME_RAW_TEXT_LIMIT,
         "_document_layout": layout,
