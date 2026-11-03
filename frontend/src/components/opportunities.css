@@ -358,3 +358,29 @@
   .has-opportunity-panel .opp-detail,
   .has-opportunity-panel .opp-row.is-selected { animation: none; }
 }
+
+.has-opportunity-panel .opp-row.is-selected .opp-actions { display: none; }
+.opportunities-page .opp-detail .opp-panel-close {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 8px !important;
+  border: 0;
+  border-radius: 50%;
+  color: #747987;
+  box-shadow: none;
+  transition: color 160ms ease, background-color 160ms ease;
+}
+.opportunities-page .opp-detail .opp-panel-close svg { width: 14px; height: 14px; }
+.opportunities-page .opp-detail .opp-panel-close:hover {
+  color: #292d35;
+  background: #eeece6 !important;
+}
+@media (pointer: coarse) {
+  .opportunities-page .opp-detail .opp-panel-close {
+    width: 44px;
+    height: 44px;
+    padding: 15px !important;
+  }
+}
