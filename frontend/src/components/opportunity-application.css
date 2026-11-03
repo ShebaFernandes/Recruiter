@@ -448,3 +448,19 @@
   box-shadow: none;
   background-color: #fffefa;
 }
+
+/* Keep expanded settings visually consistent with the card. */
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-availability {
+  background: #fffefa;
+}
+.opportunity-application-page.is-profile .candidate-experience .cp-settings-panel button.cp-setting-row[data-setting="work_preferences"],
+.opportunity-application-page.is-profile .candidate-experience .cp-settings-panel button.cp-setting-row[data-setting="work_preferences"]:hover,
+.opportunity-application-page.is-profile .candidate-experience .cp-settings-panel button.cp-setting-row[data-setting="work_preferences"][aria-expanded="true"] {
+  background: transparent;
+}
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-linkedin input {
+  border-bottom-color: #bbc3bd;
+}
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-linkedin input:focus {
+  border-bottom-color: #708579;
+}
