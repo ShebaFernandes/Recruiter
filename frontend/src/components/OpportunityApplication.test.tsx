@@ -42,6 +42,15 @@ describe('opportunity application', () => {
     expect(await screen.findByRole('button', { name: 'Review application' })).toBeVisible()
     expect(upload).toHaveBeenCalledTimes(1)
   })
+  it('uploads a dropped CV through the same protected upload API', async () => {
+    const upload = vi.spyOn(api, 'uploadResume').mockResolvedValue(ready)
+    const { container } = setup({ ...ready, latest_resume: null, profile_status: 'draft' })
+    await screen.findByLabelText('Upload your CV')
+    const file = new File(['cv'], 'alex.docx')
+    fireEvent.drop(container.querySelector('.opp-cv-dropzone')!, { dataTransfer: { files: [file] } })
+    expect(await screen.findByRole('button', { name: 'Review application' })).toBeVisible()
+    expect(upload).toHaveBeenCalledWith(file)
+  })
   it('rejects invalid files and retains the upload screen on API errors', async () => {
     const upload = vi.spyOn(api, 'uploadResume').mockRejectedValue(new Error('Scanner unavailable. Please retry.'))
     setup({ ...ready, latest_resume: null })
