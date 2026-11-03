@@ -575,14 +575,6 @@ export default function CandidateExperience({ beforeLeaveRef, opportunity }: { a
     </div>
     </section></aside>
   return <main className={`candidate-experience ${focusedProcessing ? 'is-processing' : ''}`} ref={mainRef}>
-    {opportunity && <section className="cp-section opp-profile-step">
-      <p className="opp-eyebrow">APPLICATION · CV &amp; PROFILE</p>
-      <h1>Prepare your application for {opportunity.title}</h1>
-      <p>Upload your CV or use your current CV, review your profile below, and save any corrections. Your application is only sent at the final step.</p>
-      {p.latest_resume && <><p>Current CV: <strong>{p.latest_resume.original_name}</strong></p><div className="cp-actions">{replaceControl}</div></>}
-      <p>Complete and confirm your profile below before continuing. Recruiter sharing settings remain unchanged.</p>
-      <button type="button" className="primary" disabled={busy || editing || editingSettings || processing || !p.can_submit || p.profile_status !== 'submitted' || !p.latest_resume || p.latest_resume.processing_status !== 'completed' || p.latest_resume.scan_status !== 'clean' || !!p.resume_identity_warning || !!p.resume_review} onClick={() => void leave(() => opportunity.onContinue(p))}>Review application</button>
-    </section>}
     {!focusedProcessing && <ExistingLegalReview />}
     {legalPublished && review && <LegalRetry />}
     {!success && !focusedProcessing && p.latest_resume && <header className="cp-welcome"><h1>Let's find work that feels great.</h1></header>}
@@ -625,7 +617,7 @@ export default function CandidateExperience({ beforeLeaveRef, opportunity }: { a
         <CustomChoice label="Your own exclusion" disabled={busy} add={value => prefs({ custom_exclusions: [...new Set([...(preferences.custom_exclusions || []), value])], exclusions: [...new Set([...(preferences.exclusions || []), value])] })} /></div>
         </div>
       </section>}
-      {!editing && <div className="cp-final-confirm"><button type="button" className="primary" disabled={busy || processing} onClick={() => { setReview(true) }}>Confirm my profile</button></div>}
+      {!editing && <div className="cp-final-confirm"><button type="button" className="primary" disabled={busy || processing} onClick={() => { setReview(true) }}>Confirm my profile</button>{opportunity && <button type="button" className="primary" disabled={busy || editing || editingSettings || processing || !p.can_submit || p.profile_status !== 'submitted' || !p.latest_resume || p.latest_resume.processing_status !== 'completed' || p.latest_resume.scan_status !== 'clean' || !!p.resume_identity_warning || !!p.resume_review} onClick={() => void leave(() => opportunity.onContinue(p))}>Review application</button>}</div>}
     </>)}</div>
     {resume && settingsPanel}</div>}
     {review && !focusedProcessing && <section className="cp-section cp-brief"><h2>Here's how we'll remember you</h2><h3>{p.full_name}</h3><p>{title}{p.location && ` · ${p.location}`}</p><p>{skills.join(' · ')}</p>{preferences.standout_signal && <p>{preferences.standout_signal}</p>}<p>{preferences.availability || 'Availability not specified'} · {p.work_preferences.join(' / ') || 'Work mode to confirm'}</p>{preferences.motivators?.length ? <p>Drawn to {preferences.motivators.join(', ')}</p> : null}{preferences.exclusions?.length ? <p>Not interested in {preferences.exclusions.join(', ')}</p> : null}

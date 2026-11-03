@@ -259,7 +259,7 @@
 .cp-profile>.cp-standout p { margin:0; font-size:14px; line-height:1.6; }
 .cp-profile-confirm { margin:12px 0 0; }
 .cp-profile-confirm .cp-confirm-main { margin-left:auto; }
-.cp-final-confirm { display:flex; justify-content:flex-end; margin:12px 0 2px; padding-top:12px; border-top:1px solid var(--enter-border); }
+.cp-final-confirm { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; margin:12px 0 2px; padding-top:12px; border-top:1px solid var(--enter-border); }
 .candidate-experience .cp-final-confirm button { min-height:32px; padding:6px 12px; font-size:11px; }
 .cp-resume-toolbar>strong { flex:1 1 200px; min-width:0; font-size:var(--enter-text-base); }
 .cp-resume-controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
