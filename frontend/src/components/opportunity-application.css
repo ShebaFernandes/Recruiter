@@ -192,3 +192,6 @@
 .opportunity-application-page.is-profile .candidate-experience .cp-brief form {
   border-color: #dddeda;
 }
+
+/* Programmatic heading focus should not draw a decorative frame. */
+.opp-application-shell > h1[tabindex="-1"]:focus { outline: none; }
