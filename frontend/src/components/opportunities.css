@@ -261,3 +261,18 @@
 .opportunities-page .opp-detail{font-family:var(--enter-font-ui)}
 .opportunities-page .opp-detail .opp-detail-title{font-family:var(--enter-font-ui);font-size:24px;font-weight:500;line-height:1.35;letter-spacing:-.01em;color:#555}
 @media(max-width:760px){.opportunities-page .opp-detail .opp-detail-title{font-size:22px}}
+
+/* Match the careers job page's title and description typography. */
+.opportunities-page .opp-detail .opp-detail-title {
+  font: 600 28px/1.35 var(--enter-font-ui);
+  letter-spacing: normal;
+}
+.opportunities-page .opp-detail h2:not(.opp-detail-title) {
+  font: 600 15px/1.5 var(--enter-font-ui);
+}
+.opportunities-page .opp-detail > p:not(.opp-eyebrow),
+.opportunities-page .opp-detail .opp-discussion {
+  font: 400 14px/1.8 var(--enter-font-ui);
+  color: #656b6c;
+}
+.opportunities-page .opp-detail .opp-discussion li { margin-bottom: 6px; }
