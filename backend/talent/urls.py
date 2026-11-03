@@ -1,7 +1,14 @@
 from django.urls import path
-from . import opportunity_views
 
-from . import candidate_views, career_views, hiring_views, legal_views, support_views, views
+from . import (
+    candidate_views,
+    career_views,
+    hiring_views,
+    legal_views,
+    opportunity_views,
+    support_views,
+    views,
+)
 
 urlpatterns = [
     path("opportunities/applications/", opportunity_views.apply),

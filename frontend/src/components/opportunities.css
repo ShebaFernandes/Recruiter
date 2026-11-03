@@ -227,3 +227,37 @@
 .opportunities-page .opp-hero h1{color:#f6f3ee}
 .opp-hero>.opp-eyebrow{color:#8c96ff}
 .opp-hero>p:not(.opp-eyebrow){color:#b4afa7}
+
+.opp-subsections{display:flex;flex-wrap:wrap;gap:8px;padding-top:20px}
+.opportunities-page .opp-subsections button{font-size:12px;line-height:1.4;padding:7px 11px;border-radius:6px;background:#eeece6;color:#747987}
+.opportunities-page .opp-subsections button[aria-pressed=true]{background:#e5e7f5;color:#3046c9}
+.opportunities-page .opp-subsections button:hover{color:#3046c9}
+
+/* An orderly specialism selector beneath the main categories. */
+.opp-subsections{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;padding:20px 0 4px}
+.opportunities-page .opp-subsections button{display:flex;align-items:center;justify-content:center;min-height:38px;padding:8px 10px;border:1px solid #e1ded5;border-radius:8px;background:transparent;color:#777d89;font-size:11px;line-height:1.4;text-align:center;transition:background .18s,border-color .18s,color .18s}
+.opportunities-page .opp-subsections button[aria-pressed=true]{background:#e8eaf8;border-color:#c6ccee;color:#3046c9;font-weight:500}
+.opportunities-page .opp-subsections button:hover{background:#eeece6;color:#4b5260;border-color:#d1cec5}
+.opportunities-page .opp-subsections button[aria-pressed=true]:hover{background:#e8eaf8;color:#3046c9;border-color:#c6ccee}
+@media(max-width:1000px){.opp-subsections{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:760px){.opp-subsections{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.opportunities-page .opp-subsections button{font-size:10px;padding:7px}}
+@media(max-width:420px){.opp-subsections{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Compact underlined specialisms in a neutral accent. */
+.opp-subsections{display:flex;flex-wrap:wrap;gap:8px 22px;padding:16px 0 0}
+.opportunities-page .opp-subsections button{display:inline-block;min-height:0;padding:4px 0 7px;border:0;border-bottom:1px solid transparent;border-radius:0;background:transparent;color:#85858a;font-size:11px;line-height:1.4}
+.opportunities-page .opp-subsections button[aria-pressed=true],
+.opportunities-page .opp-subsections button[aria-pressed=true]:hover{background:transparent;border-color:#66616a;color:#514c57;font-weight:500}
+.opportunities-page .opp-subsections button:hover{background:transparent;border-color:#b8b4b8;color:#66616a}
+
+.opportunities-page .opp-subsections button{font-size:12px}
+
+/* Match opportunity titles to the careers position list. */
+.opportunities-page .opp-row h2{font-family:var(--enter-font-ui);font-size:16px;font-weight:500;line-height:1.35;letter-spacing:-.01em;color:#555;margin-bottom:16px}
+.opportunities-page .opp-row h2 button{font:inherit;color:inherit}
+@media(max-width:760px){.opportunities-page .opp-row h2{font-size:14px}}
+
+/* Keep every opportunity detail screen in the careers UI typeface. */
+.opportunities-page .opp-detail{font-family:var(--enter-font-ui)}
+.opportunities-page .opp-detail .opp-detail-title{font-family:var(--enter-font-ui);font-size:24px;font-weight:500;line-height:1.35;letter-spacing:-.01em;color:#555}
+@media(max-width:760px){.opportunities-page .opp-detail .opp-detail-title{font-size:22px}}

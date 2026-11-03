@@ -1,3 +1,4 @@
+import { validateWorkEmailInput } from '../workEmail'
 import observeLandingReveal from './observeLandingReveal'
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
@@ -62,7 +63,7 @@ export default function WhenTeamsChange() {
     for (const [source, target] of [
       ['company', 'company'], ['name', 'full_name'], ['email', 'work_email'],
       ['role', 'role'], ['peopleImpacted', 'people_impacted'],
-      ['phone', 'phone'], ['reachMethod', 'reach_method'],
+      ['phone', 'phone'], ['lastWorkingDay', 'last_working_day'], ['reachMethod', 'reach_method'],
     ]) body.set(target, String(fields.get(source) ?? ''))
     body.set('consent', fields.has('consent') ? 'true' : 'false')
     if (reachMethod === 'list') {
@@ -188,10 +189,11 @@ export default function WhenTeamsChange() {
             <div className="when-teams-change__form-grid">
               <label className="when-teams-change__field"><input aria-label="Company" name="company" type="text" placeholder="Your company name" required /></label>
               <label className="when-teams-change__field"><input aria-label="Your name" name="name" type="text" placeholder="Your name" autoComplete="name" required /></label>
-              <label className="when-teams-change__field"><input aria-label="Work email" name="email" type="email" placeholder="Work email" autoComplete="email" required /></label>
+              <label className="when-teams-change__field"><input aria-label="Work email" name="email" type="email" onInput={event => validateWorkEmailInput(event.currentTarget)} placeholder="Work email" autoComplete="email" required /></label>
               <label className="when-teams-change__field"><TransitionSelect name="role" label="Your role" options={["Founder", "HR/TA", "Founding team", "Leadership", "Other"]} /></label>
               <label className="when-teams-change__field"><TransitionSelect name="peopleImpacted" label="People impacted" options={["1–10", "11–40", "41–100", "More than 100"]} /></label>
               <label className="when-teams-change__field"><input aria-label="Phone number" name="phone" type="tel" autoComplete="tel" placeholder="Phone number" maxLength={40} required /></label>
+              <label className="when-teams-change__field"><span>Last working day</span><input aria-label="Last working day" name="lastWorkingDay" type="date" required /></label>
             </div>
             <fieldset className="when-teams-change__reach" aria-label="How should we reach your people?"><legend>How should we reach your people?</legend>
               <div className={`transition-contact-option${reachMethod === 'list' ? ' is-selected' : ''}`}>

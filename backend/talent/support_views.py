@@ -24,6 +24,7 @@ from .models import EmployeeTransitionEnquiry, EnquiryNotification
 from .storage_cleanup import store_private_upload
 from .throttling import EmployeeTransitionRateThrottle
 from .upload_security import scan_public_upload
+from .work_email import PERSONAL_EMAIL_DOMAINS
 
 MAX_LIST_BYTES = 2 * 1024 * 1024
 
@@ -32,7 +33,10 @@ class EmployeeTransitionEnquirySerializer(serializers.Serializer):
     company = serializers.CharField(max_length=180, trim_whitespace=True)
     full_name = serializers.CharField(max_length=180, trim_whitespace=True)
     work_email = serializers.EmailField()
-    role = serializers.ChoiceField(choices=["HR", "People", "Founder", "Other"])
+    phone = serializers.CharField(max_length=40, required=False, allow_blank=True)
+    role = serializers.ChoiceField(
+        choices=["HR", "People", "Founder", "HR/TA", "Founding team", "Leadership", "Other"]
+    )
     people_impacted = serializers.ChoiceField(
         choices=["1–10", "11–40", "41–100", "More than 100"]
     )
@@ -41,6 +45,11 @@ class EmployeeTransitionEnquirySerializer(serializers.Serializer):
     employee_list = serializers.FileField(required=False)
     situation = serializers.CharField(max_length=2000, required=False, allow_blank=True)
     consent = serializers.BooleanField()
+
+    def validate_work_email(self, value):
+        if value.rsplit("@", 1)[-1].lower() in PERSONAL_EMAIL_DOMAINS:
+            raise serializers.ValidationError("Use your company or work email address.")
+        return value
 
     def validate_employee_list(self, uploaded):
         suffix = Path(uploaded.name).suffix.lower()
@@ -101,6 +110,7 @@ def employee_transition_enquiry(request):
             company=data["company"],
             full_name=data["full_name"],
             work_email=data["work_email"],
+            phone=data.get("phone", ""),
             role=data["role"],
             people_impacted=data["people_impacted"],
             last_working_day=data["last_working_day"],

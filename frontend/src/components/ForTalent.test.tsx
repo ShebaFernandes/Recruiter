@@ -5,14 +5,16 @@ import ForTalent from './ForTalent'
 describe('ForTalent', () => {
   it('renders the approved content once and opens the existing candidate entry flow', () => {
     const onJoin = vi.fn()
-    render(<ForTalent onJoin={onJoin} />)
+    const onLogin = vi.fn()
+    render(<ForTalent onLogin={onLogin} onJoin={onJoin} />)
 
-    expect(screen.getByRole('heading', { name: "Let's find work that feels great." })).toBeTruthy()
-    expect(screen.getByText("Find opportunities with ambitious companies building what's next.")).toBeTruthy()
-    expect(screen.getByText('AI & ML · ENGINEERING · PRODUCT · LEADERSHIP')).toBeTruthy()
-    expect(screen.getAllByRole('listitem').map(item => item.textContent)).toEqual(['AI & ML', 'Engineering', 'Product', 'Leadership'])
-
-    fireEvent.click(screen.getByRole('button', { name: 'Join enter’s talent network' }))
+    expect(screen.getByRole('heading', { name: 'Join ambitious AI and engineering teams.' })).toBeTruthy()
+    expect(screen.getByText(/enter connects talent with companies/)).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Browse open roles' }).getAttribute('href')).toBe('/opportunities')
+    fireEvent.click(screen.getByRole('button', { name: 'Join enter’s Talent network' }))
+    expect(onLogin).toHaveBeenCalledOnce()
+    expect(onJoin).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Create an account' }))
     expect(onJoin).toHaveBeenCalledOnce()
   })
 })

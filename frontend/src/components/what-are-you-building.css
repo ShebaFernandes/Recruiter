@@ -432,3 +432,15 @@
 .wb-custom-role { width:clamp(160px,18vw,250px); max-width:100%; box-sizing:border-box; padding:5px 8px; border:0; border-bottom:1px solid var(--wb-blue); background:#ffffff0d; color:var(--wb-blue); font:inherit; font-size:.75em; border-radius:4px 4px 0 0; }
 .wb-custom-role::placeholder { color:#b9c8dd; opacity:1; }
 .what-building__cta:disabled { opacity:.5; cursor:not-allowed; }
+
+.wb-custom-role-picker{position:relative;display:inline-flex;align-items:center;max-width:100%}
+.wb-custom-role-picker .wb-custom-role{padding-right:30px}
+.wb-custom-role-reset{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:transparent;border:0;color:inherit;padding:6px;display:grid;place-items:center}
+
+.wb-custom-role-picker input::-webkit-calendar-picker-indicator{display:none!important;opacity:0}
+
+.wb-custom-role-picker .wb-listbox__menu{top:calc(100% + 8px);left:0;min-width:280px;z-index:30}
+.wb-custom-role-picker .wb-listbox__menu button{width:100%;text-align:left;background:transparent;border:0;color:inherit;font:400 13px/1.5 var(--enter-font-ui);padding:8px 10px;border-radius:7px}
+.wb-custom-role-picker .wb-listbox__menu button:hover,.wb-custom-role-picker .wb-listbox__menu button:focus-visible{background:#ffffff15;outline:none}
+
+.wb-custom-role-picker .wb-listbox__menu{position:absolute;top:calc(100% + 8px);left:0;max-width:min(340px,calc(100vw - 32px));max-height:230px}

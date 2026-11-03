@@ -4,7 +4,7 @@ import { flushSync } from 'react-dom'
 import './for-talent.css'
 
 
-export default function ForTalent({ onJoin }: { onJoin: () => void }) {
+export default function ForTalent({ onJoin, onLogin }: { onJoin: () => void; onLogin: () => void }) {
   const sectionRef = useRef<HTMLElement>(null)
   const navigating = useRef(false)
   function transitionTo(action: () => void) {
@@ -28,9 +28,9 @@ export default function ForTalent({ onJoin }: { onJoin: () => void }) {
     <div className="for-talent__inner">
       <div className="for-talent__content">
         <p className="for-talent__eyebrow">FOR TALENT</p>
-        <h2 id="for-talent-title" aria-label="Let's find work that feels great.">Let's find work that<br />feels great.</h2>
-        <p className="for-talent__description">Find opportunities with ambitious companies building what's next.</p>
-        <p className="for-talent__category-line">AI &amp; ML · ENGINEERING · PRODUCT · LEADERSHIP</p>
+        <h2 id="for-talent-title" >Join ambitious AI and <br />engineering teams.</h2>
+        <p className="for-talent__description">enter connects talent with companies building what’s next. Browse open roles and apply directly, or tell us what you’re looking for.</p>
+        <div className="for-talent__tracks">{['AI and ML', 'Engineering', 'Product', 'Leadership'].map(track => <span key={track}>{track}</span>)}</div>
         <a className="for-talent__browse" href="/opportunities" onClick={event => {
           if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return
           event.preventDefault()
@@ -38,16 +38,16 @@ export default function ForTalent({ onJoin }: { onJoin: () => void }) {
             window.history.pushState({}, '', '/opportunities')
             window.dispatchEvent(new PopStateEvent('popstate'))
           })
-        }}>Explore open opportunities <span aria-hidden="true">→</span></a>
-        <p className="for-talent__hint">Find a role that fits and apply directly.</p>
+        }}>Browse open roles</a>
+        <p className="for-talent__hint for-talent__availability"><span aria-hidden="true" /><span><strong>50+ roles open now.</strong> Find one that fits and apply directly.</span></p>
       </div>
 
       <aside className="for-talent__network" aria-labelledby="talent-network-title">
-        <p className="for-talent__network-label">FOR FUTURE OPPORTUNITIES</p>
+
         <h3 id="talent-network-title">Don’t see your role?</h3>
-        <p>Join enter’s talent network and share your CV, experience, and the work you’re looking for.</p>
-        <button type="button" onClick={() => transitionTo(onJoin)}>Join enter’s talent network</button>
-        <p className="for-talent__hint">We’ll reach out when a relevant opportunity comes up.</p>
+        <p>Log in to join enter’s talent network. Add your CV and the work you want, and we’ll reach out when a relevant role opens.</p>
+        <button type="button" onClick={() => transitionTo(onLogin)}>Join enter’s Talent network</button>
+        <p className="for-talent__hint">New to enter? <button type="button" className="for-talent__signup" onClick={() => transitionTo(onJoin)}>Create an account</button> to get started.</p>
       </aside>
     </div>
   </section>

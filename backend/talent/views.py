@@ -6,7 +6,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from django.db import connection, transaction
+from django.db import DatabaseError, connection, transaction
 from django.db.models import Count, Q
 from django.http import FileResponse
 from django.middleware.csrf import get_token
@@ -132,9 +132,15 @@ def readiness(request):
                 {"status": "not_ready", "legal_documents": "unavailable"},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT 1")
-        cursor.fetchone()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+    except DatabaseError:
+        return Response(
+            {"status": "not_ready", "database": "unavailable"},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
     return Response(
         {
             "status": "ready",

@@ -13,7 +13,9 @@ deploy/*
 deploy/live-legal-v1.0/*
 !deploy/live-legal-v1.0/PRIVACY_POLICY_PUBLICATION.txt
 !deploy/live-legal-v1.0/TERMS_PUBLICATION.txt
-.env.production
+.env*
+**/.env*
+!**/.env.example
 .venv
 .env
 frontend/node_modules

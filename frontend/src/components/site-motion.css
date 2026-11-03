@@ -1,0 +1,14 @@
+@media(prefers-reduced-motion:no-preference){
+  :is(.simple-landing,.opportunities-page,.enter-careers) :is(button,a){transition:color .18s ease,background-color .18s ease,border-color .18s ease,box-shadow .2s ease}
+  :is(.for-talent__browse,.for-talent__network>button,.opp-network-button,.opp-apply,.careers-action){transition:transform .2s ease,background-color .2s ease,box-shadow .2s ease!important}
+  :is(.for-talent__browse,.for-talent__network>button,.opp-network-button,.opp-apply,.careers-action):hover{transform:translateY(-2px);box-shadow:0 5px 14px #1c253d12}
+  :is(.for-talent__browse,.for-talent__network>button,.opp-network-button,.opp-apply,.careers-action):active{transform:translateY(0) scale(.98)}
+  .for-talent__network{transition:box-shadow .25s ease,border-color .25s ease}
+  .for-talent__network:hover{box-shadow:0 18px 44px #51442b12}
+  .has-opportunity-panel .opp-detail{animation:site-panel-enter .3s cubic-bezier(.22,1,.36,1)}
+  .growth-enquiry-modal[open]{animation:site-dialog-enter .28s cubic-bezier(.22,1,.36,1)}
+  .careers-filter-panel.is-open{animation:site-menu-enter .16s ease-out}
+}
+@keyframes site-panel-enter{from{opacity:0;translate:22px 0}to{opacity:1;translate:0 0}}
+@keyframes site-dialog-enter{from{opacity:0;translate:0 12px;scale:.99}to{opacity:1;translate:0 0;scale:1}}
+@keyframes site-menu-enter{from{opacity:0;translate:0 -4px}to{opacity:1;translate:0 0}}

@@ -16,7 +16,7 @@ describe('WhatAreYouBuilding', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Find Talent' }))
     expect(screen.getByRole('dialog', { name: "Let's find your next great hire." })).toBeVisible()
     fireEvent.click(screen.getByRole('button', { name: 'Edit hiring details' }))
-    expect(screen.getByLabelText('Role or job title')).toHaveValue('Frontend')
+    expect(screen.getByLabelText('Role or job title')).toHaveValue('Frontend Engineering')
     fireEvent.click(screen.getByRole('button', { name: 'Close hiring enquiry' }))
     fireEvent.animationEnd(screen.getByRole('dialog'))
   })
@@ -78,11 +78,11 @@ describe('WhatAreYouBuilding', () => {
 
   it('keeps selected hiring values in frontend state', () => {
     render(<WhatAreYouBuilding />)
-    fireEvent.click(screen.getByRole('button', { name: 'Role to hire: Frontend' }))
-    fireEvent.click(screen.getByRole('option', { name: 'Backend' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Role to hire: Frontend Engineering' }))
+    fireEvent.click(screen.getByRole('option', { name: 'Backend Engineering' }))
     fireEvent.click(screen.getByRole('button', { name: 'Hiring location: Hyderabad' }))
     fireEvent.click(screen.getByRole('option', { name: 'Pune' }))
-    expect(screen.getByRole('button', { name: 'Role to hire: Backend' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Role to hire: Backend Engineering' })).toBeVisible()
     expect(screen.getByRole('button', { name: 'Hiring location: Pune' })).toBeVisible()
 
     fireEvent.click(screen.getByRole('tab', { name: 'Build My Team' }))
@@ -92,7 +92,7 @@ describe('WhatAreYouBuilding', () => {
     expect(within(panel).getByRole('button', { name: 'Team size: 10 people' })).toBeVisible()
 
     fireEvent.click(screen.getByRole('tab', { name: 'Conduct a Recruitment Drive' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Role for recruitment drive: Backend' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Role for recruitment drive: Backend Engineering' }))
     fireEvent.click(screen.getByRole('option', { name: 'AI/ML / Data Science' }))
     fireEvent.click(screen.getByRole('button', { name: 'Recruitment drive location: Bengaluru' }))
     fireEvent.click(screen.getByRole('option', { name: 'Pune' }))
@@ -102,10 +102,10 @@ describe('WhatAreYouBuilding', () => {
 
   it('supports keyboard selection in compact dropdowns', () => {
     render(<WhatAreYouBuilding />)
-    const roleTrigger = screen.getByRole('button', { name: 'Role to hire: Frontend' })
+    const roleTrigger = screen.getByRole('button', { name: 'Role to hire: Frontend Engineering' })
     fireEvent.keyDown(roleTrigger, { key: 'ArrowDown' })
-    fireEvent.keyDown(screen.getByRole('option', { name: 'Backend' }), { key: 'Enter' })
-    expect(screen.getByRole('button', { name: 'Role to hire: Backend' })).toBeVisible()
+    fireEvent.keyDown(screen.getByRole('option', { name: 'Backend Engineering' }), { key: 'Enter' })
+    expect(screen.getByRole('button', { name: 'Role to hire: Backend Engineering' })).toBeVisible()
   })
 
   it('allows future months while disabling past dates', () => {
@@ -133,9 +133,9 @@ describe('WhatAreYouBuilding', () => {
 
   it('closes dropdowns and the calendar with Escape', () => {
     render(<WhatAreYouBuilding />)
-    const roleTrigger = screen.getByRole('button', { name: 'Role to hire: Frontend' })
+    const roleTrigger = screen.getByRole('button', { name: 'Role to hire: Frontend Engineering' })
     fireEvent.click(roleTrigger)
-    fireEvent.keyDown(screen.getByRole('option', { name: 'Frontend' }), { key: 'Escape' })
+    fireEvent.keyDown(screen.getByRole('option', { name: 'Frontend Engineering' }), { key: 'Escape' })
     expect(screen.queryByRole('listbox', { name: 'Role to hire' })).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('tab', { name: 'Conduct a Recruitment Drive' }))
@@ -162,14 +162,14 @@ describe('WhatAreYouBuilding', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Find Talent' }))
     const dialog = screen.getByRole('dialog')
     fireEvent.click(within(dialog).getByRole('button', { name: 'Edit hiring details' }))
-    fireEvent.change(within(dialog).getByLabelText('Role or job title'), { target: { value: 'Staff Backend Engineer' } })
+    fireEvent.change(within(dialog).getByLabelText('Role or job title'), { target: { value: 'Staff Backend Engineering Engineer' } })
     fireEvent.change(within(dialog).getByLabelText('Hiring location'), { target: { value: 'Delhi NCR' } })
     fireEvent.change(within(dialog).getByLabelText('Your name'), { target: { value: 'Alex' } })
     fireEvent.click(within(dialog).getByRole('button', { name: 'HR/TA' }))
     fireEvent.change(within(dialog).getByLabelText('Company name'), { target: { value: 'Example' } })
     fireEvent.change(within(dialog).getByLabelText('Work email'), { target: { value: 'alex@gmail.com' } })
     fireEvent.click(within(dialog).getByRole('button', { name: 'Engineering' }))
-    fireEvent.change(within(dialog).getByLabelText('Which departments?'), { target: { value: 'Design' } })
+    fireEvent.change(within(dialog).getByLabelText('Other departments'), { target: { value: 'Design' } })
     fireEvent.click(within(dialog).getByRole('button', { name: '2 weeks' }))
     fireEvent.click(within(dialog).getByRole('button', { name: '30 days' }))
     expect(within(dialog).getByRole('button', { name: '2 weeks' })).toHaveAttribute('aria-pressed', 'false')
@@ -189,7 +189,7 @@ describe('WhatAreYouBuilding', () => {
     expect(body.get('how_soon_details')).toBe('6 weeks')
     expect(body.get('other_department')).toBe('Design')
     expect(body.get('kind')).toBe('hire')
-    expect(body.get('role')).toBe('Staff Backend Engineer')
+    expect(body.get('role')).toBe('Staff Backend Engineering Engineer')
     expect(body.get('location')).toBe('Delhi NCR')
     expect(body.get('headcount')).toBe('1')
     expect(body.getAll('departments')).toEqual(['Engineering', 'Other'])
@@ -211,7 +211,7 @@ describe('WhatAreYouBuilding', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('Your request has been received.')
     const body = submit.mock.calls[0][0]
     expect(body.get('kind')).toBe('team')
-    expect(body.get('team_focus')).toBe('Backend')
+    expect(body.get('team_focus')).toBe('Backend Engineering')
     expect(body.get('headcount')).toBe('6')
     expect(body.getAll('departments')).toEqual(['Engineering'])
   })
@@ -231,7 +231,7 @@ describe('WhatAreYouBuilding', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('Your request has been received.')
     const body = submit.mock.calls[0][0]
     expect(body.get('kind')).toBe('drive')
-    expect(body.get('role')).toBe('Backend')
+    expect(body.get('role')).toBe('Backend Engineering')
     expect(body.get('location')).toBe('Bengaluru')
     expect(body.get('headcount')).toBe('12')
     expect(body.get('notes')).toContain('Expected candidates for the drive: 20')

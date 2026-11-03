@@ -49,10 +49,12 @@ describe('WhenTeamsChange', () => {
     fireEvent.click(screen.getByRole('radio', { name: /Talk to us first/i }))
     expect(screen.queryByLabelText('Choose an Excel or CSV list')).toBeNull()
     fireEvent.change(screen.getByLabelText('Tell us about the situation'), { target: { value: 'Help our team find new roles.' } })
+    fireEvent.change(screen.getByLabelText('Last working day'), { target: { value: '2026-12-31' } })
     fireEvent.submit(screen.getByRole('button', { name: 'Submit' }).closest('form')!)
     await waitFor(() => expect(api.submitEmployeeTransitionEnquiry).toHaveBeenCalledOnce())
     const body = vi.mocked(api.submitEmployeeTransitionEnquiry).mock.calls[0][0]
     expect(body.get('reach_method')).toBe('talk')
+    expect(body.get('last_working_day')).toBe('2026-12-31')
     expect(body.get('situation')).toBe('Help our team find new roles.')
     expect(body.has('employee_list')).toBe(false)
     expect(await screen.findByText(/Your request has been received/)).toBeTruthy()

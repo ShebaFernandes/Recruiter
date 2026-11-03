@@ -29,17 +29,18 @@ describe('TestimonialsCarousel', () => {
 
     const originalGroup = document.querySelector('.ui-marquee__group:not([aria-hidden])') as HTMLElement
     const cards = within(originalGroup).getAllByRole('article')
-    expect(cards).toHaveLength(8)
+    expect(cards).toHaveLength(9)
 
     expect(cards.map(card => card.querySelector('.testimonial-glass-card__identity strong')?.textContent)).toEqual([
-      'Githin Joseph', 'Steve Francis', 'Drushya Shetty', 'Divya V', 'Prachi Sharma', 'Nitika Thukral', 'Joseph Kim', 'Alka Ladhani',
+      'Alisha Tahasildar', 'Githin Joseph', 'Steve Francis', 'Drushya Shetty', 'Divya V', 'Prachi Sharma', 'Nitika Thukral', 'Joseph Kim', 'Alka Ladhani',
     ])
-    expect(cards[1].textContent).toContain("I've worked with enter Recruitment")
-    expect(cards[1].textContent).toContain("I'd recommend")
-    expect(cards[2].textContent).toContain('a dependable recruitment partner!')
-    expect(cards[3].textContent).toContain('future hiring requirements.')
-    expect(cards[4].textContent).toContain('ENTER’s commitment, persistence, and enthusiasm consistently stood out.')
-    expect(cards[4].textContent).not.toContain('Looking forward to our continued partnership.')
+    expect(cards[0].textContent).toContain('They helped us close a very critical role')
+    expect(cards[2].textContent).toContain("I've worked with enter Recruitment")
+    expect(cards[2].textContent).toContain("I'd recommend")
+    expect(cards[3].textContent).toContain('a dependable recruitment partner!')
+    expect(cards[4].textContent).toContain('future hiring requirements.')
+    expect(cards[5].textContent).toContain('ENTER’s commitment, persistence, and enthusiasm consistently stood out.')
+    expect(cards[5].textContent).not.toContain('Looking forward to our continued partnership.')
 
     expect(within(originalGroup).queryByRole('button')).toBeNull()
     expect(screen.queryByRole('dialog')).toBeNull()
@@ -51,7 +52,7 @@ describe('TestimonialsCarousel', () => {
     const groups = document.querySelectorAll('.ui-marquee__group')
     expect(groups).toHaveLength(2)
     expect(groups[1].getAttribute('aria-hidden')).toBe('true')
-    expect(groups[1].querySelectorAll('.testimonial-glass-card')).toHaveLength(8)
+    expect(groups[1].querySelectorAll('.testimonial-glass-card')).toHaveLength(9)
     expect(groups[1].querySelector('[tabindex]')).toBeNull()
   })
 })

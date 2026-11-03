@@ -1,3 +1,4 @@
+import { validateWorkEmailInput } from '../workEmail'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { ChevronDown, Paperclip, X } from 'lucide-react'
 import { api } from '../api'
@@ -30,7 +31,7 @@ export default function GrowthEnquiry({ kind, onClose }: { kind: GrowthKind; onC
   const [attachment, setAttachment] = useState<File | null>(null)
   const [submitState, setSubmitState] = useState<'idle' | 'sending' | 'sent'>('idle')
   const options = founding ? foundingOptions : leadershipOptions
-  const input = (label: string, name: string, placeholder: string, required = false, type = 'text') => <label className="growth-enquiry__field">{!['company', 'full_name', 'work_email', 'phone'].includes(name) && <span>{label}</span>}<input aria-label={label} name={name} placeholder={placeholder} required={required} type={type} /></label>
+  const input = (label: string, name: string, placeholder: string, required = false, type = 'text') => <label className="growth-enquiry__field">{!['company', 'full_name', 'work_email', 'phone'].includes(name) && <span>{label}</span>}<input aria-label={label} name={name} placeholder={placeholder} required={required} type={type} onInput={event => { if (name === 'work_email') validateWorkEmailInput(event.currentTarget) }} /></label>
   const select = (label: string, name: string, options: string[], optional = false) => <GrowthDropdown label={label} name={name} options={options} optional={optional} />
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -76,7 +77,7 @@ export default function GrowthEnquiry({ kind, onClose }: { kind: GrowthKind; onC
     {founding && <textarea className="growth-enquiry__wide" aria-label="What are you building?" name="product" required placeholder="The product in a sentence or two. What problem, for whom?" rows={2} />}
     <h4>{founding ? 'Who do you need first?' : 'Which leader do you need?'}</h4>
     <fieldset aria-label={founding ? 'Who do you need first?' : 'Which leader do you need?'}><div className="growth-enquiry__pills">{options.map(option => <button type="button" key={option} aria-pressed={selected.includes(option)} onClick={() => { setSelected(values => values.includes(option) ? values.filter(value => value !== option) : [...values, option]); setNotice('') }}>{option}</button>)}{selected.includes('Other +') && <input aria-label="Which role do you need?" placeholder="Which role do you need?" value={otherRole} required maxLength={160} onChange={event => setOtherRole(event.target.value)} />}</div></fieldset>
-    {!founding && <><h4>What needs to be fundamentally different 12 months after this person joins for you to call them an exceptional hire?</h4><textarea className="growth-enquiry__wide" aria-label="What needs to be fundamentally different in 12 months?" name="outcome" required rows={2} placeholder="Raise the bar, build a team, fix delivery, take on a new market…" /><label className="growth-enquiry__confidential"><span>Keep this search confidential<small>We won’t name your company to candidates until you say so.</small></span><input aria-label="Keep this search confidential" type="checkbox" role="switch" name="confidential" defaultChecked /></label></>}
+    {!founding && <><h4>What needs to be fundamentally different 12 months after<br />this person joins for you to call them an exceptional hire?</h4><textarea className="growth-enquiry__wide" aria-label="What needs to be fundamentally different 12 months after this person joins for you to call them an exceptional hire?" name="outcome" required rows={2} placeholder="Raise the bar, build a team, fix delivery, take on a new market…" /><label className="growth-enquiry__confidential"><span>Keep this search confidential<small>We won’t name your company to candidates until you say so.</small></span><input aria-label="Keep this search confidential" type="checkbox" role="switch" name="confidential" defaultChecked /></label></>}
     <div className="growth-enquiry__fields">
       
       

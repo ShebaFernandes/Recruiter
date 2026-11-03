@@ -25,3 +25,6 @@
  .landing-background__scene,.landing-background__clouds-back,.landing-background__clouds-front { animation:none; transform:none; }
  .landing-surface .landing-motion-toggle { display:none; }
 }
+
+.landing-motion-toggle{position:absolute;z-index:2;right:20px;bottom:16px;display:grid;place-items:center;width:32px;height:32px;border:1px solid #66708550;border-radius:50%;background:#faf8f4cc;color:#303842;cursor:pointer}
+.landing-motion-toggle:focus-visible{outline:2px solid #3046c9;outline-offset:3px}

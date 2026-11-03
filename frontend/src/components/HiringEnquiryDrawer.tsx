@@ -1,3 +1,4 @@
+import { validWorkEmail } from '../workEmail'
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronDown, Paperclip, X } from 'lucide-react'
@@ -16,17 +17,12 @@ export type HiringEnquiry = {
 }
 
 const departments = ['Engineering', 'Product', 'Marketing', 'Business', 'Other']
-const personalDomains = new Set(['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'live.com', 'icloud.com', 'aol.com', 'proton.me', 'protonmail.com', 'rediffmail.com'])
 const config = {
   hire: { title: "Let's find your next great hire.", description: "Tell us who you're looking for. We'll help you find the right people.", action: 'Find Talent', department: 'Role departments' },
   team: { title: "Let's build your team.", description: "Tell us about the team you're creating and the people you need.", action: 'Build My Team', department: 'Team departments' },
   drive: { title: "Let's plan your hiring drive.", description: 'Tell us about your hiring targets and timeline.', action: 'Plan My Drive', department: 'Hiring departments' },
 } as const
 
-function validWorkEmail(value: string) {
-  if (!/^[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/.test(value)) return false
-  return !personalDomains.has(value.split('@')[1].toLowerCase())
-}
 
 export default function HiringEnquiryDrawer({ enquiry, minimumDate, opener, onClose }: {
   enquiry: HiringEnquiry; minimumDate: string; opener: HTMLButtonElement | null; onClose: () => void
@@ -153,7 +149,7 @@ export default function HiringEnquiryDrawer({ enquiry, minimumDate, opener, onCl
 
   const departmentField = <fieldset className={`enquiry-departments enquiry-departments--${enquiry.kind}`}>
     <legend>{details.department}</legend>
-    <div className="enquiry-pills">{departments.filter(department => department !== 'Other').map(department => <button key={department} type="button" aria-pressed={selected.includes(department)} onClick={() => setSelected(current => current.includes(department) ? current.filter(item => item !== department) : [...current, department])}>{department}</button>)}<input className="enquiry-other-input" aria-label="Which departments?" placeholder="Which departments?" maxLength={160} value={otherDepartment} onChange={event => { const value = event.target.value; setOtherDepartment(value); setSelected(current => value.trim() ? [...current.filter(item => item !== 'Other'), 'Other'] : current.filter(item => item !== 'Other')) }} /></div>{errors.otherDepartment && <small className="enquiry-error">{errors.otherDepartment}</small>}
+    <div className="enquiry-pills">{departments.filter(department => department !== 'Other').map(department => <button key={department} type="button" aria-pressed={selected.includes(department)} onClick={() => setSelected(current => current.includes(department) ? current.filter(item => item !== department) : [...current, department])}>{department}</button>)}<input className="enquiry-other-input" aria-label="Other departments" placeholder="Other departments" maxLength={160} value={otherDepartment} onChange={event => { const value = event.target.value; setOtherDepartment(value); setSelected(current => value.trim() ? [...current.filter(item => item !== 'Other'), 'Other'] : current.filter(item => item !== 'Other')) }} /></div>{errors.otherDepartment && <small className="enquiry-error">{errors.otherDepartment}</small>}
     {enquiry.kind === 'team' && selected.length > 1 && <p className="enquiry-summary">Selected: {selected.join(', ')}</p>}
     {errors.departments && <small className="enquiry-error" role="alert">{errors.departments}</small>}
   </fieldset>

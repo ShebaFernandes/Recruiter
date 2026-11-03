@@ -23,21 +23,11 @@ from .models import EnquiryNotification, HiringEnquiry, HiringEnquiryAttachment
 from .storage_cleanup import store_private_upload
 from .throttling import HiringEnquiryRateThrottle
 from .upload_security import scan_public_upload
+from .work_email import PERSONAL_EMAIL_DOMAINS
 
 MAX_JD_BYTES = 10 * 1024 * 1024
 DEPARTMENTS = ("Engineering", "Product", "Marketing", "Sales", "HR", "Talent Acquisition")
-PERSONAL_EMAIL_DOMAINS = {
-    "gmail.com",
-    "yahoo.com",
-    "outlook.com",
-    "hotmail.com",
-    "live.com",
-    "icloud.com",
-    "aol.com",
-    "proton.me",
-    "protonmail.com",
-    "rediffmail.com",
-}
+
 FOUNDING_CATEGORIES = (
     "Founding Engineer",
     "Founding AI / ML",

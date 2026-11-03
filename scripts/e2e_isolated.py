@@ -27,8 +27,21 @@ def wait_for(url, process):
 
 
 if __name__ == "__main__":
+    if not os.environ.get("E2E_LEGAL_PHASE") and len(sys.argv) == 1:
+        # Different build-time legal modes must never share a Vite server.
+        outcomes = []
+        phases = ("default", "published") if os.environ.get("E2E_SKIP_RECRUITER") == "1" else ("default", "published", "worker")
+        for phase in phases:
+            env = {**os.environ, "E2E_LEGAL_PHASE": phase,
+                   "E2E_START_WORKER": "1" if phase == "worker" else "0",
+                   "PLAYWRIGHT_OUTPUT_DIR": f"/tmp/enter-e2e-{phase}"}
+            outcomes.append(subprocess.run([sys.executable, __file__], env=env).returncode)
+        raise SystemExit(0 if all(code == 0 for code in outcomes) else 1)
+    published = os.environ.get("E2E_LEGAL_PHASE") == "published"
     api_port = int(os.environ.get("E2E_API_PORT", "8025"))
     api_origin = f"http://127.0.0.1:{api_port}"
+    ui_port = int(os.environ.get("E2E_UI_PORT", "5175"))
+    ui_origin = f"http://127.0.0.1:{ui_port}"
     os.environ.update({
         "DJANGO_SETTINGS_MODULE": "config.settings", "APP_ENV": "test", "DEBUG": "true",
         "TESTING": "true", "AI_PROVIDER": "deterministic", "OPENAI_API_KEY": "",
@@ -38,14 +51,18 @@ if __name__ == "__main__":
         "EXPOSE_LOCAL_EMAIL_LINKS": "true", "RESUME_QUEUE_BACKEND": "database",
         "RESUME_SCANNER_BACKEND": "development",
         "ALLOWED_HOSTS": "127.0.0.1,localhost,testserver",
-        "CORS_ALLOWED_ORIGINS": "http://127.0.0.1:5175",
-        "CSRF_TRUSTED_ORIGINS": "http://127.0.0.1:5175",
-        "FRONTEND_URL": "http://127.0.0.1:5175", "AUTH_COOKIE_SECURE": "false",
-        "PLAYWRIGHT_BASE_URL": "http://127.0.0.1:5175",
+        "CORS_ALLOWED_ORIGINS": ui_origin,
+        "CSRF_TRUSTED_ORIGINS": ui_origin,
+        "FRONTEND_URL": ui_origin, "AUTH_COOKIE_SECURE": "false",
+        "PLAYWRIGHT_BASE_URL": ui_origin,
         "PLAYWRIGHT_API_URL": f"{api_origin}/api/v1",
         "VITE_API_URL": f"{api_origin}/api/v1",
         "SECURE_SSL_REDIRECT": "false",
     })
+    os.environ["VITE_LEGAL_CONTENT_APPROVED"] = "true" if published else "false"
+    if published:
+        # Synthetic local legal fixtures only; no publication or approval changes.
+        os.environ["LEGAL_CONTENT_APPROVED"] = "false"
     os.environ.pop("AWS_STORAGE_BUCKET_NAME", None)
     import django
 
@@ -71,12 +88,12 @@ if __name__ == "__main__":
                 processes.append(api)
                 ui = subprocess.Popen(
                     ["npm", "run", "dev", "--", "--host", "127.0.0.1",
-                     "--port", "5175", "--strictPort"],
+                     "--port", str(ui_port), "--strictPort"],
                     cwd=ROOT / "frontend", stdout=log, stderr=log, start_new_session=True,
                 )
                 processes.append(ui)
                 wait_for(f"{api_origin}/api/v1/health/", api)
-                wait_for("http://127.0.0.1:5175/", ui)
+                wait_for(f"{ui_origin}/", ui)
                 if os.environ.get("E2E_START_WORKER") == "1":
                     processes.append(subprocess.Popen(
                         [sys.executable, "manage.py", "run_resume_worker"],

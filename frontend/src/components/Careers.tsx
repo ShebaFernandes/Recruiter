@@ -1,7 +1,7 @@
 import { navigateSmoothly } from './smoothPageNavigation'
 import SiteFooter from './SiteFooter'
 import { type FormEvent, useRef, useState } from 'react'
-import { ChevronDown, Check, X, ArrowUpRight, ArrowLeft } from 'lucide-react'
+import { ChevronDown, Check, LogOut, ArrowUpRight, ArrowLeft } from 'lucide-react'
 import { api } from '../api'
 import EnterLogo from './EnterLogo'
 import './careers.css'
@@ -46,7 +46,7 @@ export default function Careers() {
   }
   return <main className="enter-careers">
     <a className="careers-skip" href="#positions">Skip to open positions</a>
-    <div className="careers-hero-surface"><header><a href="/" aria-label="Enter home"><EnterLogo /><span className="careers-tagline">Humanity. Integrity and Possibility.</span></a><nav aria-label="Careers navigation"><a className="careers-close-page" href="/" onClick={navigateSmoothly} aria-label="Close careers"><X size={18} strokeWidth={1.5} aria-hidden="true" /></a></nav></header>
+    <div className="careers-hero-surface"><header><a href="/" aria-label="Enter home"><EnterLogo /><span className="careers-tagline">Humanity. Integrity and Possibility.</span></a><nav aria-label="Careers navigation"><a href="/" onClick={navigateSmoothly}>Back to enter <LogOut size={16} strokeWidth={1.5} aria-hidden="true" /></a></nav></header>
     <section className="careers-hero"><p className="careers-eyebrow">CAREERS</p><h1 tabIndex={-1}>Hiring as We Know It Is Broken.<br /><span>Be a Part of the Team Fixing It.</span></h1><p>Be a part of enter.</p></section></div>
     <div className="careers-workspace"><section id="positions" className="careers-positions"><div><p className="careers-eyebrow">BUILD WHAT COMES NEXT</p><h2>Open Positions</h2></div><div className="careers-filters"><CareerFilter label="Department" value="All departments" options={careerDepartments} onChange={setDepartment} /><CareerFilter label="Location" value="All locations" options={careerLocations} onChange={setLocation} /></div><div className="careers-job-list" aria-live="polite">{careerDepartments.map(dept => { const jobs = visiblePositions.filter(job => job.department === dept); return jobs.length > 0 && <section className="careers-department" key={dept}><div>{jobs.map(job => <button type="button" className="careers-role-row" key={job.id} onClick={() => { setActiveJob(job); setApplicationOpen(false); setPosition(`${job.title} · ${job.department} · ${job.location}`) }}><span className="careers-role-title">{job.title}</span><span className="careers-role-location">{job.location}</span><ArrowUpRight size={19} aria-hidden="true" /></button>)}</div></section> })}{visiblePositions.length === 0 && <div className="careers-empty"><h3>No matching positions</h3><p>Try another department or location.</p></div>}</div></section>
 

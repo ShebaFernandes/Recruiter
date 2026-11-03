@@ -27,8 +27,8 @@ describe('Enter Talent landing', () => {
       'For Candidates',
     ])
     for (const name of ['For Companies', 'For Candidates']) {
-      expect(screen.getAllByRole('button', { name })).toHaveLength(3)
-      expect(within(nav).getByRole('button', { name })).toBeVisible()
+      expect(screen.getAllByRole('button', { name })).toHaveLength(name === 'For Companies' ? 3 : 2)
+      expect(within(nav).getByRole(name === 'For Candidates' ? 'link' : 'button', { name })).toBeVisible()
     }
     const hero = within(document.querySelector('.ce-intro') as HTMLElement)
     expect(hero.getByRole('button', { name: 'For Companies' })).toBeVisible()
@@ -58,8 +58,8 @@ describe('Enter Talent landing', () => {
   })
   it('opens the existing candidate signup from the For Talent section', async () => {
     render(<App />)
-    const forTalent = (await screen.findByRole('heading', { name: "Let's find work that feels great." })).closest('section') as HTMLElement
-    fireEvent.click(within(forTalent).getByRole('button', { name: 'Join enter’s talent network' }))
+    const forTalent = (await screen.findByRole('heading', { name: 'Join ambitious AI and engineering teams.' })).closest('section') as HTMLElement
+    fireEvent.click(within(forTalent).getByRole('button', { name: 'Create an account' }))
     expect(screen.getByRole('heading', { name: 'Create your account' })).toBeVisible()
     expect(window.location.pathname).toBe('/')
   })
@@ -93,7 +93,8 @@ describe('Enter Talent landing', () => {
     expect(screen.getByRole('heading', { name: /The impact we create extends across entire organizations/i })).toBeVisible()
     expect(screen.queryByRole('link', { name: /Back to top/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Enter recruiter workspace/ })).not.toBeInTheDocument()
-    fireEvent.click(await screen.findByTestId('for-candidates'))
+    expect(await screen.findByTestId('for-candidates')).toHaveAttribute('href', '/opportunities')
+    fireEvent.click(screen.getByRole('button', { name: 'Create an account' }))
     expect(screen.getByRole('heading', { name: 'Create your account' })).toBeVisible()
     expect(screen.queryByText('CANDIDATE PLATFORM')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Country')).not.toBeInTheDocument()
@@ -114,9 +115,10 @@ describe('Enter Talent landing', () => {
     const heading = await screen.findByRole('heading', { name: 'The best teams are built by enter.' })
     expect(heading.querySelector('image')).toHaveAttribute('href', '/enter-wordmark.svg')
     const nav = screen.getByRole('navigation', { name: 'Main navigation' })
-    expect(within(nav).getByRole('button', { name: 'For Candidates' })).toBeVisible()
-    expect(within(nav).getByRole('button', { name: 'For Candidates' }).querySelector('svg')).toBeNull()
-    fireEvent.click(within(nav).getByRole('button', { name: 'For Candidates' }))
+    expect(within(nav).getByRole('link', { name: 'For Candidates' })).toBeVisible()
+    expect(within(nav).getByRole('link', { name: 'For Candidates' }).querySelector('svg')).toBeNull()
+    expect(within(nav).getByRole('link', { name: 'For Candidates' })).toHaveAttribute('href', '/opportunities')
+    fireEvent.click(screen.getByRole('button', { name: 'Create an account' }))
     expect(screen.getByRole('heading', { name: 'Create your account' })).toBeVisible()
     expect(window.location.hash).toBe('')
   })

@@ -277,3 +277,46 @@ html:has(.enter-careers),body:has(.enter-careers){background:#29292b}
 .enter-careers .careers-job-page input[type=file]::file-selector-button{background:#eeece6;color:#414651;border:1px solid #dedbd3;border-radius:6px;padding:8px 12px;margin-right:12px;font:500 12px/1.5 var(--enter-font-ui);cursor:pointer}
 .enter-careers .careers-job-page input[type=file]::file-selector-button:hover{background:#e4e1d9;color:#30343b}
 .enter-careers .careers-job-page .careers-fields small{color:#7a7e85;font-size:11px;line-height:1.5}
+
+/* Keep the careers card close to its content width. */
+.enter-careers{width:min(1100px,calc(100% - 32px))}
+@media(max-width:600px){.enter-careers{width:calc(100% - 16px)}}
+
+/* A portrait card with balanced outer spacing. */
+.enter-careers{width:min(900px,calc(100% - 32px));margin:20px auto;min-height:calc(100dvh - 40px)}
+.enter-careers .careers-positions{grid-template-columns:1fr;gap:20px}
+.enter-careers .careers-filters{justify-self:start}
+.enter-careers .careers-hero h1{font-size:clamp(30px,3.3vw,42px)}
+@media(min-width:1000px) and (min-height:700px){.enter-careers{min-height:calc(100dvh - 40px)}}
+@media(max-width:600px){.enter-careers{width:calc(100% - 24px);margin:12px auto;min-height:calc(100dvh - 24px)}.enter-careers .careers-filters{width:100%;flex-wrap:wrap}.enter-careers .careers-filters>div{flex:1;min-width:140px}}
+
+/* Fit the desktop overview within the viewport. */
+@media(min-width:900px) and (min-height:700px){
+.enter-careers{height:calc(100dvh - 32px);min-height:0;margin:16px auto;display:flex;flex-direction:column}
+.enter-careers .careers-hero-surface header{padding-block:14px}
+.enter-careers .careers-hero{padding-top:20px;padding-bottom:22px}
+.enter-careers .careers-hero h1{font-size:36px}
+.enter-careers .careers-workspace{flex:1;min-height:0;width:100%;display:flex;align-items:center}
+.enter-careers .careers-positions{padding-block:18px;gap:14px;width:100%}
+.enter-careers .careers-positions h2{font-size:30px}
+.enter-careers .careers-role-row{padding-block:11px}
+.enter-careers .site-footer-surface .site-footer{padding-block:18px}
+}
+
+/* Restore the standard full-width careers page. */
+.enter-careers{width:100%;margin:0;min-height:100dvh;height:auto;border:0;border-radius:0;box-shadow:none;overflow:visible}
+.enter-careers .careers-positions{grid-template-columns:1fr auto}
+.enter-careers .careers-filters{justify-self:end}
+@media(min-width:900px) and (min-height:700px){.enter-careers{height:auto;min-height:100dvh;margin:0}}
+@media(max-width:760px){.enter-careers .careers-positions{grid-template-columns:1fr}.enter-careers .careers-filters{justify-self:start}}
+
+/* Match the simple opportunities header spacing. */
+.enter-careers .careers-hero-surface header{max-width:1160px;width:calc(100% - 48px);padding:20px 0;margin-inline:auto}
+.enter-careers .careers-hero-surface header:after{display:none}
+.enter-careers .careers-hero-surface header>a svg{width:106px;height:34px}
+.enter-careers .careers-hero-surface nav a{border:0;border-radius:0;background:transparent;padding:8px 0;font-size:12px;gap:9px}
+.enter-careers .careers-hero-surface nav a:hover{background:transparent}
+
+/* Closed menus must not widen the document; keep the trailing menu onscreen. */
+.enter-careers .careers-filter-panel:not(.is-open){display:none}
+.enter-careers .careers-filter:last-child .careers-filter-panel{left:auto;right:0}

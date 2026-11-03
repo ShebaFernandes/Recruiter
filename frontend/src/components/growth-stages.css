@@ -934,3 +934,50 @@
 .growth-enquiry-modal .growth-enquiry :is(input,textarea,select,summary):focus-visible {
  outline:none; outline-offset:0; box-shadow:none; border-color:#9da7ba;
 }
+
+/* Slightly smaller subheadings in both growth enquiry cards. */
+.growth-enquiry-modal .growth-enquiry h4,
+.growth-enquiry-modal .growth-enquiry .growth-enquiry__field > span,
+.growth-enquiry-modal .growth-enquiry__confidential > span{font-size:13px}
+@media(max-width:480px){
+.growth-enquiry-modal .growth-enquiry h4,
+.growth-enquiry-modal .growth-enquiry .growth-enquiry__field > span,
+.growth-enquiry-modal .growth-enquiry__confidential > span{font-size:12px}
+}
+
+/* Consistent type hierarchy and comfortable line lengths in both cards. */
+.growth-enquiry-modal .growth-enquiry__heading h3{font:600 22px/1.3 var(--enter-font-ui);letter-spacing:-.025em;margin:0;max-width:90%}
+.growth-enquiry-modal .growth-enquiry__heading{margin-bottom:10px}
+.growth-enquiry-modal .growth-enquiry h4,
+.growth-enquiry-modal .growth-enquiry .growth-enquiry__field > span{font-size:13px;line-height:1.6;letter-spacing:0;margin:4px 0 5px;font-weight:500}
+.growth-enquiry-modal .growth-enquiry__field{gap:4px}
+.growth-enquiry-modal .growth-enquiry :is(input,textarea,select){font-family:var(--enter-font-ui);font-size:12px;line-height:1.6}
+.growth-enquiry-modal .growth-enquiry textarea{padding:10px 12px;min-height:58px}
+.growth-enquiry-modal .growth-enquiry__upload--top > span{font-size:13px;line-height:1.5}
+.growth-enquiry-modal .growth-enquiry__upload--top small{font-size:11px;line-height:1.6}
+.growth-enquiry-modal .growth-enquiry__confidential > span{font-size:13px;line-height:1.5}
+.growth-enquiry-modal .growth-enquiry__confidential small{font-size:11px;line-height:1.6;margin-top:4px}
+.growth-enquiry-modal .growth-stage-card__body h3{font-family:var(--enter-font-editorial);font-size:29px;line-height:1.18;letter-spacing:-.025em;max-width:360px;margin-bottom:22px}
+.growth-enquiry-modal .growth-stage-card__body p{font-size:13px;line-height:1.75;max-width:430px}
+@media(max-width:760px){.growth-enquiry-modal .growth-enquiry__heading h3{font-size:20px}.growth-enquiry-modal .growth-stage-card__body h3{font-size:27px}}
+
+/* Keep labels attached to their fields and remove the image edge. */
+.growth-enquiry-modal .growth-enquiry h4{margin:4px 0 -4px;line-height:1.4}
+.growth-enquiry-modal .growth-enquiry .growth-enquiry__field > span{margin:0;line-height:1.4}
+.growth-enquiry-modal .growth-enquiry__field{gap:3px}
+.growth-enquiry-modal .growth-stage-card{border:0;box-shadow:none;overflow:hidden}
+.growth-enquiry-modal .growth-stage-card__image{bottom:-1px}
+
+/* Match dropdown labels to the other form subheadings. */
+.growth-enquiry-modal .growth-enquiry .growth-enquiry__field:has(.growth-dropdown)>span{font-family:var(--enter-font-ui);font-size:13px;font-weight:500;line-height:1.4;letter-spacing:0;color:#4056c6;text-transform:none}
+
+.growth-enquiry-modal .growth-enquiry .growth-enquiry__field:has(.growth-dropdown)>span{font-size:12px}
+
+.growth-enquiry-modal .growth-enquiry .growth-enquiry__field:has(input[name="founder_role"]) > span,
+.growth-enquiry-modal .growth-enquiry .growth-enquiry__field:has(input[name="location"]) > span{font-size:13px;font-weight:500;line-height:1.4}
+
+/* Smaller, consistent founding and leadership form subheadings. */
+.growth-enquiry-modal .growth-enquiry h4,
+.growth-enquiry-modal .growth-enquiry .growth-enquiry__field:has(input[name="founder_role"]) > span,
+.growth-enquiry-modal .growth-enquiry .growth-enquiry__field:has(input[name="location"]) > span,
+.growth-enquiry-modal .growth-enquiry--leadership .growth-enquiry__confidential > span{font-size:12px}

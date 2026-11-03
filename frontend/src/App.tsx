@@ -98,7 +98,7 @@ function useDialogFocus(onClose: () => void) {
     return () => {
       document.removeEventListener('keydown', handleKey)
       document.body.style.overflow = oldOverflow
-      previous?.focus()
+      previous?.focus({ preventScroll: true })
     }
   }, [])
   return dialogRef
@@ -453,7 +453,7 @@ function RecruiterPortal({ user, logout }: { user: User; logout: () => void }) {
   }, [filterOpen])
   function closeFilters() {
     setFilterOpen(false)
-    document.querySelector<HTMLButtonElement>('.results-toolbar .filter-button')?.focus()
+    document.querySelector<HTMLButtonElement>('.results-toolbar .filter-button')?.focus({ preventScroll: true })
   }
   function filterPanelKeys(event: React.KeyboardEvent<HTMLElement>) {
     if (event.key === 'Escape') { event.preventDefault(); closeFilters(); return }
@@ -650,7 +650,7 @@ export default function App() {
   if (path === '/privacy') return <LegalPlaceholder kind="privacy" />
   if (path === '/terms') return <LegalPlaceholder kind="terms" />
   const verificationToken = query.get('verify-email')
-  if (verificationToken) return <PlatformBackground>{<EmailVerificationScreen token={verificationToken} onDone={payload => setUser(payload.user)} />}</PlatformBackground>
+  if (verificationToken) return <PlatformBackground>{<EmailVerificationScreen token={verificationToken} onDone={payload => { setUser(payload.user); if (payload.user.role === 'candidate' && sessionStorage.getItem('enter-opportunity-intent')) navigate('/opportunities') }} />}</PlatformBackground>
   const resetToken = query.get('reset-password')
   if (resetToken) return <PlatformBackground>{<PasswordResetScreen token={resetToken} done={role => { setAuthMode('login'); if (role === 'recruiter') navigate('/recruiter'); else setChoice('candidate'); setUser(null) }} />}</PlatformBackground>
   if (user === undefined) return <PlatformBackground>{<main className="auth-page"><div className="candidate-profile-loading" role="status">Opening Enter…</div></main>}</PlatformBackground>

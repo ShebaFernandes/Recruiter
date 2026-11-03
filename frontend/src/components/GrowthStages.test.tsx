@@ -65,7 +65,7 @@ describe('GrowthStages', () => {
     fireEvent.change(within(form).getByLabelText('Your name'), { target: { value: 'Alex Example' } })
     fireEvent.change(within(form).getByLabelText('Work email'), { target: { value: 'alex@example.com' } })
     fireEvent.click(within(form).getByRole('button', { name: 'Engineering Leader' }))
-    fireEvent.change(within(form).getByLabelText('What needs to be fundamentally different in 12 months?'), { target: { value: 'Raise the bar' } })
+    fireEvent.change(within(form).getByLabelText('What needs to be fundamentally different 12 months after this person joins for you to call them an exceptional hire?'), { target: { value: 'Raise the bar' } })
     fireEvent.click(within(form).getByLabelText('Keep this search confidential'))
     fireEvent.submit(form)
     expect(await screen.findByRole('status')).toHaveTextContent('Your request has been received.')

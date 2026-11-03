@@ -424,6 +424,7 @@ class EmployeeTransitionEnquiry(models.Model):
     company = models.CharField(max_length=180)
     full_name = models.CharField(max_length=180)
     work_email = models.EmailField()
+    phone = models.CharField(max_length=40, blank=True)
     role = models.CharField(max_length=40)
     people_impacted = models.CharField(max_length=30)
     last_working_day = models.DateField()

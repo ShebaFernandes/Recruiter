@@ -1,3 +1,4 @@
+import { validateWorkEmailInput } from '../workEmail'
 import mobikwikLogo from '../../..//design-references/prepared/trusted-by-review/assets/expanded/mobikwik.svg'
 import doqfyLogo from '../../../design-references/prepared/trusted-by-review/assets/doqfy-official.svg'
 import { previewCompanies } from './company-preview/companies'
@@ -11,6 +12,14 @@ import './testimonials-carousel.css'
 export type Testimonial = { id: string; excerpt: string; paragraphs: string[]; name: string; attribution: string; company?: string; videoUrl?: string }
 
 const testimonials: Testimonial[] = [
+  {
+    id: 'alisha-tahasildar',
+    name: 'Alisha Tahasildar',
+    attribution: 'HR · Anthriq',
+    company: 'Anthriq',
+    excerpt: 'They helped us close a very critical role.',
+    paragraphs: ['It’s been great working with ENTER. They helped us close a very critical role, and what stood out was that they hadn’t worked on a role like this before, yet still delivered. They were communicative and supportive throughout. I’d absolutely recommend them without hesitation.'],
+  },
   {
     id: 'githin-joseph',
     excerpt: 'They act like an extension of the in-house recruitment team.',
@@ -74,6 +83,7 @@ export default function TestimonialsCarousel() {
   const startRef = useRef<HTMLButtonElement>(null)
   const [email, setEmail] = useState('')
   const [enquiryOpen, setEnquiryOpen] = useState(false)
+  const [opener, setOpener] = useState<HTMLButtonElement | null>(null)
   const today = new Date()
   const minimumDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
 
@@ -95,18 +105,18 @@ export default function TestimonialsCarousel() {
         role={testimonial.attribution}
         paragraphs={testimonial.paragraphs}
         company={testimonial.company ?? ({'githin-joseph':'Nanonets','steve-francis':'Practo','drushya-shetty':'CRED','divya-v':'DOQFY','prachi-sharma':'Parspec'}[testimonial.id])}
-        logo={({'prachi-sharma':'/media/testimonial-logos/parspec.png','nitika-thukral':mobikwikLogo,'divya-v':doqfyLogo,'joseph-kim':'/media/testimonial-logos/lila-supplied.png','alka-ladhani':'/media/testimonial-logos/airtel.png'}[testimonial.id]) ?? previewCompanies.find(company => testimonial.attribution.toLowerCase().includes(company.name.toLowerCase()))?.logo}
+        logo={({ 'alisha-tahasildar':'/media/testimonial-logos/anthriq.png','prachi-sharma':'/media/testimonial-logos/parspec.png','nitika-thukral':mobikwikLogo,'divya-v':doqfyLogo,'joseph-kim':'/media/testimonial-logos/lila-supplied.png','alka-ladhani':'/media/testimonial-logos/airtel.png'}[testimonial.id]) ?? previewCompanies.find(company => testimonial.attribution.toLowerCase().includes(company.name.toLowerCase()))?.logo}
         videoUrl={testimonial.videoUrl}
       />)}
     </Marquee>
     <div className="testimonials-carousel__start">
       <h3>Build the team that takes you further.</h3>
       <p>From your next critical hire to the team that takes you to the next stage, start with ENTER.</p>
-      <form className="testimonials-carousel__email" aria-label="Start building your team" onSubmit={event => { event.preventDefault(); setEnquiryOpen(true) }}>
-        <input type="email" name="work_email" aria-label="Work email" autoComplete="email" placeholder="Enter your work email" required value={email} onChange={event => setEmail(event.target.value)} />
+      <form className="testimonials-carousel__email" aria-label="Start building your team" onSubmit={event => { event.preventDefault(); setOpener(startRef.current); setEnquiryOpen(true) }}>
+        <input type="email" onInput={event => validateWorkEmailInput(event.currentTarget)} name="work_email" aria-label="Work email" autoComplete="email" placeholder="Enter your work email" required value={email} onChange={event => setEmail(event.target.value)} />
         <button ref={startRef} type="submit">Get Started </button>
       </form>
     </div>
-    {enquiryOpen && <HiringEnquiryDrawer enquiry={{ kind: 'hire', headcount: 1, showStats: true, workEmail: email.trim() }} minimumDate={minimumDate} opener={startRef.current} onClose={() => setEnquiryOpen(false)} />}
+    {enquiryOpen && <HiringEnquiryDrawer enquiry={{ kind: 'hire', headcount: 1, showStats: true, workEmail: email.trim() }} minimumDate={minimumDate} opener={opener} onClose={() => setEnquiryOpen(false)} />}
   </section>
 }

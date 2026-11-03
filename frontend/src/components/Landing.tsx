@@ -1,4 +1,5 @@
 import EnterLogo from './EnterLogo'
+import { navigateSmoothly, navigateToPage } from './smoothPageNavigation'
 import useLandingMotion from './useLandingMotion'
 import LandingBackground from './LandingBackground'
 import CompanyLogoMarquee from './company-preview/CompanyLogoPreview'
@@ -23,7 +24,7 @@ export default function Landing({ choose }: {
   // Candidate screens are selected in app state, so lower-page CTAs must reset the scroll.
   const openCandidate = () => {
     sessionStorage.removeItem('enter-opportunity-intent')
-    window.location.assign('/opportunities')
+    navigateToPage('/opportunities')
   }
 
   return <main className="career-edition simple-landing"><LandingBackground>
@@ -37,7 +38,7 @@ export default function Landing({ choose }: {
       <nav aria-label="Main navigation">
         {import.meta.env.VITE_CANDIDATE_ONLY !== 'true' && <button className="ce-audience-link" data-testid="for-recruiters" onClick={() => choose('recruiter', 'login')}>For Recruiters</button>}
         <button className="ce-audience-link" data-testid="for-companies" onClick={() => navigateToHiringSection('hire')}>For Companies</button>
-        <a className="ce-audience-link" data-testid="for-candidates" href="/opportunities">For Candidates</a>
+        <a className="ce-audience-link" data-testid="for-candidates" href="/opportunities" onClick={navigateSmoothly}>For Candidates</a>
       </nav>
     </header>
 
@@ -70,7 +71,7 @@ export default function Landing({ choose }: {
     </div>
     <WhenTeamsChange />
     <TestimonialsCarousel />
-    <ForTalent onJoin={() => { sessionStorage.removeItem('enter-opportunity-intent'); window.scrollTo(0, 0); choose('candidate', 'signup') }} />
-    <ClosingFooter onCandidate={openCandidate} />
+    <ForTalent onLogin={() => { sessionStorage.removeItem('enter-opportunity-intent'); window.scrollTo(0, 0); choose('candidate', 'login') }} onJoin={() => { sessionStorage.removeItem('enter-opportunity-intent'); window.scrollTo(0, 0); choose('candidate', 'signup') }} />
+    <ClosingFooter onCandidate={openCandidate} onJoinNetwork={() => { sessionStorage.removeItem('enter-opportunity-intent'); window.scrollTo(0, 0); choose('candidate', 'login') }} />
   </main>
 }

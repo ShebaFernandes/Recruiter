@@ -93,3 +93,16 @@ def test_public_submission_requires_csrf():
     assert client.post(
         URL, request_data(), format="multipart", HTTP_X_CSRFTOKEN=token
     ).status_code == 201
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("role", ["Founder", "HR/TA", "Founding team", "Leadership", "Other"])
+def test_frontend_support_roles_are_accepted(role):
+    data = request_data()
+    data["role"] = role
+    data["phone"] = "+919876543210"
+    response = APIClient().post(URL, data, format="multipart")
+    assert response.status_code == 201
+    enquiry = EmployeeTransitionEnquiry.objects.get(pk=response.data["id"])
+    assert enquiry.role == role
+    assert enquiry.phone == data["phone"]

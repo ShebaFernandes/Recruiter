@@ -14,7 +14,7 @@ const tabs: Array<{ id: TabId; label: string }> = [
   { id: 'drive', label: 'Conduct a Recruitment Drive' },
 ]
 
-const roles = ['Backend', 'Frontend', 'AI/ML / Data Science', 'DevOps / SRE', 'Product Manager / Product Designer', 'Other']
+const roles = ['Backend Engineering', 'Frontend Engineering', 'AI/ML / Data Science', 'DevOps / SRE', 'Product Manager & Designer', 'Other']
 
 const locations = ['Bengaluru', 'Mumbai', 'Delhi NCR', 'Hyderabad', 'Pune', 'Remote']
 const teamDisciplines = roles
@@ -60,6 +60,23 @@ function clampDateKey(value: string, minimum: Date) {
   const date = dateFromKey(value)
   if (date < minimum) return dateKey(minimum)
   return dateKey(date)
+}
+
+function CustomRolePicker({ value, onChange, onSelect }: { value: string; onChange: (value: string) => void; onSelect: (value: string) => void }) {
+  const [open, setOpen] = useState(true)
+  const [showAll, setShowAll] = useState(false)
+  const id = useId()
+  const matches = roles.filter(role => role !== 'Other' && (showAll || role.toLowerCase().includes(value.toLowerCase())))
+  return <span className="wb-custom-role-picker" onBlur={event => {
+    if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false)
+  }}>
+    <input className="wb-custom-role" aria-label="Custom role" placeholder="Type your role" autoFocus autoComplete="off" maxLength={180} value={value}
+      role="combobox" aria-expanded={open && matches.length > 0} aria-controls={id} aria-autocomplete="list"
+      onFocus={() => setOpen(true)} onChange={event => { onChange(event.target.value); setShowAll(false); setOpen(true) }}
+      onKeyDown={event => { if (event.key === 'Escape') setOpen(false); if (event.key === 'ArrowDown') { event.preventDefault(); setOpen(true); event.currentTarget.parentElement?.querySelector<HTMLButtonElement>('[role=option]')?.focus() } }} />
+    <button type="button" className="wb-custom-role-reset" aria-label="Choose from all roles" title="Choose from all roles" onClick={() => { setShowAll(true); setOpen(true) }}><ChevronDown size={14} /></button>
+    {open && matches.length > 0 && <ul id={id} className="wb-listbox__menu" role="listbox" aria-label="Role suggestions">{matches.map(role => <li key={role}><button type="button" role="option" aria-selected={value === role} onMouseDown={event => event.preventDefault()} onClick={() => { onSelect(role); setOpen(false) }}>{role}</button></li>)}</ul>}
+  </span>
 }
 
 function InlineListbox({ label, value, options, onChange }: {
@@ -380,7 +397,7 @@ export default function WhatAreYouBuilding() {
         hidden={activeTab !== 'hire'}
       >
         <div className="what-building__sentence">
-          I'm looking for a <InlineListbox label="Role to hire" value={hireRole} options={roles} onChange={setHireRole} /> {hireRole === 'Other' && <input className="wb-custom-role" aria-label="Custom role" placeholder="Type your role" autoFocus maxLength={180} value={customHireRole} onChange={event => setCustomHireRole(event.target.value)} />} in <InlineListbox label="Hiring location" value={hireLocation} options={locations} onChange={setHireLocation} />
+          I'm looking for a {hireRole !== 'Other' && <InlineListbox label="Role to hire" value={hireRole} options={roles} onChange={setHireRole} />} {hireRole === 'Other' && <CustomRolePicker value={customHireRole} onChange={setCustomHireRole} onSelect={setHireRole} />} in <InlineListbox label="Hiring location" value={hireLocation} options={locations} onChange={setHireLocation} />
         </div>
         <button className="what-building__cta" type="button" disabled={hireRole === 'Other' && !customHireRole.trim()} onClick={event => { setOpener(event.currentTarget); setEnquiry({ kind: 'hire', role: hireRole === 'Other' ? customHireRole.trim() : hireRole, location: hireLocation, headcount: 1 }) }}>Find Talent </button>
       </div>
@@ -393,7 +410,7 @@ export default function WhatAreYouBuilding() {
         hidden={activeTab !== 'team'}
       >
         <div className="what-building__sentence">
-          I'm building a <InlineListbox label="Team discipline" value={teamDiscipline} options={teamDisciplines} onChange={setTeamDiscipline} /> {teamDiscipline === 'Other' && <input className="wb-custom-role" aria-label="Custom role" placeholder="Type your role" autoFocus maxLength={180} value={customTeamRole} onChange={event => setCustomTeamRole(event.target.value)} />} team of <InlineListbox label="Team size" value={teamSize} options={teamSizes} onChange={setTeamSize} /> in <InlineListbox label="Team location" value={teamLocation} options={locations} onChange={setTeamLocation} />
+          I'm building a {teamDiscipline !== 'Other' && <InlineListbox label="Team discipline" value={teamDiscipline} options={teamDisciplines} onChange={setTeamDiscipline} />} {teamDiscipline === 'Other' && <CustomRolePicker value={customTeamRole} onChange={setCustomTeamRole} onSelect={setTeamDiscipline} />} team of <InlineListbox label="Team size" value={teamSize} options={teamSizes} onChange={setTeamSize} /> in <InlineListbox label="Team location" value={teamLocation} options={locations} onChange={setTeamLocation} />
         </div>
         <button className="what-building__cta" type="button" disabled={teamDiscipline === 'Other' && !customTeamRole.trim()} onClick={event => { setOpener(event.currentTarget); setEnquiry({ kind: 'team', location: teamLocation, teamFocus: teamDiscipline === 'Other' ? customTeamRole.trim() : teamDiscipline, headcount: Number.parseInt(teamSize, 10) }) }}>Build My Team </button>
       </div>
@@ -406,7 +423,7 @@ export default function WhatAreYouBuilding() {
         hidden={activeTab !== 'drive'}
       >
         <div className="what-building__sentence what-building__sentence--drive">
-          I am looking for <InlineListbox label="Role for recruitment drive" value={driveRole} options={driveRoles} onChange={setDriveRole} /> {driveRole === 'Other' && <input className="wb-custom-role" aria-label="Custom role" placeholder="Type your role" autoFocus maxLength={180} value={customDriveRole} onChange={event => setCustomDriveRole(event.target.value)} />} in <InlineListbox label="Recruitment drive location" value={driveLocation} options={locations} onChange={setDriveLocation} /> by <InlineCalendar value={safeDeadline} minimum={today} onChange={setDeadline} />
+          I am looking for {driveRole !== 'Other' && <InlineListbox label="Role for recruitment drive" value={driveRole} options={driveRoles} onChange={setDriveRole} />} {driveRole === 'Other' && <CustomRolePicker value={customDriveRole} onChange={setCustomDriveRole} onSelect={setDriveRole} />} in <InlineListbox label="Recruitment drive location" value={driveLocation} options={locations} onChange={setDriveLocation} /> by <InlineCalendar value={safeDeadline} minimum={today} onChange={setDeadline} />
         </div>
         <button className="what-building__cta" type="button" disabled={driveRole === 'Other' && !customDriveRole.trim()} onClick={event => { setOpener(event.currentTarget); setEnquiry({ kind: 'drive', role: driveRole === 'Other' ? customDriveRole.trim() : driveRole, location: driveLocation, headcount: Number(driveCount), deadline: safeDeadline }) }}>Plan My Drive </button>
       </div>

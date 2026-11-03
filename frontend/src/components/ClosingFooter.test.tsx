@@ -39,8 +39,7 @@ describe('ClosingFooter', () => {
   it('does not send Opportunities to an unrelated signup screen', () => {
     const onCandidate = vi.fn()
     render(<ClosingFooter onCandidate={onCandidate} />)
-    fireEvent.click(screen.getByRole('button', { name: /Opportunities/ }))
+    expect(screen.getByRole('link', { name: 'Opportunities' })).toHaveAttribute('href', '/opportunities')
     expect(onCandidate).not.toHaveBeenCalled()
-    expect(screen.getByRole('status')).toHaveTextContent('Opportunities is coming soon.')
   })
 })

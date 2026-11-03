@@ -6,7 +6,8 @@ export default function useLandingMotion() {
     const preference = window.matchMedia?.('(prefers-reduced-motion: reduce)')
     if (!preference || preference.matches || typeof IntersectionObserver !== 'function' || typeof Element.prototype.animate !== 'function') return
     const animations = new Set<Animation>()
-    const observer = new IntersectionObserver(entries => {
+    let observer: IntersectionObserver
+    try { observer = new IntersectionObserver(entries => {
       entries.forEach(entry => {
         if (!entry.isIntersecting) return
         observer.unobserve(entry.target)
@@ -17,7 +18,7 @@ export default function useLandingMotion() {
         animations.add(animation)
         animation.onfinish = () => animations.delete(animation)
       })
-    }, { threshold: .12, rootMargin: '0px 0px -24px 0px' })
+    }, { threshold: .12, rootMargin: '0px 0px -24px 0px' }) } catch { return }
     document.querySelectorAll('.simple-landing section h2, .simple-landing .growth-stage-card, .simple-landing .enter-footer__column').forEach(element => observer.observe(element))
     const stop = () => { observer.disconnect(); animations.forEach(animation => animation.cancel()); animations.clear() }
     const motionChanged = () => { if (preference.matches) stop() }

@@ -2,10 +2,8 @@ import { navigateSmoothly } from './smoothPageNavigation'
 import { flushSync } from 'react-dom'
 import EnterLogo from './EnterLogo'
 import observeLandingReveal from './observeLandingReveal'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import './closing-footer.css'
-
-type PendingDestination = 'Company access' | 'Opportunities'
 
 const companyLinks = [
   { label: 'Hire Talent', href: '#what-building-title', tab: 'hire' },
@@ -13,22 +11,13 @@ const companyLinks = [
   { label: 'Recruitment Drives', href: '#what-building-title', tab: 'drive' },
 ] as const
 
-export default function ClosingFooter({ onCandidate }: { onCandidate: () => void }) {
+export default function ClosingFooter({ onCandidate, onJoinNetwork = onCandidate }: { onCandidate: () => void; onJoinNetwork?: () => void }) {
   const sectionRef = useRef<HTMLElement>(null)
-  const [pending, setPending] = useState<PendingDestination | null>(null)
 
   useEffect(() => {
     const section = sectionRef.current
     if (section) return observeLandingReveal(section, 0.22)
   }, [])
-
-  useEffect(() => {
-    if (!pending) return
-    const dismiss = window.setTimeout(() => setPending(null), 4000)
-    return () => window.clearTimeout(dismiss)
-  }, [pending])
-
-  const comingSoon = (destination: PendingDestination) => setPending(destination)
 
   return <section ref={sectionRef} id="closing-section" className="closing-section" aria-label="Build with enter">
     <div className="closing-cta" aria-labelledby="closing-cta-title">
@@ -48,9 +37,7 @@ export default function ClosingFooter({ onCandidate }: { onCandidate: () => void
             For Candidates
           </button>
         </div>
-        <p id="closing-availability" className={`closing-cta__status${pending ? ' is-visible' : ''}`} role="status" aria-live="polite">
-          {pending ? `${pending} is coming soon.` : 'Company access and unfinished destinations are coming soon.'}
-        </p>
+
       </div>
     </div>
 
@@ -74,7 +61,7 @@ export default function ClosingFooter({ onCandidate }: { onCandidate: () => void
 
         <nav className="enter-footer__column" aria-label="For candidates">
           <h3>FOR CANDIDATES</h3>
-          <button type="button" onClick={onCandidate}>Join enter's Talent network</button>
+          <button type="button" onClick={onJoinNetwork}>Join enter's Talent network</button>
           <a href="/opportunities" onClick={navigateSmoothly}>Opportunities</a>
         </nav>
 

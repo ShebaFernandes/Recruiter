@@ -205,3 +205,33 @@
 
 .for-talent .for-talent__network button{background:#8997f0;border-color:#8997f0;color:#171b30;box-shadow:none}
 .for-talent .for-talent__network button:hover{background:#a0acf7;border-color:#a0acf7;color:#171b30}
+
+/* Warm, welcoming browse and join paths. */
+.for-talent{background:linear-gradient(110deg,#faf7ee,#f5f1e1)}
+.for-talent__inner{width:min(1080px,calc(100% - 64px));grid-template-columns:1.25fr 1fr;gap:64px}
+.for-talent__content h2{font-size:clamp(36px,4vw,54px);line-height:1.08;max-width:590px}
+.for-talent__content .for-talent__description{font-size:15px;line-height:1.75;margin-bottom:24px}
+.for-talent__tracks{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px}
+.for-talent__tracks span{background:#eeead8;border-radius:999px;padding:7px 13px;font-size:12px;color:#55564f}
+.for-talent .for-talent__network{background:#fffdf7;border:1px solid #e5e0d0;border-radius:20px;padding:32px;box-shadow:0 14px 35px #51442b09}
+.for-talent .for-talent__network h3{color:#292d35;font-size:30px;margin-bottom:18px}
+.for-talent .for-talent__network>p:not(.for-talent__network-label){color:#74756e;font-size:14px;line-height:1.75}
+.for-talent .for-talent__network>button{width:100%;border:1px solid #3046c9;background:transparent;color:#3046c9;padding:12px 18px;margin-top:8px}
+.for-talent .for-talent__network>button:hover{background:#3046c908;color:#3046c9}
+.for-talent .for-talent__network .for-talent__signup{display:inline;padding:0;border:0;border-radius:0;background:none;color:#3046c9;font-size:inherit;line-height:inherit;text-decoration:underline;margin:0}
+@media(max-width:760px){.for-talent__inner{grid-template-columns:1fr;gap:30px}.for-talent .for-talent__network{padding:26px}}
+
+.for-talent{background:linear-gradient(110deg,#faf2e5,#f2e8d3)}
+.for-talent .for-talent__eyebrow{font-size:16px}
+
+.for-talent{background:#faf7ec}
+.for-talent__availability{display:flex;align-items:flex-start;gap:9px;margin-top:18px!important}
+.for-talent__availability>span:first-child{width:8px;height:8px;border-radius:50%;background:#57a36f;flex:none;margin-top:5px}
+.for-talent__availability strong{font-weight:600;color:#52544e}
+
+.for-talent{background:#e9e1cf}
+
+.for-talent{background:#f2ecd9}
+
+.for-talent .for-talent__content h2{font-size:clamp(40px,4.5vw,62px);line-height:1.08}
+@media(max-width:600px){.for-talent .for-talent__content h2{font-size:38px}}
