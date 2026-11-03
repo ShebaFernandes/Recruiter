@@ -13,6 +13,8 @@ export type WorkExperience = {
   confidence_status?: 'supported' | 'partial' | 'candidate_confirmed'
   gap_reason: string
 }
+export type YearMonth = { year: number | null; month: number | null }
+export type CareerRolePatch = { company?: string; role?: string; start?: YearMonth; end?: YearMonth; is_current?: boolean }
 export type EmploymentExtraction = {
   resume_id?: number | null
   resume_processing_status?: Resume['processing_status'] | null
@@ -58,7 +60,7 @@ export type Candidate = {
   build_lead_preference: number | null
   profile_photo_url: string | null
   available_resume?: Resume | null
-  resume_identity_warning?: { resume_id: number; code: string } | null
+  resume_identity_warning?: { resume_id: number; version: number; original_name: string; code: string; can_confirm: boolean } | null
   resume_review?: { resume_id: number; fields: Partial<Candidate>; original_name?: string } | null
   id: number
   full_name: string

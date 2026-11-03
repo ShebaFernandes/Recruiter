@@ -8,8 +8,8 @@ import EmploymentHistoryStatus from './EmploymentHistoryStatus'
 import './career-journey.css'
 
 // Compact recruiter lists can omit summaries; profile views retain saved role labels.
-type CareerJourneyProps = { items: WorkExperience[]; detailed?: boolean; showCompanyLabels?: boolean; compactMarkers?: boolean; profilePresentation?: boolean; minimal?: boolean; reverse?: boolean; presentAtEnd?: boolean; candidateMilestones?: boolean; extraction?: EmploymentExtraction | null }
-type Detail = { key:string; company?:string; title:string; period:string; employment?:string; verification?:string; note?:string; description?:string }
+type CareerJourneyProps = { items: WorkExperience[]; detailed?: boolean; showCompanyLabels?: boolean; compactMarkers?: boolean; profilePresentation?: boolean; minimal?: boolean; reverse?: boolean; presentAtEnd?: boolean; candidateMilestones?: boolean; extraction?: EmploymentExtraction | null; identityWarning?: string | null; onEditRole?: (item: WorkExperience) => void }
+type Detail = { key:string; company?:string; title:string; period:string; employment?:string; verification?:string; note?:string; description?:string; item?:WorkExperience }
 type OpenDetail = Detail & { x:number; y:number; above:boolean }
 const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const monthYear = (value:string | null) => {
@@ -28,7 +28,7 @@ function employment(item:WorkExperience) {
 }
 
 /** No example history or fetching: every marker represents a supplied saved record. */
-export default function CareerJourney({ items, extraction, detailed = false, showCompanyLabels = detailed, profilePresentation = false }: CareerJourneyProps) {
+export default function CareerJourney({ items, extraction, onEditRole, detailed = false, showCompanyLabels = detailed, profilePresentation = false }: CareerJourneyProps) {
   const sorted = sortCareerHistory(items)
   const [now] = useState(Date.now)
   const layout = careerTimelineLayout(sorted, now, !showCompanyLabels)
@@ -47,12 +47,17 @@ export default function CareerJourney({ items, extraction, detailed = false, sho
   const contentWidth = fillDatedAxis ? calendarWidth : layout.width * stretch
   const [active, setActive] = useState<OpenDetail | null>(null)
   const pinned = useRef<string | null>(null)
+  const trigger = useRef<HTMLElement | null>(null)
+  const suppressFocus = useRef(false)
   const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const close = () => { clearTimeout(hideTimer.current); pinned.current = null; setActive(null) }
+  const close = (restoreFocus = false) => { clearTimeout(hideTimer.current); pinned.current = null; setActive(null); if (restoreFocus) { suppressFocus.current = true; trigger.current?.focus(); suppressFocus.current = false } }
   const leave = () => { if (pinned.current !== active?.key) hideTimer.current = setTimeout(close, 180) }
   useEffect(() => {
     const dismiss = (event:Event) => {
-      if (event.type === 'keydown' && (event as KeyboardEvent).key !== 'Escape') return
+      if (event.type === 'keydown') {
+        if ((event as KeyboardEvent).key === 'Escape') close(true)
+        return
+      }
       const target = event.target instanceof Element ? event.target : null
       if (target?.closest('.career-popover')) return
       if (event.type === 'pointerdown' && root.current?.contains(event.target as Node)) return
@@ -65,6 +70,7 @@ export default function CareerJourney({ items, extraction, detailed = false, sho
     return () => { clearTimeout(hideTimer.current); document.removeEventListener('keydown', dismiss); document.removeEventListener('pointerdown', dismiss); window.removeEventListener('resize', dismiss); window.removeEventListener('wheel', dismiss); window.removeEventListener('touchmove', dismiss) }
   }, [])
   const show = (element:HTMLElement, data:Detail) => {
+    trigger.current = element
     clearTimeout(hideTimer.current)
     if (pinned.current !== data.key) pinned.current = null
     const box = element.getBoundingClientRect()
@@ -75,8 +81,8 @@ export default function CareerJourney({ items, extraction, detailed = false, sho
   const handlers = (data:Detail) => ({
     onMouseEnter: (event:React.MouseEvent<HTMLButtonElement>) => { if (event.buttons === 0) show(event.currentTarget, data) },
     onMouseLeave: leave,
-    onFocus: (event:React.FocusEvent<HTMLButtonElement>) => show(event.currentTarget, data),
-    onBlur: close,
+    onFocus: (event:React.FocusEvent<HTMLButtonElement>) => { if (!suppressFocus.current) show(event.currentTarget, data) },
+    onBlur: (event:React.FocusEvent<HTMLButtonElement>) => { if (pinned.current !== data.key && !(event.relatedTarget as HTMLElement | null)?.closest('.career-popover')) close() },
     onClick: (event:React.MouseEvent<HTMLButtonElement>) => { if (pinned.current === data.key) close(); else { pinned.current = data.key; show(event.currentTarget, data) } },
   })
   // Close/simultaneous starts keep their actual horizontal date coordinate. Only
@@ -123,7 +129,7 @@ export default function CareerJourney({ items, extraction, detailed = false, sho
             const confirmation = item.confidence_status === 'candidate_confirmed' ? 'Candidate-confirmed history. ' : ''
             const verification = isVerified ? 'Matched to the latest resume.' : `${confirmation}Not matched to the latest resume.`
             const key = `${item.id ?? index}-${item.company}-${item.start_date}`
-            const data:Detail = { key, company:item.company || 'Employer not specified', title:item.role || 'Role not specified', period:period(item), employment:employment(item), verification, description:item.description,
+            const data:Detail = { key, item, company:item.company || 'Employer not specified', title:item.role || 'Role not specified', period:period(item), employment:employment(item), verification, description:item.description,
               note:[overlaps ? 'Overlapping employment' : '', previousRole ? `Career progression from ${previousRole.role}` : '', !position.dated ? 'Dates incomplete · not placed on the calendar scale' : ''].filter(Boolean).join(' · ') }
             const gapData:Detail = { key:`${key}-gap`, title:'Career gap', period:`Approximately ${gap} ${gap === 1 ? 'month' : 'months'}`, description:item.gap_reason || 'Reason not provided by the candidate.' }
             return <div className={`career-sequence ${isInternship(item) ? 'is-internship' : ''} ${isVerified ? 'is-verified' : 'needs-review'} ${position.dated ? '' : 'dates-incomplete'}`} key={key}
@@ -156,6 +162,7 @@ export default function CareerJourney({ items, extraction, detailed = false, sho
       <span className="career-detail-dates">{active.period}</span>
       {active.employment && <span className="career-detail-type">{active.employment}</span>}
       {active.verification && <p className="career-detail-verification">{active.verification}</p>}
+        {onEditRole && active.item?.id != null && <button type="button" className="career-popover-edit" onClick={() => { onEditRole(active.item!); close() }}>Edit this role</button>}
       {active.note && <p>{active.note}</p>}{active.description && <p>{active.description}</p>}
     </div>, document.body)}
   </div>

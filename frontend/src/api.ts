@@ -1,4 +1,4 @@
-import type { Candidate, DocumentPreview, Notification, Project, ProjectDetail, Resume, Search, SearchResult, User } from './types'
+import type { Candidate, CareerRolePatch, DocumentPreview, Notification, Project, ProjectDetail, Resume, Search, SearchResult, User } from './types'
 import type { LegalDocuments } from './legalReview'
 
 export type AuthPayload = { token?: string; user: User }
@@ -91,6 +91,8 @@ export const api = {
   confirmPasswordReset: (token: string, password: string) => request<{ detail: string; role?: 'candidate' | 'recruiter' }>('/auth/password-reset/confirm/', { method: 'POST', body: JSON.stringify({ token, password }) }),
   logout: () => request<void>('/auth/logout/', { method: 'POST' }),
   deleteCandidateAccount: (password: string, confirmation: string) => request<void>('/candidate/account/', { method: 'DELETE', body: JSON.stringify({ password, confirmation }) }),
+  updateEmployment: (id: number, body: CareerRolePatch) => request<Candidate>(`/candidate/work-experiences/${id}/`, { method: 'PATCH', body: JSON.stringify(body) }),
+  confirmResumeOwnership: (id: number, version: number, password: string) => request<Candidate>(`/candidate/resumes/${id}/confirm-ownership/`, { method: 'POST', body: JSON.stringify({ version, password, confirmation: true }) }),
   candidateProfile: (signal?: AbortSignal) => request<Candidate>('/candidate/profile/', { signal }),
   resumeStatus: (signal?: AbortSignal) => request<{ resume: Pick<Resume, 'id' | 'processing_status' | 'processing_stage' | 'scan_status' | 'processing_error' | 'can_retry'> | null; worker_available: boolean }>('/candidate/resume-status/', { signal, cache: 'no-store' }),
   updateCandidate: (body: Partial<Candidate>) => request<Candidate>('/candidate/profile/', { method: 'PATCH', body: JSON.stringify(body) }),

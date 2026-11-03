@@ -523,3 +523,29 @@
 @media(prefers-reduced-motion:reduce) { .processing-card .cp-loading-orbit { animation:none; } }
 /* Programmatic status focus is not a selectable card. Controls keep their focus rings. */
 .candidate-experience .processing-card:focus { outline:none; }
+
+/* Existing production role editor controls; timeline layout stays unchanged. */
+.cp-career-complete { display:flex; align-items:center; flex-wrap:wrap; gap:5px 10px; margin:4px 0 2px; padding:6px 0 0; border-top:1px solid var(--enter-border); color:var(--enter-text); font-size:11px; }
+.candidate-experience .cp-career-complete button { flex:none; min-height:32px; padding:5px 9px; font-size:11px; }
+.cp-career-inline-editor { box-sizing:border-box; width:min(100%,720px); margin:6px 0 10px; padding:10px 12px; border:1px solid var(--enter-border); border-radius:var(--enter-radius-control); background:var(--enter-bg); font-family:var(--enter-font-ui); }
+.cp-career-inline-heading { margin-bottom:7px; }
+.cp-career-inline-heading strong { font-size:13px; line-height:1.3; }
+.candidate-experience .cp-career-inline-editor fieldset { min-width:0; margin:0; padding:0; border:0; }
+.cp-career-inline-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px 10px; }
+.candidate-experience .cp-career-inline-grid>label,.candidate-experience .cp-career-date-field { display:flex; min-width:0; flex-direction:column; gap:3px; font-size:11px; font-weight:600; }
+.candidate-experience .cp-career-inline-editor input:not([type=checkbox]) { box-sizing:border-box; width:100%; min-width:0; min-height:36px; padding:6px 9px; border:1px solid var(--enter-border); border-radius:var(--enter-radius-control); background:var(--enter-surface); color:var(--enter-text); font:400 12px/1.4 var(--enter-font-ui); }
+.candidate-experience .cp-career-inline-editor input[type=number] { appearance:textfield; -moz-appearance:textfield; }
+.candidate-experience .cp-career-inline-editor input[type=number]::-webkit-inner-spin-button,.candidate-experience .cp-career-inline-editor input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+.candidate-experience .cp-career-month-unknown,.candidate-experience .cp-career-current { display:flex; flex-direction:row; align-items:center; gap:6px; min-height:26px; color:var(--enter-text-muted); font-size:11px; font-weight:500; }
+.cp-career-month-unknown input,.cp-career-current input { width:16px; height:16px; flex:none; accent-color:var(--enter-primary); }
+.cp-career-current { width:max-content; max-width:100%; color:var(--enter-text); }
+.cp-career-current-note { min-height:36px; display:flex; align-items:center; padding-inline:9px; border:1px solid var(--enter-border); border-radius:var(--enter-radius-control); color:var(--enter-text-muted); font-size:12px; }
+.cp-career-inline-actions { display:flex; justify-content:flex-end; gap:6px; margin-top:7px; }
+.candidate-experience .cp-career-inline-actions button { min-height:36px; padding:6px 12px; font-size:11px; }
+.cp-career-inline-editor [role=alert] { margin:6px 0 0; color:var(--enter-error); font-size:11px; }
+.cp-career-saved { margin:6px 0; color:var(--enter-primary-hover); font-size:11px; font-weight:600; }
+@media(max-width:640px) { .candidate-experience .cp-career-complete button,.candidate-experience .cp-career-summary button { min-height:44px; } .cp-career-inline-grid>label { grid-column:1/-1; } .candidate-experience .cp-career-inline-editor input:not([type=checkbox]),.candidate-experience .cp-career-inline-actions button { min-height:44px; } .candidate-experience .cp-career-month-unknown,.candidate-experience .cp-career-current { min-height:44px; } }
+@media(max-width:370px) { .cp-career-inline-grid { grid-template-columns:minmax(0,1fr); } }
+
+.career-popover-edit { min-height:36px; margin-top:6px; padding:6px 10px; border:1px solid var(--enter-primary); border-radius:var(--enter-radius-control); background:var(--enter-primary-soft); color:var(--enter-primary-hover); font:600 11px/1.3 var(--enter-font-ui); cursor:pointer; }
+.career-popover-edit:focus-visible { outline:var(--enter-focus-ring); outline-offset:2px; }

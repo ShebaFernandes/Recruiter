@@ -112,7 +112,7 @@ describe('actual candidate processing integration', () => {
     expect(screen.getByRole('heading', { name: 'BEYOND THE CV' })).toBeVisible()
   })
   it('keeps the saved profile and shows an inline correction path for identity mismatch', async () => {
-    vi.mocked(api.candidateProfile).mockResolvedValue({ ...completed, resume_identity_warning: { resume_id: 1, code: 'identity_mismatch' } })
+    vi.mocked(api.candidateProfile).mockResolvedValue({ ...completed, resume_identity_warning: { resume_id: 1, version: 1, original_name: 'career.docx', code: 'identity_mismatch', can_confirm: false } })
     await mount()
     expect(screen.getByRole('alert')).toHaveTextContent("We couldn't match this resume")
     expect(screen.getByRole('heading', { name: "Here's how we understand you." })).toBeVisible()
