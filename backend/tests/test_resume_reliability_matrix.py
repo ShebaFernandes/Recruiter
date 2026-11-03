@@ -158,3 +158,28 @@ def test_summary_heading_and_bullet_achievement_keep_source_facts(extension):
     assert parsed["standout_signal"] == achievement
     assert parsed["headline"] == "Senior Software Engineer"
     assert len(parsed["work_experiences"]) == 1
+
+
+@pytest.mark.parametrize("extension", ["pdf", "docx"])
+def test_letter_spaced_sections_and_title_date_before_employer(extension):
+    lines = [
+        "Name: Fictional Candidate", "S U M M A R Y S T A T E M E N T",
+        "Operations leader with experience improving service delivery.",
+        "PROFILE HIGHLIGHTS", "- Developed a training platform that reduced",
+        "onboarding time by 40% across service teams.", "E X P E R I E N C E",
+        "Senior Operations Manager          January 2025- Present", "Cedar Services",
+        "Managed service operations.",
+        "Assistant Manager          April 2020- January 2025", "Maple Systems",
+        "Team Lead          December 2016- April 2020", "Orchid Software",
+        "Mentor          March 2009- December 2016", "Pine Technologies",
+        "E D U C A T I O N", "Example University",
+    ]
+    parsed = parse_resume(BytesIO(_fixture_bytes(extension, lines)), f"sample.{extension}")
+    assert parsed["headline"] == "Senior Operations Manager"
+    assert [row["company"] for row in parsed["work_experiences"]] == [
+        "Cedar Services", "Maple Systems", "Orchid Software", "Pine Technologies",
+    ]
+    assert parsed["summary"].startswith("Operations leader")
+    assert parsed["standout_signal"] == (
+        "Developed a training platform that reduced onboarding time by 40% across service teams."
+    )

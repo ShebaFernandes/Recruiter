@@ -76,6 +76,8 @@ SECTION_HEADINGS = {
     "certifications",
     "summary",
     "professional summary",
+    "summary statement",
+    "profile highlights",
     "core expertise",
     "publications talks  recognition",
 }
@@ -319,6 +321,13 @@ def _heading(value):
 def _heading_and_tail(value):
     """Return a bounded section heading, including common qualified headings."""
     stripped = value.strip()
+    # Letter-spaced section labels are common in designed PDF exports. Match
+    # only known headings so ordinary names and prose are never collapsed.
+    compact = re.sub(r"\s+", "", stripped).casefold()
+    if re.fullmatch(r"[A-Za-z](?:\s+[A-Za-z])+", stripped):
+        for heading in SECTION_HEADINGS:
+            if compact == heading.replace(" ", ""):
+                return heading, ""
     for heading in sorted(SECTION_HEADINGS, key=len, reverse=True):
         match = re.match(rf"(?i)^\s*{re.escape(heading)}\s*(?:[:|]\s*(.*))?$", stripped)
         if match:
@@ -392,7 +401,7 @@ def _looks_like_role(value):
         re.search(
             r"(?i)\b(engineer|developer|manager|designer|analyst|consultant|architect|"
             r"lead|specialist|intern|director|officer|scientist|researcher|writer|"
-            r"administrator|associate|advisor)\b",
+            r"administrator|associate|advisor|mentor)\b",
             value,
         )
     )
@@ -555,6 +564,13 @@ def _standard_experiences(lines, original_section=None):
                                 company = previous
                     elif len(parts) == 1:
                         employer = parts[0]
+            elif (prefix and layout_gap >= 3 and _concise_role(prefix)
+                  and index + 1 < len(section)
+                  and _plausible_employer_line(section[index + 1])
+                  and not _concise_role(section[index + 1])):
+                role = _concise_role(prefix)
+                company = section[index + 1].strip()
+                description_start = index + 2
             elif prefix and layout_gap >= 3 and index + 1 < len(section):
                 next_line = section[index + 1]
                 role = _layout_header_role(next_line) or _concise_role(
@@ -860,24 +876,38 @@ def parse_resume(file_obj, filename):
         )
     )
     summary = _value_after_label(text, "Summary") or " ".join(
-        _section_lines(lines, {"summary", "professional summary"})
+        _section_lines(lines, {"summary", "professional summary", "summary statement"})
     )[:2000]
     standout = _value_after_label(text, "Achievement")
     if not standout:
         # Select an intact evidence sentence, not an invented summary or a cut-off line.
-        for line in _section_lines(lines, EXPERIENCE_HEADINGS):
-            sentence = re.split(r"(?<=[.!?])\s+", line.lstrip(" •●▪-*\t"))[0]
+        evidence_lines = _section_lines(lines, {"profile highlights"}) + _section_lines(
+            lines, EXPERIENCE_HEADINGS
+        )
+        for index, line in enumerate(evidence_lines):
+            candidate = line.lstrip(" •●▪-*\t")
+            # PDF bullets often wrap across lines. Join bounded continuations,
+            # stopping at another bullet, dated role, or completed sentence.
+            for continuation in evidence_lines[index + 1:index + 6]:
+                if (re.search(r"[.!?](?:\s|$)", candidate) or len(candidate) > 300
+                        or re.match(r"^[•●▪*]", continuation)
+                        or DATE_RANGE_PATTERN.search(continuation)):
+                    break
+                candidate += " " + continuation.strip()
+            sentence = re.split(r"(?<=[.!?])\s+", candidate)[0]
             if (
                 40 <= len(sentence) <= 300
                 and sentence.endswith((".", "!"))
                 and re.match(
                     r"(?i)^(built|shipped|delivered|launched|improved|reduced|"
-                    r"architected|\d+\s*→)",
+                    r"architected|developed|optimized|spearheaded|\d+\s*→)",
                     sentence,
                 )
             ):
-                standout = sentence
-                break
+                if not standout or re.search(r"\d", sentence):
+                    standout = sentence
+                if re.search(r"\d", sentence):
+                    break
     notice_match = re.search(r"(?im)^\s*Notice(?: period)?\s*:\s*(\d+)\s*days?", text)
     current_salary = re.search(r"(?im)^\s*Current (?:salary|CTC)\s*:\s*(\d+(?:\.\d+)?)", text)
     expected_salary = re.search(r"(?im)^\s*Expected (?:salary|CTC)\s*:\s*(\d+(?:\.\d+)?)", text)
