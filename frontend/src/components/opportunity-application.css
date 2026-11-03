@@ -464,3 +464,14 @@
 .opportunity-application-page.is-profile .candidate-experience #settings-editor-linkedin input:focus {
   border-bottom-color: #708579;
 }
+
+/* Keep location suggestions compact and easy to scan. */
+.opportunity-application-page.is-profile .candidate-experience .cp-settings-panel .cp-locations ul {
+  max-height: 132px;
+  padding: 3px;
+}
+.opportunity-application-page.is-profile .candidate-experience .cp-settings-panel .cp-locations li[role="option"] {
+  padding: 6px 8px;
+  font-size: 12px;
+  line-height: 1.4;
+}
