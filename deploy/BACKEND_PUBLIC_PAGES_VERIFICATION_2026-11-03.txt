@@ -1,0 +1,82 @@
+ENTER public pages backend verification — 3 November 2026
+Reviewed branch: website-design
+Approved UI/base commit: 650101073a1d80e6b10f396c418ca4cf9f8cdd7b
+Outcome: locally prepared; production deployment NO-GO pending evidence below.
+No frontend changes, production submissions, migrations or service changes performed.
+
+Production evidence
+- Read-only SSH to the documented existing host timed out. Running commit/image,
+  applied migrations, redacted environment, notifier/resume worker, scanner and
+  private-storage status could not be inspected. No applicant records accessed.
+- Public GET probes: opportunities/applications/ 404; careers/applications/ 404;
+  hiring/enquiries/ 405; support/employee-transition/ 405; auth/csrf/ 200.
+  Prefix: https://enter.careers/api/v1/
+- 405 establishes method rejection only, not POST payload compatibility.
+  404 establishes public routing incompatibility, not its internal cause.
+
+Required API contract (local source and focused tests)
+- POST hiring/enquiries/: multipart; company, full_name, work_email, kind plus
+  kind-specific fields and optional attachments; returns 201 with id/detail.
+  Used by company hire/team/drive/founding/leadership forms.
+- POST support/employee-transition/: multipart; company/contact, phone, role,
+  people_impacted, last_working_day, consent, support details, optional list;
+  returns 201 with id/detail. Work-email and consent validation required.
+- POST opportunities/applications/: verified active candidate session; JSON
+  opportunity_id and optional note; returns 201 id/detail, or 200 on duplicate.
+  The approved For Candidates link opens /opportunities, so its production 404
+  is directly relevant. All 30 frontend opportunity IDs have backend choices.
+- POST careers/applications/: multipart name/email/phone/linkedin/motivation/
+  resume; returns 201 id/detail. Reachable through the shared footer Careers
+  link, so its production 404 affects required public navigation.
+- Candidate entry requires auth/csrf, signup, login, me, logout, verify-email,
+  resend-verification and password-reset request/confirm APIs; the talent-network
+  flow also uses candidate/profile, candidate/resumes and processing/status,
+  resume review/download and legal-document/consent APIs already present locally.
+- Careers files are scanned and privately stored for admin review; they do not
+  enter candidate-profile resume processing. Opportunity applications attach to
+  an existing candidate and do not themselves upload a resume.
+
+Local verification
+101 passed using scripts/test_isolated.py with disposable local PostgreSQL and
+private temporary media; AI disabled and in-memory mail only. Files tested:
+ test_hiring_enquiries.py, test_employee_transition.py,
+ test_work_email_validation.py, test_opportunity_applications.py,
+ test_career_applications.py, test_enquiry_notifications.py,
+ test_account_security.py, test_candidate_flow.py.
+Coverage includes persistence, duplicate applications, work-email validation,
+CSRF/permissions, private resume access, malformed uploads, scan refusal/outage,
+candidate signup/upload/local processing, and notification retry behavior.
+No local API defect found; required implementations are already committed.
+No unnecessary backend implementation changes were made.
+
+Migrations
+Isolated test database was built successfully through 0032; makemigrations
+--check --dry-run reported no changes. 0030 creates CareerApplication; 0031
+creates OpportunityApplication with a candidate/role unique constraint; 0032
+adds optional blank phone to EmployeeTransitionEnquiry. These are additive,
+but production migration state and upgrade from that state remain unverified.
+No production migrations were run.
+
+Configuration requirements (values deliberately omitted)
+API/origins: same-origin /api/v1, FRONTEND_URL, ALLOWED_HOSTS, CSRF trusted origins
+and CORS if cross-origin; secure cookies/HTTPS and existing legal/intake gates.
+Mail: delivering EMAIL_BACKEND, DEFAULT_FROM_EMAIL, EMAIL_HOST/PORT/USER/PASSWORD,
+TLS or SSL; ENQUIRY_NOTIFICATION_EMAILS and run_enquiry_notifications worker.
+The notifier queues/retries company and employee-transition alerts. Candidate
+signup requires verification mail. Delivery was not exercised against SMTP.
+Uploads: production private S3 storage, configured storage credentials/role,
+healthy configured malware scanner; resume queue and run_resume_worker for the
+candidate talent-network upload flow. Tests prove local behavior only, not S3
+permissions, live scanner signatures, queue access or actual worker readiness.
+
+Smallest outstanding actions before deployment approval
+1. Restore authorized read-only server access or obtain an operator's redacted
+   image/commit, migration-list, configuration-presence and service-health evidence.
+2. Compare that backend with this branch and prepare the compatible backend
+   release containing the two application routes, current opportunity catalog,
+   scanner/storage protections and migrations through 0032. Public 404s prevent
+   a frontend-only release. Do not apply or deploy without separate approval.
+3. Confirm SMTP sender/delivery and notifier/resume-worker health, private-storage
+   access and scanner readiness. Resolve only demonstrated missing settings.
+Full test suites, real mail sends, live submissions and production migrations
+were deliberately not run. Existing unrelated working-tree changes preserved.
