@@ -540,7 +540,7 @@ export default function CandidateExperience({ beforeLeaveRef, opportunity }: { a
     if (busyRef.current) return
     if (!await flushAnswer()) return
     if (legalPublished && !legalDocuments) return
-    if (await run(() => api.submitCandidate(true, legalDocuments?.submission.version), '')) { setSuccess(true); setReview(false); setMeaningfulDraft(null) }
+    if (await run(() => api.submitCandidate(true, legalDocuments?.submission.version), '')) { setSuccess(true); setReview(false); setEditingSettings(false); setMeaningfulDraft(null) }
   }
   const settingsEditor = (field: string) => editingSettings && editingSettingsField === field ? <SettingsAutosave ref={settingsAutosave} formRef={settingsForm} dirty={settingsDirty} flight={settingsFlight} save={saveSettings} onSaved={() => setSettingsSaved(Date.now())} closeOnSave={field === 'availability' || field === 'notice_period_days'} close={() => {
     const restoreFocus = settingsForm.current?.contains(document.activeElement)
