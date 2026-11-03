@@ -195,3 +195,12 @@
 
 /* Programmatic heading focus should not draw a decorative frame. */
 .opp-application-shell > h1[tabindex="-1"]:focus { outline: none; }
+
+/* Separate the selected opportunity from the CV selection panel. */
+.is-cv .opp-application-shell .opp-selected-role {
+  margin: 20px 0 24px;
+  line-height: 1.6;
+  color: #69716e;
+  overflow-wrap: anywhere;
+}
+.is-cv .opp-selected-role strong { color: #343c39; font-weight: 600; }
