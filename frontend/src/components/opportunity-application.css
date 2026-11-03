@@ -1,0 +1,29 @@
+.opportunity-application-page { min-height: 100vh; color: var(--text, #202b47); }
+.opp-application-shell { max-width: 880px; margin: 32px auto; padding: clamp(20px, 4vw, 40px); background: #fffdf8; border: 1px solid #dedbd3; border-radius: 24px; }
+.opp-application-shell h1 { font-size: clamp(24px, 4vw, 36px); line-height: 1.2; overflow-wrap: anywhere; }
+.opp-application-steps { display: flex; flex-wrap: wrap; gap: 12px 24px; list-style: none; padding: 0; margin: 24px 0; color: #65708a; }
+.opp-application-steps [aria-current="step"] { color: #454fc3; font-weight: 700; }
+.opp-application-shell .opp-application { margin-top: 24px; }
+.opp-application-shell button, .opp-cv-upload { min-height: 44px; }
+.opp-cv-upload { display: flex; flex-direction: column; gap: 8px; border: 1px dashed #aab3d0; padding: 14px; border-radius: 12px; cursor: pointer; }
+.opp-cv-upload input { max-width: 100%; }
+.opp-profile-step { margin-bottom: 24px; }
+.opp-profile-step h1 { font-size: clamp(24px, 4vw, 32px); overflow-wrap: anywhere; }
+.opp-application-shell .cp-check { display: flex; align-items: flex-start; gap: 10px; margin: 20px 0; }
+.opp-application-shell .cp-check input { flex: 0 0 auto; margin-top: 5px; }
+@media (max-width: 600px) {
+  .opp-application-shell { margin: 16px 12px; border-radius: 18px; }
+  .opportunity-application-page .opp-header { gap: 12px; padding: 16px; }
+  .opportunity-application-page .opp-header button { max-width: 60%; }
+  .opp-application-shell .cp-actions { flex-direction: column; align-items: stretch; }
+}
+.opportunity-application-page { --enter-primary: #3046c9; --enter-primary-hover: #293db3; }
+.opp-application-shell *, .opp-profile-step { box-sizing: border-box; min-width: 0; }
+.opp-application-shell button, .opp-profile-step button.primary { width: auto; max-width: 100%; border: 1px solid #d4d8e7; border-radius: 999px; padding: 11px 20px; font: inherit; cursor: pointer; }
+.opp-application-shell button.primary, .opp-profile-step button.primary { background: #3046c9; color: #fff; }
+.opp-application-shell button:disabled, .opp-profile-step button:disabled { opacity: .55; cursor: default; }
+.opp-application-shell .cp-actions > * { flex: 0 1 auto; max-width: 100%; }
+.opp-application-shell .opp-application .cp-check { flex-direction: row; }
+.opp-application-shell .opp-application textarea { border-radius: 10px; background: #fffefa; resize: vertical; }
+.opp-application-shell .opp-application > label { margin: 18px 0; }
+.opportunity-application-page .opp-header > button { border: 0; background: transparent; font: inherit; cursor: pointer; }

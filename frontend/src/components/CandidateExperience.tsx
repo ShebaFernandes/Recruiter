@@ -246,7 +246,7 @@ function ResumeReview({ profile, apply, busy }: { profile: Candidate; apply: (fi
   </details>
 }
 
-export default function CandidateExperience({ beforeLeaveRef }: { accountDeleted?: () => void; beforeLeaveRef?: React.MutableRefObject<(() => Promise<boolean>) | null> }) {
+export default function CandidateExperience({ beforeLeaveRef, opportunity }: { accountDeleted?: () => void; beforeLeaveRef?: React.MutableRefObject<(() => Promise<boolean>) | null>; opportunity?: { title: string; onContinue: (profile: Candidate) => void } }) {
   const legalDocuments = useLegalDocuments()
   const [profile, setProfile] = useState<Candidate | null>(null)
   const [error, setError] = useState('')
@@ -575,6 +575,14 @@ export default function CandidateExperience({ beforeLeaveRef }: { accountDeleted
     </div>
     </section></aside>
   return <main className={`candidate-experience ${focusedProcessing ? 'is-processing' : ''}`} ref={mainRef}>
+    {opportunity && <section className="cp-section opp-profile-step">
+      <p className="opp-eyebrow">APPLICATION · CV &amp; PROFILE</p>
+      <h1>Prepare your application for {opportunity.title}</h1>
+      <p>Upload your CV or use your current CV, review your profile below, and save any corrections. Your application is only sent at the final step.</p>
+      {p.latest_resume && <><p>Current CV: <strong>{p.latest_resume.original_name}</strong></p><div className="cp-actions">{replaceControl}</div></>}
+      <p>Complete and confirm your profile below before continuing. Recruiter sharing settings remain unchanged.</p>
+      <button type="button" className="primary" disabled={busy || editing || editingSettings || processing || !p.can_submit || p.profile_status !== 'submitted' || !p.latest_resume || p.latest_resume.processing_status !== 'completed' || p.latest_resume.scan_status !== 'clean' || !!p.resume_identity_warning || !!p.resume_review} onClick={() => void leave(() => opportunity.onContinue(p))}>Review application</button>
+    </section>}
     {!focusedProcessing && <ExistingLegalReview />}
     {legalPublished && review && <LegalRetry />}
     {!success && !focusedProcessing && p.latest_resume && <header className="cp-welcome"><h1>Let's find work that feels great.</h1></header>}
