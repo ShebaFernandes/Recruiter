@@ -587,3 +587,15 @@
 /* Match the closing breathing room to the section's opening. */
 .when-teams-change__landscape > p{padding-bottom:clamp(48px,5vw,72px)}
 @media(max-width:540px){.when-teams-change__landscape > p{padding-bottom:40px}}
+
+/* Keep the reference typography upright, including semantically emphasized copy. */
+.when-teams-change .when-teams-change__header h2 {
+  font-weight: 500;
+  font-style: normal;
+}
+.when-teams-change__human em { font-style: normal; }
+.when-teams-change__landscape > p,
+.when-teams-change__landscape > p em {
+  font-style: normal;
+  font-weight: 500;
+}
