@@ -382,3 +382,17 @@
 @media (prefers-reduced-motion: reduce) {
   .opportunity-application-page.is-profile .candidate-experience #settings-editor-current input { transition: none; }
 }
+
+/* Plain compensation inputs retain a quiet active-field cue. */
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-current input {
+  background: transparent;
+  border-color: transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-current input:focus {
+  outline: none;
+  border-color: transparent;
+  border-bottom-color: #779b88;
+  box-shadow: none;
+}
