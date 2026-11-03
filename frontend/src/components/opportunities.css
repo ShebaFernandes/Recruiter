@@ -287,3 +287,27 @@
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
 }
+
+/* Show the selected listing beside its details above the blurred directory. */
+@media (min-width: 1101px) {
+  .has-opportunity-panel .opp-detail { width: calc(50vw - 36px); }
+  .has-opportunity-panel .opp-row.is-selected {
+    position: fixed;
+    z-index: 50;
+    left: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: calc(50vw - 48px);
+    grid-template-columns: 1fr;
+    max-height: calc(100dvh - 48px);
+    overflow-y: auto;
+    padding: 28px;
+    border: 1px solid #dedacf;
+    border-radius: 16px;
+    background: var(--opp-bg);
+    box-shadow: 0 12px 60px #1c253d20;
+  }
+  .has-opportunity-panel .opp-row.is-selected .opp-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
