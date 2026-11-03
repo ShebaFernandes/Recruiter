@@ -22,8 +22,8 @@ const stages = [
     description: 'We find leaders who can raise the bar, build exceptional teams and lead the company through its next stage of scale.',
     specializations: 'ENGINEERING LEADERS · PRODUCT LEADERS · FUNCTIONAL LEADERS',
     cta: 'Find Leadership',
-    image: '/media/growth-stages/leadership-mountain-valley.png',
-    imageAlt: 'A misty blue-gray mountain valley beneath alpine peaks',
+    image: '/media/growth-stages/leadership-golden-hills.png',
+    imageAlt: 'Golden rolling hills in warm evening light',
     tone: 'leadership',
   },
 ] as const

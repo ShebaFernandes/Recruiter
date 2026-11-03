@@ -987,3 +987,14 @@
 .growth-enquiry-modal .growth-enquiry--leadership {
   background: #fffdf8;
 }
+
+/* Warm landscape for the leadership card and its enquiry preview. */
+.growth-stage-card--leadership,
+.growth-enquiry-modal .growth-stage-card--leadership {
+  background: #f7e5cb;
+}
+.growth-stage-card--leadership .growth-stage-card__image,
+.growth-enquiry-modal .growth-stage-card--leadership .growth-stage-card__image {
+  object-fit: cover;
+  object-position: center bottom;
+}
