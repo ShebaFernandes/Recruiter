@@ -264,6 +264,8 @@ def _employment_outcome(extracted):
     interpretation = interpretation if isinstance(interpretation, dict) else {}
     parse = extracted.get("_employment_parse")
     parse = parse if isinstance(parse, dict) else {}
+    layout = extracted.get("_document_layout")
+    layout = layout if isinstance(layout, dict) else {}
     source = str(interpretation.get("source") or "rules")
     if roles:
         status = "verified_ai" if source in {"ai", "ai_cached"} else "verified_fallback"
@@ -274,7 +276,13 @@ def _employment_outcome(extracted):
     else:
         status = "review_required"
         fallback_reason = str(interpretation.get("reason") or "")
-        if source in {"ai", "ai_cached"}:
+        if parse.get("ocr_required"):
+            reason = "unsupported_scan_ocr_disabled"
+        elif layout.get("layout_incomplete"):
+            reason = "document_layout_unavailable"
+        elif layout.get("layout_uncertain"):
+            reason = "document_layout_uncertain"
+        elif source in {"ai", "ai_cached"}:
             reason = "ai_no_supported_roles"
         elif fallback_reason == "candidate_permission_or_rollout_gate":
             reason = "ai_unavailable_or_not_consented"

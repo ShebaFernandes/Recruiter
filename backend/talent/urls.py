@@ -32,6 +32,7 @@ urlpatterns = [
     path("candidate/account/", views.delete_candidate_account),
     path("candidate/profile/", views.candidate_profile),
     path("candidate/profile/submit/", views.submit_candidate_profile),
+    path("candidate/work-experiences/<int:experience_id>/", candidate_views.edit_employment),
     path("candidate/work-experiences/<int:experience_id>/restore/",
          candidate_views.restore_archived_employment),
     path("candidate/photo/", candidate_views.candidate_photo),
@@ -39,6 +40,8 @@ urlpatterns = [
     path("candidate/resume-status/", candidate_views.processing_status),
     path("candidate/resumes/<int:resume_id>/review/", candidate_views.review_resume),
     path("candidate/resumes/<int:resume_id>/preview/", candidate_views.preview_docx),
+    path("candidate/resumes/<int:resume_id>/confirm-ownership/",
+         views.confirm_resume_ownership),
     path(
         "candidate/resumes/<int:resume_id>/retry/",
         views.retry_resume_processing,

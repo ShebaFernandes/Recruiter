@@ -312,13 +312,47 @@ def _heading(value):
 
 
 def _heading_and_tail(value):
-    """Return an exact section heading plus content sharing its table/PDF row."""
+    """Return a bounded section heading, including common qualified headings."""
     stripped = value.strip()
     for heading in sorted(SECTION_HEADINGS, key=len, reverse=True):
         match = re.match(rf"(?i)^\s*{re.escape(heading)}\s*(?:[:|]\s*(.*))?$", stripped)
         if match:
             return heading, (match.group(1) or "").strip()
+    # Resumes frequently qualify headings (for example, a selected employment
+    # section). Only standalone, short heading-shaped lines qualify; job rows,
+    # dates and prose never become section boundaries.
+    candidate = stripped.strip("•|:–—- ")
+    heading = _heading(candidate)
+    if (len(candidate) <= 70 and 1 <= len(heading.split()) <= 6
+            and not re.search(r"\d|[@|]", candidate)
+            and not _looks_like_role(candidate)):
+        if re.search(r"\b(experience|employment|internships?)\b", heading) and not re.search(
+            r"\b(projects?|years?|academic|education)\b", heading
+        ):
+            return "experience", ""
+        if re.search(r"\b(?:work|career)\s+history\b", heading):
+            return "experience", ""
+        if re.search(r"\b(?:projects?|education|skills|certifications?|awards?)\b", heading):
+            return "projects", ""
     return "", ""
+
+
+def _header_name(lines):
+    """Use a name anchored in the document header, never an arbitrary first line."""
+    if not lines:
+        return ""
+    header = "\n".join(lines[:6])
+    explicit = _value_after_label(header, "Name")
+    if explicit and len(explicit.split()) <= 5 and not _looks_like_role(explicit):
+        return explicit, "explicit_header"
+    first = lines[0].strip()
+    words = first.replace("-", " ").replace("'", " ").split()
+    if (2 <= len(words) <= 4 and len(first) <= 80
+            and all(word.isalpha() for word in words)
+            and not _looks_like_role(first)
+            and not _heading_and_tail(first)[0]):
+        return first, "inferred_header"
+    return "", "none"
 
 
 def _section_lines(lines, headings):
@@ -674,7 +708,8 @@ def parse_resume(file_obj, filename):
         alternative = '' if OCR_REQUIRED_MARKER in text or OCR_USED_MARKER in text else (
             _poppler_pdf_text(file_obj))
         evidence_views, layout = pdf_views(file_obj, text, alternative)
-        readable = [view for view in evidence_views if view['text'].strip()]
+        readable = [view for view in evidence_views
+                    if view['text'].strip() and view.get('parser_input', True)]
         if readable:
             selected = max(readable, key=lambda view: (
                 _dated_role_count(view['text']),
@@ -718,9 +753,7 @@ def parse_resume(file_obj, filename):
         (city for line in lines[:5] for city in LOCATIONS if re.search(rf"(?i)\b{city}\b", line)),
         "",
     )
-    name = _value_after_label(text, "Name") or (
-        lines[0] if lines and lines[0] != OCR_REQUIRED_MARKER else ""
-    )
+    name, name_source = _header_name(lines)
     headline = _concise_role(_value_after_label(text, "Role") or _value_after_label(text, "Title"))
     company = _value_after_label(text, "Company")
     experience_rows = []
@@ -920,10 +953,12 @@ def parse_resume(file_obj, filename):
     complete_for_archival = ((pipe_complete or standard_complete)
                              and OCR_REQUIRED_MARKER not in text and OCR_USED_MARKER not in text
                              and not layout.get('layout_incomplete')
+                             and not layout.get('layout_uncertain')
                              and (Path(filename).suffix.lower() != '.pdf'
                                   or layout.get('independent_role_count_agreement', False)))
     return {
         "full_name": name[:180],
+        "_identity_name_source": name_source,
         "headline": headline[:240],
         "current_company": company[:180],
         "email": email_match.group(0) if email_match else "",

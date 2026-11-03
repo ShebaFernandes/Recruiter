@@ -103,7 +103,7 @@ def test_resume_scan_failure_never_saves_application(monkeypatch, failure, statu
 
     scanner = Mock()
     scanner.scan.side_effect = ResumeInfectedError() if failure == "infected" else ResumeScanError()
-    monkeypatch.setattr("talent.resume_processing.get_resume_scanner", lambda: scanner)
+    monkeypatch.setattr("talent.enquiry_uploads.get_resume_scanner", lambda: scanner)
     response = APIClient().post(URL, data(), format="multipart")
     assert response.status_code == status
     assert not CareerApplication.objects.exists()

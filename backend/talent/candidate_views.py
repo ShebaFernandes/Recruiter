@@ -13,6 +13,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from .candidate_experience import pending_fields, record_candidate_edits, resume_identity_issue
+from .employment_editing import EmploymentEditSerializer, apply_employment_edit
 from .models import CandidatePhoto, CandidateProfile, Resume, WorkExperience
 from .permissions import IsCandidate
 from .resume_processing import can_retry_resume
@@ -88,6 +89,27 @@ def restore_archived_employment(request, experience_id):
     from .candidate_experience import record_candidate_edits
 
     record_candidate_edits(profile, {"work_experiences"})
+    response = Response(CandidateProfileSerializer(profile, context={"request": request}).data)
+    response["Cache-Control"] = "private, no-store"
+    return response
+
+
+@api_view(["PATCH"])
+@permission_classes([IsCandidate])
+@transaction.atomic
+def edit_employment(request, experience_id):
+    profile = CandidateProfile.objects.select_for_update().get(user=request.user)
+    row = get_object_or_404(
+        WorkExperience.objects.select_for_update(), pk=experience_id, candidate=profile,
+    )
+    serializer = EmploymentEditSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    if apply_employment_edit(row, serializer.validated_data):
+        profile.save(update_fields=["profile_updated_at"])
+        record_candidate_edits(profile, {"work_experiences"})
+        from . import legal
+
+        legal.activity(profile)
     response = Response(CandidateProfileSerializer(profile, context={"request": request}).data)
     response["Cache-Control"] = "private, no-store"
     return response

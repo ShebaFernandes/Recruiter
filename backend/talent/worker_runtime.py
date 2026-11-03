@@ -49,17 +49,26 @@ def run_bounded_job(job_id, idempotency_key=None):
     # Tests and isolated staging may override the connection's database name. The child
     # must NEVER fall back to the parent's development database URL in that case.
     database = settings.DATABASES["default"]
-    database_url = urlsplit(environment.get("DATABASE_URL", "postgresql://"))
-    credentials = quote(str(database.get("USER", "")), safe="")
-    credentials += ":" + quote(str(database.get("PASSWORD", "")), safe="")
-    host = str(database.get("HOST") or "localhost")
-    if ":" in host and not host.startswith("["):
-        host = f"[{host}]"
-    port = str(database.get("PORT") or 5432)
-    environment["DATABASE_URL"] = urlunsplit(database_url._replace(
-        scheme="postgresql", netloc=f"{credentials}@{host}:{port}",
-        path="/" + quote(str(database["NAME"]), safe=""),
-    ))
+    if database["ENGINE"] == "django.db.backends.sqlite3":
+        # A subprocess needs the same on-disk database, never a fresh memory DB.
+        name = str(database["NAME"])
+        if name == ":memory:" or name.startswith("file:"):
+            raise ValueError("Resume subprocesses require a file-backed SQLite database.")
+        environment["DATABASE_URL"] = "sqlite:///" + name
+    else:
+        database_url = urlsplit(environment.get("DATABASE_URL", "postgresql://"))
+        credentials = quote(str(database.get("USER", "")), safe="")
+        credentials += ":" + quote(str(database.get("PASSWORD", "")), safe="")
+        host = str(database.get("HOST") or "localhost")
+        if ":" in host and not host.startswith("["):
+            host = f"[{host}]"
+        port = str(database.get("PORT") or 5432)
+        environment["DATABASE_URL"] = urlunsplit(database_url._replace(
+            scheme="postgresql", netloc=f"{credentials}@{host}:{port}",
+            path="/" + quote(str(database["NAME"]), safe=""),
+        ))
+    if settings.TESTING:
+        environment["TESTING"] = "true"
     environment["MEDIA_ROOT"] = str(settings.MEDIA_ROOT)
     try:
         result = subprocess.run(

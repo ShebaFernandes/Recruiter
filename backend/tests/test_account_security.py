@@ -243,7 +243,7 @@ def test_candidate_account_deletion_removes_profile_relations_and_resume_files(t
         verified, _ = _signup_and_verify(client, "delete-me@example.com")
         upload = SimpleUploadedFile(
             "delete-me.docx",
-            resume_docx(name="Delete Me"),
+            resume_docx(name="Verified Candidate"),
             content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
         created = client.post(
@@ -285,7 +285,7 @@ def test_candidate_account_deletion_removes_profile_relations_and_resume_files(t
 
         replacement = SimpleUploadedFile(
             "delete-me-v2.docx",
-            resume_docx(name="Delete Me", role="Staff Backend Engineer"),
+            resume_docx(name="Verified Candidate", role="Staff Backend Engineer"),
             content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
         replacement_upload = client.post(
