@@ -157,3 +157,38 @@
 
 /* Keep the application title and profile workspace visually continuous. */
 .opportunity-application-page.is-profile .opp-application-shell { border-bottom: 0; }
+
+/* Refine application profile surfaces without changing their geometry. */
+.opportunity-application-page.is-profile .candidate-experience {
+  --enter-border: #dddeda;
+  --enter-border-strong: #b9c1bd;
+  --enter-highlight-wash: #eff7f4;
+  --enter-blue-wash: #f3f5f7;
+  color: #48514f;
+}
+.opportunity-application-page.is-profile .candidate-experience .cp-section {
+  border-color: #dddeda;
+  box-shadow: 0 2px 8px rgb(30 43 37 / 3%);
+}
+.opportunity-application-page.is-profile .candidate-experience :is(.cp-professional-read, .cp-highlight, .cp-beyond-next) {
+  background: #eff7f4;
+}
+.opportunity-application-page.is-profile .candidate-experience :is(.cp-section h2, .cp-section h3, .cp-setting-row strong) {
+  color: #303b37;
+}
+.opportunity-application-page.is-profile .candidate-experience button:not(.primary):not([aria-pressed=true]) {
+  border-color: #d5dcd7;
+}
+.opportunity-application-page.is-profile .candidate-experience button:focus-visible {
+  outline: 2px solid #147c78;
+  outline-offset: 3px;
+}
+.opportunity-application-page.is-profile .candidate-experience button.primary:not(:disabled) {
+  box-shadow: 0 2px 4px rgb(25 37 32 / 12%);
+}
+.opportunity-application-page.is-profile .candidate-experience .cp-brief {
+  background: #fffefa;
+}
+.opportunity-application-page.is-profile .candidate-experience .cp-brief form {
+  border-color: #dddeda;
+}
