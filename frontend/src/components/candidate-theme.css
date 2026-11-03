@@ -121,3 +121,13 @@ body:has(.career-edition, .candidate-theme, .candidate-experience),
 .workspace-ui .project-candidates .stage-active {
   background: var(--enter-selected); color: var(--enter-selected-text); border-color: var(--enter-highlight);
 }
+
+/* The signed-in candidate workspace uses the approved plain paper surface. */
+body:has(.app-shell > .candidate-experience) .platform-background { display: none; }
+body:has(.app-shell > .candidate-experience),
+.platform-surface:has(.app-shell > .candidate-experience),
+.platform-surface .app-shell:has(> .candidate-experience) { background: #faf8f4; }
+.app-shell > .candidate-experience :is(.cp-identity-card, .cp-career-surface, .cp-resume-row, .cp-settings, .cp-brief) {
+  background: #fffefa;
+  backdrop-filter: none;
+}
