@@ -275,3 +275,8 @@
   background: linear-gradient(110deg, #e8f3ec, #f3f8f3);
   box-shadow: inset 3px 0 #739e88;
 }
+
+/* Match the profile cards to the career settings panel surface. */
+.opportunity-application-page.is-profile .candidate-experience :is(.cp-identity-card, .cp-career-surface) {
+  background: #fffefa;
+}
