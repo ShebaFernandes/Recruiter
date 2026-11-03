@@ -12,7 +12,7 @@ const stages = [
     specializations: 'FOUNDING ENGINEERS · FOUNDING AI/ML · EARLY TECHNICAL LEADERS',
     cta: 'Build Your Founding Team',
     image: '/media/growth-stages/founding-teams-hills.png',
-    imageAlt: 'Rolling green and gold hills in warm evening light',
+    imageAlt: 'Rolling green grassy hills beneath a soft ivory sky',
     tone: 'founding',
   },
   {
