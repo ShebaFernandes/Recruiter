@@ -104,3 +104,30 @@
   .opportunity-application-page > .site-footer-surface .site-footer { width: calc(100% - 36px); padding: 26px 0; }
 }
 .opportunity-application-page > .opp-header > .opp-application-navigation button { color: #eee; }
+
+/* Keep application chrome fixed within the window; scroll only the workspace. */
+.opportunity-application-page { height: 100dvh; min-height: 0; overflow: hidden; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
+.opportunity-application-page > .opp-header, .opportunity-application-page > .site-footer-surface { min-height: 0; }
+.opportunity-application-page > .site-footer-surface { margin-top: 0; }
+.opportunity-application-workspace { min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.is-cv .opp-application-workspace { display: flex; align-items: safe center; }
+.is-cv .opp-application-shell { margin: 24px auto; }
+@media (min-width: 761px) and (min-height: 650px) {
+  .is-cv .opp-application-shell { max-width: 860px; margin-block: 18px; }
+  .is-cv .opp-application-shell h1 { font-size: clamp(32px, 3vw, 44px); margin-block: 8px; }
+  .is-cv .opp-application-intro { font-size: 14px; margin-bottom: 8px; }
+  .is-cv .opp-application-steps { margin: 16px 0 20px; }
+  .is-cv .opp-cv-panel { padding: 20px; }
+  .is-cv .opp-cv-panel > header { margin-bottom: 16px; }
+  .is-cv .opp-cv-dropzone { padding: 20px; gap: 14px; }
+  .is-cv .opp-cv-dropzone > svg { width: 32px; height: 32px; }
+  .is-cv .opp-cv-privacy { margin-top: 16px; }
+  .is-cv .opp-current-cv { padding-bottom: 16px; }
+}
+@media (max-width: 600px) {
+  .opportunity-application-page > .site-footer-surface .site-footer { grid-template-columns: auto 1fr; padding: 14px 0; gap: 8px 16px; }
+  .opportunity-application-page .site-footer .site-footer-brand { justify-self: start; }
+  .opportunity-application-page .site-footer-brand svg { width: 78px; height: 26px; }
+  .opportunity-application-page .site-footer .site-footer-tagline { grid-column: 1 / -1; grid-row: 2; font-size: 10px; }
+  .opportunity-application-page .site-footer .site-footer-links { justify-content: flex-end; gap: 12px; font-size: 11px; }
+}

@@ -23,13 +23,14 @@ export default function OpportunityApplication({ role, onBack }: {
   const [message, setMessage] = useState('')
   const beforeLeave = useRef<(() => Promise<boolean>) | null>(null)
   const heading = useRef<HTMLHeadingElement>(null)
+  const workspace = useRef<HTMLDivElement>(null)
   useEffect(() => {
     let active = true
     api.candidateProfile().then(value => { if (active) { setProfile(value); setError('') } })
       .catch(cause => { if (active) setError(cause instanceof Error ? cause.message : 'Could not open your profile.') })
     return () => { active = false }
   }, [attempt])
-  useEffect(() => { heading.current?.focus(); window.scrollTo(0, 0) }, [step])
+  useEffect(() => { workspace.current?.scrollTo?.(0, 0); heading.current?.focus(); window.scrollTo(0, 0) }, [step])
   async function back() {
     if (busy || (beforeLeave.current && !await beforeLeave.current())) return
     onBack()
@@ -63,6 +64,7 @@ export default function OpportunityApplication({ role, onBack }: {
   }
   return <div className={`opportunity-application-page is-${step}`}>
     <header className="opp-header"><div className="opp-application-brand"><a href="/" aria-label="Enter home"><EnterLogo /></a></div><div className="opp-application-navigation"><button type="button" disabled={busy} onClick={() => void back()}>Back to opportunities<LogOut size={16} aria-hidden="true" /></button></div></header>
+    <div ref={workspace} className="opportunity-application-workspace">
     <section className="opp-application-shell">
       <p className="opp-eyebrow">{step === 'success' ? 'APPLICATION RECEIVED' : 'YOUR APPLICATION'}</p>
       <h1 ref={heading} tabIndex={-1}>{step === 'cv' ? 'ENTER what’s next?' : role.title}</h1>
@@ -93,6 +95,7 @@ export default function OpportunityApplication({ role, onBack }: {
       {step === 'success' && <div role="status"><h2>{message}</h2><p>Role: {role.title}</p><p>Your application is linked to your candidate profile.</p><button className="primary" onClick={onBack}>Explore more opportunities</button></div>}
     </section>
     {step === 'profile' && <CandidateExperience beforeLeaveRef={beforeLeave} opportunity={{ title: role.title, onContinue: value => { if (applicationProfileReady(value)) { setProfile(value); setConfirmed(false); setError(''); setStep('confirm') } } }} />}
+    </div>
     <SiteFooter compact />
   </div>
 }
