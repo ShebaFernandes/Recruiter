@@ -430,3 +430,17 @@
     width: min(752px, calc(100vw - 552px));
   }
 }
+
+/* Align search and filter controls along one shared desktop baseline. */
+@media (min-width: 761px) {
+  .opportunities-page .opp-tools { align-items: center; }
+  .opportunities-page .opp-tools input,
+  .opportunities-page .opp-tools select {
+    box-sizing: border-box;
+    height: 48px;
+    margin: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-bottom: 1px solid #9699a2;
+  }
+}
