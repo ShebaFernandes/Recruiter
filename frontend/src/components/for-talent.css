@@ -238,5 +238,10 @@
 
 @media (min-width: 1100px) {
   .for-talent__heading-line { white-space: nowrap; }
-  .for-talent .for-talent__network { align-self: start; margin-top: 240px; }
+  .for-talent .for-talent__network {
+    align-self: start;
+    margin-top: 240px;
+    position: relative;
+    top: -24px;
+  }
 }
