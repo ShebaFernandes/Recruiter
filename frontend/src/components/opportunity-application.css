@@ -348,3 +348,11 @@
   .opportunity-application-page.is-profile .candidate-experience #settings-editor-availability .cp-choice,
   .opportunity-application-page.is-profile .candidate-experience .cp-settings-panel [data-setting="availability"]::after { transition: none; }
 }
+
+/* Continue the warm profile-card surface through the Resume section. */
+.opportunity-application-page.is-profile .candidate-experience .cp-resume-row {
+  background: #fffefa;
+}
+.opportunity-application-page.is-profile .candidate-experience .cp-resume-toolbar {
+  background: #fffefa;
+}
