@@ -218,3 +218,21 @@ def test_hundred_pdf_structure_combinations(heading, dates, layout):
     assert job["start_date"] == "2021-01-01"
     assert job["end_date"] is None
     assert job["is_current"]
+
+
+@pytest.mark.parametrize("extension", ["pdf", "docx"])
+def test_date_first_employer_then_title_layout(extension):
+    lines = [
+        "Name: Fictional Candidate", "Experience",
+        "May 2023- Present Cedar Exchange", "Software Developer", "Remote",
+        "Built reliable exchange risk systems.",
+        "July 2021- January 2023 Maple Research", "Software Developer", "Remote",
+        "Education", "July 2017 - May 2021 Example University", "Btech CS",
+    ]
+    parsed = parse_resume(BytesIO(_fixture_bytes(extension, lines)), f"sample.{extension}")
+    assert parsed["headline"] == "Software Developer"
+    assert [(job["company"], job["start_date"], job["end_date"]) for job in
+            parsed["work_experiences"]] == [
+        ("Cedar Exchange", "2023-05-01", None),
+        ("Maple Research", "2021-07-01", "2023-01-01"),
+    ]

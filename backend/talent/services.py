@@ -550,7 +550,16 @@ def _standard_experiences(lines, original_section=None):
             start_date, end_date = _range_dates(match)
             description_start = index + 1
             role, company = "", ""
-            if "|" in prefix or re.search(r"\s(?:at|@)\s", prefix, re.I):
+            suffix = line[match.end():].strip(" |•·-–—")
+            if (not prefix and suffix and _plausible_employer_line(suffix)
+                    and index + 1 < len(section)
+                    and _concise_role(section[index + 1])):
+                # Some exports place dates first, then employer, with the role
+                # on the next line. Preserve that explicit three-part header.
+                role = _concise_role(section[index + 1])
+                company = suffix
+                description_start = index + 2
+            elif "|" in prefix or re.search(r"\s(?:at|@)\s", prefix, re.I):
                 role, company = _role_and_company(prefix.split("|"))
                 role = _concise_role(role)
                 if not role:
