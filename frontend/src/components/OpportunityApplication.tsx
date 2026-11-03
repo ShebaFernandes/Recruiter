@@ -30,7 +30,7 @@ export default function OpportunityApplication({ role, onBack }: {
       .catch(cause => { if (active) setError(cause instanceof Error ? cause.message : 'Could not open your profile.') })
     return () => { active = false }
   }, [attempt])
-  useEffect(() => { workspace.current?.scrollTo?.(0, 0); heading.current?.focus(); window.scrollTo(0, 0) }, [step])
+  useEffect(() => { workspace.current?.scrollTo?.(0, 0); (step === 'profile' ? workspace.current : heading.current)?.focus(); window.scrollTo(0, 0) }, [step])
   async function back() {
     if (busy || (beforeLeave.current && !await beforeLeave.current())) return
     onBack()
@@ -64,10 +64,10 @@ export default function OpportunityApplication({ role, onBack }: {
   }
   return <div className={`opportunity-application-page is-${step}`}>
     <header className="opp-header"><div className="opp-application-brand"><a href="/" aria-label="Enter home"><EnterLogo /></a></div><div className="opp-application-navigation"><button type="button" disabled={busy} onClick={() => void back()}>Back to opportunities<LogOut size={16} aria-hidden="true" /></button></div></header>
-    <div ref={workspace} className="opportunity-application-workspace">
-    <section className="opp-application-shell">
-      <p className="opp-eyebrow">{step === 'success' ? 'APPLICATION RECEIVED' : 'APPLYING FOR'}</p>
-      <h1 ref={heading} tabIndex={-1}>{step === 'cv' ? 'ENTER what’s next?' : role.title}</h1>
+    <div ref={workspace} tabIndex={-1} className="opportunity-application-workspace">
+    <section className="opp-application-shell" style={step === 'profile' && !error ? { display: 'none' } : undefined}>
+      {step !== 'profile' && <><p className="opp-eyebrow">{step === 'success' ? 'APPLICATION RECEIVED' : 'APPLYING FOR'}</p>
+      <h1 ref={heading} tabIndex={-1}>{step === 'cv' ? 'ENTER what’s next?' : role.title}</h1></>}
       {step === 'cv' && <><p className="opp-application-intro">Somewhere, there’s something worth building.</p><p className="opp-selected-role">Applying for <strong>{role.title}</strong></p></>}
       {error && <p role="alert" className="error">{error}</p>}
       {step === 'cv' && (!profile ? <><p role="status">{error ? 'Your profile could not be loaded.' : 'Opening your profile…'}</p>{error && <button onClick={() => { setError(''); setAttempt(value => value + 1) }}>Try again</button>}</> : <>
