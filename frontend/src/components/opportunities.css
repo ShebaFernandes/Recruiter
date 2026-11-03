@@ -276,3 +276,14 @@
   color: #656b6c;
 }
 .opportunities-page .opp-detail .opp-discussion li { margin-bottom: 6px; }
+
+/* Keep the selected role clear while softening the page behind the dialog. */
+.opportunities-page.has-opportunity-panel::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 49;
+  background: rgba(25, 28, 35, .28);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
