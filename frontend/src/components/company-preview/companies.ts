@@ -24,7 +24,7 @@ import signeasy from '../../../../design-references/prepared/trusted-by-review/a
 import locus from '../../../../design-references/prepared/trusted-by-review/assets/expanded/locus.svg'
 import spoton from '../../../../design-references/prepared/trusted-by-review/assets/expanded/spoton.svg'
 import parspec from '../../../../design-references/prepared/trusted-by-review/assets/expanded/parspec.svg'
-import sentisum from '../../../../design-references/prepared/trusted-by-review/assets/expanded/sentisum.svg'
+import sentisum from '../../assets/sentisum.svg'
 
 type CompanyLogo = {
   id: string
