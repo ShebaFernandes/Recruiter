@@ -154,3 +154,6 @@
   .opportunity-application-page .opp-profile-step h1 { font-size: 30px; }
   .opportunity-application-page .opp-cv-panel > header h2 { font-size: 26px; }
 }
+
+/* Keep the application title and profile workspace visually continuous. */
+.opportunity-application-page.is-profile .opp-application-shell { border-bottom: 0; }
