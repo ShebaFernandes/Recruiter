@@ -315,3 +315,36 @@
   border-color: #d7dfda;
   color: #43564b;
 }
+
+/* Let the status choices appear gently without changing their layout. */
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-availability {
+  background: #f3f7f4;
+  border-color: #dce6de;
+  border-radius: 0 0 8px 8px;
+  animation: status-choices-open 180ms ease-out;
+}
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-availability .cp-choice {
+  border-color: #d7dfda;
+  box-shadow: none;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-availability .cp-choice:hover {
+  background: #e5efe8;
+}
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-availability .cp-choice:has(input:checked) {
+  background: #286d64;
+  border-color: #286d64;
+  color: #fff;
+}
+.opportunity-application-page.is-profile .candidate-experience .cp-settings-panel [data-setting="availability"]::after {
+  transition: transform 180ms ease;
+}
+@keyframes status-choices-open {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .opportunity-application-page.is-profile .candidate-experience #settings-editor-availability { animation: none; }
+  .opportunity-application-page.is-profile .candidate-experience #settings-editor-availability .cp-choice,
+  .opportunity-application-page.is-profile .candidate-experience .cp-settings-panel [data-setting="availability"]::after { transition: none; }
+}
