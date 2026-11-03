@@ -491,3 +491,11 @@
   }
 }
 .opportunity-application-page .site-footer-brand svg { width: 76px; height: 25px; }
+
+/* Keep professional links compact like the contact editor. */
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-linkedin .cp-fields { gap: 6px; }
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-linkedin label { font-size: 12px; gap: 2px; }
+.opportunity-application-page.is-profile .candidate-experience #settings-editor-linkedin input { min-height: 28px; height: 28px; padding-block: 3px; font-size: 12px; line-height: 20px; }
+@media (max-width: 600px) {
+  .opportunity-application-page.is-profile .candidate-experience #settings-editor-linkedin input { min-height: 44px; height: 44px; }
+}
