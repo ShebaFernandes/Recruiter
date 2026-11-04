@@ -153,6 +153,8 @@ def archive_omitted_employment(profile, extracted, resume):
     rows = trusted_rows(extracted)
     archived = []
     for saved in profile.work_experiences.all():
+        if saved.confidence_status == 'candidate_confirmed' or saved.origin != 'resume_derived':
+            continue
         if any(row_equivalent(saved, item) for item in rows):
             continue
         # Origin, confidence and candidate corrections remain intact in private
@@ -170,6 +172,9 @@ def reconcile_employment(profile, rows, *, complete=False):
     matched = set()
     conflicts = []
     for item in rows:
+        if item.get('confidence_status') == 'partial':
+            conflicts.append(item)
+            continue
         candidates = [(index, row) for index, row in enumerate(saved)
                       if index not in matched and row_matches(row, item)]
         if not candidates:
