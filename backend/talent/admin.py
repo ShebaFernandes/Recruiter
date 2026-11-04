@@ -17,6 +17,7 @@ from .models import (
     CandidateStatus,
     CandidateUpdateNotification,
     CareerApplication,
+    OpportunityApplication,
     EmployeeTransitionEnquiry,
     HiringEnquiry,
     ProfileView,
@@ -466,3 +467,11 @@ class CareerApplicationAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
                                 filename=obj.original_filename)
         response["Cache-Control"] = "no-store"
         return response
+
+
+@admin.register(OpportunityApplication)
+class OpportunityApplicationAdmin(admin.ModelAdmin):
+    list_display = ('id', 'candidate', 'opportunity_id', 'created_at')
+    list_filter = ('opportunity_id', 'created_at')
+    search_fields = ('candidate__full_name', 'candidate__email', 'opportunity_id')
+    readonly_fields = ('created_at',)

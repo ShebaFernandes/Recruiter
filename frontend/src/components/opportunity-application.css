@@ -155,6 +155,44 @@
   .opportunity-application-page .opp-cv-panel > header h2 { font-size: 26px; }
 }
 
+/* Give profile review and processing a single, aligned workspace. */
+.is-profile .opp-application-shell { max-width: 1120px; margin: 24px auto 0; padding: 0 0 20px; border: 0; border-bottom: 1px solid #e4dfd6; border-radius: 0; background: transparent; }
+.is-profile .opp-application-shell > h1 { font-size: 30px; margin: 8px 0 16px; }
+.is-profile .opp-application-steps { margin: 0; }
+.is-profile .candidate-experience { width: calc(100% - 48px); max-width: 1120px; margin: 0 auto; padding: 24px 0 40px; min-height: 0; }
+.is-profile .candidate-experience .opp-profile-step { position: relative; margin: 0 0 24px; padding: 24px; border: 1px solid #e4dfd6; border-radius: 14px; background: #fffdfa; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 24px; align-items: center; }
+.is-profile .opp-profile-step > .opp-eyebrow { margin: 0; font-size: 10px; letter-spacing: .17em; }
+.is-profile .opp-profile-step > h1 { font-size: 28px; margin: 0; grid-column: 1; }
+.is-profile .opp-profile-step > p { margin: 0; font-size: 13px; line-height: 1.6; grid-column: 1; }
+.is-profile .opp-profile-step > .cp-actions { grid-column: 2; grid-row: 1 / 5; margin: 0; }
+.is-profile .opp-profile-step > button { grid-column: 2; justify-self: stretch; }
+.is-profile .opp-profile-step .cp-replace-control { padding: 12px 16px; background: #f7f5f0; border-color: #e4dfd6; }
+.is-profile .candidate-experience .cp-welcome { margin: 0 0 8px; }
+.is-profile .candidate-experience .cp-welcome h1 { font-size: 26px; margin: 0; }
+.is-profile .candidate-experience .cp-profile-heading { margin: 0 0 20px; font-size: 20px; color: #74797c; }
+.is-profile .candidate-experience .cp-profile-workspace { gap: 20px; align-items: start; }
+.is-profile .candidate-experience .cp-resume-updates { padding: 20px; margin: 0 0 20px; border: 1px solid #dfc7a0; border-radius: 12px; background: #fff8ec; line-height: 1.6; }
+.is-profile .candidate-experience.is-processing { display: block; padding-top: 28px; }
+.is-profile .candidate-experience .processing-card { max-width: 760px; margin: 0 auto; padding: 28px 32px; border: 1px solid #e4dfd6; border-radius: 16px; background: #fffdfa; text-align: center; }
+.is-profile .candidate-experience .processing-card .onboarding-processing-copy { width: 100%; max-width: none; margin: 0; }
+.is-profile .candidate-experience .processing-card h2 { font: 400 32px/1.15 var(--enter-font-editorial); letter-spacing: -.025em; max-width: none; margin: 0 0 12px; }
+.is-profile .processing-card .cp-processing-intro { font-size: 14px; }
+.is-profile .processing-card .cp-loading-section { margin: 24px 0; }
+.is-profile .processing-card .cp-loading-orbit { width: 48px; height: 48px; margin-bottom: 20px; }
+.is-profile .processing-card .cp-processing-status { font-size: 13px; line-height: 1.6; }
+.is-profile .processing-card .cp-processing-file { font-size: 12px; overflow-wrap: anywhere; color: #74797c; }
+.is-profile .processing-card .cp-processing-prompts { padding-top: 20px; }
+@media (max-width: 700px) {
+  .is-profile .opp-application-shell, .is-profile .candidate-experience { width: calc(100% - 32px); }
+  .is-profile .candidate-experience .opp-profile-step { display: flex; flex-direction: column; align-items: stretch; padding: 18px; gap: 12px; }
+  .is-profile .opp-profile-step > h1 { font-size: 25px; }
+  .is-profile .opp-profile-step > .cp-actions { align-self: flex-start; }
+  .is-profile .candidate-experience .processing-card { padding: 24px 18px; }
+  .is-profile .candidate-experience .processing-card h2 { font-size: 28px; }
+}
+body:has(.opportunity-application-page) { height: 100dvh; overflow: hidden; }
+html:has(.opportunity-application-page) { overflow: hidden; }
+
 /* Keep the application title and profile workspace visually continuous. */
 .opportunity-application-page.is-profile .opp-application-shell { border-bottom: 0; }
 
@@ -305,7 +343,6 @@
 .opportunity-application-page.is-profile .candidate-experience .cp-settings-panel [data-setting="availability"][aria-expanded="true"]::after {
   transform: rotate(225deg);
 }
-
 .opportunity-application-page.is-profile .candidate-experience .cp-settings-panel [data-setting="availability"] { position: relative; padding-right: 28px; }
 .opportunity-application-page.is-profile .candidate-experience .cp-settings-panel [data-setting="availability"]::after { position: absolute; right: 12px; top: 50%; margin-top: -5px; margin-right: 0; }
 
@@ -404,7 +441,6 @@
 .opportunity-application-page.is-profile .candidate-experience .cp-settings-panel [data-setting="current"][aria-expanded="true"] {
   background: transparent;
 }
-
 .opportunity-application-page.is-profile .candidate-experience .cp-settings-panel button.cp-setting-row[data-setting="current"][aria-expanded="true"],
 .opportunity-application-page.is-profile .candidate-experience .cp-settings-panel button.cp-setting-row[data-setting="current"]:hover { background: transparent; }
 
@@ -531,3 +567,50 @@
   border-bottom-color: transparent;
   box-shadow: none;
 }
+
+/* Carry the candidate login background through the application workspace. */
+.platform-surface .opportunity-application-page { background: transparent; }
+
+.opportunity-application-page .application-help-footer { width: calc(100% - 48px); max-width: 1120px; margin: 0 auto; padding: 0 0 24px; min-height: 0; }
+.opportunity-application-page .application-help-footer .cp-footer { margin-top: 20px; }
+
+/* Match the candidate dashboard header surface and proportions. */
+.platform-surface .opportunity-application-page > .opp-header {
+  height: 66px;
+  padding: 0 max(24px, calc((100% - 1112px) / 2));
+  background: var(--enter-surface);
+  border-bottom: 1px solid var(--line);
+  color: var(--enter-text);
+}
+.opportunity-application-page > .opp-header > .opp-application-navigation button {
+  color: var(--enter-text-muted);
+}
+.opportunity-application-page .opp-application-navigation button:focus-visible {
+  outline: var(--enter-focus-ring);
+  outline-offset: var(--enter-focus-offset);
+}
+@media (max-width: 700px) {
+  .platform-surface .opportunity-application-page > .opp-header { padding-inline: 16px; }
+}
+
+/* Compact application confirmation, using the existing candidate palette. */
+.opportunity-application-page.is-confirm .opp-application-shell,
+.opportunity-application-page.is-success .opp-application-shell { width:calc(100% - 32px); max-width:640px; margin:28px auto; padding:28px; border-radius:18px; box-sizing:border-box; }
+.opportunity-application-page.is-confirm .opp-application-shell>h1 { font:650 26px/1.25 var(--enter-font-ui); margin:0 0 20px; letter-spacing:-.5px; }
+.opportunity-application-page.is-confirm .opp-application-shell h2 { font:600 19px/1.35 var(--enter-font-ui); margin:0 0 16px; }
+.opportunity-application-page.is-confirm .opp-application { display:flex; flex-direction:column; gap:14px; }
+.opportunity-application-page.is-confirm .opp-application p { margin:0; font-size:14px; line-height:1.5; }
+.opportunity-application-page.is-confirm .opp-application textarea { min-height:88px; height:88px; padding:12px; border-radius:10px; font:inherit; }
+.opportunity-application-page.is-confirm .opp-application button { align-self:flex-start; padding:10px 16px; font-size:14px; border-radius:9px; }
+.opportunity-application-page.is-confirm .opp-application .cp-check { display:flex; align-items:flex-start; gap:10px; font-size:13px; line-height:1.5; }
+.opportunity-application-page.is-confirm .opp-application .cp-check input { flex:0 0 auto; margin-top:3px; }
+@media(max-width:600px) { .opportunity-application-page.is-confirm .opp-application-shell { padding:20px; margin:16px auto; } }
+
+.opportunity-application-page.is-confirm .opp-cv-actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.opportunity-application-page.is-confirm .opp-cv-actions a { color:var(--enter-primary); padding:8px 4px; font-size:13px; }
+.opportunity-application-page.is-confirm .opp-cv-actions button { padding:8px 12px; font-size:13px; }
+.opportunity-application-page.is-confirm .opp-application>label { margin:0; font-size:13px; }
+.opportunity-application-page.is-confirm .opp-application-shell { margin-top:20px; }
+
+.opp-embedded-back { width:calc(100% - 32px); max-width:640px; margin:20px auto 0; }
+.opp-embedded-back button { border:0; padding:4px 0; background:transparent; color:var(--enter-text-muted); font:inherit; font-size:13px; cursor:pointer; }

@@ -6,3 +6,9 @@ export function applicationProfileReady(profile: Candidate) {
     profile.latest_resume.scan_status === 'clean' &&
     !profile.resume_identity_warning && !profile.resume_review
 }
+
+export function applicationCvReady(profile: Candidate) {
+  return profile.latest_resume?.processing_status === 'completed' &&
+    profile.latest_resume.scan_status === 'clean' &&
+    !profile.resume_identity_warning
+}

@@ -444,3 +444,10 @@
     border-bottom: 1px solid #9699a2;
   }
 }
+
+/* Submitted application details end at their content rather than filling the viewport. */
+.has-opportunity-panel .opp-detail.is-application-details { bottom:auto; height:auto; max-height:calc(100dvh - 48px); padding-bottom:20px; }
+.opportunities-page .opp-detail.is-application-details > .opp-application-result { margin:14px 0 0; }
+@media(max-width:760px) { .has-opportunity-panel .opp-detail.is-application-details { max-height:100dvh; } }
+
+.opp-applied-badge { display:inline-flex; margin-top:8px; padding:4px 9px; border-radius:6px; background:#e1efea; color:#2f7075; font-size:12px; font-weight:600; }

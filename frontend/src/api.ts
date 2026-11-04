@@ -63,6 +63,7 @@ async function request<T>(path: string, options: RequestInit = {}, binary = fals
 }
 
 export const api = {
+  opportunityApplications: () => request<{id:number; opportunity_id:string; created_at:string}[]>('/opportunities/applications/'),
   applyOpportunity: (opportunity_id: string, note: string) => request<{detail:string}>(
     '/opportunities/applications/', {method: 'POST', body: JSON.stringify({opportunity_id, note})},
   ),

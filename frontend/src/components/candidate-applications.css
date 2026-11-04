@@ -1,0 +1,52 @@
+.candidate-applications { max-width:1080px; margin:40px auto; padding:24px; color:var(--enter-text); }
+.candidate-applications h1 { margin:0 0 8px; font-size:36px; letter-spacing:-1px; }
+.candidate-applications .applications-intro { margin:0 0 28px; font-size:17px; }
+.applications-summary { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; margin-bottom:26px; }
+.applications-summary>div { display:flex; align-items:center; gap:18px; padding:20px 24px; background:rgba(255,254,250,.72); border:1px solid rgba(255,255,255,.9); border-radius:15px; backdrop-filter:blur(12px); }
+.applications-summary svg { width:24px; color:var(--enter-highlight); }
+.applications-summary strong { font-size:32px; color:var(--enter-highlight); }
+.applications-summary span { border-left:1px solid var(--enter-border); padding-left:18px; }
+.candidate-applications .application-list { list-style:none; padding:0; margin:0; display:grid; gap:18px; }
+.candidate-applications .application-card { padding:24px 28px; margin:0; border:1px solid rgba(255,255,255,.9); border-radius:16px; background:rgba(255,254,250,.84); backdrop-filter:blur(12px); }
+.application-card-heading { display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:28px; }
+.application-card h2 { margin:0 0 10px; font-size:22px; }
+.application-meta { display:flex; flex-wrap:wrap; gap:10px 18px; margin:0; color:var(--enter-text-muted); font-size:13px; }
+.application-meta span,.application-status { display:inline-flex; align-items:center; gap:6px; }
+.application-meta svg { width:15px; height:15px; }
+.application-status { background:#e1efea; color:#2f7075; padding:6px 12px; border-radius:8px; font-size:13px; font-weight:600; }
+.application-status svg { width:16px; height:16px; }
+.candidate-applications button { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 16px; border:1px solid #478489; border-radius:8px; background:transparent; color:#2f7075; font:inherit; font-size:14px; cursor:pointer; }
+.candidate-applications button svg { width:17px; }
+.application-progress { display:flex; list-style:none; padding:0; margin:28px 0 0; }
+.application-progress li { position:relative; display:flex; flex:1; flex-direction:column; align-items:center; gap:8px; font-size:12px; color:var(--enter-text-muted); }
+.application-progress li:not(:last-child)::after { content:''; position:absolute; top:10px; left:calc(50% + 11px); width:calc(100% - 22px); height:2px; background:#bdc9c5; }
+.application-progress li>span { width:22px; height:22px; border:2px solid #bdc9c5; border-radius:50%; background:#f7f6f1; display:grid; place-items:center; box-sizing:border-box; }
+.application-progress li[aria-current] { color:#2f7075; font-weight:600; }
+.application-progress li[aria-current]>span { background:#32767d; border-color:#32767d; color:white; }
+.application-progress svg { width:13px; height:13px; }
+.application-empty { padding:28px; border-radius:16px; background:rgba(255,254,250,.85); }
+@media(max-width:700px) { .candidate-applications { margin:16px auto; padding:16px; } .candidate-applications h1 { font-size:28px; } .applications-summary { gap:10px; } .applications-summary>div { padding:14px; gap:10px; flex-wrap:wrap; } .applications-summary span { border:0; padding:0; font-size:12px; } .application-card-heading { grid-template-columns:1fr auto; gap:16px; } .application-card-heading>div { grid-column:1/-1; } .candidate-applications .application-card { padding:20px; } }
+.candidate-applications .application-progress li { padding:0; margin:0; border:0; border-radius:0; background:transparent; backdrop-filter:none; }
+
+/* Compact application overview. */
+.candidate-applications { max-width:960px; margin:24px auto; padding:20px; }
+.candidate-applications h1 { font-size:30px; margin-bottom:6px; }
+.candidate-applications .applications-intro { font-size:15px; margin-bottom:20px; }
+.applications-summary { grid-template-columns:repeat(2,minmax(0,240px)); gap:12px; margin-bottom:18px; }
+.applications-summary>div { padding:14px 16px; gap:12px; border-radius:11px; background:rgba(255,254,250,.95); }
+.applications-summary strong { font-size:25px; }
+.applications-summary span { padding-left:12px; font-size:13px; }
+.applications-summary svg { width:20px; }
+.candidate-applications .application-list { gap:12px; }
+.candidate-applications .application-card { padding:18px 20px; border-radius:12px; background:rgba(255,254,250,.96); }
+.application-card-heading { gap:18px; }
+.application-card h2 { font-size:18px; line-height:1.35; margin-bottom:7px; }
+.application-meta { font-size:12px; gap:8px 14px; }
+.application-status { padding:5px 9px; font-size:12px; }
+.candidate-applications .application-card button { padding:8px 12px; font-size:12px; }
+.application-progress { max-width:640px; margin:20px auto 0; }
+.application-progress li { font-size:11px; gap:6px; }
+.application-progress li>span { width:18px; height:18px; }
+.application-progress li:not(:last-child)::after { top:8px; left:calc(50% + 9px); width:calc(100% - 18px); }
+.application-progress svg { width:11px; height:11px; }
+@media(max-width:700px) { .candidate-applications { padding:16px; margin:16px auto; } .applications-summary { grid-template-columns:repeat(2,minmax(0,1fr)); } .applications-summary>div { gap:8px; padding:12px; } .applications-summary span { padding-left:0; } .candidate-applications .application-card { padding:16px; } .application-card-heading { gap:12px; } }

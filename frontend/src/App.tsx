@@ -1,4 +1,5 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
+import CandidateApplications from './components/CandidateApplications'
+import { FormEvent, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Bell, BriefcaseBusiness, CalendarDays, Check,
   CheckCircle2, FolderPlus, GraduationCap,
@@ -270,29 +271,64 @@ function LegalPlaceholder({ kind }: { kind: 'privacy' | 'terms' }) {
   </article></main>
 }
 
-function Shell({ user, logout, children, noticeCount = 0, accountMenu }: {
-  user: User; logout: () => void; children: React.ReactNode; noticeCount?: number; accountMenu?: React.ReactNode
+function Shell({ user, logout, children, noticeCount = 0, accountMenu, navigation }: {
+  user: User; logout: () => void; children: React.ReactNode; noticeCount?: number; accountMenu?: React.ReactNode; navigation?: React.ReactNode
 }) {
   return <div className="app-shell">
-    <header><Brand compact /><div className="header-user">
+    <header><Brand compact />{navigation}<div className="header-user">
       {user.role === 'recruiter' && <span className="notification-pill"><Bell size={15} /> {noticeCount}</span>}
-      {accountMenu || <span>{user.full_name}</span>}<button onClick={logout} aria-label="Log out"><LogOut size={17} /></button>
+      {accountMenu || <span>{user.full_name}</span>}{user.role !== 'candidate' && <button onClick={logout} aria-label="Log out"><LogOut size={17} /></button>}
     </div></header>
     {children}
   </div>
 }
 
-function CandidateAccountMenu({ user, accountDeleted }: { user: User; accountDeleted: () => void }) {
+function CandidateAccountMenu({ user, accountDeleted, viewProfile, updateResume, logout }: { user: User; accountDeleted: () => void; viewProfile: () => void; updateResume: () => void; logout: () => void }) {
   const [open, setOpen] = useState(false)
+  const [settings, setSettings] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  return <div className="candidate-account-menu"><button type="button" className="candidate-account-trigger" aria-expanded={open} aria-controls="candidate-account-popover" onClick={() => setOpen(value => !value)}>{user.full_name}<ChevronDown size={15} aria-hidden="true" /></button>{open && <section id="candidate-account-popover" className="candidate-account-popover" aria-label="Account menu"><strong>Account</strong><p>Manage your ENTER profile and account.</p>{error && <p role="alert" className="error">{error}</p>}{!deleting ? <button type="button" className="cp-danger" onClick={() => setDeleting(true)}>Delete my account</button> : <form onSubmit={async event => { event.preventDefault(); const data = new FormData(event.currentTarget); setBusy(true); setError(''); try { await api.deleteCandidateAccount(String(data.get('password')), String(data.get('confirmation'))); accountDeleted() } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not delete account.') } finally { setBusy(false) } }}><label>Current password<input type="password" name="password" autoComplete="current-password" required /></label><label>Type DELETE to confirm<input name="confirmation" required pattern="DELETE" /></label><div><button disabled={busy} className="cp-danger">Permanently delete my account</button><button type="button" disabled={busy} onClick={() => { setDeleting(false); setError('') }}>Cancel</button></div></form>}</section>}</div>
+  return <div className="candidate-account-menu"><button type="button" className="candidate-account-trigger" aria-expanded={open} aria-controls="candidate-account-popover" onClick={() => setOpen(value => !value)}><span className="candidate-menu-avatar" aria-hidden="true">{user.full_name.split(/\s+/).filter(Boolean).slice(0,2).map(part => part[0]).join('').toUpperCase()}</span>{user.full_name}<ChevronDown size={15} aria-hidden="true" /></button>{open && <section id="candidate-account-popover" className="candidate-account-popover" aria-label="Account menu"><div className="candidate-menu-links"><button onClick={() => { setOpen(false); viewProfile() }}><GraduationCap size={18} aria-hidden="true" />View My Profile</button><button onClick={() => { setOpen(false); updateResume() }}><History size={18} aria-hidden="true" />Update Resume</button><button onClick={() => setSettings(value => !value)} aria-expanded={settings}><SlidersHorizontal size={18} aria-hidden="true" />Account Settings</button><button className="candidate-menu-logout" onClick={() => { setOpen(false); logout() }}><LogOut size={18} aria-hidden="true" />Log Out</button></div>{settings && <><strong>Account Settings</strong><p>Manage your ENTER account.</p></>}{error && <p role="alert" className="error">{error}</p>}{settings && (!deleting ? <button type="button" className="cp-danger" onClick={() => setDeleting(true)}>Delete my account</button> : <form onSubmit={async event => { event.preventDefault(); const data = new FormData(event.currentTarget); setBusy(true); setError(''); try { await api.deleteCandidateAccount(String(data.get('password')), String(data.get('confirmation'))); accountDeleted() } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not delete account.') } finally { setBusy(false) } }}><label>Current password<input type="password" name="password" autoComplete="current-password" required /></label><label>Type DELETE to confirm<input name="confirmation" required pattern="DELETE" /></label><div><button disabled={busy} className="cp-danger">Permanently delete my account</button><button type="button" disabled={busy} onClick={() => { setDeleting(false); setError('') }}>Cancel</button></div></form>)}</section>}</div>
 }
 
 function CandidatePortal({ user, logout, accountDeleted }: { user: User; logout: () => void; accountDeleted: () => void }) {
   const beforeLeave = useRef<(() => Promise<boolean>) | null>(null)
-  return <Shell user={user} accountMenu={<CandidateAccountMenu user={user} accountDeleted={accountDeleted} />} logout={() => { void (async () => { if (!beforeLeave.current || await beforeLeave.current()) logout() })() }}><CandidateExperience beforeLeaveRef={beforeLeave} /></Shell>
+  const [tab, setTab] = useState<'profile' | 'opportunities' | 'applications'>('opportunities')
+  const [detailsFromApplications, setDetailsFromApplications] = useState(false)
+  const [opportunitiesVersion, setOpportunitiesVersion] = useState(0)
+  const [applications, setApplications] = useState<{id:number; opportunity_id:string; created_at:string}[]>([])
+  const [applicationError, setApplicationError] = useState('')
+  const [loadingApplications, setLoadingApplications] = useState(false)
+  useEffect(() => {
+    if (tab !== 'applications') return
+    let active = true
+    setLoadingApplications(true); setApplicationError('')
+    api.opportunityApplications().then(value => { if (active) setApplications(value) }).catch(cause => { if (active) setApplicationError(cause instanceof Error ? cause.message : 'Could not load applications.') }).finally(() => { if (active) setLoadingApplications(false) })
+    return () => { active = false }
+  }, [tab])
+  async function selectTab(next: typeof tab, resetOpportunities = true) {
+    if (beforeLeave.current && !await beforeLeave.current()) return
+    beforeLeave.current = null
+    if (resetOpportunities) setDetailsFromApplications(false)
+    if (next === 'opportunities' && resetOpportunities) {
+      sessionStorage.removeItem('enter-opportunity-intent')
+      const url = new URL(window.location.href)
+      url.searchParams.delete('role')
+      window.history.replaceState({}, '', url.pathname + url.search)
+      setOpportunitiesVersion(value => value + 1)
+    }
+    setTab(next)
+    window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
+  }
+  const navigation = <nav className="candidate-platform-nav" aria-label="Candidate platform">{([['opportunities', 'Opportunities'], ['applications', 'My Applications']] as const).map(([key, title]) => <button key={key} aria-current={tab === key ? 'page' : undefined} onClick={() => void selectTab(key)}>{title}</button>)}</nav>
+  return <Shell navigation={navigation} user={user} accountMenu={<CandidateAccountMenu user={user} accountDeleted={accountDeleted} viewProfile={() => void selectTab('profile')} updateResume={() => { void selectTab('profile'); const observer = new MutationObserver(() => { const input = document.querySelector<HTMLInputElement>('.candidate-experience input[aria-label="Update Resume"], .candidate-experience input[data-testid="resume-input"]'); if (input) { observer.disconnect(); input.closest('label')?.scrollIntoView({behavior:'smooth',block:'center'}); input.click() } }); observer.observe(document.body,{childList:true,subtree:true}); window.setTimeout(() => observer.disconnect(),10000) }} logout={() => { void (async () => { if (!beforeLeave.current || await beforeLeave.current()) logout() })() }} />} logout={() => { void (async () => { if (!beforeLeave.current || await beforeLeave.current()) logout() })() }}>
+    <div key={tab} className="candidate-tab-panel"><Suspense fallback={<div className="candidate-tab-loading" role="status">Opening your profile…</div>}>
+    {tab === 'profile' && <CandidateExperience beforeLeaveRef={beforeLeave} />}
+    {tab === 'opportunities' && <div className="candidate-platform-opportunities"><Opportunities key={opportunitiesVersion} applicationDetails={detailsFromApplications} onDetailClose={detailsFromApplications ? () => { const url = new URL(window.location.href); url.searchParams.delete('role'); window.history.replaceState({}, '', url.pathname + url.search); void selectTab('applications') } : undefined} embedded loggedIn onLogin={() => void selectTab('profile')} /></div>}
+    {tab === 'applications' && <CandidateApplications applications={applications} loading={loadingApplications} error={applicationError} browse={() => void selectTab('opportunities')} view={id => { setDetailsFromApplications(true); sessionStorage.removeItem('enter-opportunity-intent'); window.history.replaceState({}, '', '?role=' + encodeURIComponent(id)); void selectTab('opportunities', false) }} />}
+    </Suspense></div>
+  </Shell>
 }
 function CandidateCard({ result, selected, toggle, open, status }: {
   result: SearchResult; selected: boolean; toggle: () => void; open: () => void; status: (value: string) => void
@@ -645,7 +681,7 @@ export default function App() {
   async function logout() { try { await api.logout() } catch { /* local logout still applies */ } auth.clear(); setUser(null); navigate('/') }
   const query = new URLSearchParams(window.location.search)
   if (import.meta.env.VITE_CANDIDATE_ONLY === 'true' && (path.startsWith('/recruiter') || screen === 'recruiter')) return <PlatformBackground><main className="auth-page"><section className="auth-card"><h1>This platform is not available</h1><button onClick={() => { setUser(null); navigate('/') }}>Return to Enter</button></section></main></PlatformBackground>
-  if (path === '/opportunities' && !choice) return <Opportunities key={user?.role || 'public'} loggedIn={user?.role === 'candidate'} onLogin={() => { setAuthMode('login'); setChoice('candidate') }} />
+  if (path === '/opportunities' && !choice && user?.role !== 'candidate') return <Opportunities key={user?.role || 'public'} loggedIn={false} onLogin={() => { setAuthMode('login'); setChoice('candidate') }} />
   if (path === '/careers') return <Careers />
   if (path === '/privacy') return <LegalPlaceholder kind="privacy" />
   if (path === '/terms') return <LegalPlaceholder kind="terms" />

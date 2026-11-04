@@ -1,7 +1,7 @@
 import pytest
 from django.contrib.auth.models import User
 from django.utils import timezone
-from talent.models import CandidateProfile, OpportunityApplication
+from talent.models import CandidateProfile, OpportunityApplication, Resume
 
 
 @pytest.mark.django_db
@@ -16,7 +16,11 @@ def test_application_requires_login(client):
 @pytest.mark.django_db
 def test_candidate_application_persists_and_prevents_duplicates(client):
     user = User.objects.create_user(username="opportunity-candidate")
-    CandidateProfile.objects.create(user=user, email_verified_at=timezone.now())
+    profile = CandidateProfile.objects.create(user=user, email_verified_at=timezone.now())
+    Resume.objects.create(
+        candidate=profile, file='test-only.docx', original_name='test.docx',
+        processing_status='completed', scan_status='clean',
+    )
     client.force_authenticate(user)
     body = {"opportunity_id": "backend-engineer", "note": "Interested in backend systems."}
     assert (
@@ -28,6 +32,9 @@ def test_candidate_application_persists_and_prevents_duplicates(client):
     application = OpportunityApplication.objects.get()
     assert application.candidate.user_id == user.id
     assert application.note == body["note"]
+    history = client.get('/api/v1/opportunities/applications/')
+    assert history.status_code == 200
+    assert [row['id'] for row in history.data] == [application.pk]
     assert (
         client.post(
             "/api/v1/opportunities/applications/", {"opportunity_id": "unknown"}, format="json"
@@ -62,3 +69,16 @@ def test_every_public_opportunity_has_one_backend_application_choice():
     ids = re.findall(r"(?:\"id\"|id)\s*:\s*['\"]([^'\"]+)", catalog)
     assert len(ids) == len(set(ids))
     assert set(ids) == set(OPPORTUNITY_IDS)
+
+
+@pytest.mark.django_db
+def test_application_history_is_private_and_resume_required(client, candidate_account):
+    response = client.post(
+        '/api/v1/opportunities/applications/', {'opportunity_id': 'backend-engineer'}
+    )
+    assert response.status_code == 400
+    assert client.get('/api/v1/opportunities/applications/').data == []
+    other = User.objects.create_user(username='another-applicant')
+    profile = CandidateProfile.objects.create(user=other)
+    OpportunityApplication.objects.create(candidate=profile, opportunity_id='backend-engineer')
+    assert client.get('/api/v1/opportunities/applications/').data == []

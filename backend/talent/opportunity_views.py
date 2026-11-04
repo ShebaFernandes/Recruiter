@@ -44,9 +44,20 @@ class ApplicationSerializer(serializers.Serializer):
     note = serializers.CharField(max_length=5000, required=False, allow_blank=True)
 
 
-@api_view(["POST"])
+@api_view(["GET", "POST"])
 @permission_classes([IsCandidate])
 def apply(request):
+    if request.method == 'GET':
+        rows = OpportunityApplication.objects.filter(
+            candidate__user=request.user
+        ).order_by('-created_at').values('id', 'opportunity_id', 'created_at')
+        return Response(list(rows))
+    profile = CandidateProfile.objects.get(user=request.user)
+    latest = profile.resumes.first()
+    if not latest or latest.processing_status != 'completed' or latest.scan_status != 'clean':
+        return Response({'detail': 'Upload and process your resume before applying.'}, status=400)
+    if latest.extracted_data.get('_identity_issue'):
+        return Response({'detail': 'Confirm resume ownership before applying.'}, status=400)
     serializer = ApplicationSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     application, created = OpportunityApplication.objects.get_or_create(

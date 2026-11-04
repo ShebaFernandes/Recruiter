@@ -19,12 +19,18 @@ function setup(profile = ready) {
   return render(<OpportunityApplication role={role} onBack={vi.fn()} />)
 }
 async function confirm() {
-  fireEvent.click(await screen.findByRole('button', { name: 'Use current CV' }))
-  fireEvent.click(screen.getByRole('button', { name: 'Review application' }))
+  await screen.findByRole('button', { name: 'Submit application' })
   fireEvent.click(screen.getByRole('checkbox'))
 }
 describe('opportunity application', () => {
-  it('requires CV selection, review and explicit confirmation before submitting the remembered role', async () => {
+  it('lets a candidate with a processed CV apply without completing optional profile fields', async () => {
+    setup({ ...ready, profile_status: 'draft', can_submit: false })
+    expect(await screen.findByRole('heading', { name: 'Review your application' })).toBeVisible()
+    expect(screen.queryByRole('heading', { name: 'Choose your CV' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Submit application' })).toBeDisabled()
+  })
+
+  it('automatically selects the current CV and requires explicit confirmation before submitting the remembered role', async () => {
     sessionStorage.setItem('enter-opportunity-intent', role.id)
     const submit = vi.spyOn(api, 'applyOpportunity').mockResolvedValue({ detail: 'Your application has been received.' })
     setup(); await confirm()
@@ -76,9 +82,20 @@ describe('opportunity application', () => {
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Please try again.'))
     expect(screen.getByRole('button', { name: 'Submit application' })).toBeEnabled()
   })
+  it('shows a processing message with a recovery option when the current CV is still being checked', async () => {
+    setup({ ...ready, latest_resume: { ...ready.latest_resume!, processing_status: 'processing', scan_status: 'scanning' } })
+    expect(await screen.findByRole('heading', { name: 'While we get to know you…' })).toBeVisible()
+    expect(screen.queryByRole('heading', { name: 'Choose your CV' })).not.toBeInTheDocument()
+  })
+  it('shows a failure message with a retry and replace option when CV processing failed', async () => {
+    setup({ ...ready, latest_resume: { ...ready.latest_resume!, processing_status: 'failed', can_retry: true } })
+    expect(await screen.findByRole('heading', { name: 'We couldn’t finish this resume' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Retry processing' })).toBeVisible()
+    expect(screen.getByLabelText('Upload a replacement resume')).toBeInTheDocument()
+  })
   it('blocks draft profiles, pending processing, unsafe scans and unresolved ownership or profile reviews', () => {
     expect(applicationProfileReady(ready)).toBe(true)
-    for (const patch of [{ latest_resume: null }, { profile_status: 'draft' }, { can_submit: false }, { resume_identity_warning: { code: 'identity_unverified' } }, { resume_review: {} }, { latest_resume: { ...ready.latest_resume, processing_status: 'processing' } }, { latest_resume: { ...ready.latest_resume, scan_status: 'infected' } }]) {
+    for (const patch of [{ latest_resume: null }, { profile_status: 'draft' }, { can_submit: false }, { resume_identity_warning: { code: 'identity_unverified' } }, { resume_review: {} }, { latest_resume: { ...ready.latest_resume!, processing_status: 'processing' } }, { latest_resume: { ...ready.latest_resume, scan_status: 'infected' } }]) {
       expect(applicationProfileReady({ ...ready, ...patch } as Candidate)).toBeFalsy()
     }
   })
