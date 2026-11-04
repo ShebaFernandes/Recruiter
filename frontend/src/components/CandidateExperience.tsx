@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { api } from '../api'
 import { applicationProfileReady } from '../opportunityApplication'
-import { sortCareerHistory } from '../careerHistory'
 import type { Candidate, CareerPreferences, WorkExperience, Resume } from '../types'
 import { CandidateProcessing } from './CandidatePresentation'
 import CandidateCareerTimeline from './CandidateCareerTimeline'
@@ -223,28 +222,17 @@ const isExperienceList = (value: unknown): value is WorkExperience[] => Array.is
   typeof item === 'object' && item !== null && 'company' in item && 'role' in item
 ))
 
-function ExperienceReviewList({ items }: { items: WorkExperience[] }) {
-  return <ol className="cp-review-history">{sortCareerHistory(items).map((item, index) => {
-    const period = item.date_label || `${item.start_date || 'Start not specified'} — ${item.end_date || 'End not specified'}`
-    return <li key={`${item.company}-${item.role}-${item.start_date || index}`}><strong>{item.role || 'Role not specified'}</strong><span>{item.company || 'Employer not specified'}</span><small>{period}</small></li>
-  })}</ol>
-}
-
 function ResumeReview({ profile, apply, busy }: { profile: Candidate; apply: (fields: string[]) => void; busy: boolean }) {
-  const [selected, setSelected] = useState<string[]>([])
   if (!profile.resume_review) return null
-  const display = (value: unknown) => Array.isArray(value) ? value.map(String).join('\n') : String(value ?? 'Not specified')
-  const proposedHistory = profile.resume_review.fields.work_experiences
-  const historySummary = isExperienceList(proposedHistory) ? `${proposedHistory.length} roles across ${new Set(proposedHistory.map(item => item.company)).size} employers` : ''
-  return <details id="resume-changes-review" className="cp-resume-updates"><summary>New resume changes to review ({Object.keys(profile.resume_review.fields).length})</summary><p className="cp-muted">Your profile is already available. These are only fields from the latest resume that conflict with saved corrections; choose what to update, or leave your profile unchanged.</p>
-    {historySummary && <p className="cp-review-summary"><strong>Career Journey:</strong> your saved profile has {profile.work_experiences.length} roles; the latest resume contains {historySummary}.</p>}
-    {Object.entries(profile.resume_review.fields).map(([key, value]) => {
-      const history = key === 'work_experiences' && isExperienceList(value)
-      const savedHistory = history && isExperienceList(profile.work_experiences) ? profile.work_experiences : []
-      return <details key={key} className="cp-review-field" open={history}><summary>{history ? 'Career Journey role changes' : label(key)}</summary><div className="cp-fields"><div><small>Saved profile</small>{history ? <ExperienceReviewList items={savedHistory} /> : <p>{display(profile[key as keyof Candidate])}</p>}</div><div><small>Latest resume</small>{history ? <ExperienceReviewList items={value} /> : <p>{display(value)}</p>}</div></div><label className="cp-check"><input type="checkbox" checked={selected.includes(key)} disabled={busy} onChange={e => setSelected(e.target.checked ? [...selected, key] : selected.filter(item => item !== key))} />{history ? `Apply ${value.length === 1 ? 'this role change' : `these ${value.length} role changes`}` : `Replace ${label(key)}`}</label></details>
-    })}
-    <div className="cp-actions"><button className="primary" disabled={busy || !selected.length} onClick={() => apply(selected)}>Apply selected changes</button><button disabled={busy} onClick={() => apply([])}>Keep my saved profile</button></div>
-  </details>
+  const fields = Object.keys(profile.resume_review.fields)
+  return <div id="resume-changes-review" className="cp-resume-updates">
+    <h3>Use your latest resume?</h3>
+    <p>We found updates in your new resume. Update your profile in one click.</p>
+    <div className="cp-actions">
+      <button className="primary" disabled={busy} onClick={() => apply(fields)}>Use latest resume</button>
+      <button disabled={busy} onClick={() => apply([])}>Keep current profile</button>
+    </div>
+  </div>
 }
 
 export default function CandidateExperience({ beforeLeaveRef, opportunity }: { accountDeleted?: () => void; beforeLeaveRef?: React.MutableRefObject<(() => Promise<boolean>) | null>; opportunity?: { title: string; onContinue: (profile: Candidate) => void } }) {
@@ -482,6 +470,9 @@ export default function CandidateExperience({ beforeLeaveRef, opportunity }: { a
   }
   if (!profile) return <main className="candidate-experience"><p role={error ? 'alert' : 'status'}>{error || 'Opening your profile…'}</p>{error && <button onClick={() => void run(api.candidateProfile, '')}>Try again</button>}</main>
   const p = profile, preferences = p.career_preferences || {}
+  const extractedJourney = p.resume_review?.resume_id === p.latest_resume?.id
+    && !p.resume_identity_warning ? p.resume_review?.fields.work_experiences : undefined
+  const journeyItems = isExperienceList(extractedJourney) ? extractedJourney : p.work_experiences
   const skills = (preferences.strongest_skills ?? p.skills).slice(0, 5)
   const resume = p.available_resume ?? (p.latest_resume?.processing_status === 'completed' ? p.latest_resume : null)
   const title = professionalTitle(p)
@@ -606,7 +597,7 @@ export default function CandidateExperience({ beforeLeaveRef, opportunity }: { a
         {p.resume_identity_warning && <ResumeOwnershipPrompt key={p.resume_identity_warning.resume_id} warning={p.resume_identity_warning} busy={busy} confirm={password => run(() => api.confirmResumeOwnership(p.resume_identity_warning!.resume_id, p.resume_identity_warning!.version, password), 'Ownership recorded. You can retry extraction without AI.')} chooseResume={() => document.querySelector<HTMLInputElement>('#career-settings-panel input[type="file"]')?.click()} />}
         {editing ? <ProfileEditor profile={p} busy={busy} save={save} cancel={() => setEditing(false)} /> : <>
           <div className="cp-identity-card"><CandidatePhoto key={p.profile_photo_url || 'initials'} profile={p} busy={busy} upload={file => void uploadPhoto(file)} remove={() => void run(api.removeCandidatePhoto, '')} /><div className="cp-identity-column"><div className="cp-identity"><h3>{displayName(p.full_name)}</h3><p className="cp-professional-title">{title || 'Add your professional title'}</p>{identityDetails.length > 0 && <div className="cp-identity-meta">{college && <span><GraduationCap aria-hidden="true" />{college}</span>}{Number(p.total_experience) > 0 && <span><BriefcaseBusiness aria-hidden="true" />{p.total_experience} years experience</span>}{p.location && <span><MapPin aria-hidden="true" />{p.location}</span>}</div>}</div><div className="cp-professional-read"><h3 className="cp-read-heading" aria-label="ENTER's read on you"><Sparkles className="cp-read-sparkle" aria-hidden="true" /><svg className="cp-read-wordmark" viewBox="145 145 1110 310" aria-hidden="true" focusable="false"><image href="/enter-wordmark.svg" width="1400" height="600" /></svg><span>'s read on you</span></h3><p>{professionalRead}</p></div></div><aside className="cp-highlight"><h3>What stood out to us</h3><p>{preferences.standout_signal || 'Add an evidence-backed achievement using “Not quite — edit”.'}</p>{preferences.standout_signal && highlightTopics.length > 0 && <div className="cp-highlight-topics">{highlightTopics.map(topic => <span key={topic}>{topic}</span>)}</div>}</aside></div>
-          <div className="cp-career-surface"><CandidateCareerTimeline items={p.work_experiences} extraction={p.employment_extraction} identityWarning={p.resume_identity_warning?.code} edit={() => setEditing(true)} saveRole={(id, patch) => run(() => api.updateEmployment(id, patch), 'Career Journey updated.')} busy={busy} retryProcessing={p.latest_resume?.can_retry && p.employment_extraction?.status === 'review_required' ? () => { void run(() => api.retryResume(p.latest_resume!.id), 'Rechecking your saved resume without AI.') } : undefined} reviewLatestResume={p.resume_review?.resume_id === p.employment_extraction?.resume_id && p.resume_review?.fields.work_experiences ? () => {
+          <div className="cp-career-surface"><CandidateCareerTimeline automatic items={journeyItems} extraction={p.employment_extraction} identityWarning={p.resume_identity_warning?.code} edit={() => setEditing(true)} saveRole={(id, patch) => run(() => api.updateEmployment(id, patch), 'Career Journey updated.')} busy={busy} retryProcessing={p.latest_resume?.can_retry && p.employment_extraction?.status === 'review_required' ? () => { void run(() => api.retryResume(p.latest_resume!.id), 'Rechecking your saved resume without AI.') } : undefined} reviewLatestResume={p.resume_review?.resume_id === p.employment_extraction?.resume_id && p.resume_review?.fields.work_experiences ? () => {
             const review = document.getElementById('resume-changes-review') as HTMLDetailsElement | null
             if (!review) return
             review.open = true

@@ -42,7 +42,7 @@ export default function CareerJourney({ items, extraction, onEditRole, detailed 
     return () => observer.disconnect()
   }, [items.length])
   const fillDatedAxis = (showCompanyLabels || profilePresentation) && layout.datedEnd > 0 && layout.rows.every(row => row.dated)
-  const availableWidth = Math.max(1, viewportWidth - 48)
+  const availableWidth = Math.max(1, Math.min(profilePresentation ? 720 : Infinity, viewportWidth - 48))
   const calendarWidth = profilePresentation && viewportWidth > 0
     ? availableWidth
     : Math.max(layout.width, availableWidth)
@@ -98,7 +98,7 @@ export default function CareerJourney({ items, extraction, onEditRole, detailed 
     let lane = markerLanes.findIndex(end => row.left * stretch - end >= 52)
     if (lane < 0) lane = markerLanes.length
     markerLanes[lane] = row.left * stretch
-    return lane
+    return profilePresentation ? 0 : lane
   })
   const summaryEdges:number[] = []
   const summaries = layout.rows.map(row => {
@@ -108,6 +108,10 @@ export default function CareerJourney({ items, extraction, onEditRole, detailed 
     summaryEdges[lane] = left + 240
     return { left, lane }
   })
+  // Profile markers share a compact horizontal row; retain every role's details.
+  const profileStep = contentWidth / Math.max(1, sorted.length)
+  const markerLeft = (index: number) => profilePresentation
+    ? index * profileStep : layout.rows[index].left * stretch
   const verified = new Set(extraction?.verified_role_ids || [])
   const anyUnverified = items.some(item => item.id == null || !verified.has(item.id))
   const lastDatedEnd = Math.max(...sorted.filter((_, i) => layout.rows[i].dated).map(item => endTime(item, now)).filter(Number.isFinite))
@@ -122,7 +126,7 @@ export default function CareerJourney({ items, extraction, onEditRole, detailed 
       {anyUnverified && <p className="career-review-key">Hollow markers show earlier saved roles.</p>}
       <div ref={root} className={`career-journey shared calendar-timeline marker-only ${profilePresentation ? 'fit-profile' : ''} ${showCompanyLabels ? 'with-role-summaries' : ''} ${detailed ? 'detailed' : 'compact'} ${items.length === 1 && layout.rows[0].span > 0 ? 'has-single-period' : ''}`} aria-label="Career journey" role="list" tabIndex={0}>
         <div className="career-calendar" role="presentation" style={{ width:contentWidth, height:showCompanyLabels ? 104 + Math.max(0, ...lanes) * 52 + summaryEdges.length * layout.labelHeight : 112 + Math.max(0, ...lanes) * 52 }}>
-          <span className={`career-axis ${sorted.some(item => ongoing(item) && Number.isFinite(time(item.start_date)) && !coarseDates(item)) ? 'is-current' : ''}`} aria-hidden="true" style={{ width:layout.datedEnd * stretch }} />
+          <span className={`career-axis ${sorted.some(item => ongoing(item) && Number.isFinite(time(item.start_date)) && !coarseDates(item)) ? 'is-current' : ''}`} aria-hidden="true" style={{ width:profilePresentation ? contentWidth : layout.datedEnd * stretch }} />
           {sorted.map((item, index) => {
             const position = layout.rows[index]
             const start = time(item.start_date)
@@ -141,9 +145,9 @@ export default function CareerJourney({ items, extraction, onEditRole, detailed 
               note:[overlaps ? 'Overlapping employment' : '', previousRole ? `Career progression from ${previousRole.role}` : '', !position.dated ? 'Dates incomplete · not placed on the calendar scale' : ''].filter(Boolean).join(' · ') }
             const gapData:Detail = { key:`${key}-gap`, title:'Career gap', period:`Approximately ${gap} ${gap === 1 ? 'month' : 'months'}`, description:item.gap_reason || 'Reason not provided by the candidate.' }
             return <div className={`career-sequence ${isInternship(item) ? 'is-internship' : ''} ${isVerified ? 'is-verified' : 'needs-review'} ${position.dated ? '' : 'dates-incomplete'}`} key={key}
-              style={{ left:position.left * stretch, '--career-role-span':`${position.span * stretch}px`, '--career-marker-lane':lanes[index], '--career-summary-left':`${summaries[index].left - position.left * stretch}px`, '--career-summary-top':`${98 + Math.max(0, ...lanes) * 52 + summaries[index].lane * layout.labelHeight}px` } as CSSProperties}>
+              style={{ left:markerLeft(index), '--career-role-span':`${profilePresentation ? (index < sorted.length - 1 ? profileStep : 0) : position.span * stretch}px`, '--career-marker-lane':lanes[index], '--career-summary-left':`${summaries[index].left - position.left * stretch}px`, '--career-summary-top':`${98 + Math.max(0, ...lanes) * 52 + summaries[index].lane * layout.labelHeight}px` } as CSSProperties}>
               <span className="career-period-line" aria-hidden="true" />
-              {gap > 0 && <div className="career-gap-period" role="listitem" style={{ left:(layout.x(gapStart) - position.left) * stretch, width:(layout.x(start) - layout.x(gapStart)) * stretch }}>
+              {gap > 0 && <div className="career-gap-period" role="listitem" style={{ left:profilePresentation ? -profileStep * 0.45 : (layout.x(gapStart) - position.left) * stretch, width:profilePresentation ? profileStep * 0.45 : (layout.x(start) - layout.x(gapStart)) * stretch }}>
                 <button type="button" className="career-job career-gap-marker" aria-label={`Career gap of approximately ${gap} ${gap === 1 ? 'month' : 'months'}`} aria-expanded={active?.key === gapData.key} aria-describedby={active?.key === gapData.key ? id : undefined} {...handlers(gapData)}><span className="career-gap-line" aria-hidden="true" /></button>
               </div>}
               <div className="career-period" role="listitem">
@@ -161,7 +165,7 @@ export default function CareerJourney({ items, extraction, onEditRole, detailed 
               </div>
             </div>
           })}
-          {showEndYear && <span className="career-end-year" style={{ left:layout.datedEnd * stretch, top:endYearNeedsLane ? 88 : undefined }} aria-hidden="true">{endYear}</span>}
+          {showEndYear && <span className="career-end-year" style={{ left:profilePresentation ? contentWidth : layout.datedEnd * stretch, top:endYearNeedsLane ? 88 : undefined }} aria-hidden="true">{endYear}</span>}
         </div>
       </div>
     </>}

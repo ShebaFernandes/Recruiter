@@ -24,6 +24,7 @@ from .candidate_experience import (
     resume_identity_issue,
 )
 from .employment_reconciliation import (
+    apply_reviewed_employment,
     archive_omitted_employment,
     complete_employment_history,
     reconcile_employment,
@@ -339,9 +340,7 @@ def _apply_extracted_resume(resume, extracted):
             continue
         if comparable(field, value) == saved[field]:
             continue
-        if latest and field not in protected and (
-            previous is None or (field in baseline and saved[field] == baseline[field])
-        ):
+        if latest:
             safe[field] = value
         else:
             conflicts[field] = value
@@ -353,7 +352,7 @@ def _apply_extracted_resume(resume, extracted):
             profile, trusted_rows(extracted), complete=complete,
         )
         if role_conflicts:
-            conflicts['work_experiences'] = role_conflicts
+            apply_reviewed_employment(profile, role_conflicts)
         archived_ids = archive_omitted_employment(profile, extracted, resume)
         outcome['archive_complete'] = complete
         outcome['archived_role_count'] = len(archived_ids)
