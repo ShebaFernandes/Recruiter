@@ -52,22 +52,21 @@
 .career-journey.fit-profile .career-gap-line { border-top-style:dotted; }
 .career-journey.fit-profile .career-calendar { min-width:0; }
 
-/* Incomplete-date styling belongs to the connecting line, not the role icon. */
-.career-journey.fit-profile .dates-incomplete .career-marker-icon { border-style:solid; }
-.career-journey.shared.marker-only.fit-profile .dates-incomplete .career-period-line {
-  display:block; height:0; border-top:3px dotted #60777b; background:transparent;
+/* Only confirmed gaps use dots; internships alone use a lighter palette. */
+.career-journey.shared.marker-only.fit-profile .career-marker-icon {
+  border:1px solid #32767d; background:#32767d; color:#fff;
 }
-.career-journey.fit-profile .career-axis.is-current::after { right:0; }
-
-/* Keep review markers clear, with dots confined to the connector. */
-.career-journey.shared.marker-only.fit-profile .dates-incomplete .career-marker-icon {
-  border:2px solid #32767d;
-  background:var(--enter-surface);
-  color:#32767d;
+.career-journey.shared.marker-only.fit-profile .career-period-line {
+  display:block; height:3px; border:0; background:#32767d;
 }
-.career-journey.shared.marker-only.fit-profile .dates-incomplete .career-period-line,
+.career-journey.shared.marker-only.fit-profile .is-internship .career-marker-icon {
+  border-color:#8fc7c4; background:#c7e6e3; color:#245d61;
+}
+.career-journey.shared.marker-only.fit-profile .is-internship .career-period-line {
+  background:#8fc7c4;
+}
+.career-journey.shared.marker-only.fit-profile .career-gap-period { z-index:1; }
 .career-journey.shared.marker-only.fit-profile .career-gap-line {
-  height:3px;
-  border:0;
+  height:3px; border:0;
   background:radial-gradient(circle, #32767d 1px, transparent 1.2px) 0 50% / 7px 3px repeat-x, var(--enter-surface);
 }

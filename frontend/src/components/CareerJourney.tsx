@@ -11,6 +11,18 @@ import './career-journey.css'
 type CareerJourneyProps = { items: WorkExperience[]; detailed?: boolean; showCompanyLabels?: boolean; compactMarkers?: boolean; profilePresentation?: boolean; minimal?: boolean; reverse?: boolean; presentAtEnd?: boolean; candidateMilestones?: boolean; extraction?: EmploymentExtraction | null; identityWarning?: string | null; onEditRole?: (item: WorkExperience) => void }
 type Detail = { key:string; company?:string; title:string; period:string; employment?:string; verification?:string; note?:string; description?:string; item?:WorkExperience }
 type OpenDetail = Detail & { x:number; y:number; above:boolean }
+const companyDisplayName = (name: string) => name.replace(
+  /(?:[,\s]+(?:pvt\.?\s*(?:ltd\.?|limited)|private\s+limited|limited|ltd\.?|inc\.?|incorporated|llc))\s*$/i, '',
+).trim() || name
+const briefDescription = (description?: string) => {
+  const text = description?.replace(/\s+/g, ' ').trim() || ''
+  return text.length > 180 ? `${text.slice(0, 177).replace(/\s+\S*$/, '')}…` : text
+}
+const employmentYears = (item: WorkExperience) => {
+  const start = careerStartYear(item)
+  const end = ongoing(item) ? 'Present' : item.end_date?.match(/^\d{4}/)?.[0]
+  return start && end ? `${start} — ${end}` : period(item)
+}
 const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const monthYear = (value:string | null) => {
   const matched = value?.match(/^((?:19|20)\d{2})-(0[1-9]|1[0-2])(?:-|$)/)
@@ -112,6 +124,13 @@ export default function CareerJourney({ items, extraction, onEditRole, detailed 
   const profileStep = contentWidth / Math.max(1, sorted.length)
   const markerLeft = (index: number) => profilePresentation
     ? index * profileStep : layout.rows[index].left * stretch
+  const seenYears = new Set<string>()
+  const markerYears = sorted.map(item => {
+    const year = careerStartYear(item)
+    if (profilePresentation && year && seenYears.has(year)) return ''
+    if (year) seenYears.add(year)
+    return year || '?'
+  })
   const verified = new Set(extraction?.verified_role_ids || [])
   const anyUnverified = items.some(item => item.id == null || !verified.has(item.id))
   const lastDatedEnd = Math.max(...sorted.filter((_, i) => layout.rows[i].dated).map(item => endTime(item, now)).filter(Number.isFinite))
@@ -123,7 +142,7 @@ export default function CareerJourney({ items, extraction, onEditRole, detailed 
   return <div className="career-history">
     <EmploymentHistoryStatus items={items} extraction={extraction} />
     {items.length > 0 && <>
-      {anyUnverified && <p className="career-review-key">Hollow markers show earlier saved roles.</p>}
+      {!profilePresentation && anyUnverified && <p className="career-review-key">Hollow markers show earlier saved roles.</p>}
       <div ref={root} className={`career-journey shared calendar-timeline marker-only ${profilePresentation ? 'fit-profile' : ''} ${showCompanyLabels ? 'with-role-summaries' : ''} ${detailed ? 'detailed' : 'compact'} ${items.length === 1 && layout.rows[0].span > 0 ? 'has-single-period' : ''}`} aria-label="Career journey" role="list" tabIndex={0}>
         <div className="career-calendar" role="presentation" style={{ width:contentWidth, height:showCompanyLabels ? 104 + Math.max(0, ...lanes) * 52 + summaryEdges.length * layout.labelHeight : 112 + Math.max(0, ...lanes) * 52 }}>
           <span className={`career-axis ${sorted.some(item => ongoing(item) && Number.isFinite(time(item.start_date)) && !coarseDates(item)) ? 'is-current' : ''}`} aria-hidden="true" style={{ width:profilePresentation ? contentWidth : layout.datedEnd * stretch }} />
@@ -154,7 +173,7 @@ export default function CareerJourney({ items, extraction, onEditRole, detailed 
                 {lanes[index] > 0 && <span className="career-marker-stem" aria-hidden="true" />}
                 <button type="button" className={`career-job ${active?.key === key ? 'is-active' : ''}`} aria-label={`${data.title} at ${data.company}, ${data.period}${data.employment ? `, ${data.employment}` : ''}${overlaps ? ', overlapping employment' : ''}, ${verification}`} aria-expanded={active?.key === key} aria-describedby={active?.key === key ? id : undefined} {...handlers(data)}>
                   <span className="career-marker-icon" aria-hidden="true"><CandidateMilestoneIcon /></span>
-                  <small>{careerStartYear(item) || '?'}</small>
+                  {markerYears[index] && <small>{markerYears[index]}</small>}
                 </button>
                 {showCompanyLabels && <div className="career-role-summary">
                   <span className="career-company-initial" aria-hidden="true">{data.company?.trim().charAt(0).toUpperCase()}</span>
@@ -170,12 +189,18 @@ export default function CareerJourney({ items, extraction, onEditRole, detailed 
       </div>
     </>}
     {active && createPortal(<div id={id} className="career-popover" role="tooltip" onMouseEnter={() => clearTimeout(hideTimer.current)} onMouseLeave={leave} style={{ left:active.x, ...(active.above ? { bottom:active.y } : { top:active.y }) }}>
+      {profilePresentation ? <>
+        <strong>{active.company ? companyDisplayName(active.company) : active.title}</strong>
+        <span className="career-detail-dates">{active.item ? employmentYears(active.item) : active.period}</span>
+        {(active.description || active.item?.role) && <p>{briefDescription(active.description) || active.item?.role}</p>}
+      </> : <>
       <strong>{active.company || active.title}</strong>{active.company && <b>{active.title}</b>}
       <span className="career-detail-dates">{active.period}</span>
       {active.employment && <span className="career-detail-type">{active.employment}</span>}
       {active.verification && <p className="career-detail-verification">{active.verification}</p>}
         {onEditRole && active.item?.id != null && <button type="button" className="career-popover-edit" onClick={() => { onEditRole(active.item!); close() }}>Edit this role</button>}
       {active.note && <p>{active.note}</p>}{active.description && <p>{active.description}</p>}
+      </>}
     </div>, document.body)}
   </div>
 }

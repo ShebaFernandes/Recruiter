@@ -16,8 +16,13 @@ it.each([CareerJourney, CandidateCareerTimeline])('shows years and markers until
   const marker = screen.getByRole('button', { name:/Engineer at Example/ })
   fireEvent.focus(marker)
   expect(screen.getByRole('tooltip')).toHaveTextContent('Example')
-  expect(screen.getByRole('tooltip')).toHaveTextContent('Engineer')
-  expect(screen.getByRole('tooltip')).toHaveTextContent('Mar 2018 — Jan 2019')
+  if (Component === CareerJourney) {
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Engineer')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Mar 2018 — Jan 2019')
+  } else {
+    expect(screen.getByRole('tooltip')).toHaveTextContent('2018 — 2019')
+    expect(screen.getByRole('tooltip')).not.toHaveTextContent('Engineer')
+  }
   expect(screen.getByRole('tooltip')).toHaveTextContent('Built reliable tools.')
   expect(marker).toHaveAttribute('aria-expanded', 'true')
   fireEvent.keyDown(document, { key:'Escape' })
