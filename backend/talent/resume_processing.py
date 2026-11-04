@@ -4,7 +4,7 @@ import socket
 import struct
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from decimal import Decimal
+from decimal import ROUND_CEILING, Decimal
 from pathlib import Path
 
 import boto3
@@ -513,6 +513,7 @@ def _reserve_ai_attempt(claimed, reserved_input_tokens):
                 + Decimal(settings.RESUME_AI_MAX_OUTPUT_TOKENS)
                 * settings.RESUME_AI_OUTPUT_USD_PER_MILLION
             ) / Decimal("1000000")
+            reserved_cost = reserved_cost.quantize(Decimal("0.000001"), rounding=ROUND_CEILING)
             now = timezone.now()
             day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
             month_start = datetime(now.year, now.month, 1, tzinfo=now.tzinfo)
@@ -520,7 +521,7 @@ def _reserve_ai_attempt(claimed, reserved_input_tokens):
                 actual=Sum("actual_cost_usd"),
                 reserved=Sum(
                     "estimated_cost_usd",
-                    filter=Q(outcome=ResumeAIUsage.Outcome.RESERVED),
+                    filter=Q(actual_cost_usd__isnull=True),
                 ),
             )
             monthly_values = ResumeAIUsage.objects.filter(
@@ -529,7 +530,7 @@ def _reserve_ai_attempt(claimed, reserved_input_tokens):
                 actual=Sum("actual_cost_usd"),
                 reserved=Sum(
                     "estimated_cost_usd",
-                    filter=Q(outcome=ResumeAIUsage.Outcome.RESERVED),
+                    filter=Q(actual_cost_usd__isnull=True),
                 ),
             )
             daily = (daily_values["actual"] or Decimal("0")) + (
@@ -590,7 +591,8 @@ def _record_ai_attempt(
             usage.stop_reason = str(getattr(metadata, "stop_reason", "") or "")[:60]
         usage.failure_stage = str(getattr(error, "stage", "") or "")[:40]
         usage.validation_rejections = list(validation_rejections or [])
-        if response or getattr(error, "usage_confirmed", False):
+        if ((response or getattr(error, "usage_confirmed", False))
+                and usage.input_tokens > 0):
             if (
                 usage.provider == "gemini"
                 and settings.RESUME_AI_GEMINI_FREE_TIER_APPROVED
@@ -604,6 +606,9 @@ def _record_ai_attempt(
                     Decimal(usage.input_tokens) * settings.RESUME_AI_INPUT_USD_PER_MILLION
                     + Decimal(usage.output_tokens) * settings.RESUME_AI_OUTPUT_USD_PER_MILLION
                 ) / Decimal("1000000")
+                usage.actual_cost_usd = usage.actual_cost_usd.quantize(
+                    Decimal("0.000001"), rounding=ROUND_CEILING,
+                )
         if failure_category:
             usage.failure_category = failure_category[:40]
             usage.outcome = ResumeAIUsage.Outcome.FAILED

@@ -6,7 +6,6 @@ proof of truth: the candidate remains the authority on their own professional hi
 
 import json
 import logging
-import math
 import re
 import time
 from copy import deepcopy
@@ -310,6 +309,14 @@ def _evidence_positions(evidence, text):
 
 def _associated_employer_positions(fact, facts, text):
     employer_evidence = fact["employer_evidence"]
+    quote = fact.get("role_evidence", "")
+    # A structured source row can put the title before the employer. Treat
+    # that exact row as their joint header, never a quotation spanning jobs.
+    if ("|" in quote and "\n" not in quote
+            and supported(fact.get("company"), quote, text)
+            and supported(fact.get("role"), quote, text)
+            and any(normalized(quote) in normalized(line) for line in text.splitlines())):
+        employer_evidence = quote
     if not supported(fact.get("company"), employer_evidence, text) and supported(
         fact.get("company"), fact.get("role_evidence"), text
     ):
@@ -324,6 +331,12 @@ def _associated_employer_positions(fact, facts, text):
     for candidate in facts:
         company = candidate.get("company")
         evidence = candidate.get("employer_evidence")
+        quote = candidate.get("role_evidence", "")
+        if ("|" in quote and "\n" not in quote
+                and supported(company, quote, text)
+                and supported(candidate.get("role"), quote, text)
+                and any(normalized(quote) in normalized(line) for line in text.splitlines())):
+            evidence = quote
         if not supported(company, evidence, text) and supported(
             company, candidate.get("role_evidence"), text
         ):
@@ -640,9 +653,10 @@ def request_input_token_reservation(text, layout_regions=None):
         ensure_ascii=False,
         separators=(",", ":"),
     )
-    # Structured schemas and punctuation tokenize more densely than prose. Two UTF-8
-    # bytes/token plus a small Messages wrapper allowance covered the observed request.
-    return math.ceil(len(request_material.encode("utf-8")) / 2) + 256
+    # Reserve one token per UTF-8 byte plus wrapper overhead rather than an
+    # average prose ratio. Dense punctuation and non-English text must not
+    # consume unreserved budget.
+    return len(request_material.encode("utf-8")) + 1024
 
 
 def _rejection(category, item_index=None, field=None):
@@ -1078,16 +1092,19 @@ def resume_provider():
 
 def interpretation_text(rules):
     # Minimize direct identifiers. Employment history is still personal information.
+    from .services import DATE_RANGE_PATTERN
+
     text = rules.get("raw_text", "")
     for key in ("email", "phone", "linkedin_url", "github_url", "full_name"):
         value = rules.get(key)
-        if value:
+        if value and not (key == "phone" and DATE_RANGE_PATTERN.fullmatch(value.strip())):
             text = re.sub(re.escape(value), "[REDACTED]", text, flags=re.I)
     text = re.sub(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}", "[REDACTED]", text)
     text = re.sub(r"(?:https?://|www\.)\S+", "[REDACTED]", text, flags=re.I)
     text = re.sub(
         r"(?<!\w)\+?\d[\d ()-]{8,}\d(?!\w)",
-        lambda match: "[REDACTED]" if len(re.sub(r"\D", "", match[0])) >= 10 else match[0],
+        lambda match: (match[0] if DATE_RANGE_PATTERN.fullmatch(match[0].strip())
+                       or len(re.sub(r"\D", "", match[0])) < 10 else "[REDACTED]"),
         text,
     )
     return text

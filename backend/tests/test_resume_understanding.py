@@ -1577,7 +1577,8 @@ def test_worker_persists_mocked_ai_interpretation_and_private_evidence(
     assert usage.outcome == ResumeAIUsage.Outcome.SUCCEEDED
     assert usage.provider == "anthropic"
     assert usage.estimated_cost_usd == 0
-    assert usage.actual_cost_usd == 0
+    # The mock supplied no token usage; billing must remain unconfirmed.
+    assert usage.actual_cost_usd is None
     assert "_evidence" in stored.extracted_data
     assert "_evidence" not in str(result) and "raw_text" not in str(result)
     assert "Asha Rao" not in provider.generate.call_args.args[1]["document_text"]
@@ -1845,3 +1846,20 @@ def test_worker_records_evidence_rejection_and_confirmed_cost_separately(
     assert second_usage.latency_ms == 217
     assert second_usage.reserved_input_tokens > 0
     assert second_usage.actual_cost_usd is None
+
+
+def test_title_before_employer_in_exact_pipe_row_keeps_association():
+    text = "Software Intern | Lumen | Jan 2019 - Jun 2019 | Internship"
+    data = work_response([{
+        "company": "Lumen", "role": "Software Intern", "start": "Jan 2019",
+        "end": "Jun 2019", "employer_evidence": "Lumen",
+        "role_evidence": "Software Intern | Lumen | Jan 2019 - Jun 2019",
+    }])
+    assert len(validate_interpretation(data, text)["work_experiences"]) == 1
+
+
+def test_numeric_employment_range_survives_contact_minimization():
+    text = "Lead Engineer | Quartz Co | 05-2020 - 2023-09\nPhone: +91 98765 43210"
+    minimized = interpretation_text({"raw_text": text, "phone": "05-2020 - 2023-09"})
+    assert "05-2020 - 2023-09" in minimized
+    assert "98765" not in minimized
