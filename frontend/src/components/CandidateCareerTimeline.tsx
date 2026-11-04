@@ -20,7 +20,7 @@ export default function CandidateCareerTimeline({ items, edit, saveRole, busy = 
     setSaved(false)
   }
   return <section className="cp-career" aria-labelledby="candidate-career-heading">
-    <div className="cp-career-heading"><div><h3 id="candidate-career-heading">Your career journey</h3><p>{hasTimeline ? 'Employment dates to scale. Scroll to explore; hover or tap a role for details.' : 'Latest resume verification and safely retained records.'}</p></div></div>
+    <div className="cp-career-heading"><div><h3 id="candidate-career-heading">Your career journey</h3><p>{hasTimeline ? 'Employment dates to scale. Hover or tap a role for details.' : 'Latest resume verification and safely retained records.'}</p></div></div>
     <div className={stale ? 'cp-career-previous' : ''}><CareerJourney items={items} extraction={extraction} identityWarning={identityWarning} onEditRole={saveRole ? item => openRole(item) : undefined} profilePresentation presentAtEnd candidateMilestones /></div>
     {extraction?.status === 'review_required' && !items.length && retryProcessing
       ? <button type="button" onClick={retryProcessing}>Try reading this saved resume again (without AI)</button>

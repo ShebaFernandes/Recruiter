@@ -42,10 +42,14 @@ export default function CareerJourney({ items, extraction, onEditRole, detailed 
     return () => observer.disconnect()
   }, [items.length])
   const fillDatedAxis = (showCompanyLabels || profilePresentation) && layout.datedEnd > 0 && layout.rows.every(row => row.dated)
+  const availableWidth = Math.max(1, viewportWidth - 48)
   const calendarWidth = profilePresentation && viewportWidth > 0
-    ? Math.max(240, viewportWidth - 48)
-    : Math.max(layout.width, viewportWidth - 48)
-  const stretch = fillDatedAxis ? calendarWidth / layout.datedEnd : Math.max(1, (viewportWidth - 48) / layout.width)
+    ? availableWidth
+    : Math.max(layout.width, availableWidth)
+  // Fit every saved role, including incomplete-date markers, inside the profile card.
+  const stretch = profilePresentation && viewportWidth > 0
+    ? availableWidth / (fillDatedAxis ? layout.datedEnd : layout.width)
+    : fillDatedAxis ? calendarWidth / layout.datedEnd : Math.max(1, availableWidth / layout.width)
   const contentWidth = fillDatedAxis ? calendarWidth : layout.width * stretch
   const [active, setActive] = useState<OpenDetail | null>(null)
   const pinned = useRef<string | null>(null)
@@ -116,7 +120,7 @@ export default function CareerJourney({ items, extraction, onEditRole, detailed 
     <EmploymentHistoryStatus items={items} extraction={extraction} />
     {items.length > 0 && <>
       {anyUnverified && <p className="career-review-key">Hollow markers show earlier saved roles.</p>}
-      <div ref={root} className={`career-journey shared calendar-timeline marker-only ${showCompanyLabels ? 'with-role-summaries' : ''} ${detailed ? 'detailed' : 'compact'} ${items.length === 1 && layout.rows[0].span > 0 ? 'has-single-period' : ''}`} aria-label="Career journey" role="list" tabIndex={0}>
+      <div ref={root} className={`career-journey shared calendar-timeline marker-only ${profilePresentation ? 'fit-profile' : ''} ${showCompanyLabels ? 'with-role-summaries' : ''} ${detailed ? 'detailed' : 'compact'} ${items.length === 1 && layout.rows[0].span > 0 ? 'has-single-period' : ''}`} aria-label="Career journey" role="list" tabIndex={0}>
         <div className="career-calendar" role="presentation" style={{ width:contentWidth, height:showCompanyLabels ? 104 + Math.max(0, ...lanes) * 52 + summaryEdges.length * layout.labelHeight : 112 + Math.max(0, ...lanes) * 52 }}>
           <span className={`career-axis ${sorted.some(item => ongoing(item) && Number.isFinite(time(item.start_date)) && !coarseDates(item)) ? 'is-current' : ''}`} aria-hidden="true" style={{ width:layout.datedEnd * stretch }} />
           {sorted.map((item, index) => {

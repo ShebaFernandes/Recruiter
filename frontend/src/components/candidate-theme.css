@@ -131,3 +131,12 @@ body:has(.app-shell > .candidate-experience),
   background: #fffefa;
   backdrop-filter: none;
 }
+
+/* The resume row has one content cell, unlike the three-cell settings buttons. */
+.candidate-experience .cp-settings-panel .cp-setting-row.cp-setting-resume {
+  grid-template-columns: minmax(0, 1fr);
+}
+.candidate-experience .cp-setting-resume > div {
+  min-width: 0;
+  width: 100%;
+}

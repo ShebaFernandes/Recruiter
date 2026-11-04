@@ -45,3 +45,5 @@
 .career-popover .career-detail-type { color:#0b7378; }
 .career-popover .career-detail-verification { border-top:1px solid var(--enter-border); padding-top:10px; font-size:12px; }
 @media(prefers-reduced-motion:reduce) { .calendar-timeline *, .career-popover { transition:none!important; animation:none!important; scroll-behavior:auto; } }
+
+.career-journey.shared.calendar-timeline.marker-only.fit-profile { overflow:clip; }
