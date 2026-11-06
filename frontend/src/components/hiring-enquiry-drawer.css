@@ -1,5 +1,5 @@
 .enquiry-backdrop { position: fixed; z-index: 1500; inset: 0; display: flex; justify-content: center; align-items: center; padding: 18px; background: rgba(0, 0, 0, .6); backdrop-filter: blur(8px); animation: enquiry-fade 350ms ease both; }
-.enquiry-scene { --enquiry-scene-top: 72px; --enquiry-scene-bottom: 72px; display: flex; justify-content: center; box-sizing: border-box; width: min(596px, 100%); max-height: calc(100dvh - 36px); padding: var(--enquiry-scene-top) 72px var(--enquiry-scene-bottom); border: 1px solid rgba(255, 255, 255, .35); border-radius: 22px; background: #b6c6c2 url('/media/hiring-enquiry-landscape-v1.png') center / cover no-repeat; box-shadow: 0 24px 80px rgba(9, 20, 44, .28); animation: enquiry-enter 420ms cubic-bezier(.22, 1, .36, 1) both; }
+.enquiry-scene { --enquiry-scene-top: 72px; --enquiry-scene-bottom: 72px; display: flex; justify-content: center; box-sizing: border-box; width: min(596px, 100%); max-height: calc(100dvh - 36px); padding: var(--enquiry-scene-top) 72px var(--enquiry-scene-bottom); border: 1px solid rgba(255, 255, 255, .35); border-radius: 22px; background: #b6c6c2 image-set(url('../assets/landing/evidence-960.avif') type('image/avif'), url('../assets/landing/evidence-960.webp') type('image/webp')) center / cover no-repeat; box-shadow: 0 24px 80px rgba(9, 20, 44, .28); animation: enquiry-enter 420ms cubic-bezier(.22, 1, .36, 1) both; }
 .enquiry-drawer { box-sizing: border-box; width: min(450px, 100%); height: auto; max-height: calc(100dvh - 36px - var(--enquiry-scene-top) - var(--enquiry-scene-bottom) - 2px); overflow-y: auto; overscroll-behavior: contain; padding: 18px 22px 12px; border-radius: 16px; background: #fff; color: #17213b; box-shadow: 0 20px 60px rgba(0, 0, 0, .42); font-family: var(--enter-font-ui); }
 .enquiry-backdrop.is-closing { animation: enquiry-fade 300ms ease reverse both; }
 .enquiry-backdrop.is-closing .enquiry-scene { animation: enquiry-exit 300ms ease both; }
@@ -247,7 +247,7 @@
 
 .enquiry-scene--stats { width:min(1120px,100%); display:grid; grid-template-columns:1fr 1.1fr; gap:0; overflow-y:auto; border-radius:20px; background:#fff; }
 .enquiry-scene--stats .enquiry-drawer { border-radius:0; box-shadow:none; max-height:none; }
-.enquiry-stats { min-height:560px; display:flex; align-items:flex-end; padding:22px; box-sizing:border-box; background:linear-gradient(180deg,#142b1410,#142b1480),url('/media/section10-closing-mountain-lush.png') center/cover; }
+.enquiry-stats { min-height:560px; display:flex; align-items:flex-end; padding:22px; box-sizing:border-box; background:linear-gradient(180deg,#142b1410,#142b1480),image-set(url('../assets/landing/closing-960.avif') type('image/avif'), url('../assets/landing/closing-960.webp') type('image/webp')) center/cover; }
 .enquiry-stats__items { width:100%; display:grid; gap:12px; }
 .enquiry-stats__items > div { padding:18px; border:1px solid #ffffff30; border-radius:12px; background:#14261f85; backdrop-filter:blur(14px); color:#fff; }
 .enquiry-stats strong { display:block; font:400 36px/1.15 var(--enter-font-editorial); }
@@ -292,7 +292,7 @@
 .enquiry-scene--stats .enquiry-pills button { padding:6px 10px; }
 .enquiry-scene--stats .enquiry-upload { border-radius:12px; background:#f7f8fc; border-color:#bac4df; }
 .enquiry-scene--stats .enquiry-submit { background:#3046c9; min-height:38px; padding-inline:22px; }
-.enquiry-scene--stats .enquiry-stats { padding:18px; background-image:linear-gradient(180deg,#10261a00 35%,#10261a66),url('/media/section10-closing-mountain-lush.png'); }
+.enquiry-scene--stats .enquiry-stats { padding:18px; background-image:linear-gradient(180deg,#10261a00 35%,#10261a66),image-set(url('../assets/landing/closing-960.avif') type('image/avif'), url('../assets/landing/closing-960.webp') type('image/webp')); }
 .enquiry-scene--stats .enquiry-stats__items { gap:9px; }
 .enquiry-scene--stats .enquiry-stats__items > div { padding:20px 11px; border-radius:14px; background:rgba(30,49,39,.56); border-color:#edf3e638; }
 .enquiry-scene--stats .enquiry-stats strong { font-size:clamp(19px,2vw,26px); }

@@ -11,7 +11,7 @@ test('strict container stack: email verification through candidate submission', 
   const email = `browser-${Date.now()}@example.test`
   const password = 'Orchid!72-Cobalt!91-Zebra'
   await page.goto('/')
-  await page.getByTestId('for-candidates').click()
+  await page.getByRole('button', { name: 'Create an account', exact: true }).click()
   await page.getByLabel('Full name').fill('Synthetic Candidate')
   await page.getByLabel('Email', { exact: true }).fill(email)
   await page.getByLabel('Password', { exact: true }).fill(password)

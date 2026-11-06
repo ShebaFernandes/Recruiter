@@ -6,7 +6,8 @@ import CareerJourney from './CareerJourney'
 import CandidateResumePreview from './CandidateResumePreview'
 import { CandidateProcessing } from './CandidatePresentation'
 import { api } from '../api'
-import type { Resume, WorkExperience } from '../types'
+import { ProfileEditor } from './CandidateExperience'
+import type { Candidate, Resume, WorkExperience } from '../types'
 
 afterEach(() => { cleanup(); vi.restoreAllMocks() })
 const resume: Resume = { id: 9, original_name: 'original.docx', version: 1, uploaded_at: '', processing_status: 'completed', scan_status: 'clean', processing_error: '', can_retry: false, url: '/api/v1/resumes/9/download/' }
@@ -41,7 +42,7 @@ describe('candidate career experience', () => {
     expect(container.querySelector('.career-job>b')).toBeNull()
     fireEvent.focus(screen.getByRole('button', { name: /Engineer at Saved Employer/ }))
     expect(screen.getByRole('tooltip')).toHaveTextContent('Saved Employer')
-    expect(screen.getByRole('tooltip')).toHaveTextContent('2020 — 2022')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Jan 2020 — Jan 2022')
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
   })
@@ -103,13 +104,13 @@ describe('candidate career experience', () => {
     expect(screen.queryByRole('button', { name: /Career gap/ })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /at First/ }))
     expect(screen.getByRole('tooltip')).toHaveTextContent('First')
-    expect(screen.getByRole('tooltip')).toHaveTextContent('2015 — 2017')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('2015–17')
     expect(screen.getByRole('tooltip')).not.toHaveTextContent('yrs')
   })
   it('displays processing activities without fabricated completed stages', () => {
     render(<CandidateProcessing resume={{ ...resume, processing_status: 'processing' }} uploading={false} retry={vi.fn()} upload={vi.fn()} error="" />)
     expect(screen.getByRole('status')).toHaveTextContent('Processing')
-    expect(screen.getAllByRole('listitem')).toHaveLength(4)
+    expect(screen.queryByRole('region', { name: 'Something to reflect on' })).not.toBeInTheDocument()
     expect(screen.queryByText(/100%|Completed/)).not.toBeInTheDocument()
   })
   it('renders actual document content as escaped text and supports expand/collapse', async () => {
@@ -143,4 +144,24 @@ describe('candidate career experience', () => {
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Preview unavailable'))
     expect(screen.getByRole('link', { name: 'Download original' })).toHaveAttribute('href', resume.url)
   })
+})
+
+
+it('adds and saves missing employment history without changing the original profile', async () => {
+  const profile = { full_name: 'Synthetic Candidate', headline: 'Engineer', current_company: '',
+    location: 'Bengaluru', total_experience: '2', summary: '', skills: [], education: [],
+    work_experiences: [], career_preferences: {} } as unknown as Candidate
+  const save = vi.fn().mockResolvedValue(true)
+  render(<ProfileEditor profile={profile} save={save} cancel={vi.fn()} busy={false} />)
+  expect(screen.queryByLabelText('Company', { exact: true })).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Add experience' }))
+  fireEvent.change(screen.getByLabelText('Company', { exact: true }), { target: { value: 'Synthetic Systems' } })
+  fireEvent.change(screen.getByLabelText('Job title', { exact: true }), { target: { value: 'Backend Engineer' } })
+  fireEvent.change(screen.getByLabelText('Start date', { exact: true }), { target: { value: '2024-01-01' } })
+  fireEvent.submit(screen.getByRole('button', { name: 'Save corrections' }).closest('form')!)
+  await waitFor(() => expect(save).toHaveBeenCalledOnce())
+  expect(save.mock.calls[0][0].work_experiences).toEqual([expect.objectContaining({
+    company: 'Synthetic Systems', role: 'Backend Engineer', start_date: '2024-01-01',
+  })])
+  expect(profile.work_experiences).toEqual([])
 })

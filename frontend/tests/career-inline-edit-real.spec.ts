@@ -9,7 +9,6 @@ test('candidate edits a saved role through the real API and keeps its ID after r
   const email = `real-role-edit-${Date.now()}@example.test`
   await page.goto('/')
   await page.getByRole('button', { name: 'Join enter’s Talent network', exact: true }).click()
-  await page.getByRole('button', { name: 'New here? Create an account' }).click()
   await page.getByLabel('Full name').fill('Role Edit Candidate')
   await page.getByLabel('Email', { exact: true }).fill(email)
   await page.getByLabel('Password', { exact: true }).fill('Role-edit-password-123!')

@@ -18,18 +18,20 @@
   isolation: isolate;
   overflow: hidden;
   color: #fff;
-  background: #17213b url('/media/section10-closing-mountain-lush.png') center 52% / cover no-repeat;
+  background: #17213b;
 }
 
 .closing-cta::before {
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: 1;
   content: '';
   background: linear-gradient(180deg, rgba(10, 20, 45, .55), rgba(8, 18, 42, .6));
 }
 
 .closing-cta__content {
+  position: relative;
+  z-index: 2;
   width: min(1040px, calc(100% - 48px));
   padding: 76px 0 62px;
   text-align: center;
@@ -400,4 +402,15 @@
 }
 @media (min-width: 601px) and (max-width: 900px) {
   .enter-footer__grid { column-gap: 20px; row-gap: 24px; }
+}
+
+.closing-cta__landscape {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 52%;
+  pointer-events: none;
 }

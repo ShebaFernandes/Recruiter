@@ -26,8 +26,9 @@ it.each([CareerJourney, CandidateCareerTimeline])('separates current evidence, e
   expect(screen.queryByRole('status')).not.toBeInTheDocument()
   if (Component === CandidateCareerTimeline) expect(container.querySelector('.career-role-summary')).toBeNull()
   fireEvent.focus(screen.getByRole('button', { name:/Senior Platform Engineer at/ }))
-  expect(screen.getByRole('tooltip')).toHaveTextContent('Candidate-confirmed history')
-  expect(screen.getByRole('tooltip')).toHaveTextContent('Not matched to the latest resume')
+  if (Component === CareerJourney) expect(screen.getByRole('tooltip')).toHaveTextContent('Candidate-confirmed history')
+  else expect(screen.getByRole('tooltip')).toHaveTextContent('Candidate edited details.')
+  if (Component === CareerJourney) expect(screen.getByRole('tooltip')).toHaveTextContent('Not matched to the latest resume')
   expect(role.description).toBe('Candidate edited details.')
 })
 it('offers one explicit no-AI recovery action for an unreadable saved resume', () => {

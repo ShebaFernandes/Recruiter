@@ -18,7 +18,7 @@ test('failed worker retries the saved upload and returns to My Profile without a
   await page.setViewportSize({ width: 390, height: 900 })
   const email = `worker-retry-${Date.now()}@example.com`
   await page.goto('/')
-  await page.getByTestId('for-candidates').click()
+  await page.getByRole('button', { name: 'Create an account', exact: true }).click()
   await page.getByLabel('Full name').fill('Asha Rao')
   await page.getByLabel('Email', { exact: true }).fill(email)
   await page.getByLabel('Password', { exact: true }).fill('strong-pass-123')
@@ -51,8 +51,9 @@ with patch('talent.worker_runtime.subprocess.run', side_effect=OSError):
   await expect(page.getByRole('heading', { name: 'While we get to know you…' })).toBeVisible()
   expect(localWorker(`from talent.models import ResumeProcessingJob, ResumeAIUsage
 from talent.worker_runtime import run_bounded_job
-assert run_bounded_job(${resumeId}) == 'completed'
 job = ResumeProcessingJob.objects.get(resume_id=${resumeId})
+assert run_bounded_job(job.pk) == 'completed'
+job.refresh_from_db()
 assert ResumeProcessingJob.objects.filter(resume_id=${resumeId}).count() == 1
 assert ResumeAIUsage.objects.filter(resume_id=${resumeId}).count() == 0
 print(job.state)`)).toBe('completed')

@@ -52,7 +52,7 @@
 .career-journey.fit-profile .career-gap-line { border-top-style:dotted; }
 .career-journey.fit-profile .career-calendar { min-width:0; }
 
-/* Only confirmed gaps use dots; internships alone use a lighter palette. */
+/* Career gaps use dots without an opaque strip or text label. */
 .career-journey.shared.marker-only.fit-profile .career-marker-icon {
   border:1px solid #32767d; background:#32767d; color:#fff;
 }
@@ -68,5 +68,9 @@
 .career-journey.shared.marker-only.fit-profile .career-gap-period { z-index:1; }
 .career-journey.shared.marker-only.fit-profile .career-gap-line {
   height:3px; border:0;
-  background:radial-gradient(circle, #32767d 1px, transparent 1.2px) 0 50% / 7px 3px repeat-x, var(--enter-surface);
+  background:radial-gradient(circle, #32767d 1px, transparent 1.2px) 0 50% / 7px 3px repeat-x;
 }
+
+.career-popover .career-detail-role { font-size:13px; font-weight:500; color:var(--enter-text-muted); }
+.career-popover .career-detail-dates { color:var(--enter-text-muted); font-size:12px; }
+.career-popover .career-popover-edit { margin-top:14px; }

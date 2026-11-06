@@ -8,7 +8,7 @@ const documents = Object.fromEntries(['terms', 'privacy', 'age', 'submission'].m
   unpublished: false,
 }]))
 
-test('published documents gate registration without granting recruiter sharing', async ({ page }) => {
+test('published documents remain available while simple signup submits no acceptance', async ({ page }) => {
   await page.route('**/*.mp4', route => route.abort())
   await page.route('**/api/v1/auth/me/', route => route.fulfill({ status: 401, json: {} }))
   await page.route('**/api/v1/legal/documents/', route => route.fulfill({ json: { enabled: true, documents } }))
@@ -24,23 +24,19 @@ test('published documents gate registration without granting recruiter sharing',
   await expect(page.getByText(/UNPUBLISHED/)).toHaveCount(0)
 
   await page.goto('/')
-  await page.getByTestId('for-candidates').click()
-  await expect(page.getByRole('group', { name: 'Required confirmations' })).toBeVisible()
-  await expect(page.getByText(/does not authorize recruiter sharing/)).toBeVisible()
+  await page.getByRole('button', { name: /Join enter.s Talent network/ }).first().click()
+  await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible()
+  await expect(page.getByRole('group', { name: 'Required confirmations' })).toHaveCount(0)
+  await expect(page.getByText(/does not authorize recruiter sharing/)).toHaveCount(0)
   await page.getByLabel('Full name').fill('Published Synthetic Candidate')
   await page.getByLabel('Email', { exact: true }).fill('published@example.test')
   await page.getByLabel('Password', { exact: true }).fill('Synthetic-password-123!')
   const checks = page.getByRole('checkbox')
-  await expect(checks).toHaveCount(1)
-  await checks.nth(0).check()
+  await expect(checks).toHaveCount(0)
   await page.getByRole('button', { name: 'Create account', exact: true }).click()
   await expect(page.getByText('Synthetic verification only.')).toBeVisible()
   expect(signupBody).toMatchObject({
     country_code: 'IN',
-    age_accepted: true,
-    terms_accepted: true,
-    age_version: 'enter-candidate-age-v1.0',
-    terms_version: 'enter-candidate-terms-v1.0',
   })
-  expect(signupBody).not.toHaveProperty('recruiter_sharing')
+  for (const key of ['age_accepted', 'terms_accepted', 'age_version', 'terms_version', 'recruiter_sharing']) expect(signupBody).not.toHaveProperty(key)
 })

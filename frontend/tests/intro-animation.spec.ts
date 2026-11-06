@@ -1,6 +1,8 @@
+import { optionalComponentHarness } from './component-harness'
 import { test, expect } from '@playwright/test'
 test.use({ video:{ mode:'on', size:{ width:1440, height:1000 } } })
 test.beforeEach(async ({ page }) => {
+  await optionalComponentHarness(page, 'intro')
   await page.route('**/api/v1/auth/me/', route => route.fulfill({ status:401, json:{ detail:'Not authenticated' } }))
 })
 for (const width of [390,768,1024,1440]) {
@@ -16,7 +18,7 @@ for (const width of [390,768,1024,1440]) {
     await expect(page.locator('.enter-intro-track')).toHaveCount(0, { timeout:5500 })
     await expect(page.locator('#enter-home')).toBeFocused()
     await expect(page.locator('.ce-intro h1')).toHaveCSS('opacity','1')
-    await expect(page.locator('.ce-intro button')).toHaveCount(0)
+    await expect(page.locator('.ce-intro button')).toHaveCount(2)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await page.screenshot({ path:info.outputPath(`landing-${width}.png`), fullPage:true })
     await page.reload()
@@ -82,7 +84,7 @@ test('canvas unavailable still completes and candidate navigation remains usable
   await page.addInitScript(() => { HTMLCanvasElement.prototype.getContext = () => null })
   await page.goto('/')
   await expect(page.locator('.enter-intro-track')).toHaveCount(0, { timeout:6000 })
-  await page.getByTestId('for-candidates').click()
+  await page.getByRole('button', { name: 'Create an account', exact: true }).click()
   await expect(page.locator('.auth-page')).toBeVisible()
   await expect(page.locator('.enter-intro-track')).toHaveCount(0)
 })

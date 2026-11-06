@@ -9,7 +9,7 @@ test.use({ actionTimeout: 15_000, video: 'on' })
 async function signup(page: Page, suffix: string, startWorker = true) {
   const email = `candidate-redesign-${suffix}-${Date.now()}@example.com`
   await page.goto('/')
-  await page.getByTestId('for-candidates').click()
+  await page.getByRole('button', { name: 'Create an account', exact: true }).click()
   await page.getByLabel('Full name').fill('Career Test Candidate')
   await page.getByLabel('Email', { exact: true }).fill(email)
   await page.getByLabel('Password', { exact: true }).fill(password)
@@ -303,7 +303,7 @@ document.save(${JSON.stringify(docx)})`], { cwd: path.resolve('../backend'), enc
 test('onboarding layouts and truthful queued processing', async ({ page }, info) => {
   test.setTimeout(90_000)
   await page.goto('/')
-  await page.getByTestId('for-candidates').click()
+  await page.getByRole('button', { name: 'Create an account', exact: true }).click()
   await layouts(page, info, 'signup')
   await page.getByRole('button', { name: 'Already have an account? Log in' }).click()
   await layouts(page, info, 'login')
@@ -537,7 +537,7 @@ test('real candidate resume, timeline, preferences, replacement, preview and acc
   await expect(page.getByRole('complementary', { name: 'Career Settings panel' })).toBeVisible()
   expect(submissions).toBe(1)
   await page.getByRole('button', { name: 'Log out' }).click()
-  await page.getByTestId('for-candidates').click()
+  await page.getByRole('button', { name: 'Create an account', exact: true }).click()
   await page.getByRole('button', { name: /Already have an account/ }).click()
   await page.getByLabel('Email', { exact: true }).fill(email)
   await page.getByLabel('Password', { exact: true }).fill(password)

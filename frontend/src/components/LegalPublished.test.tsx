@@ -9,6 +9,8 @@ vi.hoisted(() => {
 import { api } from '../api'
 import type { LegalDocuments } from '../legalReview'
 import { ExistingLegalReview, LegalChecks, LegalPage } from './LegalReview'
+import CandidateExperience from './CandidateExperience'
+import type { Candidate } from '../types'
 
 const documents = Object.fromEntries(['terms', 'privacy', 'age', 'submission'].map(purpose => [purpose, {
   text: `${purpose} v1.0`,
@@ -93,4 +95,15 @@ it('requires an existing account to accept the current published versions', asyn
     terms_accepted: true,
   })))
   await waitFor(() => expect(screen.queryByRole('heading', { name: 'Accept current Terms' })).not.toBeInTheDocument())
+})
+
+it('shows the private CV upload without the retired Terms acceptance panel', async () => {
+  vi.spyOn(api, 'legalDocuments').mockResolvedValue({ enabled: true, documents })
+  const status = vi.spyOn(api, 'legalStatus')
+  vi.spyOn(api, 'candidateProfile').mockResolvedValue({ id: 1, full_name: 'Synthetic Candidate', headline: '', total_experience: '0', skills: [], work_experiences: [], career_preferences: {}, education: [], work_preferences: [], profile_updated_at: '', meaningful_work: '', latest_resume: null } as unknown as Candidate)
+  render(<CandidateExperience accountDeleted={vi.fn()} />)
+  expect(await screen.findByRole('heading', { name: 'Start with your resume' })).toBeVisible()
+  expect(screen.queryByRole('heading', { name: 'Accept current Terms' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('group', { name: 'Required confirmations' })).not.toBeInTheDocument()
+  expect(status).not.toHaveBeenCalled()
 })

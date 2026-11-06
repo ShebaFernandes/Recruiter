@@ -161,3 +161,5 @@
 .simple-landing .ce-header-logo { display: block; width: 110px; height: auto; aspect-ratio: 1110 / 310; }
 
 .simple-landing .ce-headline-logo { display: inline-block; width: 2.8em; height: auto; aspect-ratio: 1110 / 310; vertical-align: -.03em; }
+
+.simple-landing { --enter-font-editorial: 'Newsreader Landing', 'Newsreader', serif; --serif: var(--enter-font-editorial); }

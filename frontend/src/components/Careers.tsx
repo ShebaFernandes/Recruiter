@@ -1,3 +1,4 @@
+import '../platform-styles.css'
 import { navigateSmoothly } from './smoothPageNavigation'
 import SiteFooter from './SiteFooter'
 import { type FormEvent, useRef, useState } from 'react'

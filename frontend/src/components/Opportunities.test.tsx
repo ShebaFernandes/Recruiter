@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import Opportunities from './Opportunities'
 import { api } from '../api'
@@ -43,4 +43,36 @@ it('loads already-applied status from saved applications', async () => {
   render(<Opportunities loggedIn onLogin={vi.fn()} />)
   expect(await screen.findByRole('button', { name:'Already applied' })).toBeDisabled()
   expect(submit).not.toHaveBeenCalled()
+})
+
+
+it('opens the chosen JD with its description and role facts, then closes it', async () => {
+  render(<Opportunities loggedIn={false} onLogin={vi.fn()} />)
+  const listing = screen.getByRole('button', { name: 'Lead Product Manager — Consumer' })
+    .closest('article')!
+  fireEvent.click(within(listing).getByRole('button', { name: 'View Opportunity' }))
+  const dialog = screen.getByRole('dialog', { name: 'Job description' })
+  expect(within(dialog).getByRole('heading', { name: 'Lead Product Manager — Consumer' })).toBeVisible()
+  expect(within(dialog).getByText(/Own the complete product roadmap/)).toBeVisible()
+  const summary = within(dialog).getByRole('complementary', { name: 'Opportunity summary' })
+  expect(within(summary).getByText('Lead Product Manager — Consumer')).toBeVisible()
+  expect(within(dialog).getByText('₹80 LPA')).toBeVisible()
+  expect(within(dialog).getByText('Bengaluru')).toBeVisible()
+  expect(within(dialog).getByText('8+ years')).toBeVisible()
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Close job description' }))
+  expect(screen.queryByRole('dialog', { name: 'Job description' })).not.toBeInTheDocument()
+})
+
+it('uses the latest close callback without resetting dialog focus', async () => {
+  sessionStorage.setItem('enter-opportunity-intent', 'backend-engineer')
+  vi.spyOn(api, 'opportunityApplications').mockResolvedValue([])
+  const previous = vi.fn(), current = vi.fn(), login = vi.fn()
+  const view = render(<Opportunities loggedIn onLogin={login} onDetailClose={previous} />)
+  const apply = await screen.findByRole('button', { name: 'Apply now' })
+  apply.focus()
+  view.rerender(<Opportunities loggedIn onLogin={login} onDetailClose={current} />)
+  expect(apply).toHaveFocus()
+  fireEvent.keyDown(document, { key: 'Escape' })
+  expect(previous).not.toHaveBeenCalled()
+  expect(current).toHaveBeenCalledOnce()
 })

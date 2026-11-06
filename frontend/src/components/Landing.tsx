@@ -1,5 +1,5 @@
+import DeferredArtwork from './DeferredArtwork'
 import EnterLogo from './EnterLogo'
-import { navigateSmoothly, navigateToPage } from './smoothPageNavigation'
 import useLandingMotion from './useLandingMotion'
 import LandingBackground from './LandingBackground'
 import CompanyLogoMarquee from './company-preview/CompanyLogoPreview'
@@ -21,10 +21,15 @@ export default function Landing({ choose }: {
   choose: (role: 'recruiter' | 'candidate', mode?: 'signup' | 'login') => void
 }) {
   useLandingMotion()
-  // Candidate screens are selected in app state, so lower-page CTAs must reset the scroll.
+  // "For Candidates" entry points land on the in-page candidate pitch first,
+  // where visitors can browse roles or sign in/up — not straight into the job list.
   const openCandidate = () => {
-    sessionStorage.removeItem('enter-opportunity-intent')
-    navigateToPage('/opportunities')
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+    window.history.pushState(window.history.state, '', '#for-talent-title')
+    document.getElementById('for-talent-title')?.scrollIntoView({
+      behavior: reducedMotion ? 'instant' : 'smooth',
+      block: 'start',
+    })
   }
 
   return <main className="career-edition simple-landing"><LandingBackground>
@@ -38,7 +43,7 @@ export default function Landing({ choose }: {
       <nav aria-label="Main navigation">
         {import.meta.env.VITE_CANDIDATE_ONLY !== 'true' && <button className="ce-audience-link" data-testid="for-recruiters" onClick={() => choose('recruiter', 'login')}>For Recruiters</button>}
         <button className="ce-audience-link" data-testid="for-companies" onClick={() => navigateToHiringSection('hire')}>For Companies</button>
-        <a className="ce-audience-link" data-testid="for-candidates" href="/opportunities" onClick={navigateSmoothly}>For Candidates</a>
+        <button className="ce-audience-link" data-testid="for-candidates" onClick={openCandidate}>For Candidates</button>
       </nav>
     </header>
 
@@ -65,13 +70,13 @@ export default function Landing({ choose }: {
     </div>
     <BrandStatement />
     <GrowthStages />
-    <div className="evidence-to-hires">
+    <DeferredArtwork className="evidence-to-hires">
       <TalentPrinciples />
       <AmbitionHires />
-    </div>
+    </DeferredArtwork>
     <WhenTeamsChange />
     <TestimonialsCarousel />
     <ForTalent onLogin={() => { sessionStorage.removeItem('enter-opportunity-intent'); window.scrollTo(0, 0); choose('candidate', 'login') }} onJoin={() => { sessionStorage.removeItem('enter-opportunity-intent'); window.scrollTo(0, 0); choose('candidate', 'signup') }} />
-    <ClosingFooter onCandidate={openCandidate} onJoinNetwork={() => { sessionStorage.removeItem('enter-opportunity-intent'); window.scrollTo(0, 0); choose('candidate', 'login') }} />
+    <ClosingFooter onCandidate={openCandidate} onJoinNetwork={() => { sessionStorage.removeItem('enter-opportunity-intent'); window.scrollTo(0, 0); choose('candidate', 'signup') }} />
   </main>
 }

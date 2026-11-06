@@ -1,5 +1,7 @@
+import { artwork } from '../assets/landing/artwork'
+import ResponsiveArtwork from './ResponsiveArtwork'
 import { navigateSmoothly } from './smoothPageNavigation'
-import { flushSync } from 'react-dom'
+import { warmPublicPage } from '../publicPageLoader'
 import EnterLogo from './EnterLogo'
 import observeLandingReveal from './observeLandingReveal'
 import { useEffect, useRef } from 'react'
@@ -21,6 +23,7 @@ export default function ClosingFooter({ onCandidate, onJoinNetwork = onCandidate
 
   return <section ref={sectionRef} id="closing-section" className="closing-section" aria-label="Build with enter">
     <div className="closing-cta" aria-labelledby="closing-cta-title">
+      <ResponsiveArtwork className="closing-cta__landscape" artwork={artwork.closing} sizes="(max-width: 1400px) 1400px, 100vw" alt="" aria-hidden="true" />
       <div className="closing-cta__content">
         <p className="closing-cta__eyebrow">THE BEST TEAMS ARE BUILT BY ENTER.</p>
         <h2 id="closing-cta-title">Who are you building next?</h2>
@@ -62,24 +65,13 @@ export default function ClosingFooter({ onCandidate, onJoinNetwork = onCandidate
         <nav className="enter-footer__column" aria-label="For candidates">
           <h3>FOR CANDIDATES</h3>
           <button type="button" onClick={onJoinNetwork}>Join enter's Talent network</button>
-          <a href="/opportunities" onClick={navigateSmoothly}>Opportunities</a>
+          <a href="/opportunities" onPointerEnter={() => warmPublicPage('/opportunities')} onFocus={() => warmPublicPage('/opportunities')} onClick={navigateSmoothly}>Opportunities</a>
         </nav>
 
         <nav className="enter-footer__column" aria-label="enter">
           <h3>ENTER</h3>
           <a href="#talent-principles">About</a>
-          <a href="/careers" onClick={event => {
-            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return
-            event.preventDefault()
-            const openCareers = () => {
-              window.history.pushState({}, '', '/careers')
-              flushSync(() => window.dispatchEvent(new PopStateEvent('popstate')))
-              window.scrollTo({ top: 0, behavior: 'instant' })
-              document.querySelector<HTMLElement>('.careers-hero h1')?.focus({ preventScroll: true })
-            }
-            if (document.startViewTransition && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) document.startViewTransition(openCareers)
-            else openCareers()
-          }}>Careers</a>
+          <a href="/careers" onPointerEnter={() => warmPublicPage('/careers')} onFocus={() => warmPublicPage('/careers')} onClick={navigateSmoothly}>Careers</a>
           <a href="mailto:sheba@enterrecruitment.com">Contact</a>
           <a href="https://www.linkedin.com/company/enterrecruitment/posts/?feedView=all" target="_blank" rel="noopener noreferrer">LinkedIn</a>
         </nav>

@@ -12,7 +12,7 @@ test('production CSP permits only the approved video origin and playback works',
   expect(policy).toContain("script-src 'self'")
   expect(policy).toContain("object-src 'none'")
   expect(policy).not.toContain('*')
-  await page.getByTestId('for-candidates').click()
+  await page.getByRole('button', { name: 'Create an account', exact: true }).click()
   const video = page.locator('.platform-background video')
   await expect(video).toHaveJSProperty('muted', true)
   await expect(video).toHaveCSS('object-fit', 'cover')
@@ -26,7 +26,7 @@ test('production reduced-motion preference retains the still fallback', async ({
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.route('**/api/v1/auth/me/', route => route.fulfill({ status: 401, json: {} }))
   await page.goto('/')
-  await page.getByTestId('for-candidates').click()
+  await page.getByRole('button', { name: 'Create an account', exact: true }).click()
   await expect(page.locator('.platform-background')).toHaveAttribute('data-render-state', 'fallback')
   await expect(page.locator('.platform-background video')).toHaveCount(0)
   // The existing accessible fallback is a static neutral surface, not a video still.

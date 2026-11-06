@@ -1,8 +1,12 @@
+import testimonialLogo3 from '../assets/landing/logos/airtel.png'
+import testimonialLogo2 from '../assets/landing/logos/lila-supplied.png'
+import testimonialLogo1 from '../assets/landing/logos/parspec.png'
+import testimonialLogo0 from '../assets/landing/logos/anthriq.png'
 import { validateWorkEmailInput } from '../workEmail'
 import mobikwikLogo from '../../..//design-references/prepared/trusted-by-review/assets/expanded/mobikwik.svg'
 import doqfyLogo from '../../../design-references/prepared/trusted-by-review/assets/doqfy-official.svg'
 import { previewCompanies } from './company-preview/companies'
-import HiringEnquiryDrawer from './HiringEnquiryDrawer'
+import HiringEnquiryDrawer from './DeferredHiringEnquiryDrawer'
 import observeLandingReveal from './observeLandingReveal'
 import { useEffect, useRef, useState } from 'react'
 import { Marquee } from './ui/marquee'
@@ -105,7 +109,7 @@ export default function TestimonialsCarousel() {
         role={testimonial.attribution}
         paragraphs={testimonial.paragraphs}
         company={testimonial.company ?? ({'githin-joseph':'Nanonets','steve-francis':'Practo','drushya-shetty':'CRED','divya-v':'DOQFY','prachi-sharma':'Parspec'}[testimonial.id])}
-        logo={({ 'alisha-tahasildar':'/media/testimonial-logos/anthriq.png','prachi-sharma':'/media/testimonial-logos/parspec.png','nitika-thukral':mobikwikLogo,'divya-v':doqfyLogo,'joseph-kim':'/media/testimonial-logos/lila-supplied.png','alka-ladhani':'/media/testimonial-logos/airtel.png'}[testimonial.id]) ?? previewCompanies.find(company => testimonial.attribution.toLowerCase().includes(company.name.toLowerCase()))?.logo}
+        logo={({ 'alisha-tahasildar':testimonialLogo0,'prachi-sharma':testimonialLogo1,'nitika-thukral':mobikwikLogo,'divya-v':doqfyLogo,'joseph-kim':testimonialLogo2,'alka-ladhani':testimonialLogo3}[testimonial.id]) ?? previewCompanies.find(company => testimonial.attribution.toLowerCase().includes(company.name.toLowerCase()))?.logo}
         videoUrl={testimonial.videoUrl}
       />)}
     </Marquee>

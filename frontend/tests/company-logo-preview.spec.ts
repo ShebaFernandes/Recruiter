@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
 test('normal homepage includes the approved logos without a preview flag', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('region', { name: 'Company logos', exact: true })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'The best teams are built by ENTER.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'The best teams are built by enter.' })).toBeVisible()
   await page.locator('.ce-company-preview img').evaluateAll(images => Promise.all(images.map(image => (image as HTMLImageElement).decode())))
   await expect(page.getByRole('button', { name: 'About Shiprocket' })).toHaveCount(1)
   await expect(page.getByRole('button', { name: 'About WazirX' })).toHaveCount(1)
@@ -50,21 +50,23 @@ for (const width of [1440, 1024, 390]) {
     expect(initialLayout.logoTop).toBeLessThan(width > 760 ? 810 : 720)
     expect(initialLayout.copyBottom).toBeLessThan(initialLayout.logoTop - 150)
     await expect(page.locator('.ce-entry-section')).toHaveCount(0)
-    await expect(page.getByText(/The impact we create extends/)).toHaveCount(0)
-    await expect(page.locator('footer')).toHaveCount(0)
-    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(900)
+    await expect(page.getByText(/The impact we create extends/)).toHaveCount(1)
+    await expect(page.locator('footer.enter-footer')).toHaveCount(1)
+    // The approved full website continues below the initial logo preview.
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeGreaterThan(900)
     await section.scrollIntoViewIfNeeded()
     await section.locator('img').evaluateAll(images => Promise.all(images.map(i => (i as HTMLImageElement).decode())))
     await expect(page.getByRole('button', { name: /^About / })).toHaveCount(27)
-    await expect(section.locator('img').first()).toHaveCSS('filter', 'grayscale(1)')
+    await expect(section.locator('img').first()).toHaveCSS('filter', 'brightness(0) invert(0.52)')
     expect(await section.evaluate(e => e.previousElementSibling?.classList.contains('ce-mountain-hero'))).toBe(true)
     const spacing = await section.evaluate(element => {
       const hero = element.previousElementSibling!.getBoundingClientRect()
       const logo = element.querySelector('img')!.getBoundingClientRect()
       return { gap: logo.top - hero.bottom, height: element.getBoundingClientRect().height }
     })
-    expect(spacing.gap).toBeGreaterThan(20)
-    expect(spacing.gap).toBeLessThan(48)
+    // The approved strip overlaps the mountain edge by its -64px margin.
+    expect(spacing.gap).toBeGreaterThan(-24)
+    expect(spacing.gap).toBeLessThan(-20)
     expect(spacing.height).toBe(113)
     await expect(section.getByText(/public logo permissions pending/)).toHaveCount(0)
     const pause = page.getByRole('button', { name: 'Pause company logos' })

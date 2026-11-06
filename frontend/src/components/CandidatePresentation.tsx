@@ -32,7 +32,7 @@ export function CandidateProcessing({ resume, uploading, retry, upload, error, r
         : resume.processing_stage === 'extracting' ? 'Extracting — reading your experience.'
           : resume.processing_stage === 'validating' ? 'Validating — checking and saving your profile.'
         : resume.processing_status === 'processing' ? 'Processing — extracting and validating your experience.'
-          : resume.processing_status === 'uploaded' ? 'Uploaded — waiting to be queued.' : 'Queued — waiting for a resume worker.'
+          : 'Your upload is saved. Preparing to read your resume.'
   return <section className={`cp-section processing-card ${failed ? 'is-failed' : ''}`} aria-labelledby="resume-processing-heading" tabIndex={-1}>
         <div className="onboarding-processing-copy">
         <h2 id="resume-processing-heading">{failed ? 'We couldn’t finish this resume' : active ? 'While we get to know you…' : 'Your profile is ready'}</h2>
@@ -46,10 +46,6 @@ export function CandidateProcessing({ resume, uploading, retry, upload, error, r
         <p className="cp-processing-file">{resume.original_name}</p>
         {delayed && refresh && <div className="processing-actions"><button onClick={refresh} disabled={uploading}>Check status again</button></div>}
         </div>
-        {active && <section className="cp-processing-prompts" aria-label="Something to reflect on">
-          <p>What would make your next move worth it?</p>
-          <ul>{['Harder problems', 'More ownership', 'Exceptional people', 'Compensation'].map(text => <li key={text}>{text}</li>)}</ul>
-        </section>}
         {failed && <p role="alert">{error || resume.processing_error || 'Your profile was not changed. Please retry.'}</p>}
         {failed && aiConsent}
         {failed && <div className="processing-actions">

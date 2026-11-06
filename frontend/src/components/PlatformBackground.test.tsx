@@ -92,3 +92,11 @@ it('pauses hidden-page playback and resumes without remounting the video', () =>
   expect(video.play).toHaveBeenCalledTimes(2)
   expect(view.container.querySelector('video')).toBe(video)
 })
+
+
+it('keeps the immediate poster without requesting video during session resolution', () => {
+  const view = render(<PlatformBackground playVideo={false}>Opening Enter…</PlatformBackground>)
+  expect(view.container.querySelector('video')).toBeNull()
+  expect(view.container.querySelector('.platform-background')).toHaveAttribute('data-render-state', 'fallback')
+  expect(view.container.querySelector('.platform-background')?.getAttribute('style')).toContain('background-image')
+})

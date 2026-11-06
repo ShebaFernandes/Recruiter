@@ -8,7 +8,7 @@ test('permanent preferences: responsive layout, inline editing and persistence',
   await page.addInitScript(() => sessionStorage.setItem('enter-door-intro-seen', '1'))
   const email = `preferences-${Date.now()}@example.test`
   await page.goto('/')
-  await page.getByTestId('for-candidates').click()
+  await page.getByRole('button', { name: 'Create an account', exact: true }).click()
   await page.getByLabel('Full name').fill('Jordan Test')
   await page.getByLabel('Email', { exact: true }).fill(email)
   await page.getByLabel('Password', { exact: true }).fill('Strong-pass-123!')
@@ -31,7 +31,7 @@ b=io.BytesIO();d.save(b);sys.stdout.buffer.write(b.getvalue())`, email])
   await expect(page.getByRole('heading', { name: 'Career Settings', exact: true })).toHaveCount(0)
   await expect(panel.getByText('Role & direction', { exact: true })).toHaveCount(0)
   await expect(panel.getByRole('heading', { name: 'Build ↔ Lead Spectrum' })).toBeVisible()
-  for (const name of ['Availability', 'Notice period', 'Compensation', 'Work preferences', 'How should we reach you?', 'Professional links']) {
+  for (const name of ['Job Search Status', 'Notice period', 'Compensation', 'Work preferences', 'How should we reach you?', 'Professional links']) {
     await panel.getByRole('button', { name: new RegExp(name.replace('?', '\\?')) }).first().click()
     await expect(panel.locator('form')).toBeVisible()
     await page.locator('.cp-welcome').click()

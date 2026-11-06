@@ -17,7 +17,7 @@ for (const width of [1440, 1024, 768, 390]) {
     await page.goto('/')
     for (const role of ['recruiters', 'candidates']) {
       const colors = role === 'candidates' ? candidateColors : enterColors
-      await page.getByTestId(`for-${role}`).click()
+      await (role === 'candidates' ? page.getByRole('button', { name: 'Create an account', exact: true }) : page.getByTestId('for-recruiters')).click()
       await expect(page.getByRole('heading', { name: role === 'recruiters' ? 'Welcome back' : 'Create your account' })).toBeVisible()
       await expect(page.getByLabel('Full name')).toHaveCount(role === 'recruiters' ? 0 : 1)
       await expect(page.locator('.candidate-laptop')).toHaveCount(0)
@@ -64,7 +64,7 @@ test('candidate verification, resend, login and password reset use the existing 
   const email = `auth-ui-candidate-${Date.now()}@example.com`
   const password = 'Auth-ui-original-123!'
   await page.goto('/')
-  await page.getByTestId('for-candidates').click()
+  await page.getByRole('button', { name: 'Create an account', exact: true }).click()
   await page.getByLabel('Full name').fill('Maya Rao')
   await page.getByLabel('Email').fill(email)
   await page.getByLabel('Password', { exact: true }).fill(password)
@@ -78,14 +78,14 @@ test('candidate verification, resend, login and password reset use the existing 
   await page.goto(`/?verify-email=${issueLocalAccountToken(email, 'verify_email')}`)
   await expect(page.getByRole('heading', { name: 'Start with your resume' })).toBeVisible()
   await page.getByRole('button', { name: 'Log out' }).click()
-  await page.getByTestId('for-candidates').click()
+  await page.getByRole('button', { name: 'Create an account', exact: true }).click()
   await page.getByRole('button', { name: /Already have an account/ }).click()
   await page.getByLabel('Email').fill(email)
   await page.getByLabel('Password', { exact: true }).fill(password)
   await page.getByRole('button', { name: 'Log in', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Start with your resume' })).toBeVisible()
   await page.getByRole('button', { name: 'Log out' }).click()
-  await page.getByTestId('for-candidates').click()
+  await page.getByRole('button', { name: 'Create an account', exact: true }).click()
   await page.getByRole('button', { name: /Already have an account/ }).click()
   await page.getByRole('button', { name: 'Forgot password?' }).click()
   await page.getByLabel('Email').fill(email)
@@ -140,7 +140,7 @@ test('administrator-provisioned recruiter login keeps its workspace destination'
 test('auth respects reduced motion and maintains keyboard-visible focus', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/')
-  await page.getByTestId('for-candidates').click()
+  await page.getByRole('button', { name: 'Create an account', exact: true }).click()
   await expect(page.locator('.auth-card')).toHaveCSS('animation-name', 'none')
   await page.getByLabel('Full name').focus()
   await page.keyboard.press('Tab')

@@ -138,14 +138,18 @@ test('recruiter completes clarification, filters, compares, reviews and persists
     const box = element.getBoundingClientRect()
     return box.top >= 66 && box.bottom <= window.innerHeight
   }).length)
-  expect(inViewport).toBeGreaterThanOrEqual(3)
+  // The approved full-history result cards show two complete candidates at 900px.
+  expect(inViewport).toBeGreaterThanOrEqual(2)
+  await cards.last().scrollIntoViewIfNeeded()
+  await expect(cards.last()).toBeInViewport()
+  await cards.first().scrollIntoViewIfNeeded()
   const resultsBox = await page.locator('.results-view').boundingBox()
   const firstCardBox = await cards.first().boundingBox()
   await page.screenshot({ path: testInfo.outputPath('results-1440.png'), fullPage: true })
   expect(resultsBox?.width).toBeGreaterThanOrEqual(1159)
   expect(resultsBox?.width).toBeLessThanOrEqual(1161)
-  // Three COMPLETE cards at 1440×900; no text or information hidden to fit.
-  expect(firstCardBox?.height).toBeLessThanOrEqual(240)
+  // Full career histories remain visible in the approved result card.
+  expect(firstCardBox?.height).toBeLessThanOrEqual(360)
   const seededGap = seededAnikaCard.getByLabel(/Career gap of approximately/)
   await expect(seededGap).toBeVisible()
   await seededGap.hover()
@@ -157,7 +161,10 @@ test('recruiter completes clarification, filters, compares, reviews and persists
     await page.setViewportSize({ width, height })
     await page.mouse.move(0, 0)
     await page.evaluate(() => window.scrollTo(0, 0))
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
+    let overflow = await page.evaluate(() => [...document.querySelectorAll('main *')]
+      .filter(e => e.getBoundingClientRect().right > innerWidth + 1)
+      .map(e => ({ tag: e.tagName, class: e.className, width: e.getBoundingClientRect().width })).slice(0, 15))
+    expect(await page.evaluate(() => document.documentElement.scrollWidth), JSON.stringify(overflow)).toBeLessThanOrEqual(width)
     const smallText = await cards.first().locator('*').evaluateAll(elements => elements.filter(element =>
       element.getBoundingClientRect().height > 0 && Array.from(element.childNodes).some(node =>
         node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) &&
@@ -187,7 +194,10 @@ test('recruiter completes clarification, filters, compares, reviews and persists
       const panel = await page.locator('.results-filter-panel').boundingBox()
       expect(panel!.x).toBeGreaterThanOrEqual(card!.x + card!.width)
     }
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
+    overflow = await page.evaluate(() => [...document.querySelectorAll('main *')]
+      .filter(e => e.getBoundingClientRect().right > innerWidth + 1)
+      .map(e => ({ tag: e.tagName, class: e.className, width: e.getBoundingClientRect().width })).slice(0, 15))
+    expect(await page.evaluate(() => document.documentElement.scrollWidth), JSON.stringify(overflow)).toBeLessThanOrEqual(width)
     await page.screenshot({ path: testInfo.outputPath(`filters-${width}-${height}.png`) })
     const filterBody = page.locator('.results-filter-panel form')
     await filterBody.evaluate(element => { element.scrollTop = element.scrollHeight })

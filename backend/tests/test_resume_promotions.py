@@ -187,6 +187,102 @@ def test_docx_table_heading_and_separate_date_cells_are_preserved():
     assert parsed["work_experiences"][1]["end_date"] == "2020-01-01"
 
 
+def test_explicit_employer_after_a_promotion_is_not_overwritten_by_carryover():
+    """A genuine promotion correctly inherits the carried employer when no
+    company is named on the role line -- but an explicit, different employer
+    named on the very next job's own line must win, even right after one."""
+    parsed = parse_resume(
+        BytesIO(resume_pdf([
+            "Name: Fictional Person",
+            "PROFESSIONAL EXPERIENCE",
+            "Senior Staff Engineer at Northstar Labs",
+            "Jun 2023 - Present",
+            "Leads platform reliability for 12 teams.",
+            "Staff Engineer at Northstar Labs",
+            "Jan 2021 - May 2023",
+            "Led the checkout migration.",
+            "Software Engineer at Early Ventures",
+            "Mar 2016 - Dec 2019",
+            "Built the initial payments pipeline.",
+        ])),
+        "resume.pdf",
+    )
+    assert [(row["company"], row["role"]) for row in parsed["work_experiences"]] == [
+        ("Northstar Labs", "Senior Staff Engineer"),
+        ("Northstar Labs", "Staff Engineer"),
+        ("Early Ventures", "Software Engineer"),
+    ]
+
+
+def test_docx_table_date_cells_are_paired_even_when_not_adjacent():
+    """A location/employment-type cell between the start and end date must not
+    hide the role: the dates are still the first start-shaped and the nearest
+    later end-shaped cell, not strictly neighboring columns."""
+    document = Document()
+    heading = document.add_table(rows=1, cols=5).rows[0].cells
+    heading[0].text = "WORK HISTORY"
+    row = document.tables[0].add_row().cells
+    for cell, value in zip(
+        row,
+        ["Example Labs", "Senior Engineer", "2020-02", "Remote", "Present"],
+        strict=True,
+    ):
+        cell.text = value
+    parsed = parse_resume(BytesIO(_document_bytes(document)), "table.docx")
+    assert [(row["company"], row["role"], row["is_current"])
+            for row in parsed["work_experiences"]] == [("Example Labs", "Senior Engineer", True)]
+
+
+@pytest.mark.parametrize("end_token", ["Till Date", "Till Now", "To Date", "Ongoing"])
+def test_open_ended_synonyms_are_recognized_as_current(end_token):
+    """Present/Current/Now are not the only words resumes use for an open role."""
+    parsed = parse_resume(
+        BytesIO(resume_pdf([
+            "Name: Fictional Person",
+            "PROFESSIONAL EXPERIENCE",
+            f"Senior Engineer at Example Labs Jan 2022 - {end_token}",
+        ])),
+        "resume.pdf",
+    )
+    assert len(parsed["work_experiences"]) == 1
+    row = parsed["work_experiences"][0]
+    assert row["is_current"] is True
+    assert row["end_date"] is None
+
+
+def test_unrelated_years_of_experience_bullet_does_not_override_computed_total():
+    """A self-declared total outside the employment section may still override an
+    undercounted computation, but a tenure/skill number inside a job bullet --
+    phrased exactly like a total-experience claim -- must not."""
+    parsed = parse_resume(
+        BytesIO(resume_pdf([
+            "Name: Fictional Person",
+            "PROFESSIONAL EXPERIENCE",
+            "Senior Engineer at Example Labs",
+            "Jan 2021 - Jan 2024",
+            "Brings 8 years of experience building distributed systems.",
+        ])),
+        "resume.pdf",
+    )
+    assert parsed["total_experience"] == 3
+
+
+def test_explicit_summary_total_can_still_override_the_computed_total():
+    """The scoping fix must not disable the legitimate case: an explicit total
+    stated outside the employment section (e.g. in a summary line) still wins."""
+    parsed = parse_resume(
+        BytesIO(resume_pdf([
+            "Name: Fictional Person",
+            "Summary: 8 years of experience building distributed systems.",
+            "PROFESSIONAL EXPERIENCE",
+            "Senior Engineer at Example Labs",
+            "Jan 2021 - Jan 2024",
+        ])),
+        "resume.pdf",
+    )
+    assert parsed["total_experience"] == 8
+
+
 def _document_bytes(document):
     content = BytesIO()
     document.save(content)

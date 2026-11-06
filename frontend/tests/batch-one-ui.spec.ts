@@ -94,7 +94,7 @@ test('glass surfaces retain readable content over moving video', async ({ page }
     await page.setViewportSize({ width, height:1000 })
     signedIn = false
     await page.goto('/')
-    await page.getByTestId('for-candidates').click()
+    await page.getByRole('button', { name: 'Create an account', exact: true }).click()
     await expect(page.locator('.auth-card')).toHaveCSS('background-color','rgba(250, 248, 244, 0.94)')
     await expect(page.locator('.auth-card')).toHaveCSS('backdrop-filter','blur(5px) saturate(1.1)')
     await expect(page.locator('.auth-story__copy')).toHaveCSS('background-color','rgba(0, 0, 0, 0)')
@@ -329,7 +329,7 @@ test('batch one: same-screen candidate and landing visual review', async ({ page
     await expect(page.locator('.enter-intro-shell')).toHaveCount(0)
     await expect(page.locator('.career-edition')).toHaveCSS('--enter-primary', '#303842')
     await capture(page, info, `landing-${width}`)
-    await page.getByTestId('for-candidates').click()
+    await page.getByRole('button', { name: 'Create an account', exact: true }).click()
     await expect(page.getByRole('button', { name: 'Create account', exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Create account', exact: true })).toHaveCSS('background-color', 'rgb(48, 56, 66)')
     await capture(page, info, `signup-${width}`)
@@ -452,8 +452,8 @@ test('batch one: same-screen candidate and landing visual review', async ({ page
         }
       }
       for (const choice of await editor.locator('.cp-choice').all()) {
-        await expect(choice).toHaveCSS('min-height', '24px')
-        await expect(choice).toHaveCSS('padding', '3px 8px')
+        await expect(choice).toHaveCSS('min-height', field === 'availability' ? '30px' : '24px')
+        await expect(choice).toHaveCSS('padding', field === 'availability' ? '5px 10px' : '3px 8px')
         await expect(choice).toHaveCSS('font-size', '11px')
       }
       if (field === 'availability') {
@@ -486,7 +486,7 @@ test('batch one: same-screen candidate and landing visual review', async ({ page
     const markerBox = (await page.locator('.career-marker-icon').first().boundingBox())!
     const dateBox = (await page.locator('.career-period small').first().boundingBox())!
     expect(dateBox.y).toBeGreaterThan(markerBox.y + markerBox.height)
-    expect(dateBox.y - markerBox.y - markerBox.height).toBeLessThanOrEqual(4)
+    expect(dateBox.y - markerBox.y - markerBox.height).toBeCloseTo(16, 0)
   }
 })
 
@@ -607,12 +607,12 @@ test('batch three autosave: rapid edits, errors, validation, navigation and loca
   await page.getByLabel('Portfolio', { exact: true }).fill('https://example.com/portfolio')
   await expect(status).toHaveText('Saved')
   await editor.screenshot({ path: info.outputPath('separate-professional-links.png') })
-  await page.getByRole('button', { name: /Job Search Status.*Edit/ }).click()
+  await page.getByRole('button', { name: /Job Search Status/ }).click()
   await page.getByRole('radio', { name: 'Actively Looking', exact: true }).check()
   await expect(status).toHaveText('Saved')
   await expect(editor).toHaveCount(0)
   await page.reload()
-  await expect(page.getByRole('button', { name: /Job Search Status.*Actively Looking.*Edit/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Job Search Status.*Actively Looking/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /Work preferences.*Remote Europe.*Edit/ })).toBeVisible()
   expect(saved.linkedin_url).toBe('https://www.linkedin.com/in/fictional-test')
   expect(saved.github_url).toBe('https://github.com/example')
@@ -629,7 +629,7 @@ test('batch three autosave: rapid edits, errors, validation, navigation and loca
   // A successful single-choice save is acknowledged before the gentle close;
   // editing again during that acknowledgement must keep the latest choice.
   await page.setViewportSize({ width: 1440, height: 1000 })
-  await page.getByRole('button', { name: /Job Search Status.*Edit/ }).click()
+  await page.getByRole('button', { name: /Job Search Status/ }).click()
   const availability = (name: string) => page.getByRole('radio', { name, exact: true })
   await availability('Not Looking').check()
   await expect(editor.getByRole('status')).toHaveText('Saved')
@@ -644,7 +644,7 @@ test('batch three autosave: rapid edits, errors, validation, navigation and loca
 
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.setViewportSize({ width: 390, height: 1000 })
-  await page.getByRole('button', { name: /Job Search Status.*Edit/ }).click()
+  await page.getByRole('button', { name: /Job Search Status/ }).click()
   expect(await editor.evaluate(form => form.getAnimations().length)).toBe(0)
   await availability('Actively Looking').check()
   await expect(editor).toHaveCount(0)

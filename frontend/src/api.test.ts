@@ -70,7 +70,7 @@ describe('API recovery messages', () => {
         }),
       ),
     )
-    await expect(api.me()).rejects.toMatchObject({ code: 'auth_expired' })
+    await expect(api.candidateProfile()).rejects.toMatchObject({ code: 'auth_expired' })
     expect(expired).toHaveBeenCalledOnce()
   })
 
@@ -100,4 +100,16 @@ describe('API recovery messages', () => {
       message: 'Enter could not understand this search right now. Please try again shortly.',
     })
   })
+})
+
+it('does not cancel signup navigation when the anonymous startup session probe returns 401', async () => {
+  const expired = vi.fn()
+  window.addEventListener('enter-auth-expired', expired)
+  try {
+    const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ detail: 'Authentication required.' }), { status: 401 }))
+    vi.stubGlobal('fetch', fetch)
+    await expect(api.me()).rejects.toMatchObject({ status: 401 })
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/auth/me/'), expect.objectContaining({ credentials: 'include' }))
+    expect(expired).not.toHaveBeenCalled()
+  } finally { window.removeEventListener('enter-auth-expired', expired) }
 })

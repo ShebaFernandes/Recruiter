@@ -34,6 +34,8 @@ type CompanyLogo = {
   source: string
   logo: string
   height: number
+  intrinsicWidth: number
+  intrinsicHeight: number
   treatment?: 'silhouette' | 'original'
 }
 
@@ -43,31 +45,31 @@ type CompanyLogo = {
 // Keep the existing first two logos; append only companies from the user's list.
 // Source URLs and unresolved identities are recorded in expanded/sources.json.
 export const previewCompanies: readonly CompanyLogo[] = [
-  { id: 'shiprocket', name: 'Shiprocket', category: 'E-commerce logistics', description: 'Shipping and fulfilment tools for e-commerce businesses.', source: 'https://www.shiprocket.in/', logo: shiprocket, height: 31 },
-  { id: 'wazirx', name: 'WazirX', category: 'Digital assets', description: 'A cryptocurrency trading platform based in India.', source: 'https://wazirx.com/', logo: wazirx, height: 48 },
-  { id: 'cred', name: 'CRED', category: 'Financial services', description: 'Credit card payments and financial services for members.', source: 'https://cred.club/', logo: cred, height: 38, treatment: 'silhouette' },
-  { id: 'nanonets', name: 'Nanonets', category: 'Document automation', description: 'AI tools for extracting and processing business documents.', source: 'https://nanonets.com/', logo: nanonets, height: 40 },
-  { id: 'coindcx', name: 'CoinDCX', category: 'Digital assets', description: 'A cryptocurrency investment and trading platform.', source: 'https://coindcx.com/', logo: coindcx, height: 30, treatment: 'silhouette' },
-  { id: 'navi', name: 'Navi', category: 'Financial services', description: 'Digital payments, lending and investment services.', source: 'https://navi.com/', logo: navi, height: 30 },
-  { id: 'mpl', name: 'MPL', category: 'Gaming', description: 'A platform for mobile games and competitions.', source: 'https://www.mpl.live/', logo: mpl, height: 38, treatment: 'silhouette' },
-  { id: 'dream11', name: 'Dream11', category: 'Sports', description: 'A digital platform for sports fans.', source: 'https://www.dream11.com/', logo: dream11, height: 32, treatment: 'silhouette' },
-  { id: 'truefoundry', name: 'TrueFoundry', category: 'AI infrastructure', description: 'Infrastructure for deploying and managing AI applications.', source: 'https://www.truefoundry.com/', logo: truefoundry, height: 30 },
-  { id: 'kindred', name: 'Kindred Group', category: 'Online gaming', description: 'An online gaming group, now part of FDJ UNITED.', source: 'https://www.kindredgroup.com/', logo: kindred, height: 38 },
-  { id: 'practo', name: 'Practo', category: 'Healthcare', description: 'A platform connecting patients with healthcare providers.', source: 'https://www.practo.com/', logo: practo, height: 30 },
-  { id: 'arintra', name: 'Arintra', category: 'Healthcare technology', description: 'AI-powered medical coding and revenue-cycle automation.', source: 'https://www.arintra.com/', logo: arintra, height: 30, treatment: 'silhouette' },
-  { id: 'orange-health', name: 'Orange Health', category: 'Diagnostics', description: 'Diagnostic lab testing with at-home sample collection.', source: 'https://www.orangehealth.in/', logo: orangeHealth, height: 30 },
-  { id: 'zepto', name: 'Zepto', category: 'Quick commerce', description: 'Delivery of groceries and everyday essentials.', source: 'https://www.zepto.com/', logo: zepto, height: 32, treatment: 'silhouette' },
-  { id: 'coinswitch', name: 'CoinSwitch', category: 'Digital assets', description: 'A cryptocurrency investment and trading platform.', source: 'https://coinswitch.co/', logo: coinswitch, height: 30, treatment: 'silhouette' },
-  { id: 'pagarbook', name: 'PagarBook', category: 'Workforce software', description: 'Staff attendance and payroll management software.', source: 'https://pagarbook.com/', logo: pagarbook, height: 30 },
-  { id: 'hackerearth', name: 'HackerEarth', category: 'Developer hiring', description: 'Technical assessments and developer hiring tools.', source: 'https://www.hackerearth.com/', logo: hackerearth, height: 30, treatment: 'silhouette' },
-  { id: 'justanswer', name: 'JustAnswer', category: 'Expert services', description: 'Online questions and answers from professional experts.', source: 'https://www.justanswer.com/info/press', logo: justanswer, height: 38 },
-  { id: 'mindtickle', name: 'Mindtickle', category: 'Sales enablement', description: 'Sales training, coaching and revenue enablement software.', source: 'https://www.mindtickle.com/', logo: mindtickle, height: 30 },
-  { id: 'commerceiq', name: 'CommerceIQ', category: 'Retail e-commerce', description: 'Software for retail e-commerce operations and advertising.', source: 'https://www.commerceiq.ai/', logo: commerceiq, height: 30, treatment: 'silhouette' },
-  { id: 'satsure', name: 'SatSure', category: 'Geospatial intelligence', description: 'Satellite-data analytics for business decision-making.', source: 'https://www.satsure.co/', logo: satsure, height: 27, treatment: 'silhouette' },
-  { id: 'spicejet', name: 'SpiceJet', category: 'Aviation', description: 'An Indian airline providing passenger flight services.', source: 'https://www.spicejet.com/', logo: spicejet, height: 34, treatment: 'silhouette' },
-  { id: 'signeasy', name: 'Signeasy', category: 'Electronic signatures', description: 'Electronic signatures and contract management software.', source: 'https://signeasy.com/', logo: signeasy, height: 30 },
-  { id: 'locus', name: 'Locus', category: 'Logistics technology', description: 'Logistics planning and delivery optimization software.', source: 'https://locus.sh/', logo: locus, height: 32 },
-  { id: 'spoton', name: 'SpotOn', category: 'Restaurant technology', description: 'Point-of-sale and business software for restaurants.', source: 'https://www.spoton.com/', logo: spoton, height: 32 },
-  { id: 'parspec', name: 'Parspec', category: 'Construction technology', description: 'AI quoting software for building-product distributors.', source: 'https://www.parspec.io/', logo: parspec, height: 30, treatment: 'silhouette' },
-  { id: 'sentisum', name: 'SentiSum', category: 'Customer intelligence', description: 'AI analysis of customer feedback and support conversations.', source: 'https://www.sentisum.com/', logo: sentisum, height: 42 },
+  { id: 'shiprocket', name: 'Shiprocket', category: 'E-commerce logistics', description: 'Shipping and fulfilment tools for e-commerce businesses.', source: 'https://www.shiprocket.in/', logo: shiprocket, intrinsicWidth: 854, intrinsicHeight: 190, height: 31 },
+  { id: 'wazirx', name: 'WazirX', category: 'Digital assets', description: 'A cryptocurrency trading platform based in India.', source: 'https://wazirx.com/', logo: wazirx, intrinsicWidth: 1920, intrinsicHeight: 640, height: 48 },
+  { id: 'cred', name: 'CRED', category: 'Financial services', description: 'Credit card payments and financial services for members.', source: 'https://cred.club/', logo: cred, intrinsicWidth: 224, intrinsicHeight: 74, height: 38, treatment: 'silhouette' },
+  { id: 'nanonets', name: 'Nanonets', category: 'Document automation', description: 'AI tools for extracting and processing business documents.', source: 'https://nanonets.com/', logo: nanonets, intrinsicWidth: 100, intrinsicHeight: 100, height: 40 },
+  { id: 'coindcx', name: 'CoinDCX', category: 'Digital assets', description: 'A cryptocurrency investment and trading platform.', source: 'https://coindcx.com/', logo: coindcx, intrinsicWidth: 400, intrinsicHeight: 81, height: 30, treatment: 'silhouette' },
+  { id: 'navi', name: 'Navi', category: 'Financial services', description: 'Digital payments, lending and investment services.', source: 'https://navi.com/', logo: navi, intrinsicWidth: 108, intrinsicHeight: 40, height: 30 },
+  { id: 'mpl', name: 'MPL', category: 'Gaming', description: 'A platform for mobile games and competitions.', source: 'https://www.mpl.live/', logo: mpl, intrinsicWidth: 152, intrinsicHeight: 56, height: 38, treatment: 'silhouette' },
+  { id: 'dream11', name: 'Dream11', category: 'Sports', description: 'A digital platform for sports fans.', source: 'https://www.dream11.com/', logo: dream11, intrinsicWidth: 145, intrinsicHeight: 32, height: 32, treatment: 'silhouette' },
+  { id: 'truefoundry', name: 'TrueFoundry', category: 'AI infrastructure', description: 'Infrastructure for deploying and managing AI applications.', source: 'https://www.truefoundry.com/', logo: truefoundry, intrinsicWidth: 266, intrinsicHeight: 47, height: 30 },
+  { id: 'kindred', name: 'Kindred Group', category: 'Online gaming', description: 'An online gaming group, now part of FDJ UNITED.', source: 'https://www.kindredgroup.com/', logo: kindred, intrinsicWidth: 217, intrinsicHeight: 64, height: 38 },
+  { id: 'practo', name: 'Practo', category: 'Healthcare', description: 'A platform connecting patients with healthcare providers.', source: 'https://www.practo.com/', logo: practo, intrinsicWidth: 516, intrinsicHeight: 118, height: 30 },
+  { id: 'arintra', name: 'Arintra', category: 'Healthcare technology', description: 'AI-powered medical coding and revenue-cycle automation.', source: 'https://www.arintra.com/', logo: arintra, intrinsicWidth: 107, intrinsicHeight: 22, height: 30, treatment: 'silhouette' },
+  { id: 'orange-health', name: 'Orange Health', category: 'Diagnostics', description: 'Diagnostic lab testing with at-home sample collection.', source: 'https://www.orangehealth.in/', logo: orangeHealth, intrinsicWidth: 234, intrinsicHeight: 26, height: 30 },
+  { id: 'zepto', name: 'Zepto', category: 'Quick commerce', description: 'Delivery of groceries and everyday essentials.', source: 'https://www.zepto.com/', logo: zepto, intrinsicWidth: 87, intrinsicHeight: 28, height: 32, treatment: 'silhouette' },
+  { id: 'coinswitch', name: 'CoinSwitch', category: 'Digital assets', description: 'A cryptocurrency investment and trading platform.', source: 'https://coinswitch.co/', logo: coinswitch, intrinsicWidth: 212, intrinsicHeight: 32, height: 30, treatment: 'silhouette' },
+  { id: 'pagarbook', name: 'PagarBook', category: 'Workforce software', description: 'Staff attendance and payroll management software.', source: 'https://pagarbook.com/', logo: pagarbook, intrinsicWidth: 1663, intrinsicHeight: 400, height: 30 },
+  { id: 'hackerearth', name: 'HackerEarth', category: 'Developer hiring', description: 'Technical assessments and developer hiring tools.', source: 'https://www.hackerearth.com/', logo: hackerearth, intrinsicWidth: 118, intrinsicHeight: 22, height: 30, treatment: 'silhouette' },
+  { id: 'justanswer', name: 'JustAnswer', category: 'Expert services', description: 'Online questions and answers from professional experts.', source: 'https://www.justanswer.com/info/press', logo: justanswer, intrinsicWidth: 396, intrinsicHeight: 120, height: 38 },
+  { id: 'mindtickle', name: 'Mindtickle', category: 'Sales enablement', description: 'Sales training, coaching and revenue enablement software.', source: 'https://www.mindtickle.com/', logo: mindtickle, intrinsicWidth: 834, intrinsicHeight: 250, height: 30 },
+  { id: 'commerceiq', name: 'CommerceIQ', category: 'Retail e-commerce', description: 'Software for retail e-commerce operations and advertising.', source: 'https://www.commerceiq.ai/', logo: commerceiq, intrinsicWidth: 768, intrinsicHeight: 101, height: 30, treatment: 'silhouette' },
+  { id: 'satsure', name: 'SatSure', category: 'Geospatial intelligence', description: 'Satellite-data analytics for business decision-making.', source: 'https://www.satsure.co/', logo: satsure, intrinsicWidth: 667, intrinsicHeight: 103, height: 27, treatment: 'silhouette' },
+  { id: 'spicejet', name: 'SpiceJet', category: 'Aviation', description: 'An Indian airline providing passenger flight services.', source: 'https://www.spicejet.com/', logo: spicejet, intrinsicWidth: 370, intrinsicHeight: 100, height: 34, treatment: 'silhouette' },
+  { id: 'signeasy', name: 'Signeasy', category: 'Electronic signatures', description: 'Electronic signatures and contract management software.', source: 'https://signeasy.com/', logo: signeasy, intrinsicWidth: 500, intrinsicHeight: 120, height: 30 },
+  { id: 'locus', name: 'Locus', category: 'Logistics technology', description: 'Logistics planning and delivery optimization software.', source: 'https://locus.sh/', logo: locus, intrinsicWidth: 103, intrinsicHeight: 26, height: 32 },
+  { id: 'spoton', name: 'SpotOn', category: 'Restaurant technology', description: 'Point-of-sale and business software for restaurants.', source: 'https://www.spoton.com/', logo: spoton, intrinsicWidth: 116, intrinsicHeight: 35, height: 32 },
+  { id: 'parspec', name: 'Parspec', category: 'Construction technology', description: 'AI quoting software for building-product distributors.', source: 'https://www.parspec.io/', logo: parspec, intrinsicWidth: 300, intrinsicHeight: 56, height: 30, treatment: 'silhouette' },
+  { id: 'sentisum', name: 'SentiSum', category: 'Customer intelligence', description: 'AI analysis of customer feedback and support conversations.', source: 'https://www.sentisum.com/', logo: sentisum, intrinsicWidth: 82, intrinsicHeight: 58, height: 42 },
 ]

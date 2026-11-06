@@ -1,6 +1,5 @@
 import { provisionRecruiter } from './recruiter-admin'
-import { expect, test, type Download } from '@playwright/test'
-import { readFile } from 'node:fs/promises'
+import { expect, test } from '@playwright/test'
 import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 import { issueLocalAccountToken } from './account-token'
@@ -32,7 +31,7 @@ test('candidate created in the UI is discovered and updated in the recruiter UI'
   createRealPdf(pdfPath)
 
   await page.goto('/')
-  await page.getByTestId('for-candidates').click()
+  await page.getByRole('button', { name: 'Create an account', exact: true }).click()
   await page.getByLabel('Full name').fill('Connection Candidate')
   await page.getByLabel('Email').fill(candidateEmail)
   await page.getByLabel('Password').fill(password)
@@ -44,22 +43,31 @@ test('candidate created in the UI is discovered and updated in the recruiter UI'
   await page.getByTestId('resume-input').setInputFiles(pdfPath)
   await expect(page.locator('.cp-identity')).toContainText('Priya Nair', { timeout: 30_000 })
   await expect(page.locator('.cp-identity')).toContainText('Backend Engineer')
-  await expect(page.locator('.cp-signals')).toContainText('Python')
-  await expect(page.locator('.cp-signals')).toContainText('Django')
+  await expect(page.locator('.cp-skill-chips')).toContainText('Python')
+  await expect(page.locator('.cp-skill-chips')).toContainText('Django')
   await page.getByRole('button', { name: 'Not quite — edit' }).click()
   await page.getByRole('button', { name: 'Add experience', exact: true }).click()
-  await page.getByLabel('Company 1', { exact: true }).fill('Audit Systems')
-  await page.getByLabel('Job title 1', { exact: true }).fill('Backend Engineer')
-  await page.getByLabel('Start date 1', { exact: true }).fill('2022-01-01')
+  await page.getByLabel('Company', { exact: true }).fill('Audit Systems')
+  await page.getByLabel('Job title', { exact: true }).fill('Backend Engineer')
+  await page.getByLabel('Start date', { exact: true }).fill('2022-01-01')
   await page.getByLabel('Education (one entry per line)').fill('B.Tech Computer Science, Audit University')
   await page.getByRole('button', { name: 'Save corrections' }).click()
   await expect(page.getByRole('button', { name: /Backend Engineer at Audit Systems/ })).toBeVisible()
-  await page.getByLabel("What is the most meaningful thing you've built?").fill(meaningfulWork)
+  await page.getByRole('button', { name: "That's me ✓" }).click()
   const answerSaved = page.waitForResponse(r => r.url().endsWith('/candidate/profile/') && r.request().method() === 'PATCH')
-  await page.getByRole('button', { name: 'Save answer' }).click()
+  await page.getByLabel("What is the most meaningful thing you've built?").fill(meaningfulWork)
+  await page.locator('.cp-welcome').click()
   expect((await answerSaved).status()).toBe(200)
-  await page.getByLabel('Notice Period (days)').fill('30')
+  await page.getByRole('button', { name: /Notice period.*Edit/ }).click()
+  const noticeSaved = page.waitForResponse(r => r.url().endsWith('/candidate/profile/') && r.request().method() === 'PATCH')
+  await page.getByLabel('Notice period', { exact: true }).selectOption('30')
+  expect((await noticeSaved).status()).toBe(200)
+  await page.locator('.cp-welcome').click()
+  await page.getByRole('button', { name: /Work preferences.*Edit/ }).click()
+  const workSaved = page.waitForResponse(r => r.url().endsWith('/candidate/profile/') && r.request().method() === 'PATCH')
   await page.getByLabel('Remote', { exact: true }).check()
+  expect((await workSaved).status()).toBe(200)
+  await page.locator('.cp-welcome').click()
   await expect(page.getByRole('combobox', { name: 'Profile Visibility' })).toHaveCount(0)
   await page.getByRole('button', { name: 'Confirm my profile' }).click()
   await expect(page.getByRole('heading', { name: "Here's how we'll remember you" })).toBeVisible()
@@ -92,26 +100,18 @@ test('candidate created in the UI is discovered and updated in the recruiter UI'
   await expect(profile).toContainText(meaningfulWork)
   await expect(profile.getByRole('button', { name: 'View Resume' })).toBeVisible()
   const resumeResponse = page.waitForResponse(response => /\/resumes\/\d+\/download\/$/.test(response.url()))
-  let previewDownload: Download | undefined
-  page.on('download', download => { previewDownload = download })
-  page.context().on('page', newPage => newPage.on('download', download => { previewDownload = download }))
   const popupEvent = page.waitForEvent('popup')
   await profile.getByRole('button', { name: 'View Resume' }).click()
   const popup = await popupEvent
   const document = await resumeResponse
   expect(document.status()).toBe(200)
   expect(document.headers()['content-type']).toContain('application/pdf')
-  // Headless Chromium can download PDFs instead of using its native viewer.
-  await expect.poll(() => previewDownload || popup.url().startsWith('blob:')).toBeTruthy()
-  const signature = previewDownload
-    ? (await readFile((await previewDownload.path())!)).subarray(0, 4).toString()
-    : await page.evaluate(async url => (await (await fetch(url)).text()).slice(0, 4), popup.url())
-  expect(signature).toBe('%PDF')
+  expect((await document.body()).subarray(0, 4).toString()).toBe('%PDF')
   await popup.close()
   await page.locator('.profile-drawer .close').click()
 
   await page.getByRole('button', { name: 'Log out' }).click()
-  await page.getByTestId('for-candidates').click()
+  await page.getByRole('button', { name: 'Create an account', exact: true }).click()
   await page.getByRole('button', { name: /Already have an account/ }).click()
   await page.getByLabel('Email').fill(candidateEmail)
   await page.getByLabel('Password').fill(password)

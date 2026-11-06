@@ -51,7 +51,7 @@ for (const width of [1440, 390]) test(`accepted uploads and replacements visibly
   await page.emulateMedia({ reducedMotion: 'no-preference' })
   const email = `processing-ui-${width}-${Date.now()}@example.com`
   await page.goto('/')
-  await page.getByTestId('for-candidates').click()
+  await page.getByRole('button', { name: 'Create an account', exact: true }).click()
   await page.getByLabel('Full name').fill('Processing Test Candidate')
   await page.getByLabel('Email', { exact: true }).fill(email)
   await page.getByLabel('Password', { exact: true }).fill('strong-pass-123')

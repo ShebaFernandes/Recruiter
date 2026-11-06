@@ -26,6 +26,39 @@ KNOWN_SKILLS = [
     "PostgreSQL",
     "Redis",
     "Microservices",
+    "SQL",
+    "MySQL",
+    "MongoDB",
+    "Docker",
+    "Terraform",
+    "GCP",
+    "Azure",
+    "JavaScript",
+    "HTML",
+    "CSS",
+    "C++",
+    "C#",
+    ".NET",
+    "Ruby",
+    "PHP",
+    "Swift",
+    "Kotlin",
+    "Scala",
+    "Rust",
+    "Angular",
+    "Vue.js",
+    "Git",
+    "CI/CD",
+    "Jenkins",
+    "GraphQL",
+    "Figma",
+    "Excel",
+    "Salesforce",
+    "Tableau",
+    "Power BI",
+    "Linux",
+    "Spark",
+    "Airflow",
 ]
 RESUME_SKILLS = [
     "Agentic AI",
@@ -108,9 +141,11 @@ DATE_VALUE_PATTERN = (
     rf"(?:{MONTH_PATTERN}\.?\s+\d{{4}}|\d{{1,2}}[/-]\d{{4}}|"
     rf"\d{{4}}[/-]\d{{1,2}}|\d{{4}})"
 )
+OPEN_END_PATTERN = r"present|current|now|till\s*date|till\s*now|to\s*date|ongoing"
+OPEN_END_RE = re.compile(rf"^(?:{OPEN_END_PATTERN})$", re.IGNORECASE)
 DATE_RANGE_PATTERN = re.compile(
     rf"(?P<start>{DATE_VALUE_PATTERN})\s*(?:-|–|—|to)\s*"
-    rf"(?P<end>present|current|now|{DATE_VALUE_PATTERN}|\d{{2}})(?!\d)",
+    rf"(?P<end>{OPEN_END_PATTERN}|{DATE_VALUE_PATTERN}|\d{{2}})(?!\d)",
     re.IGNORECASE,
 )
 
@@ -320,7 +355,9 @@ def _heading(value):
 
 def _heading_and_tail(value):
     """Return a bounded section heading, including common qualified headings."""
-    stripped = value.strip()
+    stripped = value.strip().lstrip("�• ")
+    if re.match(r"(?i)^work experience\s+\d+\+?\s+years?\b.*$", stripped):
+        return "work experience", ""
     # Letter-spaced section labels are common in designed PDF exports. Match
     # only known headings so ordinary names and prose are never collapsed.
     compact = re.sub(r"\s+", "", stripped).casefold()
@@ -335,6 +372,8 @@ def _heading_and_tail(value):
     # Resumes frequently qualify headings (for example, a selected employment
     # section). Only standalone, short heading-shaped lines qualify; job rows,
     # dates and prose never become section boundaries.
+    if stripped.endswith((".", "!", "?")):
+        return "", ""
     candidate = stripped.strip("•|:–—- ")
     heading = _heading(candidate)
     if (len(candidate) <= 70 and 1 <= len(heading.split()) <= 6
@@ -401,7 +440,8 @@ def _looks_like_role(value):
         re.search(
             r"(?i)\b(engineer|developer|manager|designer|analyst|consultant|architect|"
             r"lead|specialist|intern|director|officer|scientist|researcher|writer|"
-            r"administrator|associate|advisor|mentor)\b",
+            r"administrator|associate|advisor|mentor|founder|co-founder|ceo|cto|coo|cfo|"
+            r"president|vp|vice president|head|principal|partner|chief|owner)\b",
             value,
         )
     )
@@ -470,23 +510,46 @@ def _plausible_employer_line(value):
 def _range_dates(match):
     start_value, end_value = match.group("start", "end")
     if re.fullmatch(r"\d{2}", end_value):
-        end_value = start_value[-4:-2] + end_value
+        century = start_value[-4:-2]
+        start_year = start_value[-4:]
+        candidate = century + end_value
+        # A two-digit end year normally continues the start year's century
+        # ("2016-18" -> 2018), but a range like "1999-00" means 2000, not
+        # 1900: if staying in the same century would put the end before the
+        # start, roll forward to the next century instead.
+        if century.isdigit() and start_year.isdigit() and int(candidate) < int(start_year):
+            century = str(int(century) + 1).zfill(2)
+        end_value = century + end_value
     return _resume_date(start_value), (
-        None if end_value.lower() in {"present", "current", "now"} else _resume_date(end_value)
+        None if OPEN_END_RE.fullmatch(end_value.strip()) else _resume_date(end_value)
     )
 
 
 def _table_date_range(line):
-    """Turn separate DOCX table date cells into the same explicit range grammar."""
+    """Turn separate DOCX table date cells into the same explicit range grammar.
+
+    Date cells are not always adjacent -- a location or employment-type cell can
+    sit between the start and end date. Pair the first start-shaped cell with the
+    nearest later end-shaped cell instead of requiring them next to each other.
+    """
     cells = [cell.strip() for cell in line.split("|")]
     if len(cells) < 4:
         return line
-    for index in range(1, len(cells) - 1):
-        start, end = cells[index], cells[index + 1]
-        if re.fullmatch(DATE_VALUE_PATTERN, start, re.I) and re.fullmatch(
-            rf"(?:present|current|now|{DATE_VALUE_PATTERN}|\d{{2}})", end, re.I
-        ):
-            return " | ".join(cells[:index] + [f"{start} - {end}"] + cells[index + 2 :])
+    end_pattern = rf"(?:{OPEN_END_PATTERN}|{DATE_VALUE_PATTERN}|\d{{2}})"
+    for start_index in range(1, len(cells) - 1):
+        start = cells[start_index]
+        if not re.fullmatch(DATE_VALUE_PATTERN, start, re.I):
+            continue
+        for end_index in range(start_index + 1, len(cells)):
+            end = cells[end_index]
+            if re.fullmatch(end_pattern, end, re.I):
+                return " | ".join(
+                    cells[:start_index] + [f"{start} - {end}"] + cells[end_index + 1:]
+                )
+            if re.fullmatch(DATE_VALUE_PATTERN, end, re.I):
+                # A second start-shaped cell before any end-shaped cell means this
+                # row's dates aren't a single simple range -- stop at this pair.
+                break
     return line
 
 
@@ -559,6 +622,10 @@ def _standard_experiences(lines, original_section=None):
                 role = _concise_role(section[index + 1])
                 company = suffix
                 description_start = index + 2
+            elif (len(inline_parts := re.split(r"\s+[–—]\s+", prefix)) >= 2
+                  and _concise_role(" – ".join(inline_parts[:-1]))):
+                role = " – ".join(inline_parts[:-1])
+                company = inline_parts[-1]
             elif "|" in prefix or re.search(r"\s(?:at|@)\s", prefix, re.I):
                 role, company = _role_and_company(prefix.split("|"))
                 role = _concise_role(role)
@@ -616,9 +683,12 @@ def _standard_experiences(lines, original_section=None):
                 role, company = _role_and_company(section[max(0, index - 2) : index])
                 role = _concise_role(role)
                 # A promotion often follows an achievement or an undated
-                # progression note. Those lines are not new employers.
+                # progression note. Those lines are not new employers -- but
+                # only when no employer was actually named: an explicit "Role
+                # at Company" on the preceding line must never be overridden
+                # by a carried-over employer from an earlier, different role.
                 preceding = section[index - 2].strip() if index >= 2 else ''
-                if employer and (
+                if not company and employer and (
                     preceding.endswith(('.', '!', ':'))
                     or re.search(r'(?i)\b(?:progression|same employer|promotion)\b', preceding)
                 ):
@@ -661,7 +731,7 @@ def _standard_experiences(lines, original_section=None):
                     "company": company[:180],
                     "start_date": start_date,
                     "end_date": end_date,
-                    "is_current": match.group("end").lower() in {"present", "current", "now"},
+                    "is_current": bool(OPEN_END_RE.fullmatch(match.group("end").strip())),
                     "date_label": match.group(0),
                     "employment_type": employment_type,
                     "location": role_location,
@@ -694,10 +764,27 @@ def _unheaded_employment_lines(lines):
     return lines[start:end]
 
 
+def _plausible_institution_name(value):
+    """A short, capitalized, digit-free line that could be a named institute
+
+    (e.g. "IIT Bombay", "BITS Pilani") even without the word university/
+    college/institute/school/academy. Only trusted right after a degree line.
+    """
+    words = value.split()
+    return bool(
+        1 <= len(words) <= 6 and len(value) <= 80
+        and not re.search(r"\d", value)
+        and all(word[:1].isupper() for word in words if word[:1].isalpha())
+        and not _looks_like_role(value)
+    )
+
+
 def _education_rows(text, lines):
     rows = [value.strip() for value in re.findall(r"(?im)^\s*Education\s*:\s*(.+)$", text)]
     degree_words = re.compile(
-        r"(?i)\b(b\.?tech|bachelor|master|mba|m\.?tech|degree|diploma|ph\.?d)\b"
+        r"(?i)\b(b\.?tech|bachelor|master|mba|m\.?tech|degree|diploma|ph\.?d|"
+        r"b\.?sc|m\.?sc|b\.?a|m\.?a|b\.?e|m\.?e|b\.?com|m\.?com|b\.?ca|m\.?ca|"
+        r"b\.?ba|pgdm|postgraduate|undergraduate)\b"
     )
     institution_words = re.compile(r"(?i)\b(university|college|institute|school|academy)\b")
     for raw_value in _section_lines(lines, EDUCATION_HEADINGS):
@@ -709,7 +796,9 @@ def _education_rows(text, lines):
         if rows and DATE_RANGE_PATTERN.fullmatch(value):
             rows[-1] = f"{rows[-1]} · {value}"
         elif rows and (
-            (degree_words.search(rows[-1]) and institution_words.search(value))
+            (degree_words.search(rows[-1]) and (
+                institution_words.search(value) or _plausible_institution_name(value)
+            ))
             or (institution_words.search(rows[-1]) and degree_words.search(value))
         ):
             rows[-1] = f"{rows[-1]} · {value}"
@@ -764,21 +853,50 @@ def parse_resume(file_obj, filename):
         from .document_evidence import docx_view
 
         evidence_views, layout = docx_view(text)
+    if Path(filename).suffix.lower() == ".pdf":
+        file_obj.seek(0)
+        for page in PdfReader(file_obj).pages:
+            for reference in page.get("/Annots", []):
+                action = reference.get_object().get("/A")
+                if action and action.get("/S") == "/URI":
+                    uri = str(action.get("/URI", ""))
+                    if any(_profile_url(uri, host) for host in ("linkedin.com", "github.com")):
+                        text += "\n" + uri
+    # Some CV templates print the end date beside the role and the start date
+    # beside its first bullet. Restore a single chronological date range.
+    text = re.sub(
+        r"(?m)^([^\S\n]*)(\d{2}/\d{4})[ \t]+([^\n]+)\n"
+        r"[ \t]*(\d{2}/\d{4})[ \t]*(.*)$",
+        lambda m: (
+            "Experience: " + "|".join(m[3].rsplit(",", 2)[:2]) + "|"
+            + "-".join(reversed(m[4].split("/"))) + "-01|"
+            + "-".join(reversed(m[2].split("/"))) + f"-01\n{m[5]}"
+        ),
+        text,
+    )
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     email_match = re.search(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}", text)
     phone_match = re.search(r"(?:\+?91[-\s]?)?[6-9]\d{9}", text)
     linkedin = _profile_url(text, "linkedin.com")
     github = _profile_url(text, "github.com")
-    # A tenure or a metric in a job description is not total career experience.
-    years_match = re.search(
-        r"(?i)(\d+(?:\.\d+)?)\+?\s*(?:years?|yrs?)\s+(?:of\s+)?experience", text
-    )
     skills_line = _value_after_label(text, "Skills")
     skills = [skill for skill in RESUME_SKILLS if re.search(rf"(?i)\b{re.escape(skill)}\b", text)]
     if skills_line:
         skills = list(
             dict.fromkeys([s.strip() for s in skills_line.split(",") if s.strip()] + skills)
         )
+    # A "Skills"/"Technical Skills" heading followed by bulleted or wrapped
+    # lines (the common real-world layout) isn't captured by the single-line
+    # label above. Read the whole section body, bounded by the next heading.
+    skills_section = _section_lines(lines, {"skills", "technical skills"})
+    if skills_section:
+        section_entries = [
+            entry.strip(" \t•-–—*")
+            for entry in re.split(r"[,;|\n]+", " ".join(skills_section))
+        ]
+        skills = list(dict.fromkeys(
+            skills + [entry for entry in section_entries if 1 <= len(entry) <= 40]
+        ))
     location = _value_after_label(text, "Location") or next(
         (city for line in lines[:5] for city in LOCATIONS if re.search(rf"(?i)\b{city}\b", line)),
         "",
@@ -794,8 +912,8 @@ def parse_resume(file_obj, filename):
                 "role": match.group(1).strip()[:180],
                 "company": match.group(2).strip()[:180],
                 "start_date": match.group(3),
-                "end_date": None if end_value.lower() in {"present", "current"} else end_value,
-                "is_current": end_value.lower() in {"present", "current", "now"},
+                "end_date": None if OPEN_END_RE.fullmatch(end_value.strip()) else end_value,
+                "is_current": bool(OPEN_END_RE.fullmatch(end_value.strip())),
                 "date_label": f"{match.group(3)} — {end_value}",
                 "employment_type": "",
                 "location": "",
@@ -806,6 +924,19 @@ def parse_resume(file_obj, filename):
         )
     section = _section_lines(lines, EXPERIENCE_HEADINGS)
     employment_lines = section or _unheaded_employment_lines(lines)
+    # A tenure or a metric inside a job description/bullet is not the candidate's
+    # total career experience. Only an explicit self-declared total outside the
+    # employment section itself (summary, header) can override the computed total.
+    excluded_lines = set(employment_lines)
+    years_search_text = "\n".join(line for line in lines if line not in excluded_lines)
+    years_match = re.search(
+        r"(?i)(\d+(?:\.\d+)?)\+?\s*(?:years?|yrs?)\s+(?:of\s+)?experience", years_search_text
+    )
+    if not years_match:
+        years_match = re.search(
+            r"(?im)^\s*(?:work|professional|total)\s+experience\s*[:|–-]?\s*"
+            r"(\d+(?:\.\d+)?)\+?\s*(?:years?|yrs?)\b", years_search_text
+        )
     for item in _standard_experiences(lines, employment_lines):
         key = (item["role"].lower(), item["company"].lower(), item["start_date"])
         existing = {

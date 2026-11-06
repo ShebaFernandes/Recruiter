@@ -274,19 +274,16 @@ describe('actual candidate processing integration', () => {
   })
 })
 
-it.each([false, true])('uses static reflection prompts without preference writes (replacement=%s)', async replacement => {
+it.each([false, true])('keeps processing focused without reflection choices or preference writes (replacement=%s)', async replacement => {
   vi.mocked(api.candidateProfile).mockResolvedValue(replacement ? completed : profile)
   vi.spyOn(api, 'uploadResume').mockResolvedValue(queued)
   const patch = vi.spyOn(api, 'updateCandidate')
   await mount(); await upload()
   expect(screen.queryByRole('checkbox')).toBeNull()
   expect(screen.getByText("We're turning your experience into a clearer picture of your career.")).toBeVisible()
-  for (const text of ['Harder problems', 'More ownership', 'Exceptional people', 'Compensation']) {
-    const chip = screen.getByText(text)
-    expect(chip.tagName).toBe('LI')
-    expect(chip).not.toHaveAttribute('tabindex')
-    fireEvent.click(chip)
-  }
+  expect(screen.queryByRole('region', { name: 'Something to reflect on' })).toBeNull()
+  expect(screen.queryByText('What would make your next move worth it?')).toBeNull()
+  expect(document.querySelector('.cp-processing-prompts')).toBeNull()
   expect(patch).not.toHaveBeenCalled()
   expect(api.uploadResume).toHaveBeenCalledWith(file, undefined)
   vi.mocked(api.candidateProfile).mockResolvedValue(completed)
@@ -353,4 +350,20 @@ it('a manual check retains the truthful worker delay and cannot create another u
   await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Check status again' })) })
   expect(screen.getByRole('status')).toHaveTextContent('temporarily delayed')
   expect(uploadRequest).not.toHaveBeenCalled()
+})
+
+
+it('checks a waiting resume at least every five seconds and leaves the screen on completion', async () => {
+  vi.mocked(api.candidateProfile).mockResolvedValue(queued)
+  vi.mocked(api.resumeStatus).mockResolvedValue({ resume, worker_available: true })
+  await mount()
+  for (const [index, milliseconds] of [3000, 4500, 5000, 5000].entries()) {
+    await act(() => vi.advanceTimersByTimeAsync(milliseconds))
+    expect(api.resumeStatus).toHaveBeenCalledTimes(index + 1)
+  }
+  vi.mocked(api.candidateProfile).mockResolvedValue(completed)
+  vi.mocked(api.resumeStatus).mockResolvedValue({ resume: completed.latest_resume, worker_available: true })
+  await act(() => vi.advanceTimersByTimeAsync(5000))
+  expect(screen.getByRole('heading', { name: "Here's how we understand you." })).toBeVisible()
+  expect(screen.queryByRole('progressbar')).toBeNull()
 })

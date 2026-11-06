@@ -31,7 +31,7 @@ export function MarqueeCard({ name, role, paragraphs, logo, videoUrl }: MarqueeC
   return <><LiquidCard className={`testimonial-glass-card${highlighted ? ' is-highlighted' : ''}`} tabIndex={duplicate ? undefined : 0} onClick={() => setHighlighted(value => !value)} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setHighlighted(value => !value) } }} role="article" aria-label={`${name} testimonial`}>
     <CardContent className="testimonial-glass-card__content">
       <div className="testimonial-glass-card__person">
-        <span className={`testimonial-glass-card__avatar${logo ? ' has-logo' : ''}`} aria-hidden="true">{logo ? <img src={logo} alt="" /> : initials}</span>
+        <span className={`testimonial-glass-card__avatar${logo ? ' has-logo' : ''}`} aria-hidden="true">{logo ? <img src={logo} alt="" width={64} height={64} loading="lazy" decoding="async" /> : initials}</span>
         <div className="testimonial-glass-card__identity">
           <strong>{name}</strong>
           <span>{role}</span>

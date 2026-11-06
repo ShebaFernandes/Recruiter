@@ -1,5 +1,5 @@
 import { ArrowRight, CalendarDays, Check, FileText, MapPin } from 'lucide-react'
-import { roles } from './Opportunities'
+import { roles } from './opportunityRoles'
 import './candidate-applications.css'
 
 type Application = { id: number; opportunity_id: string; created_at: string }

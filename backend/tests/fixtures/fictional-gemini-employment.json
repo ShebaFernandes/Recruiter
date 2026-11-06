@@ -1,0 +1,310 @@
+[
+  {
+    "fixture": "chronological_pdf",
+    "rows": [
+      {
+        "role": "Engineer",
+        "company": "Alpha Labs",
+        "start_date": "2020-01-01",
+        "end_date": "2021-12-01",
+        "is_current": false,
+        "date_label": "Jan 2020 - Dec 2021",
+        "employment_type": "",
+        "location": "",
+        "description": "",
+        "confidence_status": "supported"
+      },
+      {
+        "role": "Senior Engineer",
+        "company": "Beta Labs",
+        "start_date": "2022-01-01",
+        "end_date": null,
+        "is_current": true,
+        "date_label": "Jan 2022 - Present",
+        "employment_type": "",
+        "location": "",
+        "description": "",
+        "confidence_status": "supported"
+      }
+    ]
+  },
+  {
+    "fixture": "chronological_docx",
+    "rows": [
+      {
+        "company": "Cedar Works",
+        "role": "Developer",
+        "start_date": "2017-06-01",
+        "end_date": "2019-05-01",
+        "is_current": false,
+        "date_label": "Jun 2017 \u2014 May 2019",
+        "employment_type": "",
+        "location": "",
+        "description": "",
+        "achievements": [],
+        "confidence_status": "supported"
+      },
+      {
+        "company": "Delta Works",
+        "role": "Lead Developer",
+        "start_date": "2019-06-01",
+        "end_date": "2022-12-01",
+        "is_current": false,
+        "date_label": "Jun 2019 \u2014 Dec 2022",
+        "employment_type": "",
+        "location": "",
+        "description": "",
+        "achievements": [],
+        "confidence_status": "supported"
+      }
+    ]
+  },
+  {
+    "fixture": "promotions_pdf",
+    "rows": [
+      {
+        "company": "Evergreen Group",
+        "role": "Director of Engineering",
+        "start_date": "2023-01-01",
+        "end_date": null,
+        "is_current": true,
+        "date_label": "Jan 2023 \u2014 Present",
+        "employment_type": "",
+        "location": "",
+        "description": "",
+        "achievements": [],
+        "confidence_status": "supported"
+      },
+      {
+        "company": "Evergreen Group",
+        "role": "Engineering Manager",
+        "start_date": "2020-01-01",
+        "end_date": "2022-12-01",
+        "is_current": false,
+        "date_label": "Jan 2020 \u2014 Dec 2022",
+        "employment_type": "",
+        "location": "",
+        "description": "",
+        "achievements": [],
+        "confidence_status": "supported"
+      },
+      {
+        "company": "Evergreen Group",
+        "role": "Software Engineer",
+        "start_date": "2018-01-01",
+        "end_date": "2019-12-01",
+        "is_current": false,
+        "date_label": "Jan 2018 \u2014 Dec 2019",
+        "employment_type": "",
+        "location": "",
+        "description": "",
+        "achievements": [],
+        "confidence_status": "supported"
+      }
+    ]
+  },
+  {
+    "fixture": "promotions_docx",
+    "rows": [
+      {
+        "company": "Fable Systems",
+        "role": "VP Engineering",
+        "start_date": null,
+        "end_date": null,
+        "is_current": true,
+        "date_label": "2022 \u2014 Present",
+        "employment_type": "",
+        "location": "",
+        "description": "",
+        "achievements": [],
+        "confidence_status": "supported"
+      },
+      {
+        "company": "Fable Systems",
+        "role": "Senior Engineer",
+        "start_date": null,
+        "end_date": null,
+        "is_current": false,
+        "date_label": "2019 \u2014 2021",
+        "employment_type": "",
+        "location": "",
+        "description": "",
+        "achievements": [],
+        "confidence_status": "supported"
+      },
+      {
+        "company": "Fable Systems",
+        "role": "Engineer",
+        "start_date": null,
+        "end_date": null,
+        "is_current": false,
+        "date_label": "2016 \u2014 2018",
+        "employment_type": "",
+        "location": "",
+        "description": "",
+        "achievements": [],
+        "confidence_status": "supported"
+      }
+    ]
+  },
+  {
+    "fixture": "overlap_pdf",
+    "rows": [
+      {
+        "company": "Gamma Co",
+        "role": "Platform Engineer",
+        "start_date": "2020-01-01",
+        "end_date": null,
+        "is_current": true,
+        "date_label": "Jan 2020 \u2014 Present",
+        "employment_type": "",
+        "location": "",
+        "description": "",
+        "achievements": [],
+        "confidence_status": "supported"
+      },
+      {
+        "company": "Harbor Studio",
+        "role": "Advisor",
+        "start_date": "2021-06-01",
+        "end_date": "2022-06-01",
+        "is_current": false,
+        "date_label": "Jun 2021 \u2014 Jun 2022",
+        "employment_type": "",
+        "location": "",
+        "description": "",
+        "achievements": [],
+        "confidence_status": "supported"
+      }
+    ]
+  },
+  {
+    "fixture": "year_only_docx",
+    "rows": [
+      {
+        "company": "Indigo",
+        "role": "Analyst",
+        "start_date": null,
+        "end_date": null,
+        "is_current": false,
+        "date_label": "2014 \u2014 2017",
+        "employment_type": "",
+        "location": "",
+        "description": "",
+        "achievements": [],
+        "confidence_status": "supported"
+      },
+      {
+        "company": "Juniper",
+        "role": "Senior Analyst",
+        "start_date": null,
+        "end_date": null,
+        "is_current": false,
+        "date_label": "2018 \u2014 2020",
+        "employment_type": "",
+        "location": "",
+        "description": "",
+        "achievements": [],
+        "confidence_status": "supported"
+      }
+    ]
+  },
+  {
+    "fixture": "unknown_dates_pdf",
+    "rows": [
+      {
+        "company": "Kite Labs",
+        "role": "Product Manager",
+        "start_date": null,
+        "end_date": null,
+        "is_current": false,
+        "date_label": "Unknown \u2014 Unknown",
+        "employment_type": "",
+        "location": "",
+        "description": "",
+        "achievements": [],
+        "confidence_status": "partial"
+      }
+    ]
+  },
+  {
+    "fixture": "intern_contract_docx",
+    "rows": [
+      {
+        "company": "Lumen",
+        "role": "Software Intern",
+        "start_date": "2019-01-01",
+        "end_date": "2019-06-01",
+        "is_current": false,
+        "date_label": "Jan 2019 \u2014 Jun 2019",
+        "employment_type": "",
+        "location": "",
+        "description": "",
+        "achievements": [],
+        "confidence_status": "supported"
+      },
+      {
+        "company": "Mosaic",
+        "role": "Consultant",
+        "start_date": "2019-07-01",
+        "end_date": "2020-12-01",
+        "is_current": false,
+        "date_label": "Jul 2019 \u2014 Dec 2020",
+        "employment_type": "",
+        "location": "",
+        "description": "",
+        "achievements": [],
+        "confidence_status": "supported"
+      }
+    ]
+  },
+  {
+    "fixture": "mixed_months_pdf",
+    "rows": [
+      {
+        "company": "Pine Co",
+        "role": "Engineer",
+        "start_date": "2018-03-01",
+        "end_date": "2020-04-01",
+        "is_current": false,
+        "date_label": "2018/03 \u2014 04/2020",
+        "employment_type": "",
+        "location": "",
+        "description": "",
+        "achievements": [],
+        "confidence_status": "supported"
+      }
+    ]
+  },
+  {
+    "fixture": "separate_company_role_docx",
+    "rows": [
+      {
+        "company": "River Systems",
+        "role": "Staff Engineer",
+        "start_date": "2021-04-01",
+        "end_date": null,
+        "is_current": true,
+        "date_label": "Apr 2021 \u2014 Present",
+        "employment_type": "",
+        "location": "",
+        "description": "",
+        "achievements": [],
+        "confidence_status": "supported"
+      },
+      {
+        "company": "Stone Systems",
+        "role": "Engineer",
+        "start_date": "2018-03-01",
+        "end_date": "2021-03-01",
+        "is_current": false,
+        "date_label": "Mar 2018 \u2014 Mar 2021",
+        "employment_type": "",
+        "location": "",
+        "description": "",
+        "achievements": [],
+        "confidence_status": "supported"
+      }
+    ]
+  }
+]

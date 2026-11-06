@@ -36,6 +36,9 @@
 .has-opportunity-panel .opp-detail{position:fixed;inset:20px 20px 20px auto;width:min(660px,calc(100vw - 40px));height:calc(100dvh - 40px);z-index:50;padding:28px 32px 40px;border:1px solid #dedacf;border-radius:12px;box-shadow:0 12px 80px #1c253d30;overflow-y:auto;overscroll-behavior:contain}
 @media(max-width:760px){.has-opportunity-panel .opp-detail{inset:0;width:100%;height:100dvh;border:0;border-radius:0;padding:24px}}
 
+/* Soften the job directory behind the open job description dialog. */
+.opportunities-page.has-opportunity-panel::after{content:'';position:fixed;inset:0;z-index:49;pointer-events:none;background:rgba(25,28,35,.28);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+
 /* Match the careers navigation bar. */
 .opportunities-page .opp-header{position:relative;isolation:isolate;padding:18px 12px;border-bottom:1px solid #ffffff20;color:#f6f3ee}
 .opportunities-page .opp-header:before{content:"";position:absolute;z-index:-1;top:0;bottom:-1px;left:calc((1160px - 100vw)/2);right:calc((1160px - 100vw)/2);background:radial-gradient(ellipse at 85% -20%,#42425555,transparent 60%),#1f1f21}
@@ -277,42 +280,7 @@
 }
 .opportunities-page .opp-detail .opp-discussion li { margin-bottom: 6px; }
 
-/* Keep the selected role clear while softening the page behind the dialog. */
-.opportunities-page.has-opportunity-panel::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 49;
-  background: rgba(25, 28, 35, .28);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-}
-
-/* Show the selected listing beside its details above the blurred directory. */
-@media (min-width: 1101px) {
-  .has-opportunity-panel .opp-detail { width: calc(50vw - 36px); }
-  .has-opportunity-panel .opp-row.is-selected {
-    position: fixed;
-    z-index: 50;
-    left: 24px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: calc(50vw - 48px);
-    grid-template-columns: 1fr;
-    max-height: calc(100dvh - 48px);
-    overflow-y: auto;
-    padding: 28px;
-    border: 1px solid #dedacf;
-    border-radius: 16px;
-    background: var(--opp-bg);
-    box-shadow: 0 12px 60px #1c253d20;
-  }
-  .has-opportunity-panel .opp-row.is-selected .opp-facts {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-/* A balanced, gently animated pair for the focused opportunity. */
+/* A gentle entrance for the focused opportunity panel. */
 @keyframes opportunity-focus-in {
   from { opacity: 0; translate: 0 8px; }
   to { opacity: 1; translate: 0 0; }
@@ -320,46 +288,10 @@
 .has-opportunity-panel .opp-detail {
   animation: opportunity-focus-in 220ms ease-out;
 }
-@media (min-width: 1101px) {
-  .has-opportunity-panel .opp-detail {
-    inset: 24px 24px 24px auto;
-    width: calc(54vw - 36px);
-    height: calc(100dvh - 48px);
-    border-radius: 20px;
-    padding: 32px 36px 40px;
-  }
-  .has-opportunity-panel .opp-row.is-selected {
-    top: 24px;
-    transform: none;
-    width: calc(46vw - 36px);
-    padding: 32px;
-    gap: 20px;
-    border-radius: 20px;
-    animation: opportunity-focus-in 220ms ease-out;
-  }
-  .has-opportunity-panel .opp-row.is-selected h2 button {
-    font-size: 22px;
-    line-height: 1.4;
-  }
-  .has-opportunity-panel .opp-row.is-selected .opp-facts {
-    gap: 20px;
-    margin: 0;
-    padding: 20px;
-    border-radius: 12px;
-    background: #eeece6;
-  }
-  .has-opportunity-panel .opp-row.is-selected .opp-list-skills {
-    margin-top: 20px;
-    gap: 8px;
-  }
-  .has-opportunity-panel .opp-row.is-selected .opp-actions { margin-top: 0; }
-}
 @media (prefers-reduced-motion: reduce) {
-  .has-opportunity-panel .opp-detail,
-  .has-opportunity-panel .opp-row.is-selected { animation: none; }
+  .has-opportunity-panel .opp-detail { animation: none; }
 }
 
-.has-opportunity-panel .opp-row.is-selected .opp-actions { display: none; }
 .opportunities-page .opp-detail .opp-panel-close {
   width: 32px;
   height: 32px;
@@ -385,23 +317,11 @@
   }
 }
 
-/* Compact the focused pair within a centered, comfortably inset layout. */
+/* Keep the detail panel comfortably inset on large screens. */
 @media (min-width: 1101px) {
-  .has-opportunity-panel .opp-row.is-selected {
-    left: max(40px, calc((100vw - 1120px) / 2));
-    top: 56px;
-    width: 340px;
-    padding: 24px;
-    gap: 16px;
-    border-radius: 16px;
-    max-height: calc(100dvh - 112px);
-  }
-  .has-opportunity-panel .opp-row.is-selected h2 button { font-size: 18px; }
-  .has-opportunity-panel .opp-row.is-selected .opp-facts { padding: 16px; gap: 16px; }
-  .has-opportunity-panel .opp-row.is-selected .opp-list-skills { margin-top: 16px; }
   .has-opportunity-panel .opp-detail {
-    inset: 56px max(40px, calc((100vw - 1120px) / 2)) auto auto;
-    width: min(752px, calc(100vw - 448px));
+    inset: 56px max(32px, calc((100vw - 1240px) / 2)) auto auto;
+    width: min(752px, calc(100vw - 552px));
     height: calc(100dvh - 112px);
     padding: 24px 28px 32px;
     border-radius: 16px;
@@ -410,25 +330,6 @@
   .opp-detail .opp-facts { padding: 16px 20px; gap: 16px; }
   .opportunities-page .opp-detail > p:not(.opp-eyebrow) { line-height: 1.7; margin-bottom: 16px; }
   .opportunities-page .opp-detail h2:not(.opp-detail-title) { margin-top: 22px; }
-}
-
-/* A landscape summary with facts across one row. */
-@media (min-width: 1101px) {
-  .has-opportunity-panel .opp-row.is-selected {
-    left: max(32px, calc((100vw - 1240px) / 2));
-    width: 460px;
-    padding: 22px 24px;
-  }
-  .has-opportunity-panel .opp-row.is-selected .opp-facts {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    padding: 14px;
-    gap: 12px;
-  }
-  .has-opportunity-panel .opp-row.is-selected .opp-facts dd { font-size: 12px; }
-  .has-opportunity-panel .opp-detail {
-    right: max(32px, calc((100vw - 1240px) / 2));
-    width: min(752px, calc(100vw - 552px));
-  }
 }
 
 /* Align search and filter controls along one shared desktop baseline. */
@@ -451,3 +352,85 @@
 @media(max-width:760px) { .has-opportunity-panel .opp-detail.is-application-details { max-height:100dvh; } }
 
 .opp-applied-badge { display:inline-flex; margin-top:8px; padding:4px 9px; border-radius:6px; background:#e1efea; color:#2f7075; font-size:12px; font-weight:600; }
+
+
+/* Keep the selected role summary and full JD together above the directory. */
+.has-opportunity-panel .opp-detail-layout {
+  position: fixed;
+  z-index: 70;
+  inset: clamp(24px, 7.3vh, 80px) max(32px, calc((100vw - 1680px) / 2));
+  display: grid;
+  grid-template-columns: minmax(0, .38fr) minmax(0, .62fr);
+  gap: 32px;
+  align-items: start;
+  pointer-events: none;
+}
+.opportunities-page.has-opportunity-panel::after { z-index: 69; background: #1b1d2052; pointer-events: auto; }
+.opp-detail-layout > .opp-summary,
+.has-opportunity-panel .opp-detail-layout > .opp-detail {
+  pointer-events: auto;
+  min-width: 0;
+  background: #faf8f4;
+  border: 1px solid #e4dfd6;
+  border-radius: 18px;
+  box-shadow: 0 16px 70px #20243126;
+}
+.opp-detail-layout > .opp-summary { padding: 28px; max-height: 100%; overflow-y: auto; }
+.opp-summary-title { margin: 0 0 20px; font: 600 21px/1.4 var(--enter-font-ui); color: #555; }
+.opp-summary-category { margin: 0 0 22px; color: #788091; font-size: 14px; }
+.opp-summary .opp-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  background: #eeece6;
+  border-radius: 14px;
+  padding: 18px 16px;
+  margin: 0 0 20px;
+}
+.opp-summary .opp-facts dt { font-size: 10px; color: #788091; text-transform: uppercase; margin-bottom: 8px; }
+.opp-summary .opp-facts dd { margin: 0; font-size: 13px; font-weight: 500; }
+.opp-summary .opp-tags span { background: #eeece6; border-radius: 8px; color: #687080; font-size: 13px; }
+.has-opportunity-panel .opp-detail-layout > .opp-detail {
+  position: relative;
+  inset: auto;
+  grid-column: auto;
+  grid-row: auto;
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  padding: 28px 32px 36px;
+  scrollbar-gutter: stable;
+}
+.opportunities-page .opp-detail-layout .opp-detail-title { font-size: 28px; }
+.opp-detail-layout .opp-detail > p:not(.opp-eyebrow) { white-space: pre-line; }
+@media (max-width: 1100px) and (min-width: 761px) {
+  .opp-detail-layout .opp-summary { padding: 22px; }
+  .opp-summary .opp-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .has-opportunity-panel .opp-detail-layout {
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 64px 16px 20px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    pointer-events: auto;
+    background: #faf8f4;
+  }
+  .opp-detail-layout > .opp-summary,
+  .has-opportunity-panel .opp-detail-layout > .opp-detail {
+    flex: 0 0 auto;
+    width: 100%;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: none;
+  }
+  .opp-summary .opp-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .opportunities-page .opp-detail-layout .opp-detail-title { font-size: 24px; }
+  .opportunities-page .opp-detail-layout .opp-panel-close { position: fixed; top: 12px; right: 16px; }
+}

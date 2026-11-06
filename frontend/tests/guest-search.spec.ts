@@ -22,7 +22,7 @@ for (const width of [1440, 1024, 390]) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
     await page.screenshot({ path: info.outputPath(`recruiter-login-${width}.png`), fullPage: true })
     await page.getByRole('button', { name: '← Back to Enter' }).click()
-    await page.getByTestId('for-candidates').click()
+    await page.getByRole('button', { name: 'Create an account', exact: true }).click()
     await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible()
   })
 }

@@ -1,3 +1,5 @@
+import { artwork } from '../assets/landing/artwork'
+import ResponsiveArtwork from './ResponsiveArtwork'
 import { ambitionHireResults } from './ambitionHireResults'
 import observeLandingReveal from './observeLandingReveal'
 import { useEffect, useRef } from 'react'
@@ -33,7 +35,7 @@ export default function AmbitionHires() {
   }, [])
 
   return <section ref={sectionRef} className="ambition-hires" aria-labelledby="ambition-hires-title">
-    <img className="ambition-hires__landscape" src="/media/ambition-hires-mountain.jpg" alt="" aria-hidden="true" />
+    <ResponsiveArtwork className="ambition-hires__landscape" artwork={artwork.ambition} sizes="100vw" alt="" aria-hidden="true" />
     <div className="ambition-hires__wash" aria-hidden="true" />
 
     <div className="ambition-hires__inner">

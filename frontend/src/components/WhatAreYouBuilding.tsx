@@ -3,7 +3,8 @@ import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import useInlinePopover from './useInlinePopover'
 import { listenForHiringSectionNavigation } from './hiringSectionNavigation'
 import observeLandingReveal from './observeLandingReveal'
-import HiringEnquiryDrawer, { type HiringEnquiry } from './HiringEnquiryDrawer'
+import HiringEnquiryDrawer from './DeferredHiringEnquiryDrawer'
+import type { HiringEnquiry } from './HiringEnquiryDrawer'
 import './what-are-you-building.css'
 
 type TabId = 'hire' | 'team' | 'drive'
@@ -140,7 +141,7 @@ function InlineListbox({ label, value, options, onChange }: {
     </button>
     <ChevronDown size={14} aria-hidden="true" />
     <ul ref={listRef} id={listboxId} className="wb-listbox__menu" role="listbox" aria-label={label} hidden={!open}>
-      {options.map((option, index) => <li
+      {open && options.map((option, index) => <li
         key={option}
         role="option"
         aria-selected={option === value}
@@ -396,10 +397,12 @@ export default function WhatAreYouBuilding() {
         aria-labelledby="building-tab-hire"
         hidden={activeTab !== 'hire'}
       >
+        {activeTab === 'hire' && <>
         <div className="what-building__sentence">
           I'm looking for a {hireRole !== 'Other' && <InlineListbox label="Role to hire" value={hireRole} options={roles} onChange={setHireRole} />} {hireRole === 'Other' && <CustomRolePicker value={customHireRole} onChange={setCustomHireRole} onSelect={setHireRole} />} in <InlineListbox label="Hiring location" value={hireLocation} options={locations} onChange={setHireLocation} />
         </div>
         <button className="what-building__cta" type="button" disabled={hireRole === 'Other' && !customHireRole.trim()} onClick={event => { setOpener(event.currentTarget); setEnquiry({ kind: 'hire', role: hireRole === 'Other' ? customHireRole.trim() : hireRole, location: hireLocation, headcount: 1 }) }}>Find Talent </button>
+        </>}
       </div>
 
       <div
@@ -409,10 +412,12 @@ export default function WhatAreYouBuilding() {
         aria-labelledby="building-tab-team"
         hidden={activeTab !== 'team'}
       >
+        {activeTab === 'team' && <>
         <div className="what-building__sentence">
           I'm building a {teamDiscipline !== 'Other' && <InlineListbox label="Team discipline" value={teamDiscipline} options={teamDisciplines} onChange={setTeamDiscipline} />} {teamDiscipline === 'Other' && <CustomRolePicker value={customTeamRole} onChange={setCustomTeamRole} onSelect={setTeamDiscipline} />} team of <InlineListbox label="Team size" value={teamSize} options={teamSizes} onChange={setTeamSize} /> in <InlineListbox label="Team location" value={teamLocation} options={locations} onChange={setTeamLocation} />
         </div>
         <button className="what-building__cta" type="button" disabled={teamDiscipline === 'Other' && !customTeamRole.trim()} onClick={event => { setOpener(event.currentTarget); setEnquiry({ kind: 'team', location: teamLocation, teamFocus: teamDiscipline === 'Other' ? customTeamRole.trim() : teamDiscipline, headcount: Number.parseInt(teamSize, 10) }) }}>Build My Team </button>
+        </>}
       </div>
 
       <div
@@ -422,10 +427,12 @@ export default function WhatAreYouBuilding() {
         aria-labelledby="building-tab-drive"
         hidden={activeTab !== 'drive'}
       >
+        {activeTab === 'drive' && <>
         <div className="what-building__sentence what-building__sentence--drive">
           I am looking for {driveRole !== 'Other' && <InlineListbox label="Role for recruitment drive" value={driveRole} options={driveRoles} onChange={setDriveRole} />} {driveRole === 'Other' && <CustomRolePicker value={customDriveRole} onChange={setCustomDriveRole} onSelect={setDriveRole} />} in <InlineListbox label="Recruitment drive location" value={driveLocation} options={locations} onChange={setDriveLocation} /> by <InlineCalendar value={safeDeadline} minimum={today} onChange={setDeadline} />
         </div>
         <button className="what-building__cta" type="button" disabled={driveRole === 'Other' && !customDriveRole.trim()} onClick={event => { setOpener(event.currentTarget); setEnquiry({ kind: 'drive', role: driveRole === 'Other' ? customDriveRole.trim() : driveRole, location: driveLocation, headcount: Number(driveCount), deadline: safeDeadline }) }}>Plan My Drive </button>
+        </>}
       </div>
 
     </div>

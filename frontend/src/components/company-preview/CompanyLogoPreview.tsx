@@ -104,7 +104,7 @@ export default function CompanyLogoMarquee() {
           aria-hidden={duplicate || undefined} data-duplicate={duplicate}>
           {sequenceCompanies.map((company, index) => {
             const repeated = index >= previewCompanies.length
-            const mark = <img src={company.logo} alt="" draggable={false} data-treatment={company.treatment}
+            const mark = <img src={company.logo} alt="" draggable={false} width={company.intrinsicWidth} height={company.intrinsicHeight} loading="lazy" decoding="async" fetchPriority="low" data-treatment={company.treatment}
               style={{ maxHeight: company.height }} />
             const image = company.id === 'nanonets'
               ? <span className="ce-nanonets-lockup">{mark}<span>Nanonets</span></span>

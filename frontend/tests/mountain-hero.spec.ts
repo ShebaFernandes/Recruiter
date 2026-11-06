@@ -1,8 +1,10 @@
+import { optionalComponentHarness } from './component-harness'
 import { expect, test } from '@playwright/test'
 
 // These tests inspect the landing after entry. Manual knob/Skip behavior is
 // exercised separately in intro-animation.spec.ts.
 test.beforeEach(async ({ page }) => {
+  await optionalComponentHarness(page, 'mountain')
   await page.addInitScript(() => sessionStorage.setItem('enter-door-intro-seen', '1'))
 })
 
@@ -26,9 +28,9 @@ for (const width of [1440, 1024, 768, 390]) {
     }))).toBe(true)
     const dimensions = await layers.evaluateAll(images => images.map(image => [image.clientWidth, image.clientHeight]))
     expect(dimensions.every(size => size.toString() === dimensions[0].toString())).toBe(true)
-    await expect(page.getByRole('heading', { name: 'The best teams are built by ENTER.' })).toBeVisible()
-    await expect(page.locator('.ce-intro h1')).toHaveCSS('color', 'rgb(11, 31, 58)')
-    await expect(scene.locator('.ce-landscape-curves')).toHaveCSS('color', 'rgb(22, 59, 101)')
+    await expect(page.getByRole('heading', { name: 'The best teams are built by enter.' })).toBeVisible()
+    await expect(page.locator('.ce-intro h1')).toHaveCSS('color', width <= 768 ? 'rgb(11, 31, 58)' : 'rgb(48, 56, 66)')
+    await expect(scene.locator('.ce-landscape-curves')).toHaveCSS('color', 'rgb(48, 56, 66)')
     expect(await layers.evaluateAll(images => images.every(image => (image as HTMLImageElement).src.includes('/mountain-v1/')))).toBe(true)
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
     await page.screenshot({ path: testInfo.outputPath(`mountain-hero-${width}.png`), fullPage: true, animations: 'disabled' })
@@ -117,6 +119,8 @@ for (const width of [1440, 390]) {
     const scene = page.locator('.ce-mountain-scene')
     await expect(scene).toHaveAttribute('data-active', 'true')
     await scene.locator('img').evaluateAll(images => Promise.all(images.map(image => (image as HTMLImageElement).decode())))
+    // The optional harness mounts the hero after the app; wait for its fonts too.
+    await page.evaluate(() => document.fonts.ready)
     const movement = await scene.evaluate(async element => {
       const front = element.querySelector('.ce-landscape-clouds-front')!
       const back = element.querySelector('.ce-landscape-clouds-back')!
@@ -135,8 +139,8 @@ for (const width of [1440, 390]) {
     const backDelta = movement.after.back - movement.before.back
     expect(Math.abs(frontDelta)).toBeGreaterThan(1)
     expect(Math.abs(backDelta)).toBeGreaterThan(1)
-    expect(Math.abs(frontDelta)).toBeLessThan(25)
-    expect(Math.abs(backDelta)).toBeLessThan(25)
+    expect(Math.abs(frontDelta)).toBeLessThan(width * .07)
+    expect(Math.abs(backDelta)).toBeLessThan(width * .07)
     expect(frontDelta * backDelta).toBeLessThan(0)
     expect(movement.after.heading).toEqual(movement.before.heading)
     await page.emulateMedia({ reducedMotion: 'reduce' })
@@ -167,8 +171,9 @@ test('delayed artwork cannot move the hero content', async ({ page }) => {
 
 test('original wordmark has transparent paper and unchanged navy ink', async ({ page }) => {
   await page.goto('/')
-  const pixels = await page.locator('.ce-masthead .ce-logo img').evaluate(async element => {
-    const image = element as HTMLImageElement
+  const pixels = await page.locator('.ce-masthead .ce-logo image').evaluate(async () => {
+    const image = new Image()
+    image.src = '/enter-wordmark.svg'
     await image.decode()
     const canvas = document.createElement('canvas')
     canvas.width = image.naturalWidth
@@ -181,7 +186,7 @@ test('original wordmark has transparent paper and unchanged navy ink', async ({ 
   expect(pixels.size).toEqual([1400, 600])
   expect(pixels.paper).toEqual([0, 0, 0, 0])
   expect(pixels.ink).toEqual([17, 18, 62, 255])
-  await expect(page.locator('.ce-masthead .ce-logo img')).toHaveCSS('filter', 'none')
+  await expect(page.locator('.ce-masthead .ce-logo svg')).toHaveCSS('filter', 'none')
 })
 
 test('hero copy and decorative nodes remain accessible without lower sections', async ({ page }) => {

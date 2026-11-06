@@ -1010,11 +1010,11 @@
 /* One continuous landscape with a gradual reading overlay. */
 .growth-stage-card--leadership,
 .growth-enquiry-modal .growth-stage-card--leadership {
-  background: #dce5df url('/media/growth-stages/leadership-lake.png') center / cover no-repeat;
+  background: #dce5df;
 }
 .growth-stage-card--leadership .growth-stage-card__image,
 .growth-enquiry-modal .growth-stage-card--leadership .growth-stage-card__image {
-  visibility: hidden;
+  visibility: visible;
 }
 .growth-stage-card--leadership .growth-stage-card__body,
 .growth-enquiry-modal .growth-stage-card--leadership .growth-stage-card__body {
@@ -1030,3 +1030,15 @@
   pointer-events: none;
   background: linear-gradient(180deg, #edf2edf2 0%, #edf2ede6 38%, #edf2edb3 58%, #edf2ed26 78%, transparent 100%);
 }
+
+.growth-stages[data-artwork-ready=false] .growth-stage-card--leadership { background-image: none; }
+
+/* The image itself now owns the continuous leadership artwork and its loading. */
+.growth-stage-card--leadership .growth-stage-card__image,
+.growth-enquiry-modal .growth-stage-card--leadership .growth-stage-card__image {
+  position:absolute; inset:0; width:100%; height:100%;
+  object-fit:cover; object-position:center; mask-image:none; -webkit-mask-image:none;
+  z-index:0;
+}
+.growth-stage-card--leadership::after { z-index:0; }
+.growth-stage-card--leadership .growth-stage-card__body { z-index:1; }

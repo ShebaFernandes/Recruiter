@@ -122,16 +122,6 @@ body:has(.career-edition, .candidate-theme, .candidate-experience),
   background: var(--enter-selected); color: var(--enter-selected-text); border-color: var(--enter-highlight);
 }
 
-/* The signed-in candidate workspace uses the approved plain paper surface. */
-body:has(.app-shell > .candidate-experience) .platform-background { display: none; }
-body:has(.app-shell > .candidate-experience),
-.platform-surface:has(.app-shell > .candidate-experience),
-.platform-surface .app-shell:has(> .candidate-experience) { background: #faf8f4; }
-.app-shell > .candidate-experience :is(.cp-identity-card, .cp-career-surface, .cp-resume-row, .cp-settings, .cp-brief) {
-  background: #fffefa;
-  backdrop-filter: none;
-}
-
 /* The resume row has one content cell, unlike the three-cell settings buttons. */
 .candidate-experience .cp-settings-panel .cp-setting-row.cp-setting-resume {
   grid-template-columns: minmax(0, 1fr);
@@ -154,13 +144,13 @@ body:has(.app-shell > .candidate-experience),
 .candidate-applications button { padding:10px 16px; border:1px solid var(--enter-border); border-radius:8px; background:var(--enter-surface); color:var(--enter-primary); font:inherit; cursor:pointer; }
 .candidate-applications button:hover { background:var(--enter-primary-soft); }
 
-.candidate-tab-panel { min-height:calc(100vh - 80px); animation:candidate-tab-enter 180ms ease-out both; }
+.candidate-tab-panel { min-height:calc(100vh - 80px); animation:candidate-tab-enter 180ms ease-out; }
 .candidate-tab-loading { max-width:1080px; margin:36px auto; padding:24px; color:var(--enter-text-muted); }
 .candidate-platform-nav button { transition:color 160ms ease, border-color 160ms ease; }
 @keyframes candidate-tab-enter { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
 @media(prefers-reduced-motion:reduce) { .candidate-tab-panel { animation:none; } .candidate-platform-nav button { transition:none; } }
 
-.candidate-menu-avatar { width:34px; height:34px; display:grid; place-items:center; border-radius:50%; background:#e2efec; color:#253d46; font-size:12px; font-weight:650; }
+.candidate-menu-avatar { width:34px; height:34px; display:grid; place-items:center; border-radius:50%; background:var(--enter-primary-soft); color:var(--enter-text); font-size:12px; font-weight:650; }
 .candidate-menu-links { display:grid; gap:4px; }
 .candidate-account-popover .candidate-menu-links button { display:flex; align-items:center; gap:12px; width:100%; padding:11px 12px; border:0; border-radius:7px; background:transparent; text-align:left; font:inherit; font-size:14px; color:var(--enter-text); }
 .candidate-account-popover .candidate-menu-links button:hover { background:var(--enter-primary-soft); }

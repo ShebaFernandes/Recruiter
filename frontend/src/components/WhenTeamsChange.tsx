@@ -1,3 +1,4 @@
+import useDeferredArtwork from './useDeferredArtwork'
 import { validateWorkEmailInput } from '../workEmail'
 import observeLandingReveal from './observeLandingReveal'
 import { useEffect, useRef, useState } from 'react'
@@ -44,6 +45,7 @@ export default function WhenTeamsChange() {
   const fileRef = useRef<HTMLInputElement>(null)
   const [fileName, setFileName] = useState('')
   const sectionRef = useRef<HTMLElement>(null)
+  const artworkReady = useDeferredArtwork(sectionRef)
   const landscapeRef = useRef<HTMLDivElement>(null)
   const supportTriggerRef = useRef<HTMLButtonElement>(null)
   const supportDialogRef = useRef<HTMLDivElement>(null)
@@ -126,7 +128,7 @@ export default function WhenTeamsChange() {
     }
   }, [supportOpen])
 
-  return <section ref={sectionRef} className="when-teams-change" aria-labelledby="when-teams-change-title">
+  return <section ref={sectionRef} className="when-teams-change" data-artwork-ready={artworkReady} aria-labelledby="when-teams-change-title">
     <div className="when-teams-change__content">
       <header className="when-teams-change__header">
         <p>WHEN TEAMS CHANGE</p>

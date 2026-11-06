@@ -24,7 +24,7 @@ for (const width of [390, 1440]) test(`latest resume evidence drives My Profile 
     await context.clearCookies()
     const email = `journey-${fixture.name}-${width}-${Date.now()}@example.com`
     await page.goto('/')
-    await page.getByTestId('for-candidates').click()
+    await page.getByRole('button', { name: 'Create an account', exact: true }).click()
     await page.getByLabel('Full name').fill('Asha Rao')
     await page.getByLabel('Email', { exact:true }).fill(email)
     await page.getByLabel('Password', { exact:true }).fill('strong-pass-123')
@@ -48,7 +48,14 @@ Path(${JSON.stringify(file)}).write_bytes(_fixture_bytes('docx', ['Name: Asha Ra
       expect(offline(`from talent.models import ResumeProcessingJob
 from talent.worker_runtime import run_bounded_job
 job = ResumeProcessingJob.objects.get(resume_id=${resumeId})
-print(run_bounded_job(job.pk))
+import time
+outcome = run_bounded_job(job.pk)
+for _ in range(100):
+    job.refresh_from_db()
+    if job.state == 'completed': break
+    time.sleep(.1)
+assert job.state == 'completed', outcome
+print('completed')
 assert not job.resume.ai_usage.exists()`)).toBe('completed')
       await expect(page.getByRole('heading', { name:"Here's how we understand you." })).toBeVisible({ timeout:20000 })
       const api = await (await page.request.get(`${process.env.PLAYWRIGHT_API_URL}/candidate/profile/`)).json()
@@ -79,7 +86,7 @@ assert not job.resume.ai_usage.exists()`)).toBe('completed')
       await page.keyboard.press('Escape')
     } else {
       expect(saved.employment_extraction.status).toBe('confirmed_no_employment')
-      await expect(journey.getByRole('status')).toContainText('No employment history declared in the latest resume')
+      await expect(journey.getByRole('status')).toContainText('No employment history was declared in this resume.')
     }
     if (fixture.name === 'internship') await expect(journey.locator('.is-internship')).toHaveCount(1)
     if (['promotions', 'internship'].includes(fixture.name)) await expect(journey.locator('.career-gap-period')).toHaveCount(0)
@@ -104,7 +111,8 @@ assert not job.resume.ai_usage.exists()`)).toBe('completed')
       expect(unresolved.employment_extraction.status).toBe('review_required')
       expect(unresolved.employment_extraction.verified_role_ids).toEqual([])
       await expect(journey.locator('.career-period')).toHaveCount(saved.work_experiences.length)
-      await expect(journey.getByRole('status')).toContainText('Review is needed')
+      await expect(journey.getByRole('status')).toHaveCount(0)
+      await expect(journey.locator('.cp-career-previous')).toHaveCount(1)
       await expect(journey.locator('.career-sequence.needs-review')).toHaveCount(saved.work_experiences.length)
       await journey.scrollIntoViewIfNeeded()
       await page.screenshot({ path:info.outputPath(`preserved-review-${width}.png`), animations:'disabled' })

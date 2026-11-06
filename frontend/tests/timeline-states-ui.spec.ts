@@ -47,7 +47,7 @@ for (const width of [390, 1440]) test(`single role, partial dates and extraction
   await expect(partial).not.toContainText('Jan')
   expect(await partial.getByRole('list').evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true)
   await expect(page.getByRole('region', { name:'Declared no employment' }).getByRole('status')).toContainText('declared in this resume')
-  await expect(page.getByRole('region', { name:'Extraction needs review' }).getByRole('status')).toContainText('could not find supported employment history')
+  await expect(page.getByRole('region', { name:'Extraction needs review' }).getByRole('status')).toContainText('could not verify employment history')
   const preserved = page.getByRole('region', { name:'Preserved manual history' })
   await expect(preserved.getByRole('status')).toHaveCount(0)
   await expect(preserved.locator('.career-journey')).toHaveCount(1)

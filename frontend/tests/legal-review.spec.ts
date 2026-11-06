@@ -12,7 +12,7 @@ test('unavailable documents block signup until explicit retry succeeds', async (
   await page.route('**/api/v1/legal/documents/', route => route.fulfill(available
     ? { json: { enabled: true, documents } } : { status: 503, json: {} }))
   await page.goto('/')
-  await page.getByTestId('for-candidates').click()
+  await page.getByRole('button', { name: 'Create an account', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Create account', exact: true })).toBeDisabled()
   await expect(page.getByRole('alert')).toContainText('could not load')
   available = true
@@ -39,7 +39,7 @@ for (const width of [390, 768, 1440]) {
       await route.fulfill({ status: 201, json: { requires_email_verification: true, detail: 'Synthetic verification only.' } })
     })
     await page.goto('/')
-    await page.getByTestId('for-candidates').click()
+    await page.getByRole('button', { name: 'Create an account', exact: true }).click()
     await page.getByLabel('Full name').fill('Synthetic Candidate')
     await expect(page.getByLabel('Country')).toHaveCount(0)
     await expect(page.locator('input[name="country_code"]')).toHaveValue('IN')

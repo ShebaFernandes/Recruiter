@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import poster from './platform-poster.jpg?inline'
 
 /** One decorative video per platform screen, never inside cards or dialogs. */
-export default function PlatformBackground({ children }: { children: ReactNode }) {
+export default function PlatformBackground({ children, playVideo = true }: { children: ReactNode; playVideo?: boolean }) {
   const video = useRef<HTMLVideoElement>(null)
   const [reduced, setReduced] = useState(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? true)
   const [failed, setFailed] = useState(false)
@@ -39,7 +39,7 @@ export default function PlatformBackground({ children }: { children: ReactNode }
       media.removeEventListener('loadeddata', reveal)
       if (frame !== undefined) media.cancelVideoFrameCallback(frame)
     }
-  }, [reduced, failed])
+  }, [reduced, failed, playVideo])
   useEffect(() => {
     const media = video.current
     if (!media) return
@@ -51,10 +51,10 @@ export default function PlatformBackground({ children }: { children: ReactNode }
     sync()
     document.addEventListener('visibilitychange', sync)
     return () => { active = false; document.removeEventListener('visibilitychange', sync); media.pause() }
-  }, [reduced, failed])
+  }, [reduced, failed, playVideo])
   return <div className="platform-surface">
-    <div className="platform-background" style={{ backgroundImage: `url("${poster}")` }} aria-hidden="true" data-media-ready={ready} data-render-state={reduced || failed ? 'fallback' : playing ? 'running' : 'paused'}>
-      {!reduced && !failed && <video ref={video} poster={poster} src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260820_010308_b1636845-4c15-4ab6-b0c9-9a29bfb0c6e3.mp4" autoPlay muted loop playsInline preload="metadata" onPlaying={() => setPlaying(true)} onPause={() => setPlaying(false)} onError={() => setFailed(true)} />}
+    <div className="platform-background" style={{ backgroundImage: `url("${poster}")` }} aria-hidden="true" data-media-ready={ready} data-render-state={!playVideo || reduced || failed ? 'fallback' : playing ? 'running' : 'paused'}>
+      {playVideo && !reduced && !failed && <video ref={video} poster={poster} src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260820_010308_b1636845-4c15-4ab6-b0c9-9a29bfb0c6e3.mp4" autoPlay muted loop playsInline preload="metadata" onPlaying={() => setPlaying(true)} onPause={() => setPlaying(false)} onError={() => setFailed(true)} />}
     </div>
     <div className="platform-content">{children}</div>
   </div>

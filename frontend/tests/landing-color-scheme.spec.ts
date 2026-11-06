@@ -23,8 +23,8 @@ for (const width of [360, 390, 430]) {
       await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))))
       await expect(page.locator('.ce-intro h1')).toHaveCSS('color', 'rgb(11, 31, 58)')
       await expect(page.getByTestId('for-candidates')).toHaveCSS('color', 'rgb(11, 31, 58)')
-      await expect(page.locator('.ce-logo img')).toBeVisible()
-      await expect(page.locator('.ce-headline-wordmark')).toBeVisible()
+      await expect(page.locator('.ce-logo svg')).toBeVisible()
+      await expect(page.locator('.ce-headline-logo')).toBeVisible()
       await expect(page.locator('.landing-background img')).toHaveCount(6)
       const capture = await page.screenshot({ path: info.outputPath(`${mode}-${width}.png`), animations: 'disabled' })
       if (mode === 'light') light = capture

@@ -38,7 +38,7 @@ for (const width of [390, 768, 1024, 1440]) {
       }
       requestAnimationFrame(sample)
     })
-    await page.getByTestId('for-candidates').click()
+    await page.getByRole('button', { name: 'Create an account', exact: true }).click()
     await page.waitForFunction(() => (window as unknown as { backgroundTransitionSamples: unknown[] }).backgroundTransitionSamples.length >= 30)
     const samples = await page.evaluate(() => (window as unknown as { backgroundTransitionSamples: { poster: boolean; opacity: number; animations: string[] }[] }).backgroundTransitionSamples)
     await info.attach('first-frames', { body: JSON.stringify(samples), contentType: 'application/json' })

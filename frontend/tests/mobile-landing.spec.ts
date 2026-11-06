@@ -18,7 +18,7 @@ for (const width of [360, 390, 430, 1440]) {
       await Promise.all(images.map(image => (image as HTMLImageElement).decode()))
     })
 
-    const heading = page.getByRole('heading', { name: 'The best teams are built by ENTER.' })
+    const heading = page.getByRole('heading', { name: 'The best teams are built by enter.' })
     const candidateNav = page.getByTestId('for-candidates')
     const motion = page.getByRole('button', { name: 'Pause background animation' })
     await expect(heading).toBeVisible()
@@ -29,7 +29,7 @@ for (const width of [360, 390, 430, 1440]) {
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
 
-    await expect(page.locator('.ce-intro button')).toHaveCount(0)
+    await expect(page.locator('.ce-intro button')).toHaveCount(2)
     if (width <= 768) {
       await expect(heading).toHaveCSS('color', 'rgb(11, 31, 58)')
       await expect(candidateNav).toHaveCSS('color', 'rgb(11, 31, 58)')
@@ -65,14 +65,13 @@ for (const width of [360, 390, 430, 1440]) {
 test('mobile navigation retains candidate signup and login without hero buttons', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/')
-  await page.getByText('Log in', { exact: true }).click()
-  if (process.env.EXPECT_CANDIDATE_ONLY === 'true') {
+    if (process.env.EXPECT_CANDIDATE_ONLY === 'true') {
     await expect(page.getByRole('button', { name: 'Recruiter log in' })).toHaveCount(0)
   }
-  await page.getByRole('button', { name: 'Candidate log in' }).click()
-  await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
+  await page.getByRole('button', { name: 'Join enter’s Talent network', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible()
   await page.goto('/')
-  await page.getByTestId('for-candidates').click()
+  await page.getByRole('button', { name: 'Create an account', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible()
 })
 
@@ -81,7 +80,7 @@ test('reduced motion keeps the mobile landing static and candidate navigation us
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/')
   await expect(page.getByTestId('for-candidates')).toBeVisible()
-  await expect(page.locator('.ce-intro button')).toHaveCount(0)
+  await expect(page.locator('.ce-intro button')).toHaveCount(2)
   await expect(page.getByRole('button', { name: 'Pause background animation' })).toHaveCount(0)
   await expect(page.locator('.landing-background__scene')).toHaveCSS('animation-name', 'none')
 })

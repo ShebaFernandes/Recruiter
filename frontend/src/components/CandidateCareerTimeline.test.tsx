@@ -20,8 +20,8 @@ it.each([CareerJourney, CandidateCareerTimeline])('shows years and markers until
     expect(screen.getByRole('tooltip')).toHaveTextContent('Engineer')
     expect(screen.getByRole('tooltip')).toHaveTextContent('Mar 2018 — Jan 2019')
   } else {
-    expect(screen.getByRole('tooltip')).toHaveTextContent('2018 — 2019')
-    expect(screen.getByRole('tooltip')).not.toHaveTextContent('Engineer')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Mar 2018 — Jan 2019')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Engineer')
   }
   expect(screen.getByRole('tooltip')).toHaveTextContent('Built reliable tools.')
   expect(marker).toHaveAttribute('aria-expanded', 'true')
@@ -115,4 +115,55 @@ it('fits a long candidate career in its card and separates the final year label'
     expect(container.querySelectorAll('.career-period>.career-job')).toHaveLength(4)
     expect(container.querySelector('.career-end-year')).toHaveStyle({ top: '88px' })
   } finally { vi.unstubAllGlobals() }
+})
+
+it('collapses duplicate appointments while preserving saved records and the verified edit target', () => {
+  const items = [role({ id: 11 }), role({ id: 12, description: 'Latest supported description' })]
+  const edit = vi.fn()
+  const { container } = render(<CareerJourney profilePresentation items={items} extraction={{ verified_role_ids: [12], status: 'verified_fallback', source: 'rules', reason_code: 'evidence_roles_accepted', accepted_role_count: 1, saved_role_count: 2, profile_state: 'applied', stale_profile_preserved: false }} onEditRole={edit} />)
+  expect(container.querySelectorAll('.career-period>.career-job')).toHaveLength(1)
+  fireEvent.focus(screen.getByRole('button', { name: /Engineer at Example/ }))
+  expect(screen.getAllByRole('tooltip')).toHaveLength(1)
+  fireEvent.click(screen.getByRole('button', { name: 'Edit this role' }))
+  expect(edit).toHaveBeenCalledWith(items[1])
+  expect(items.map(item => item.id)).toEqual([11, 12])
+})
+it('keeps distinct jobs and incomplete dates separate in the candidate timeline', () => {
+  const { container } = render(<CareerJourney profilePresentation items={[
+    role({ id: 1 }), role({ id: 2, role: 'Senior Engineer' }),
+    role({ id: 3, start_date: '2019-03-01', end_date: '2020-01-01' }),
+    role({ id: 4, start_date: null, end_date: null }), role({ id: 5, start_date: null, end_date: null }),
+  ]} />)
+  expect(container.querySelectorAll('.career-period>.career-job')).toHaveLength(5)
+})
+
+it('shows a role title once when its description repeats the title', () => {
+  render(<CareerJourney profilePresentation items={[role({ description: 'Engineer' })]} />)
+  fireEvent.focus(screen.getByRole('button', { name: /Engineer at Example/ }))
+  expect(screen.getByRole('tooltip').querySelectorAll('p')).toHaveLength(0)
+  expect(screen.getByRole('tooltip')).toHaveTextContent('Engineer')
+})
+
+it('shows a location-qualified employer and rearranged internship title once for the same dated appointment', () => {
+  const items = [
+    role({ id: 41, company: 'Example Research and Technologies', role: 'AI Intern / SDE Intern - AI', start_date: '2020-01-01', end_date: '2020-07-01', date_label: 'Jan 2020 - Jul 2020', employment_type: '' }),
+    role({ id: 42, company: 'Example Research and Technologies, Bengaluru', role: 'AI / SDE Intern', start_date: '2020-01-01', end_date: '2020-07-01', date_label: 'Jan 2020 - Jul 2020', employment_type: 'Internship' }),
+  ]
+  const { container } = render(<CareerJourney profilePresentation items={items} />)
+  expect(container.querySelectorAll('.career-period>.career-job')).toHaveLength(1)
+  fireEvent.mouseEnter(container.querySelector('.career-period>.career-job')!)
+  expect(screen.getAllByRole('tooltip')).toHaveLength(1)
+  expect(screen.getByRole('tooltip')).toHaveTextContent('Jan 2020 — Jul 2020')
+  expect(items).toHaveLength(2)
+})
+it('preserves distinct comma-containing employers, seniority, technologies and appointment periods', () => {
+  const { container } = render(<CareerJourney profilePresentation items={[
+    role({ company: 'Example', role: 'AI Intern' }),
+    role({ company: 'Example, Consulting', role: 'AI Intern' }),
+    role({ company: 'Example', role: 'Senior AI Intern' }),
+    role({ company: 'Example', role: 'AI Intern', start_date: '2021-01-01', end_date: '2021-07-01' }),
+    role({ company: 'Example', role: 'C Developer' }),
+    role({ company: 'Example', role: 'C++ Developer' }),
+  ]} />)
+  expect(container.querySelectorAll('.career-period>.career-job')).toHaveLength(6)
 })

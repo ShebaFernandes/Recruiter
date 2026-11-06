@@ -27,8 +27,8 @@ describe('Enter Talent landing', () => {
       'For Candidates',
     ])
     for (const name of ['For Companies', 'For Candidates']) {
-      expect(screen.getAllByRole('button', { name })).toHaveLength(name === 'For Companies' ? 3 : 2)
-      expect(within(nav).getByRole(name === 'For Candidates' ? 'link' : 'button', { name })).toBeVisible()
+      expect(screen.getAllByRole('button', { name })).toHaveLength(3)
+      expect(within(nav).getByRole('button', { name })).toBeVisible()
     }
     const hero = within(document.querySelector('.ce-intro') as HTMLElement)
     expect(hero.getByRole('button', { name: 'For Companies' })).toBeVisible()
@@ -59,8 +59,8 @@ describe('Enter Talent landing', () => {
   it('opens the existing candidate signup from the For Talent section', async () => {
     render(<App />)
     const forTalent = (await screen.findByRole('heading', { name: 'Join ambitious AI and engineering teams.' })).closest('section') as HTMLElement
-    fireEvent.click(within(forTalent).getByRole('button', { name: 'Create an account' }))
-    expect(screen.getByRole('heading', { name: 'Create your account' })).toBeVisible()
+    fireEvent.click(within(forTalent).getByRole('button', { name: 'Join enter’s Talent network' }))
+    expect(await screen.findByRole('heading', { name: 'Create your account' })).toBeVisible()
     expect(window.location.pathname).toBe('/')
   })
   it('opens the workspace directly for a valid recruiter session', async () => {
@@ -79,7 +79,7 @@ describe('Enter Talent landing', () => {
     render(<App />)
     const entry = await screen.findByTestId('for-recruiters')
     expect(entry).toHaveTextContent('For Recruiters')
-    expect(screen.queryByText('Log in')).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Welcome back' })).not.toBeInTheDocument()
     fireEvent.click(entry)
     expect(screen.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
     expect(screen.queryByLabelText('Company')).not.toBeInTheDocument()
@@ -93,9 +93,9 @@ describe('Enter Talent landing', () => {
     expect(screen.getByRole('heading', { name: /The impact we create extends across entire organizations/i })).toBeVisible()
     expect(screen.queryByRole('link', { name: /Back to top/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Enter recruiter workspace/ })).not.toBeInTheDocument()
-    expect(await screen.findByTestId('for-candidates')).toHaveAttribute('href', '/opportunities')
-    fireEvent.click(screen.getByRole('button', { name: 'Create an account' }))
-    expect(screen.getByRole('heading', { name: 'Create your account' })).toBeVisible()
+    expect(await screen.findByTestId('for-candidates')).toBeVisible()
+    fireEvent.click(screen.getAllByRole('button', { name: 'Join enter’s Talent network' })[0])
+    expect(await screen.findByRole('heading', { name: 'Create your account' })).toBeVisible()
     expect(screen.queryByText('CANDIDATE PLATFORM')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Country')).not.toBeInTheDocument()
     expect(document.querySelector('input[name="country_code"]')).toHaveValue('IN')
@@ -103,10 +103,10 @@ describe('Enter Talent landing', () => {
     expect(screen.queryByRole('link', { name: 'Terms of Use' })).not.toBeInTheDocument()
   })
 
-  it('fails closed when approved legal publication is unavailable', () => {
+  it('fails closed when approved legal publication is unavailable', async () => {
     window.history.replaceState({}, '', '/privacy')
     render(<App />)
-    expect(screen.getByRole('heading', { name: 'Privacy Policy unavailable' })).toBeVisible()
+    expect(await screen.findByRole('heading', { name: 'Privacy Policy unavailable' })).toBeVisible()
     expect(screen.getByText(/Registration remains disabled/i)).toBeVisible()
   })
 
@@ -115,11 +115,10 @@ describe('Enter Talent landing', () => {
     const heading = await screen.findByRole('heading', { name: 'The best teams are built by enter.' })
     expect(heading.querySelector('image')).toHaveAttribute('href', '/enter-wordmark.svg')
     const nav = screen.getByRole('navigation', { name: 'Main navigation' })
-    expect(within(nav).getByRole('link', { name: 'For Candidates' })).toBeVisible()
-    expect(within(nav).getByRole('link', { name: 'For Candidates' }).querySelector('svg')).toBeNull()
-    expect(within(nav).getByRole('link', { name: 'For Candidates' })).toHaveAttribute('href', '/opportunities')
-    fireEvent.click(screen.getByRole('button', { name: 'Create an account' }))
-    expect(screen.getByRole('heading', { name: 'Create your account' })).toBeVisible()
+    expect(within(nav).getByRole('button', { name: 'For Candidates' })).toBeVisible()
+    expect(within(nav).getByRole('button', { name: 'For Candidates' }).querySelector('svg')).toBeNull()
+    fireEvent.click(screen.getAllByRole('button', { name: 'Join enter’s Talent network' })[0])
+    expect(await screen.findByRole('heading', { name: 'Create your account' })).toBeVisible()
     expect(window.location.hash).toBe('')
   })
 })

@@ -49,7 +49,8 @@ async function request<T>(path: string, options: RequestInit = {}, binary = fals
       message = body.detail || Object.values(body).flat().join(' ') || message
       code = body.code || ''
     } catch { /* preserve fallback */ }
-    if (response.status === 401 && options.credentials !== 'omit') {
+    // An anonymous startup probe is expected and must not cancel signup navigation.
+    if (response.status === 401 && options.credentials !== 'omit' && path !== '/auth/me/') {
       message = 'Your session has expired. Please sign in again.'
       window.dispatchEvent(new CustomEvent('enter-auth-expired'))
     }

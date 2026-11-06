@@ -15,8 +15,8 @@ describe('candidate presentation', () => {
     expect(screen.getByRole('paragraph')).toHaveTextContent('Join Leading Startups Building Their Teams with ENTER')
   })
   it.each([
-    ['uploaded', 'quarantined', 'Uploaded — waiting to be queued.'],
-    ['queued', 'quarantined', 'Queued — waiting for a resume worker.'],
+    ['uploaded', 'quarantined', 'Your upload is saved. Preparing to read your resume.'],
+    ['queued', 'quarantined', 'Your upload is saved. Preparing to read your resume.'],
     ['processing', 'scanning', 'Scanning — checking your file safely.'],
     ['processing', 'clean', 'Processing — extracting and validating your experience.'],
   ] as const)('presents the actual %s / %s state', (processing_status, scan_status, status) => {
@@ -54,7 +54,7 @@ describe('candidate presentation', () => {
     vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }))
     const { container, rerender } = render(<CandidateProcessing {...props()} />)
     act(() => vi.advanceTimersByTime(15000))
-    expect(screen.getByRole('status')).toHaveTextContent('Queued')
+    expect(screen.getByRole('status')).toHaveTextContent('Preparing to read your resume')
     expect(container.querySelector('.cp-processing-message')).toBeNull()
     rerender(<CandidateProcessing {...props()} resume={{ ...resume, processing_status: 'completed' }} />)
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
@@ -67,7 +67,7 @@ describe('candidate presentation', () => {
     const { container, rerender } = render(<CandidateProcessing {...props()} />)
     act(() => vi.advanceTimersByTime(6000))
     expect(container.querySelector('.cp-processing-message')).toBeNull()
-    expect(screen.getByRole('status')).toHaveTextContent('Queued')
+    expect(screen.getByRole('status')).toHaveTextContent('Preparing to read your resume')
     rerender(<CandidateProcessing {...props()} error="Status unavailable" refresh={refresh} />)
     expect(screen.getByRole('status')).toHaveTextContent('Unable to check')
     fireEvent.click(screen.getByRole('button', { name: 'Check status again' }))

@@ -113,7 +113,7 @@
   pointer-events: none;
   background:
     radial-gradient(ellipse at 50% 42%, rgba(250, 250, 246, .95) 12%, rgba(247, 250, 244, .88) 56%, rgba(239, 246, 235, .76)),
-    url('/media/hiring-enquiry-landscape-v1.png') center 55% / cover no-repeat;
+    image-set(url('../assets/landing/evidence-1399.avif') type('image/avif'), url('../assets/landing/evidence-1399.webp') type('image/webp')) center 55% / cover no-repeat;
 }
 @media (prefers-reduced-motion: no-preference) {
   .simple-landing .evidence-to-hires::before { animation: talent-nature-drift 36s ease-in-out infinite alternate; }
@@ -334,3 +334,11 @@
 }
 
 .simple-landing .growth-stages { background:#24282a; }
+
+@media (max-width: 760px) and (max-resolution: 2dppx) {
+  .simple-landing .evidence-to-hires::before { background-image: radial-gradient(ellipse at 50% 42%, rgba(250, 250, 246, .95) 12%, rgba(247, 250, 244, .88) 56%, rgba(239, 246, 235, .76)), image-set(url('../assets/landing/evidence-960.avif') type('image/avif'), url('../assets/landing/evidence-960.webp') type('image/webp')); }
+}
+
+.simple-landing .evidence-to-hires[data-artwork-ready=false]::before {
+  background-image: radial-gradient(ellipse at 50% 42%, rgba(250, 250, 246, .95) 12%, rgba(247, 250, 244, .88) 56%, rgba(239, 246, 235, .76));
+}

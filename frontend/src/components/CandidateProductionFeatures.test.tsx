@@ -12,19 +12,15 @@ beforeEach(() => { sessionStorage.clear(); vi.useFakeTimers(); vi.spyOn(Math, 'r
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.useRealTimers() })
 async function mount() { await act(async () => { render(<CandidateExperience accountDeleted={vi.fn()} />) }) }
 
-  it('confirms only an unverified exact resume after fresh password entry', async () => {
-    const ambiguous = { ...completed, resume_identity_warning: { resume_id: 1, version: 2, original_name: 'career.docx', code: 'identity_unverified', can_confirm: true } }
-    vi.mocked(api.candidateProfile).mockResolvedValue(ambiguous)
-    const confirmed = vi.spyOn(api, 'confirmResumeOwnership').mockResolvedValue({ ...completed, resume_identity_warning: null })
-    await mount()
-    expect(screen.getByRole('alert')).toHaveTextContent('Resume version 2: career.docx')
-    expect(screen.getByRole('button', { name: 'Confirm ownership' })).toBeDisabled()
-    fireEvent.click(screen.getByLabelText('I confirm this exact resume is mine.'))
-    fireEvent.change(screen.getByLabelText('Verify your account password'), { target: { value: 'strong-pass-123' } })
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Confirm ownership' })) })
-    expect(confirmed).toHaveBeenCalledWith(1, 2, 'strong-pass-123')
-    expect(screen.queryByText('Confirm this resume belongs to you')).not.toBeInTheDocument()
-  })
+it('does not show the removed ownership form or automatically confirm a resume', async () => {
+  vi.mocked(api.candidateProfile).mockResolvedValue({ ...completed, resume_identity_warning: { resume_id: 1, version: 2, original_name: 'career.docx', code: 'identity_unverified', can_confirm: true } })
+  const confirm = vi.spyOn(api, 'confirmResumeOwnership')
+  await mount()
+  expect(screen.queryByText('Confirm this resume belongs to you')).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Confirm ownership' })).not.toBeInTheDocument()
+  expect(screen.queryByLabelText('Verify your account password')).not.toBeInTheDocument()
+  expect(confirm).not.toHaveBeenCalled()
+})
 
 it('saves an inline role edit through the existing API without replacing profile fields', async () => {
   const role = { id: 77, company: 'Synthetic Studio', role: 'Engineer', start_date: '2020-01-01', end_date: '2022-01-01', is_current: false, description: 'Keep this evidence', gap_reason: '' }

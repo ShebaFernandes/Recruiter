@@ -1,8 +1,12 @@
 import '@testing-library/jest-dom/vitest'
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { api } from '../api'
 import WhatAreYouBuilding from './WhatAreYouBuilding'
+import { loadHiringDrawer } from './hiringDrawerLoader'
+
+// The regular landing prewarms its dialog after the intro.
+beforeAll(() => loadHiringDrawer())
 
 afterEach(() => {
   cleanup()

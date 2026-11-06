@@ -7,16 +7,17 @@ import './for-talent.css'
 export default function ForTalent({ onJoin, onLogin }: { onJoin: () => void; onLogin: () => void }) {
   const sectionRef = useRef<HTMLElement>(null)
   const navigating = useRef(false)
+  // A plain, synchronous update: the View Transition API can abort mid-flight
+  // on a long, image-heavy page like this one (seen as an uncaught
+  // InvalidStateError), leaving the old screen frozen on top of the page that
+  // already navigated underneath it. These CTAs are the primary conversion
+  // path, so they skip the cosmetic cross-fade rather than risk that stall.
   function transitionTo(action: () => void) {
     if (navigating.current) return
     navigating.current = true
-    const update = () => { flushSync(action); window.scrollTo({ top: 0, behavior: 'instant' }) }
-    if (document.startViewTransition && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      void document.startViewTransition(update).finished.finally(() => { navigating.current = false })
-    } else {
-      update()
-      navigating.current = false
-    }
+    flushSync(action)
+    window.scrollTo({ top: 0, behavior: 'instant' })
+    navigating.current = false
   }
 
   useEffect(() => {
@@ -46,8 +47,8 @@ export default function ForTalent({ onJoin, onLogin }: { onJoin: () => void; onL
 
         <h3 id="talent-network-title">Don’t see your role?</h3>
         <p>Log in to join enter’s talent network. Add your CV and the work you want, and we’ll reach out when a relevant role opens.</p>
-        <button type="button" onClick={() => transitionTo(onLogin)}>Join enter’s Talent network</button>
-        <p className="for-talent__hint">New to enter? <button type="button" className="for-talent__signup" onClick={() => transitionTo(onJoin)}>Create an account</button> to get started.</p>
+        <button type="button" onClick={() => transitionTo(onJoin)}>Join enter’s Talent network</button>
+        <p className="for-talent__hint">Already have an account? <button type="button" className="for-talent__signup" onClick={() => transitionTo(onLogin)}>Log in</button></p>
       </aside>
     </div>
   </section>

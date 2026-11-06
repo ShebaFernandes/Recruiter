@@ -1,4 +1,5 @@
 import { sortCareerHistory } from '../careerHistory'
+import CandidateFooter from './CandidateFooter'
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { api } from '../api'
@@ -14,9 +15,9 @@ import SettingsAutosave from './SettingsAutosave'
 import { compensationDisplay } from './compensationDisplay'
 import type { SettingsAutosaveHandle } from './SettingsAutosave'
 import { professionalTitle } from '../candidateIdentity'
-import { UserRound, GraduationCap, BriefcaseBusiness, MapPin, Camera, Trash2, Clock3, BadgeIndianRupee, House, Phone, Link2, FileText, Target, Globe2, Pencil, UploadCloud, LockKeyhole, Sparkles } from 'lucide-react'
+import { UserRound, GraduationCap, BriefcaseBusiness, MapPin, Camera, Trash2, Clock3, BadgeIndianRupee, House, Phone, Link2, FileText, Target, Pencil, UploadCloud, LockKeyhole, Sparkles } from 'lucide-react'
 import './candidate-experience.css'
-import { ExistingLegalReview, LegalRetry } from './LegalReview'
+import { LegalRetry } from './LegalReview'
 import { legalPublished, useLegalDocuments } from '../legalReview'
 import type { LegalDocument } from '../legalReview'
 
@@ -30,26 +31,12 @@ const contactMethods = ['Email', 'WhatsApp', 'Phone']
 export function ResumeAIConsent({ document, checked, disabled, change }: { document: LegalDocument; checked: boolean; disabled: boolean; change: (checked: boolean) => void }) {
   return <label className="cp-check cp-ai-consent"><input type="checkbox" checked={checked} disabled={disabled} onChange={event => change(event.target.checked)} /><span>{document.text.trim()}</span></label>
 }
-function ResumeOwnershipPrompt({ warning, busy, confirm, chooseResume }: { warning: NonNullable<Candidate['resume_identity_warning']>; busy: boolean; confirm: (password: string) => Promise<boolean>; chooseResume: () => void }) {
-  const [password, setPassword] = useState('')
-  const [checked, setChecked] = useState(false)
-  const unverified = warning.code === 'identity_unverified' && warning.can_confirm
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!checked || !password) return
-    const accepted = await confirm(password)
-    setPassword('')
-    if (accepted) setChecked(false)
-  }
+function ResumeMismatchNotice({ warning, chooseResume }: { warning: NonNullable<Candidate['resume_identity_warning']>; chooseResume: () => void }) {
   return <div role="alert" className="cp-resume-updates">
-    <strong>{unverified ? 'Confirm this resume belongs to you' : "We couldn't match this resume to your profile."}</strong>
-    <p>Resume version {warning.version}: <strong>{warning.original_name}</strong>. {unverified && 'Open the private Resume section below to inspect this exact file.'}</p>
-    {unverified ? <form onSubmit={event => void submit(event)}>
-      <p>The document has no reliable account-name match. Confirming ownership does not verify any employer, role or date. You can then request a no-AI retry of this saved file.</p>
-      <label className="cp-check"><input type="checkbox" checked={checked} disabled={busy} onChange={event => setChecked(event.target.checked)} />I confirm this exact resume is mine.</label>
-      <label>Verify your account password<input type="password" autoComplete="current-password" value={password} disabled={busy} onChange={event => setPassword(event.target.value)} /></label>
-      <div className="cp-actions"><button type="submit" disabled={busy || !checked || !password}>Confirm ownership</button><button type="button" disabled={busy} onClick={chooseResume}>Upload a different resume</button></div>
-    </form> : <><p>Your saved information is unchanged. Upload your own resume showing the correct name. ENTER will not combine two people's career histories.</p><button type="button" onClick={chooseResume}>Choose the correct resume</button></>}
+    <strong>We couldn't match this resume to your profile.</strong>
+    <p>Resume version {warning.version}: <strong>{warning.original_name}</strong>.</p>
+    <p>Your saved information is unchanged. Upload your own resume showing the correct name. ENTER will not combine two people's career histories.</p>
+    <button type="button" onClick={chooseResume}>Choose the correct resume</button>
   </div>
 }
 const jobStatuses = [
@@ -66,9 +53,6 @@ function WorkModeChoices({ values }: { values: string[] }) {
   const [selected, setSelected] = useState(values)
   const choices = [...new Set([...workSetups, ...values])]
   return <fieldset className="cp-settings-choices"><legend>Work mode</legend><div>{choices.map(value => <label className="cp-choice" key={value}><input type="checkbox" name="setup" value={value} checked={selected.includes(value)} onChange={() => setSelected(current => current.includes(value) ? current.filter(item => item !== value) : [...current, value])} /><span>{value}</span></label>)}</div></fieldset>
-}
-function LinkedInIcon() {
-  return <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.2 8.3A1.85 1.85 0 1 0 5.2 4.6a1.85 1.85 0 0 0 0 3.7ZM3.6 9.8h3.2V20H3.6V9.8ZM9 9.8h3.1v1.5h.05c.44-.82 1.5-1.7 3.1-1.7 3.3 0 3.9 2.18 3.9 5V20H16v-4.75c0-1.13-.02-2.58-1.58-2.58-1.58 0-1.82 1.23-1.82 2.5V20H9V9.8Z" /></svg>
 }
 const list = (text: string) => [...new Set(text.split(/[,\n]/).map(value => value.trim()).filter(Boolean))]
 const label = (key: string) => key.replaceAll('_', ' ')
@@ -172,7 +156,7 @@ function CustomChoice({ label, disabled, add }: { label: string; disabled: boole
   }} /> : <button ref={trigger} className="cp-add-choice" type="button" disabled={disabled} onClick={() => setOpen(true)}>+ Add my own</button>
 }
 
-function ProfileEditor({ profile, save, cancel, busy }: { profile: Candidate; save: (patch: Partial<Candidate>) => Promise<boolean>; cancel: () => void; busy: boolean }) {
+export function ProfileEditor({ profile, save, cancel, busy }: { profile: Candidate; save: (patch: Partial<Candidate>) => Promise<boolean>; cancel: () => void; busy: boolean }) {
   const [rows, setRows] = useState(profile.work_experiences)
   const update = (index: number, patch: Partial<WorkExperience>) => setRows(previous => previous.map((row, i) => i === index ? { ...row, ...patch } : row))
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -215,6 +199,15 @@ function ProfileEditor({ profile, save, cancel, busy }: { profile: Candidate; sa
         <label className="cp-field-wide">Role details<textarea value={row.description} onChange={e => update(i, { description: e.target.value })} /></label>
       </div></details>
     })}
+    <button type="button" onClick={event => {
+      const form = event.currentTarget.form
+      setRows(previous => [...previous, { company: '', role: '', start_date: null, end_date: null, description: '', gap_reason: '', is_current: false }])
+      requestAnimationFrame(() => {
+        const added = form?.querySelectorAll<HTMLDetailsElement>('.cp-work-edit')
+        const last = added?.[added.length - 1]
+        if (last) { last.open = true; last.querySelector('input')?.focus() }
+      })
+    }}>Add experience</button>
     </section><div className="cp-actions cp-editor-actions"><span>Changes apply when you save.</span><button className="primary" type="submit">Save corrections</button></div>
     </fieldset></form>
 }
@@ -285,7 +278,6 @@ export default function CandidateExperience({ beforeLeaveRef, opportunity }: { a
   const [showBeyond, setShowBeyond] = useState(false)
   const [review, setReview] = useState(false)
   const [success, setSuccess] = useState(false)
-  const [footerPanel, setFooterPanel] = useState<'support' | null>(null)
   const [dragging, setDragging] = useState(false)
   const [pollError, setPollError] = useState('')
   const statusCheckInFlight = useRef(false)
@@ -428,7 +420,7 @@ export default function CandidateExperience({ beforeLeaveRef, opportunity }: { a
         }
         setProfile(current => current?.latest_resume?.id === resumeId ? { ...current, latest_resume: { ...current.latest_resume, ...latest } } : current)
         setPollError(data.worker_available ? '' : 'worker_delayed')
-        delay = Math.min(latest.processing_status === 'processing' ? 5000 : 15000, delay * 1.5)
+        delay = Math.min(5000, delay * 1.5)
       } catch {
         if (active && !document.hidden) setPollError('Status unavailable. We will retry automatically.')
         delay = Math.min(30000, delay * 2)
@@ -588,7 +580,6 @@ export default function CandidateExperience({ beforeLeaveRef, opportunity }: { a
     </div>
     </section></aside>
   return <main className={`candidate-experience ${focusedProcessing ? 'is-processing' : ''}`} ref={mainRef}>
-    {!focusedProcessing && <ExistingLegalReview />}
     {legalPublished && review && <LegalRetry />}
     {!success && !focusedProcessing && p.latest_resume && <header className="cp-welcome"><h1>Let's find work that feels great.</h1></header>}
     {error && !editingSettings && <p role="alert" className="error">{error}</p>}<p aria-live="polite" aria-atomic="true" className="cp-sr-only">{message}</p>
@@ -603,7 +594,7 @@ export default function CandidateExperience({ beforeLeaveRef, opportunity }: { a
       </section>
     </section> : (processing || !resume) && processingView ? null : <>
       <section className="cp-section cp-profile" tabIndex={-1}>
-        {p.resume_identity_warning && <ResumeOwnershipPrompt key={p.resume_identity_warning.resume_id} warning={p.resume_identity_warning} busy={busy} confirm={password => run(() => api.confirmResumeOwnership(p.resume_identity_warning!.resume_id, p.resume_identity_warning!.version, password), 'Ownership recorded. You can retry extraction without AI.')} chooseResume={() => document.querySelector<HTMLInputElement>('#career-settings-panel input[type="file"]')?.click()} />}
+        {p.resume_identity_warning?.code === 'identity_mismatch' && <ResumeMismatchNotice warning={p.resume_identity_warning} chooseResume={() => document.querySelector<HTMLInputElement>('#career-settings-panel input[type="file"]')?.click()} />}
         {editing ? <ProfileEditor profile={p} busy={busy} save={save} cancel={() => setEditing(false)} /> : <>
           <div className="cp-identity-card"><CandidatePhoto key={p.profile_photo_url || 'initials'} profile={p} busy={busy} upload={file => void uploadPhoto(file)} remove={() => void run(api.removeCandidatePhoto, '')} /><div className="cp-identity-column"><div className="cp-identity"><h3>{displayName(p.full_name)}</h3><p className="cp-professional-title">{title || 'Add your professional title'}</p>{identityDetails.length > 0 && <div className="cp-identity-meta">{college && <span><GraduationCap aria-hidden="true" />{college}</span>}{Number(p.total_experience) > 0 && <span><BriefcaseBusiness aria-hidden="true" />{p.total_experience} years experience</span>}{p.location && <span><MapPin aria-hidden="true" />{p.location}</span>}</div>}</div><div className="cp-professional-read"><h3 className="cp-read-heading" aria-label="ENTER's read on you"><Sparkles className="cp-read-sparkle" aria-hidden="true" /><svg className="cp-read-wordmark" viewBox="145 145 1110 310" aria-hidden="true" focusable="false"><image href="/enter-wordmark.svg" width="1400" height="600" /></svg><span>'s read on you</span></h3><p>{professionalRead}</p></div></div><aside className="cp-highlight"><h3>What stood out to us</h3><p>{preferences.standout_signal || 'Add an evidence-backed achievement using “Not quite — edit”.'}</p>{preferences.standout_signal && highlightTopics.length > 0 && <div className="cp-highlight-topics">{highlightTopics.map(topic => <span key={topic}>{topic}</span>)}</div>}</aside></div>
           <div className="cp-career-surface"><CandidateCareerTimeline items={p.work_experiences} extraction={p.employment_extraction} identityWarning={p.resume_identity_warning?.code} edit={() => setEditing(true)} saveRole={(id, patch) => run(() => api.updateEmployment(id, patch), 'Career Journey updated.')} busy={busy} retryProcessing={p.latest_resume?.can_retry && p.employment_extraction?.status === 'review_required' ? () => { void run(() => api.retryResume(p.latest_resume!.id), 'Rechecking your saved resume without AI.') } : undefined} reviewLatestResume={p.resume_review?.resume_id === p.employment_extraction?.resume_id && p.resume_review?.fields.work_experiences ? () => {
@@ -639,6 +630,6 @@ export default function CandidateExperience({ beforeLeaveRef, opportunity }: { a
       <form onSubmit={submit}><label className="cp-check"><input type="checkbox" required />{legalPublished ? legalDocuments?.submission.text || 'Submission wording unavailable.' : 'I agree to share my profile with authorized ENTER recruiters according to my visibility preferences.'}</label><div className="cp-actions"><a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a><a href="/terms" target="_blank" rel="noopener noreferrer">Terms</a><button className="primary" disabled={busy || !p.can_submit || processing || (legalPublished && !legalDocuments)}>Yes, that's me ✓</button><button type="button" onClick={() => setReview(false)}>Keep editing</button></div></form>
     </section>}
     </>}
-    {!opportunity && !success && !focusedProcessing && <footer className="cp-footer" aria-label="Candidate help links"><div className="cp-footer-row"><img src="/enter-wordmark.svg" alt="ENTER" /><div className="cp-footer-links"><button aria-expanded={footerPanel === 'support'} onClick={() => void leave(() => setFooterPanel(value => value === 'support' ? null : 'support'))}>Help Center</button></div><div className="cp-connect"><strong>Connect with us</strong><div><a className="cp-footer-icon" href="https://www.linkedin.com/company/enterrecruitment/posts/?feedView=all" target="_blank" rel="noopener noreferrer" aria-label="ENTER Recruitment on LinkedIn"><LinkedInIcon /></a><a className="cp-footer-icon" href="https://www.enterrecruitment.com/" target="_blank" rel="noopener noreferrer" aria-label="ENTER Recruitment website"><Globe2 aria-hidden="true" /></a></div></div></div>{footerPanel === 'support' && <section className="cp-footer-panel"><h2>Help Center</h2><p>For help with your profile, contact your ENTER representative.</p><div className="cp-faqs"><h3>Frequently asked questions</h3><details><summary>How do I update my Career Journey?</summary><p>Use “Not quite — edit” to correct saved profile details, or review Resume updates after replacing a resume.</p></details><details><summary>When will my resume be ready?</summary><p>ENTER shows the processing state while your uploaded document is being read. Your profile opens automatically when processing is complete.</p></details><details><summary>How do I change what opportunities I receive?</summary><p>Use the career preferences beside your profile to update availability, notice period, compensation, work mode, locations, and contact preferences.</p></details><details><summary>Can I delete my profile?</summary><p>Open your name in the top-right account menu to access account deletion.</p></details></div></section>}</footer>}
+    {!opportunity && !success && !focusedProcessing && <CandidateFooter onToggle={action => { void leave(action) }} />}
   </main>
 }

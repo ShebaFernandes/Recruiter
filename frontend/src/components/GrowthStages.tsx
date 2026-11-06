@@ -1,3 +1,6 @@
+import useDeferredArtwork from './useDeferredArtwork'
+import { artwork } from '../assets/landing/artwork'
+import ResponsiveArtwork from './ResponsiveArtwork'
 import observeLandingReveal from './observeLandingReveal'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import GrowthEnquiry from './GrowthEnquiry'
@@ -11,7 +14,7 @@ const stages = [
     description: 'We find the early builders who can turn an idea into a product — and build the technical foundations for what comes next.',
     specializations: 'FOUNDING ENGINEERS · FOUNDING AI/ML · EARLY TECHNICAL LEADERS',
     cta: 'Build Your Founding Team',
-    image: '/media/growth-stages/founding-teams-hills.png',
+    image: artwork.founding,
     imageAlt: 'Rolling green grassy hills beneath a soft ivory sky',
     tone: 'founding',
   },
@@ -22,7 +25,7 @@ const stages = [
     description: 'We find leaders who can raise the bar, build exceptional teams and lead the company through its next stage of scale.',
     specializations: 'ENGINEERING LEADERS · PRODUCT LEADERS · FUNCTIONAL LEADERS',
     cta: 'Find Leadership',
-    image: '/media/growth-stages/leadership-lake.png',
+    image: artwork.leadership,
     imageAlt: 'Sunlit mountain lake with reflected clouds',
     tone: 'leadership',
   },
@@ -31,6 +34,7 @@ const stages = [
 export default function GrowthStages() {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const sectionRef = useRef<HTMLElement>(null)
+  const artworkReady = useDeferredArtwork(sectionRef)
   const movingCard = useRef<{ tone: 'founding' | 'leadership'; rect: DOMRect } | null>(null)
   const [active, setActive] = useState<'founding' | 'leadership' | null>(null)
 
@@ -64,7 +68,7 @@ export default function GrowthStages() {
     setActive(null)
   }
 
-  return <section ref={sectionRef} className="growth-stages" aria-labelledby="growth-stages-title">
+  return <section ref={sectionRef} className="growth-stages" data-artwork-ready={artworkReady} aria-labelledby="growth-stages-title">
     <div className="growth-stages__inner">
       <header className="growth-stages__header">
         <p className="growth-stages__eyebrow">TAILORED FOR EVERY STAGE OF GROWTH</p>
@@ -94,7 +98,7 @@ export default function GrowthStages() {
               {stage.cta}
             </button>
           </div>
-          <img className="growth-stage-card__image" src={stage.image} alt={stage.imageAlt} />
+          <ResponsiveArtwork className="growth-stage-card__image" artwork={stage.image} eager={Boolean(active)} sizes="(max-width: 760px) 100vw, (max-width: 1240px) 50vw, 592px" alt={stage.imageAlt} />
         </article>)}
       </div>
 
@@ -108,7 +112,7 @@ export default function GrowthStages() {
               <h3>{stage.heading}</h3>
               <p className="growth-stage-card__description">{stage.description}</p>
             </div>
-            <img className="growth-stage-card__image" src={stage.image} alt={stage.imageAlt} />
+            <ResponsiveArtwork className="growth-stage-card__image" artwork={stage.image} eager={Boolean(active)} sizes="(max-width: 760px) 100vw, (max-width: 1240px) 50vw, 592px" alt={stage.imageAlt} />
           </article>)}
         </div>
       </dialog>}
