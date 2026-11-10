@@ -478,3 +478,15 @@
   }
 }
 .opportunities-page .opp-detail-toolbar .opp-apply[hidden] { display: none; }
+
+
+/* Place the application action alongside the job title. */
+.opp-detail-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; margin-bottom:24px; }
+.opportunities-page .opp-detail-heading .opp-detail-title { flex:1; min-width:0; margin:0; }
+.opportunities-page .opp-detail-heading .opp-apply { flex-shrink:0; margin:0; white-space:nowrap; }
+.opportunities-page .opp-detail-heading .opp-apply[hidden] { display:none; }
+.opp-detail-toolbar { padding:0; border:0; background:transparent; box-shadow:none; }
+@media (max-width:760px) {
+  .opp-detail-heading { gap:12px; flex-wrap:wrap; }
+  .opp-detail-heading .opp-apply { margin-left:auto; }
+}
