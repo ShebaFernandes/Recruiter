@@ -38,6 +38,65 @@ NOTICE = (
 )
 
 
+SHORT_NOTICE = ""
+SHORT_NOTICE_VERSION = "enter-signup-no-notice-local-v2"
+SHORT_MECHANISM = "enter-signup-terms-only-local-v1"
+
+
+def notice_text():
+    return SHORT_NOTICE if settings.CANDIDATE_SIMPLE_SIGNUP_ENABLED else NOTICE
+
+
+def notice_version():
+    return SHORT_NOTICE_VERSION if settings.CANDIDATE_SIMPLE_SIGNUP_ENABLED else NOTICE_VERSION
+
+
+def action_method(provider="google"):
+    if settings.CANDIDATE_SIMPLE_SIGNUP_ENABLED:
+        return "signup_button_" + provider + "_no_notice_v2"
+    return METHOD
+
+
+def local_terms_only_release():
+    # Record direct user authorization honestly; do not relabel it as a CEO decision.
+    if not settings.DEBUG or settings.APP_ENV not in {"local", "test"}:
+        raise SignupUnavailable()
+    raw = Path(settings.GOOGLE_SIGNUP_APPROVAL_FILE).read_bytes()
+    if hashlib.sha256(raw).hexdigest() != settings.GOOGLE_SIGNUP_APPROVAL_SHA256:
+        raise SignupUnavailable()
+    record = json.loads(raw)
+    received = parse_datetime(record.get("authorization_recorded_at", ""))
+    if (
+        record.get("record_type") != "direct_user_local_terms_only_authorization"
+        or record.get("decision") != "approved"
+        or record.get("release_scope") != "isolated_local_testing_only"
+        or record.get("mechanism_id") != SHORT_MECHANISM
+        or record.get("notice_sha256") != sha(SHORT_NOTICE)
+        or not record.get("written_authorization")
+        or not received
+        or timezone.is_naive(received)
+        or received > timezone.now()
+        or settings.CANDIDATE_REGISTRATION_COUNTRIES
+        or not legal.published()
+    ):
+        raise SignupUnavailable()
+    docs = legal.documents()
+    if any(
+        record.get("documents", {}).get(p)
+        != {
+            "version": docs[p]["version"],
+            "sha256": docs[p]["sha256"],
+        }
+        for p in ["terms", "privacy", "submission"]
+    ):
+        raise SignupUnavailable()
+    return {
+        "approval_sha256": settings.GOOGLE_SIGNUP_APPROVAL_SHA256,
+        "notice_sha256": sha(SHORT_NOTICE),
+        "documents": docs,
+    }
+
+
 class SignupUnavailable(Exception):
     """Configuration and audit details are never included in public error bodies."""
 
@@ -50,6 +109,8 @@ def release():
     if not settings.GOOGLE_SIGNUP_AUTOCREATE_ENABLED:
         raise SignupUnavailable()
     try:
+        if settings.CANDIDATE_SIMPLE_SIGNUP_ENABLED:
+            return local_terms_only_release()
         if not legal.published() or not settings.GOOGLE_SIGNUP_APPROVAL_SHA256:
             raise SignupUnavailable()
         raw = Path(settings.GOOGLE_SIGNUP_APPROVAL_FILE).read_bytes()
@@ -162,36 +223,36 @@ def offer(request):
         expires_at=timezone.now() + timedelta(seconds=600),
     )
     return {
-        "text": NOTICE,
-        "version": NOTICE_VERSION,
+        "text": notice_text(),
+        "version": notice_version(),
         "challenge": challenge,
         "terms_url": links["terms"],
         "privacy_url": links["privacy"],
     }, browser
 
 
-def capture(request):
+def capture(request, provider="google"):
     raw = request.data.get("notice_challenge")
     if not raw:
         return None  # Existing linked candidates may still sign in without signup evidence.
     obj = google.take(request, raw, "notice")
     current = release()
-    if obj.payload != current or request.data.get("notice_version") != NOTICE_VERSION:
+    if obj.payload != current or request.data.get("notice_version") != notice_version():
         raise ValidationError("Signup wording changed. Review the notice and start again.")
     received = timezone.now()
     return {
         **current,
         "action_id": str(uuid.uuid4()),
         "received_at": received.isoformat(),
-        "notice_version": NOTICE_VERSION,
-        "notice_text": NOTICE,
-        "method": METHOD,
-        "age_self_declared": True,
-        "country_code": "IN",
+        "notice_version": notice_version(),
+        "notice_text": notice_text(),
+        "method": action_method(provider),
+        "age_self_declared": not settings.CANDIDATE_SIMPLE_SIGNUP_ENABLED,
+        "country_code": "" if settings.CANDIDATE_SIMPLE_SIGNUP_ENABLED else "IN",
     }
 
 
-def register(identity, action, request):
+def validate_action(action, provider="google"):
     current = release()
     if not action or any(action.get(k) != current[k] for k in current):
         raise SignupUnavailable()
@@ -200,13 +261,18 @@ def register(identity, action, request):
         not received
         or timezone.is_naive(received)
         or not timezone.now() - timedelta(minutes=10) <= received <= timezone.now()
-        or action.get("notice_text") != NOTICE
-        or action.get("notice_version") != NOTICE_VERSION
-        or action.get("method") != METHOD
-        or action.get("age_self_declared") is not True
-        or action.get("country_code") != "IN"
+        or action.get("notice_text") != notice_text()
+        or action.get("notice_version") != notice_version()
+        or action.get("method") != action_method(provider)
+        or action.get("age_self_declared") is not (not settings.CANDIDATE_SIMPLE_SIGNUP_ENABLED)
+        or action.get("country_code") != ("" if settings.CANDIDATE_SIMPLE_SIGNUP_ENABLED else "IN")
     ):
         raise SignupUnavailable()
+    return received
+
+
+def register(identity, action, request):
+    validate_action(action)
     if settings.CANDIDATE_REGISTRATION_PAUSED:
         raise SignupUnavailable()
     countries = settings.CANDIDATE_REGISTRATION_COUNTRIES
@@ -218,7 +284,6 @@ def register(identity, action, request):
     throttle = SignupRateThrottle()
     if not throttle.allow_request(request, None):
         raise SignupUnavailable()
-    docs = action["documents"]
     try:
         with transaction.atomic():
             if google.matching_accounts(identity["email"]).exists():
@@ -234,42 +299,49 @@ def register(identity, action, request):
                 user=user,
                 email=identity["email"],
                 full_name=identity["full_name"],
-                registration_country_code="IN",
+                registration_country_code=action["country_code"],
                 email_verified_at=timezone.now() if identity["authoritative"] else None,
             )
             ExternalIdentity.objects.create(user=user, subject=identity["subject"])
-            accepted = {}
-            for purpose in ["terms", "age"]:
-                doc = docs[purpose]
-                accepted[purpose] = LegalAcceptance.objects.create(
-                    user=user,
-                    subject_user_id=user.pk,
-                    subject_joined_at=user.date_joined,
-                    purpose=purpose,
-                    version=doc["version"],
-                    document_text=doc["text"],
-                    document_sha256=doc["sha256"],
-                    unpublished=False,
-                    accepted_at=received,
-                )
-            GoogleSignupEvidence.objects.create(
-                action_id=action["action_id"],
-                terms_acceptance=accepted["terms"],
-                age_acceptance=accepted["age"],
-                method=METHOD,
-                received_at=received,
-                account_created_at=user.date_joined,
-                notice_version=NOTICE_VERSION,
-                notice_text=NOTICE,
-                notice_sha256=sha(NOTICE),
-                privacy_version=docs["privacy"]["version"],
-                privacy_text=docs["privacy"]["text"],
-                privacy_sha256=docs["privacy"]["sha256"],
-                country_code="IN",
-                age_self_declared=True,
-                approval_sha256=current["approval_sha256"],
-            )
+            record_action(user, action)
             return user
     except IntegrityError:
         # Never merge users or replace an existing identity after a concurrency conflict.
         return None
+
+
+def record_action(user, action, provider="google"):
+    received = validate_action(action, provider)
+    docs = action["documents"]
+    accepted = {}
+    for purpose in legal.signup_purposes():
+        doc = docs[purpose]
+        accepted[purpose] = LegalAcceptance.objects.create(
+            user=user,
+            subject_user_id=user.pk,
+            subject_joined_at=user.date_joined,
+            purpose=purpose,
+            version=doc["version"],
+            document_text=doc["text"],
+            document_sha256=doc["sha256"],
+            unpublished=False,
+            accepted_at=received,
+        )
+    GoogleSignupEvidence.objects.create(
+        action_id=action["action_id"],
+        terms_acceptance=accepted.get("terms"),
+        subject_user=user,
+        age_acceptance=accepted.get("age"),
+        method=action["method"],
+        received_at=received,
+        account_created_at=user.date_joined,
+        notice_version=action["notice_version"],
+        notice_text=action["notice_text"],
+        notice_sha256=sha(action["notice_text"]) if action["notice_text"] else "",
+        privacy_version=docs["privacy"]["version"],
+        privacy_text=docs["privacy"]["text"],
+        privacy_sha256=docs["privacy"]["sha256"],
+        country_code=action["country_code"],
+        age_self_declared=action["age_self_declared"],
+        approval_sha256=action["approval_sha256"],
+    )

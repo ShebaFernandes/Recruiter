@@ -59,3 +59,7 @@
 /* Official asset: https://developers.google.com/static/identity/images/g-logo.png */
 .google-button-mark img { display: block; width: 24px; height: auto; }
 .google-button-label { padding-inline: 8px; font-size: 16px; font-weight: 600; line-height: 1.25; }
+
+.signup-terms-notice { font-size: 12px; line-height: 1.55; color: var(--muted); }
+.signup-terms-notice a { color: inherit; text-underline-offset: 2px; }
+.signup-terms-notice small { font-size: 12px; line-height: 1.55; }

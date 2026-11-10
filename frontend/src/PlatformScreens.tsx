@@ -2,7 +2,7 @@ import './platform-styles.css'
 import './components/legal-review.css'
 import CandidateApplications from './components/CandidateApplications'
 import Opportunities from './components/Opportunities'
-import { FormEvent, Suspense, lazy, useEffect, useRef, useState } from 'react'
+import { FormEvent, Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
 import {
   ArrowRight, Bell, BriefcaseBusiness, CalendarDays, Check,
   FolderPlus, GraduationCap,
@@ -21,7 +21,7 @@ import EnterBrandText from './components/EnterBrandText'
 import './components/onboarding.css'
 import { LegalPage, LegalChecks, LegalRetry } from './components/LegalReview'
 import { GoogleButton } from './components/GoogleLogin'
-import { legalPublished, useLegalDocumentState } from './legalReview'
+import { legalPublished, simpleSignup, useLegalDocumentState } from './legalReview'
 
 import './components/recruiter-results.css'
 import './components/recruiter-workspace.css'
@@ -151,6 +151,9 @@ function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
   const [message, setMessage] = useState('')
   const [pendingEmail, setPendingEmail] = useState('')
   const [localVerificationUrl, setLocalVerificationUrl] = useState('')
+  const [signupAttempt, setSignupAttempt] = useState(0)
+  const [signupConfiguration, setSignupConfiguration] = useState<Awaited<ReturnType<typeof api.googleConfig>> | null>(null)
+  const receiveSignupConfiguration = useCallback((value: Awaited<ReturnType<typeof api.googleConfig>>) => setSignupConfiguration(value), [])
   useEffect(() => {
     document.documentElement.scrollTop = 0
     document.body.scrollTop = 0
@@ -164,11 +167,11 @@ function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
         setMessage(response.detail)
         return
       }
-      if (mode === 'signup' && legalPublished && (!legalDocuments || data.terms_accepted !== 'on')) {
+      if (mode === 'signup' && legalPublished && !simpleSignup && (!legalDocuments || data.terms_accepted !== 'on')) {
         throw new Error('Review and accept the current Terms before creating your account.')
       }
       const payload = mode === 'signup'
-        ? await api.signup({ ...data, role, ...(legalPublished ? { age_accepted: data.terms_accepted === 'on', terms_accepted: data.terms_accepted === 'on' } : {}) })
+        ? await api.signup({ ...data, role, ...(simpleSignup ? { notice_challenge: signupConfiguration?.signup_notice?.challenge, notice_version: signupConfiguration?.signup_notice?.version } : {}), ...(!simpleSignup && legalPublished ? { age_accepted: data.terms_accepted === 'on', terms_accepted: data.terms_accepted === 'on' } : {}) })
         : await api.login({ email: data.email, password: data.password })
       if ('requires_email_verification' in payload) {
         setPendingEmail(data.email)
@@ -179,6 +182,7 @@ function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
       if (payload.user.role !== role) throw new ApiError(`This account belongs to the ${payload.user.role} platform.`, 400)
       auth.save(payload); await onDone(payload)
     } catch (err) {
+      if (mode === 'signup' && simpleSignup) setSignupAttempt(value => value + 1)
       if (role === 'candidate' && mode === 'login' && err instanceof ApiError && err.code === 'email_not_verified') {
         setPendingEmail(data.email)
       }
@@ -207,14 +211,14 @@ function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
   const emailFields = <div className="auth-email-fields">
         <div className="auth-fields">
           {mode === 'signup' && <FormField label="Full name" name="full_name" required autoComplete="name" />}
-          {mode === 'signup' && <input type="hidden" name="country_code" value="IN" />}
+          {mode === 'signup' && !simpleSignup && <input type="hidden" name="country_code" value="IN" />}
           <FormField label="Email" name="email" type="email" required autoComplete="email" />
           {mode !== 'forgot' && <FormField label="Password" name="password" type="password" minLength={8} required autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} hint={mode === 'signup' ? 'Use at least 8 characters.' : undefined} />}
         </div>
         <InlineError value={error} />
         {message && <div className="success" role="status"><Check size={17} aria-hidden="true" />{message}</div>}
-        {mode === 'signup' && legalPublished && (legalDocuments ? <LegalChecks documents={legalDocuments} /> : <p role="status">{legalError || 'Loading required legal documents…'}<LegalRetry /></p>)}
-        <Button variant={role === 'candidate' && mode !== 'forgot' ? 'secondary' : 'primary'} size="large" fullWidth disabled={busy || (mode === 'signup' && legalPublished && !legalDocuments)}>{busy ? 'Please wait…' : mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send reset link' : 'Log in'}</Button>
+        {mode === 'signup' && legalPublished && (simpleSignup ? null : legalDocuments ? <LegalChecks documents={legalDocuments} /> : <p role="status">{legalError || 'Loading required legal documents…'}<LegalRetry /></p>)}
+        <Button variant={role === 'candidate' && mode !== 'forgot' ? 'secondary' : 'primary'} size="large" fullWidth disabled={busy || (mode === 'signup' && legalPublished && (simpleSignup ? !signupConfiguration?.simple_signup || !signupConfiguration.signup_notice : !legalDocuments))}>{busy ? 'Please wait…' : mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send reset link' : 'Log in'}</Button>
         {mode === 'login' && <Button type="button" variant="ghost" fullWidth onClick={() => { setMode('forgot'); setError(''); setMessage('') }}>Forgot password?</Button>}
   </div>
   return <AuthLayout role={role} back={back} onboardingMode={mode === 'forgot' ? undefined : mode}>
@@ -223,7 +227,7 @@ function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
         <Badge tone="neutral">{role === 'recruiter' ? 'RECRUITER WORKSPACE' : 'CANDIDATE PROFILE'}</Badge>
         <h1>{mode === 'signup' ? 'Create your account' : mode === 'forgot' ? 'Forgot your password?' : 'Welcome back'}</h1>
         <p>{mode === 'forgot' ? 'Enter your email. If an account exists, we’ll send a secure reset link.' : role === 'recruiter' ? 'Search real candidate profiles and build a thoughtful shortlist.' : 'Turn your resume into a profile you control.'}</p>
-        {role === 'candidate' && mode !== 'forgot' && <GoogleButton />}
+        {role === 'candidate' && mode !== 'forgot' && <GoogleButton key={signupAttempt} onConfiguration={receiveSignupConfiguration} />}
         {role === 'candidate' && mode !== 'forgot' ? <details className="auth-email-options">
           <summary><span className="auth-email-or">OR</span><span className="auth-email-link"><span>Continue with email</span><ArrowRight size={18} aria-hidden="true" /></span></summary>
           {emailFields}

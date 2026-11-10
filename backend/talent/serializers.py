@@ -43,7 +43,11 @@ class SignupSerializer(serializers.Serializer):
         return value.lower()
 
     def validate(self, attrs):
-        country_code = attrs.get("country_code", "").strip().upper()
+        country_code = (
+            ""
+            if settings.CANDIDATE_SIMPLE_SIGNUP_ENABLED
+            else attrs.get("country_code", "").strip().upper()
+        )
         if settings.CANDIDATE_REGISTRATION_COUNTRIES:
             if country_code not in settings.CANDIDATE_REGISTRATION_COUNTRIES:
                 raise serializers.ValidationError(
@@ -177,20 +181,27 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
             return []
         rows = WorkExperience.all_objects.filter(candidate=obj, archived_at__isnull=False)
         return [
-            {**WorkExperienceSerializer(row).data, "archived_at": row.archived_at}
-            for row in rows
+            {**WorkExperienceSerializer(row).data, "archived_at": row.archived_at} for row in rows
         ]
 
     def get_resume_identity_warning(self, obj):
         resume = obj.resumes.filter(processing_status="completed").first()
         issue = resume_identity_issue(resume, obj) if resume else None
-        return {
-            "resume_id": resume.pk, "version": resume.version,
-            "original_name": resume.original_name, "code": issue,
-            "can_confirm": (can_confirm_resume_identity(resume, obj)
-                            and obj.resumes.first().pk == resume.pk
-                            and resume.scan_status == Resume.ScanStatus.CLEAN),
-        } if issue else None
+        return (
+            {
+                "resume_id": resume.pk,
+                "version": resume.version,
+                "original_name": resume.original_name,
+                "code": issue,
+                "can_confirm": (
+                    can_confirm_resume_identity(resume, obj)
+                    and obj.resumes.first().pk == resume.pk
+                    and resume.scan_status == Resume.ScanStatus.CLEAN
+                ),
+            }
+            if issue
+            else None
+        )
 
     def get_profile_photo_url(self, obj):
         request = self.context.get("request")
@@ -211,8 +222,11 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
         for resume in obj.resumes.filter(processing_status="completed", scan_status="clean"):
             fields = pending_fields(resume, obj)
             if fields:
-                return {"resume_id": resume.pk, "fields": fields,
-                        "original_name": resume.original_name}
+                return {
+                    "resume_id": resume.pk,
+                    "fields": fields,
+                    "original_name": resume.original_name,
+                }
         return None
 
     def validate_career_preferences(self, value):
@@ -533,10 +547,17 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
     def get_latest_resume(self, obj):
         request = self.context.get("request")
         if getattr(getattr(request, "user", None), "recruiter_profile", None):
-            resume = next((item for item in obj.resumes.filter(
-                processing_status=Resume.ProcessingStatus.COMPLETED,
-                scan_status=Resume.ScanStatus.CLEAN,
-            ) if not resume_identity_issue(item, obj)), None)
+            resume = next(
+                (
+                    item
+                    for item in obj.resumes.filter(
+                        processing_status=Resume.ProcessingStatus.COMPLETED,
+                        scan_status=Resume.ScanStatus.CLEAN,
+                    )
+                    if not resume_identity_issue(item, obj)
+                ),
+                None,
+            )
         else:
             resume = obj.resumes.first()
         return ResumeSerializer(resume, context=self.context).data if resume else None

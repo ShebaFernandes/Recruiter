@@ -23,9 +23,7 @@ def legal_documents(request):
         {"enabled": True, "documents": documents},
         headers={
             "Cache-Control": "no-store",
-            "X-Robots-Tag": (
-                "noindex, nofollow" if not legal.published() else "index, follow"
-            ),
+            "X-Robots-Tag": ("noindex, nofollow" if not legal.published() else "index, follow"),
         },
     )
 
@@ -53,7 +51,7 @@ def accept_terms(request):
                 version=docs[p]["version"],
                 unpublished=docs[p]["unpublished"],
             ).exists()
-            for p in ["age", "terms"]
+            for p in legal.signup_purposes()
         }
         return Response(
             {"accepted": accepted, "versions": {p: docs[p]["version"] for p in accepted}},
@@ -61,7 +59,7 @@ def accept_terms(request):
         )
     docs = {
         purpose: legal.validate_acceptance(request.data, purpose, current_documents[purpose])
-        for purpose in ["age", "terms"]
+        for purpose in legal.signup_purposes()
     }
     for purpose, doc in docs.items():
         legal.record(request.user, purpose, doc)

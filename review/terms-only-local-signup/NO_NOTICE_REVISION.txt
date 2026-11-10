@@ -1,0 +1,1 @@
+User-directed local revision: remove both signup notices. New signup button actions store empty notice text/hash and no Terms/age acceptance; subject_user links the action to its account. Historical evidence is unchanged. Draft 02 remains a separate historical mechanism. Local/test restriction remains; no deployment authorized.

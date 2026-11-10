@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
-import { legalPublished, retryLegalDocuments, useLegalDocumentState } from '../legalReview'
+import { legalPublished, simpleSignup, retryLegalDocuments, useLegalDocumentState } from '../legalReview'
 import type { LegalDocuments } from '../legalReview'
 import { Button } from './ui'
 import './legal-review.css'
 
 export function LegalChecks({ documents }: { documents: LegalDocuments }) {
+  if (simpleSignup) return null
   return <fieldset className="legal-confirmations">
     <legend>Required confirmations</legend>
     <label className="cp-check"><input name="terms_accepted" type="checkbox" required />
@@ -37,11 +38,11 @@ export function ExistingLegalReview() {
     <p role="alert">{error} <Button variant="ghost" type="button" onClick={retry}>Retry legal documents</Button></p>
   </section>
   if (!documents || (!status && !statusError)) return null
-  const current = documents && status && ['age', 'terms'].every(purpose => {
+  const current = documents && status && (simpleSignup ? ['terms'] : ['age', 'terms']).every(purpose => {
     const key = purpose as 'age' | 'terms'
     return status.versions[key] === documents[key].version
   })
-  const accepted = current && status?.accepted.age && status.accepted.terms
+  const accepted = current && status?.accepted.terms && (simpleSignup || status.accepted.age)
   if (accepted) return null
   return <section className="card"><h2>Accept current Terms</h2>
     <p>Current published documents. Existing accounts are not assumed to have accepted them.</p>
@@ -52,8 +53,8 @@ export function ExistingLegalReview() {
         setBusy(true)
         const data = Object.fromEntries(new FormData(event.currentTarget))
         try {
-          const accepted = data.terms_accepted === 'on'
-          await api.acceptLegal({ ...data, age_accepted: accepted, terms_accepted: accepted })
+          const accepted = simpleSignup || data.terms_accepted === 'on'
+          await api.acceptLegal({ ...data, ...(simpleSignup ? {} : { age_accepted: accepted }), terms_accepted: accepted })
           setMessage('Confirmations recorded. No recruiter sharing enabled.')
           setStatus(null)
           setAttempt(value => value + 1)

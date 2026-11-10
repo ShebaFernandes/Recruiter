@@ -14,6 +14,10 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from .models import CandidateProfile, DeletionRequest, InactivityReminder, LegalAcceptance
 
 
+def signup_purposes():
+    return [] if settings.CANDIDATE_SIMPLE_SIGNUP_ENABLED else ["age", "terms"]
+
+
 def enabled():
     return settings.LEGAL_WORKFLOW_PREVIEW or settings.LEGAL_CONTENT_APPROVED
 
@@ -80,9 +84,7 @@ def documents():
         ),
     }
     if settings.LEGAL_RESUME_AI_APPROVED:
-        texts["resume_ai"] = _published_text(
-            root / "RESUME_AI_CONSENT_PUBLICATION.txt"
-        )
+        texts["resume_ai"] = _published_text(root / "RESUME_AI_CONSENT_PUBLICATION.txt")
     versions = {
         "terms": settings.LEGAL_TERMS_VERSION,
         "privacy": settings.LEGAL_PRIVACY_VERSION,
@@ -108,9 +110,7 @@ def documents():
             "text": text,
             "sha256": digest,
             "version": (
-                versions[purpose]
-                if published()
-                else f"unpublished-{purpose}-{digest[:16]}"
+                versions[purpose] if published() else f"unpublished-{purpose}-{digest[:16]}"
             ),
             "effective_date": settings.LEGAL_EFFECTIVE_DATE if published() else None,
             "unpublished": not published(),
@@ -158,7 +158,7 @@ def require_terms(user):
             version=docs[purpose]["version"],
             unpublished=docs[purpose]["unpublished"],
         ).exists()
-        for purpose in ["age", "terms"]
+        for purpose in signup_purposes()
     ):
         raise PermissionDenied("Review and accept the current Terms first.")
 
@@ -249,15 +249,15 @@ def deliver_reminders(now=None, *, require_enabled=True):
         raise PermissionDenied("Retention reminder delivery is not enabled.")
     now = now or timezone.now()
     sent = failed = 0
-    pending_ids = InactivityReminder.objects.filter(sent_at=None).filter(
-        Q(next_attempt_at=None) | Q(next_attempt_at__lte=now)
-    ).values_list("pk", flat=True)
+    pending_ids = (
+        InactivityReminder.objects.filter(sent_at=None)
+        .filter(Q(next_attempt_at=None) | Q(next_attempt_at__lte=now))
+        .values_list("pk", flat=True)
+    )
     for reminder_id in pending_ids.iterator():
         with transaction.atomic():
             reminder = InactivityReminder.objects.select_for_update().get(pk=reminder_id)
-            candidate = CandidateProfile.objects.select_for_update().get(
-                pk=reminder.candidate_id
-            )
+            candidate = CandidateProfile.objects.select_for_update().get(pk=reminder.candidate_id)
             if reminder.sent_at or not _reminder_is_current(reminder, candidate, now):
                 continue
             if reminder.delivery_attempts >= settings.RETENTION_REMINDER_MAX_ATTEMPTS:
@@ -265,9 +265,7 @@ def deliver_reminders(now=None, *, require_enabled=True):
             reminder.delivery_attempts += 1
             reminder.last_attempt_at = now
             reminder.last_error_code = ""
-            reminder.save(
-                update_fields=["delivery_attempts", "last_attempt_at", "last_error_code"]
-            )
+            reminder.save(update_fields=["delivery_attempts", "last_attempt_at", "last_error_code"])
         deadline = reminder.deadline_at or expiry(reminder.activity_at)
         try:
             subject_prefix = "" if published() else "UNPUBLISHED LOCAL TEST — "

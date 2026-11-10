@@ -15,21 +15,22 @@ function loadConfiguration() {
 function documentUrl(path: string) {
   return new URL(path, new URL(API_URL, window.location.origin)).href
 }
-function SignupNotice({ notice }: { notice: NonNullable<GoogleConfiguration['signup_notice']> }) {
+export function SignupNotice({ notice }: { notice: NonNullable<GoogleConfiguration['signup_notice']> }) {
+  if (!notice.text) return null
   const [before, afterTerms] = notice.text.split('Terms')
   const [middle, afterPrivacy] = afterTerms.split('Privacy Policy')
   return <small>{before}<a href={documentUrl(notice.terms_url)} target="_blank" rel="noopener noreferrer">Terms</a>{middle}<a href={documentUrl(notice.privacy_url)} target="_blank" rel="noopener noreferrer">Privacy Policy</a>{afterPrivacy}</small>
 }
-export function GoogleButton() {
+export function GoogleButton({ onConfiguration }: { onConfiguration?: (value: GoogleConfiguration) => void } = {}) {
   const [configuration, setConfiguration] = useState<GoogleConfiguration>({ enabled: false })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  useEffect(() => { let active = true; loadConfiguration().then(result => { if (active) setConfiguration(result) }).catch(() => {}); return () => { active = false } }, [])
+  useEffect(() => { let active = true; loadConfiguration().then(result => { if (active) { setConfiguration(result); onConfiguration?.(result) } }).catch(() => {}); return () => { active = false } }, [onConfiguration])
   return <div className="google-login"><Button type="button" className="google-signin-button" size="large" fullWidth disabled={!configuration.enabled || busy} onClick={async () => {
     setBusy(true); setError('')
     try { window.location.assign((await api.googleStart(candidateAuthDestination(), configuration.signup_notice)).url) }
-    catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not start Google Login.'); setBusy(false); loadConfiguration().then(setConfiguration).catch(() => {}) }
-  }}><span className="google-button-mark" aria-hidden="true"><img src="/google-g.png" width="24" height="24" alt="" /></span><span className="google-button-label">Continue with Google</span></Button>{configuration.signup_notice ? <SignupNotice notice={configuration.signup_notice} /> : <small>Read ENTER’s <a href="/terms" target="_blank" rel="noopener noreferrer">Terms</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</small>}{!configuration.enabled && <small>Google Login is not available yet. Continue with email below.</small>}{error && <p role="alert">{error}</p>}</div>
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not start Google Login.'); setBusy(false); loadConfiguration().then(value => { setConfiguration(value); onConfiguration?.(value) }).catch(() => {}) }
+  }}><span className="google-button-mark" aria-hidden="true"><img src="/google-g.png" width="24" height="24" alt="" /></span><span className="google-button-label">Continue with Google</span></Button>{!configuration.simple_signup && configuration.signup_notice && <SignupNotice notice={configuration.signup_notice} />}{!configuration.enabled && <small>Google Login is not available yet. Continue with email below.</small>}{error && <p role="alert">{error}</p>}</div>
 }
 
 export function GoogleLoginScreen() {

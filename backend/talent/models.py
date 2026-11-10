@@ -750,12 +750,15 @@ class PublishedSignupDocument(models.Model):
 class GoogleSignupEvidence(models.Model):
     """One observed signup action; retention follows its existing legal acceptance rows."""
 
+    subject_user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     action_id = models.UUIDField(unique=True)
     terms_acceptance = models.OneToOneField(
-        LegalAcceptance, on_delete=models.CASCADE, related_name="google_signup_terms_evidence",
+        LegalAcceptance, on_delete=models.CASCADE, null=True, blank=True,
+        related_name="google_signup_terms_evidence",
     )
     age_acceptance = models.OneToOneField(
-        LegalAcceptance, on_delete=models.CASCADE, related_name="google_signup_age_evidence",
+        LegalAcceptance, on_delete=models.CASCADE, null=True, blank=True,
+        related_name="google_signup_age_evidence",
     )
     method = models.CharField(max_length=60, default="notice_bound_google_button_v1")
     received_at = models.DateTimeField()
@@ -767,6 +770,6 @@ class GoogleSignupEvidence(models.Model):
     privacy_version = models.CharField(max_length=100)
     privacy_text = models.TextField()
     privacy_sha256 = models.CharField(max_length=64)
-    country_code = models.CharField(max_length=2)
+    country_code = models.CharField(max_length=2, blank=True)
     age_self_declared = models.BooleanField()
     approval_sha256 = models.CharField(max_length=64)

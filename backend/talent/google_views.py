@@ -44,9 +44,12 @@ def redirect(result, next_path="/"):
 @permission_classes([AllowAny])
 @throttle_classes([LoginRateThrottle])
 def configuration(request):
-    body = {"enabled": settings.GOOGLE_OAUTH_ENABLED}
+    body = {
+        "enabled": settings.GOOGLE_OAUTH_ENABLED,
+        **({"simple_signup": True} if settings.CANDIDATE_SIMPLE_SIGNUP_ENABLED else {}),
+    }
     browser = None
-    if settings.GOOGLE_OAUTH_ENABLED:
+    if settings.GOOGLE_OAUTH_ENABLED or settings.CANDIDATE_SIMPLE_SIGNUP_ENABLED:
         try:
             body["signup_notice"], browser = google_signup.offer(request)
         except google_signup.SignupUnavailable:

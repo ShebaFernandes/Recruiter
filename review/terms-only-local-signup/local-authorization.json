@@ -1,0 +1,25 @@
+{
+  "record_type": "direct_user_local_terms_only_authorization",
+  "decision": "approved",
+  "release_scope": "isolated_local_testing_only",
+  "mechanism_id": "enter-signup-terms-only-local-v1",
+  "notice_sha256": "0293f8ba98d3ffb141f72fb1d55a67586c8a68e49c38e28a04327aacba2d1831",
+  "authorization_recorded_at": "2026-11-10T10:03:18.019837+00:00",
+  "written_authorization": "User approved removing both displayed blocks and then explicitly confirmed: \u201cRemove those signup requirements too; keep a short Terms/Privacy notice\u201d.",
+  "identity_attribution": "Direct user instruction in this conversation. No new CEO/policy-owner identity or approval timestamp is inferred or reused.",
+  "documents": {
+    "terms": {
+      "version": "enter-candidate-terms-terms-only-local-v1",
+      "sha256": "76b16b5da7134dca9b288765fb296524e064fa4759add1b2deb86cae76b7f787"
+    },
+    "privacy": {
+      "version": "enter-candidate-privacy-terms-only-local-v1",
+      "sha256": "a9e4c2399edfd1a0438e8e73ff24960516bb84318d09d287cbc81c0b3405631c"
+    },
+    "submission": {
+      "version": "unpublished-submission-d1beaf60fbea2b35",
+      "sha256": "d1beaf60fbea2b351f039dc64f37a54e76d8e42083fe216da199ece72b1b70ba"
+    }
+  },
+  "production_deployment_authorized": false
+}

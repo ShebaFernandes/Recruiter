@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from './api'
 
+export const simpleSignup = import.meta.env.VITE_CANDIDATE_SIMPLE_SIGNUP === 'true'
 export const legalPublished = import.meta.env.VITE_LEGAL_CONTENT_APPROVED === 'true'
 export type LegalDocument = { text: string; version: string; sha256: string; effective_date?: string | null; unpublished: boolean }
 export type LegalDocuments = Record<'terms' | 'privacy' | 'age' | 'submission', LegalDocument> & { resume_ai?: LegalDocument }

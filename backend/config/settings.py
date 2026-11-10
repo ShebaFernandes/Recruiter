@@ -737,3 +737,12 @@ GOOGLE_SIGNUP_AUTOCREATE_ENABLED = (
 )
 GOOGLE_SIGNUP_APPROVAL_FILE = os.getenv("GOOGLE_SIGNUP_APPROVAL_FILE", "")
 GOOGLE_SIGNUP_APPROVAL_SHA256 = os.getenv("GOOGLE_SIGNUP_APPROVAL_SHA256", "")
+
+# The terms-only signup revision is authorized for isolated local testing only.
+CANDIDATE_SIMPLE_SIGNUP_ENABLED = (
+    os.getenv("CANDIDATE_SIMPLE_SIGNUP_ENABLED", "false").lower() == "true"
+)
+if CANDIDATE_SIMPLE_SIGNUP_ENABLED and (not DEBUG or APP_ENV not in {"local", "test"}):
+    raise ImproperlyConfigured("Terms-only signup is currently authorized for local testing only.")
+if CANDIDATE_SIMPLE_SIGNUP_ENABLED and CANDIDATE_REGISTRATION_COUNTRIES:
+    raise ImproperlyConfigured("Terms-only signup must not infer a registration country.")

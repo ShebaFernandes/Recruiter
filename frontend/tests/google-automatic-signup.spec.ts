@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 test.skip(process.env.E2E_AUTOSIGNUP !== '1', 'Requires disposable synthetic signup fixture; never a real provider test')
-const api = 'http://127.0.0.1:18012/api/v1'
+const api = process.env.E2E_API_URL || 'http://127.0.0.1:18012/api/v1'
 
 async function chooseGoogle(page: import('@playwright/test').Page, tag: string) {
   await page.route('https://accounts.google.com/o/oauth2/v2/auth**', async route => {
@@ -20,7 +20,8 @@ async function openSignup(page: import('@playwright/test').Page) {
   await page.goto('/')
   await page.getByRole('button', { name: 'Join enter’s Talent network', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeEnabled()
-  await expect(page.getByText(/These are your declarations; Google sign-in does not verify/)).toBeVisible()
+  if (process.env.E2E_TERMS_ONLY === '1') await expect(page.locator('.google-login small')).toHaveCount(0)
+  else await expect(page.locator('.google-login small')).toContainText('These are your declarations; Google sign-in does not verify')
   await expect(page.locator('.google-login input')).toHaveCount(0)
 }
 
@@ -28,7 +29,7 @@ test('single-button signup opens My Profile and repeat login keeps the same acco
   await chooseGoogle(page, 'profile')
   await openSignup(page)
   const terms = page.locator('.google-login').getByRole('link', { name: 'Terms', exact: true })
-  expect((await page.request.get((await terms.getAttribute('href'))!)).status()).toBe(200)
+  if (process.env.E2E_TERMS_ONLY !== '1') expect((await page.request.get((await terms.getAttribute('href'))!)).status()).toBe(200)
   await page.screenshot({ path: '/private/tmp/enter-google-approved-notice-synthetic.png', fullPage: false })
   await page.getByRole('button', { name: 'Continue with Google' }).click()
   await expect(page).toHaveURL(/\/$/)

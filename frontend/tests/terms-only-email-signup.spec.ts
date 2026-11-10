@@ -1,0 +1,26 @@
+import { expect, test } from '@playwright/test'
+
+test.skip(process.env.E2E_TERMS_ONLY !== '1', 'Requires disposable synthetic local setup')
+
+test('email registration and verification work without age/country/checkbox declarations', async ({ page }) => {
+  test.setTimeout(60_000)
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Join enter’s Talent network', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeEnabled()
+  await page.getByText('Continue with email', { exact: true }).click()
+  await expect(page.getByRole('checkbox')).toHaveCount(0)
+  await page.getByLabel('Full name').fill('Synthetic Terms Only')
+  await page.getByLabel('Email', { exact: true }).fill(`terms-only-browser-${Date.now()}@example.test`)
+  await page.getByLabel('Password', { exact: true }).fill('Synthetic-terms-only-password-123!')
+  const request = page.waitForRequest(r => r.method() === 'POST' && r.url().endsWith('/auth/signup/'))
+  const response = page.waitForResponse(r => r.request().method() === 'POST' && r.url().endsWith('/auth/signup/'), { timeout: 30_000 })
+  await page.getByRole('button', { name: 'Create account', exact: true }).click()
+  const body = (await request).postDataJSON()
+  expect(body.notice_challenge).toBeTruthy()
+  for (const key of ['age_accepted', 'age_version', 'country_code', 'terms_accepted']) expect(body[key]).toBeUndefined()
+  expect((await response).status()).toBe(201)
+  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible()
+  await page.getByRole('link', { name: 'Verify this local account' }).click()
+  await expect(page.locator('.candidate-experience')).toBeVisible()
+  await expect(page.getByRole('checkbox')).toHaveCount(0)
+})

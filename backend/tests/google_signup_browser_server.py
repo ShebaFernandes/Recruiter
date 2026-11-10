@@ -16,6 +16,7 @@ from unittest.mock import patch
 def main():
     if os.environ.get("TESTING") != "true" or os.environ.get("APP_ENV") != "test":
         raise SystemExit("Only an explicit disposable test environment is supported.")
+    port = os.environ.get("SIGNUP_BROWSER_PORT", "18012")
     import django
 
     django.setup()
@@ -38,12 +39,15 @@ def main():
     with tempfile.TemporaryDirectory(prefix="enter-google-signup-synthetic-") as temp:
         configuration = published_legal_settings(Path(temp))
         auto = os.environ.get("E2E_AUTOSIGNUP") == "1"
+        simple = os.environ.get("E2E_TERMS_ONLY") == "1"
         configuration.update(
             GOOGLE_OAUTH_ENABLED=True,
             GOOGLE_OAUTH_CLIENT_ID="synthetic-browser-client",
             GOOGLE_OAUTH_CLIENT_SECRET="synthetic-browser-secret",
-            GOOGLE_OAUTH_REDIRECT_URI="http://127.0.0.1:18012/api/v1/auth/google/callback/",
+            GOOGLE_OAUTH_REDIRECT_URI=f"http://127.0.0.1:{port}/api/v1/auth/google/callback/",
             GOOGLE_SIGNUP_AUTOCREATE_ENABLED=auto,
+            CANDIDATE_SIMPLE_SIGNUP_ENABLED=simple,
+            **({"CANDIDATE_REGISTRATION_COUNTRIES": set()} if simple else {}),
         )
         if not auto:
             configuration.update(LEGAL_CONTENT_APPROVED=False, LEGAL_WORKFLOW_PREVIEW=False)
@@ -67,6 +71,17 @@ def main():
                         for p, d in legal.documents().items()
                     },
                 }
+                if simple:
+                    approval = {
+                        "record_type": "direct_user_local_terms_only_authorization",
+                        "decision": "approved",
+                        "release_scope": "isolated_local_testing_only",
+                        "mechanism_id": signup.SHORT_MECHANISM,
+                        "notice_sha256": signup.sha(signup.SHORT_NOTICE),
+                        "authorization_recorded_at": timezone.now().isoformat(),
+                        "written_authorization": "SYNTHETIC BROWSER TEST ONLY",
+                        "documents": approval["documents"],
+                    }
                 approval_file = Path(temp) / "synthetic-approval.json"
                 approval_file.write_text(json.dumps(approval))
                 settings.GOOGLE_SIGNUP_APPROVAL_FILE = str(approval_file)
@@ -99,7 +114,7 @@ def main():
                 }
 
             with patch("talent.google_oauth.exchange", side_effect=synthetic_exchange):
-                call_command("runserver", "127.0.0.1:18012", use_reloader=False)
+                call_command("runserver", f"127.0.0.1:{port}", use_reloader=False)
 
 
 if __name__ == "__main__":

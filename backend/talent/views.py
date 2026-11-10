@@ -172,7 +172,18 @@ def signup(request):
     from . import legal
 
     accepted = {}
-    if legal.enabled():
+    signup_action = None
+    if settings.CANDIDATE_SIMPLE_SIGNUP_ENABLED:
+        from . import google_signup
+
+        if settings.CANDIDATE_REGISTRATION_PAUSED:
+            return Response({"detail": "Candidate registration is temporarily paused."}, status=503)
+        try:
+            signup_action = google_signup.capture(request, provider="email")
+            google_signup.validate_action(signup_action, provider="email")
+        except google_signup.SignupUnavailable:
+            return Response({"detail": "Signup requirements are unavailable."}, status=503)
+    elif legal.enabled():
         accepted = {p: legal.validate_acceptance(request.data, p) for p in ["age", "terms"]}
     if request.data.get("role") == UserRole.Role.RECRUITER:
         return Response(
@@ -196,8 +207,11 @@ def signup(request):
                 email=data["email"],
                 registration_country_code=data["country_code"],
             )
-            for purpose, doc in accepted.items():
-                legal.record(user, purpose, doc)
+            if signup_action:
+                google_signup.record_action(user, signup_action, provider="email")
+            else:
+                for purpose, doc in accepted.items():
+                    legal.record(user, purpose, doc)
     except IntegrityError:
         return Response({"detail": "An account with this email already exists."}, status=400)
     try:

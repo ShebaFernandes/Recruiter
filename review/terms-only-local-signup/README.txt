@@ -1,0 +1,3 @@
+LOCAL TERMS-ONLY SIGNUP REVISION
+
+Authorized by the user's explicit instruction to remove age/India signup requirements and retain a short Terms/Privacy notice. The record uses the actual recording time, not an invented policy-owner approval timestamp. It does not reuse Dikshita Verma's Draft02 approval for this different mechanism. This revision is blocked outside local/test mode. Historical policy snapshots and acceptance records remain immutable. New Google/email signup evidence records Terms only; age evidence is absent and registration country is blank. Production/staging activation requires a separately authorized release. No production changes are made.

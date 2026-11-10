@@ -87,11 +87,11 @@ it('blocks new signup when requirements are unavailable without offering an unch
   expect(complete).not.toHaveBeenCalled()
 })
 
-it('provides Terms and Privacy links without asserting acceptance or adding a checkbox', async () => {
+it('does not add fallback legal notices or a checkbox', async () => {
   vi.spyOn(api, 'googleConfig').mockResolvedValue({ enabled: true })
   render(<GoogleButton />)
-  expect(screen.getByRole('link', { name: 'Terms' })).toHaveAttribute('href', '/terms')
-  expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '/privacy')
+  expect(screen.queryByRole('link', { name: 'Terms' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('link', { name: 'Privacy Policy' })).not.toBeInTheDocument()
   expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
 })
 

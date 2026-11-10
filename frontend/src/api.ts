@@ -64,7 +64,7 @@ async function request<T>(path: string, options: RequestInit = {}, binary = fals
 }
 
 export const api = {
-  googleConfig: () => request<{ enabled: boolean; signup_notice?: { text: string; version: string; challenge: string; terms_url: string; privacy_url: string } }>('/auth/google/config/', { cache: 'no-store' }),
+  googleConfig: () => request<{ enabled: boolean; simple_signup?: boolean; signup_notice?: { text: string; version: string; challenge: string; terms_url: string; privacy_url: string } }>('/auth/google/config/', { cache: 'no-store' }),
   googleStart: (next = '/', notice?: { challenge: string; version: string }) => request<{ url: string }>('/auth/google/start/', { method: 'POST', body: JSON.stringify({ next, notice_challenge: notice?.challenge, notice_version: notice?.version }) }),
   googlePending: () => request<{ stage: 'signup' | 'link' | 'confirm_link'; email: string; full_name: string; signup_available?: boolean }>('/auth/google/pending/', { cache: 'no-store' }),
   googleComplete: (body: Record<string, unknown>) => request<SignupResponse>('/auth/google/complete/', { method: 'POST', body: JSON.stringify(body) }),
@@ -84,7 +84,7 @@ export const api = {
   submitEmployeeTransitionEnquiry: (body: FormData) => request<{ id: number; detail: string }>(
     '/support/employee-transition/', { method: 'POST', body },
   ),
-  legalStatus: () => request<{ accepted: Record<'age' | 'terms', boolean>; versions: Record<'age' | 'terms', string> }>('/candidate/legal/accept/', { cache: 'no-store' }),
+  legalStatus: () => request<{ accepted: Partial<Record<'age' | 'terms', boolean>>; versions: Partial<Record<'age' | 'terms', string>> }>('/candidate/legal/accept/', { cache: 'no-store' }),
   // Public publication must remain readable even when a saved session has expired.
   legalDocuments: () => request<{ enabled: boolean; documents?: LegalDocuments }>('/legal/documents/', { cache: 'no-store', credentials: 'omit' }),
   acceptLegal: (body: Record<string, unknown>) => request('/candidate/legal/accept/', { method: 'POST', body: JSON.stringify(body) }),
