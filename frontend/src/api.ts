@@ -4,7 +4,7 @@ import type { LegalDocuments } from './legalReview'
 export type AuthPayload = { token?: string; user: User }
 export type SignupResponse = AuthPayload | { detail: string; requires_email_verification: true; local_verification_url?: string }
 
-const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
+export const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
 
 export const auth = { save: (payload: AuthPayload) => void payload, clear: () => undefined }
 
@@ -64,6 +64,13 @@ async function request<T>(path: string, options: RequestInit = {}, binary = fals
 }
 
 export const api = {
+  googleConfig: () => request<{ enabled: boolean; signup_notice?: { text: string; version: string; challenge: string; terms_url: string; privacy_url: string } }>('/auth/google/config/', { cache: 'no-store' }),
+  googleStart: (next = '/', notice?: { challenge: string; version: string }) => request<{ url: string }>('/auth/google/start/', { method: 'POST', body: JSON.stringify({ next, notice_challenge: notice?.challenge, notice_version: notice?.version }) }),
+  googlePending: () => request<{ stage: 'signup' | 'link' | 'confirm_link'; email: string; full_name: string; signup_available?: boolean }>('/auth/google/pending/', { cache: 'no-store' }),
+  googleComplete: (body: Record<string, unknown>) => request<SignupResponse>('/auth/google/complete/', { method: 'POST', body: JSON.stringify(body) }),
+  googleLinkStart: (email: string, password: string, next = '/') => request<{ url: string }>('/auth/google/link/start/', { method: 'POST', body: JSON.stringify({ email, password, next }) }),
+  googleLinkConfirm: () => request<AuthPayload>('/auth/google/link/confirm/', { method: 'POST', body: JSON.stringify({ confirm: true }) }),
+  googleReauth: (action: 'delete_account' | 'confirm_resume') => request<{ url: string }>('/auth/google/reauth/', { method: 'POST', body: JSON.stringify({ action }) }),
   opportunityApplications: () => request<{id:number; opportunity_id:string; created_at:string}[]>('/opportunities/applications/'),
   applyOpportunity: (opportunity_id: string, note: string) => request<{detail:string}>(
     '/opportunities/applications/', {method: 'POST', body: JSON.stringify({opportunity_id, note})},

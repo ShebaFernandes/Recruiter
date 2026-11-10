@@ -434,3 +434,47 @@
   .opportunities-page .opp-detail-layout .opp-detail-title { font-size: 24px; }
   .opportunities-page .opp-detail-layout .opp-panel-close { position: fixed; top: 12px; right: 16px; }
 }
+
+/* Keep Apply visible before the role summary and throughout description scrolling. */
+.has-opportunity-panel .opp-detail-layout {
+  grid-template-rows: auto minmax(0, 1fr);
+  row-gap: 16px;
+  outline: none;
+}
+.opp-detail-toolbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  border: 1px solid #e4dfd6;
+  border-radius: 14px;
+  background: #faf8f4;
+  box-shadow: 0 8px 30px #20243114;
+  pointer-events: auto;
+}
+.opportunities-page .opp-detail-toolbar .opp-apply { margin: 0; }
+.opportunities-page .opp-detail-toolbar .opp-panel-close {
+  position: static;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-left: auto;
+  padding: 10px;
+  border-radius: 50%;
+  color: #747987;
+}
+.opportunities-page .opp-detail-toolbar .opp-panel-close:hover { background: #eeece6; }
+@media (max-width: 760px) {
+  .has-opportunity-panel .opp-detail-layout { padding-top: 16px; }
+  .opp-detail-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    flex: 0 0 auto;
+    width: 100%;
+  }
+}
+.opportunities-page .opp-detail-toolbar .opp-apply[hidden] { display: none; }

@@ -1,0 +1,27 @@
+REVIEWER-READY DRAFT 02 — NOT APPROVED OR ACTIVE
+Proposed notice identifier: enter-google-signup-notice-draft-02
+Button label: Continue with Google
+
+Exact notice text:
+For new accounts, selecting “Continue with Google” means you agree to ENTER’s Terms, declare that you are at least 18, and select India as your registration country. These are your declarations; Google sign-in does not verify your age or registration country for ENTER. Read our Privacy Policy.
+
+Link targets:
+“Terms” links to the exact Terms version bound to this signup attempt.
+“Privacy Policy” links to the corresponding Privacy Policy notice version.
+Production domain routes remain /terms and /privacy; historical/version-specific
+text must remain accessible for the versions associated with the attempt.
+
+Placement and behavior:
+Place this readable notice immediately beside the button, before it is selected.
+Use accessible links; reviewing a document must not start OAuth or lose the notice.
+Do not precheck a box, hide this text, imply Google verified age/country, or claim
+that the Privacy Policy was accepted or read. The declarations are self-declared.
+No additional form, checkbox, age input or registration-country dropdown follows
+Google authentication in the normal approved new-account path. Visitors who do
+not meet the declared eligibility must not create a new account under this notice.
+The notice applies to new-account creation, not routine returning-user login.
+A sharing/AI opt-in is not part of this button or notice. Do not describe the
+Privacy Policy as an agreement or store privacy_accepted/privacy_acknowledged/
+privacy_read=true from this action. Its version is notice evidence only.
+
+This wording and action need policy/legal approval before revised signup is built.

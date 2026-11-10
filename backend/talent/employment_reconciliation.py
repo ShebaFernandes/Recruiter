@@ -169,14 +169,15 @@ def archive_omitted_employment(profile, extracted, resume):
 def reconcile_employment(profile, rows, *, complete=False):
     """Merge supported roles; complete replacements can supersede corrected rows."""
     saved = list(profile.work_experiences.all())
+    had_existing_roles = bool(saved)
     matched = set()
     conflicts = []
     for item in rows:
-        if item.get('confidence_status') == 'partial':
-            conflicts.append(item)
-            continue
         candidates = [(index, row) for index, row in enumerate(saved)
                       if index not in matched and row_matches(row, item)]
+        if item.get('confidence_status') == 'partial' and had_existing_roles and not candidates:
+            conflicts.append(item)
+            continue
         if not candidates:
             archived = next((row for row in WorkExperience.all_objects.filter(
                 candidate=profile, archived_at__isnull=False

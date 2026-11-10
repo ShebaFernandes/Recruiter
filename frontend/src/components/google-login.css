@@ -1,0 +1,61 @@
+.google-login { display: grid; gap: 8px; margin-block: 18px 8px; }
+.google-login small, .google-fallback { color: var(--muted); font-size: 12px; text-align: center; }
+.google-completion { display: grid; gap: 16px; }
+.google-completion form { display: grid; gap: 16px; }
+.google-enter-logo { width: 100px; height: auto; margin-inline: auto; }
+
+/* A single primary action, with the password form available on request. */
+.auth-email-options { margin-block: 8px 0; }
+.auth-email-options > summary {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 15px;
+  padding: 4px 0 8px;
+}
+.auth-email-options > summary::-webkit-details-marker { display: none; }
+.auth-email-or { color: var(--muted); font-size: 13px; }
+.auth-email-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: #397da3;
+  padding-block: 8px;
+  border-bottom: 1px solid #c9dce8;
+}
+.auth-email-options > summary:hover .auth-email-link { color: #245c7c; border-bottom-color: currentColor; }
+.auth-email-options > summary:focus-visible { outline: 2px solid #397da3; outline-offset: 4px; border-radius: 4px; }
+.auth-email-fields { display: grid; gap: 18px; }
+.auth-email-options[open] > .auth-email-fields { padding-top: 20px; }
+.google-login { gap: 12px; margin-block: 12px 0; }
+.google-login small { text-align: left; font-size: 12px; line-height: 1.55; }
+.google-login small a { color: inherit; text-underline-offset: 2px; }
+
+.google-login .google-signin-button {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  min-height: 56px;
+  padding: 4px;
+  gap: 0;
+  border: 1px solid #62666d;
+  border-radius: 10px;
+  background: #62666d;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+}
+.google-login .google-signin-button:hover:not(:disabled) { background: #52565d; border-color: #52565d; }
+.google-button-mark {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  background: #fff;
+  border-radius: 7px;
+}
+/* Official asset: https://developers.google.com/static/identity/images/g-logo.png */
+.google-button-mark img { display: block; width: 24px; height: auto; }
+.google-button-label { padding-inline: 8px; font-size: 16px; font-weight: 600; line-height: 1.25; }

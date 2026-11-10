@@ -1,4 +1,4 @@
-export type User = { id: number; email: string; role: 'candidate' | 'recruiter'; full_name: string }
+export type User = { has_password?: boolean; id: number; email: string; role: 'candidate' | 'recruiter'; full_name: string }
 export type WorkExperience = {
   id?: number
   company: string

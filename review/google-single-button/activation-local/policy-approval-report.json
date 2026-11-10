@@ -1,0 +1,18 @@
+{
+  "record_type": "reported_policy_confirmation_with_pending_policy_owner_audit_fields",
+  "source": "User messages in this conversation",
+  "user_report": "The policy owner has confirmed the exact Draft 02 approval statement.",
+  "latest_user_instruction": "Use the previously supplied details only for developer approval. Do not request them again. Keep any separate missing policy-owner confirmation pending rather than inventing it.",
+  "developer_approval_record": "developer-approval-record.json",
+  "developer_record_sha256": "70939069c62033c216c77346e8aed399465b38b8e979c0a82e8c4347201930bf",
+  "policy_owner_name": null,
+  "policy_owner_role_and_authority": null,
+  "policy_approved_at": null,
+  "policy_effective_date": null,
+  "policy_confirmation_reference": null,
+  "policy_audit_status": "pending; developer identity/time not reused as policy approval",
+  "mechanism_id": "enter-google-signup-button-draft-02",
+  "review_package_sha256": "e769d63851f2399b90de0f05c33fe4b2bb9ef4107190b310ebb282abd99ed3cb",
+  "production_deployment_authorized": false,
+  "automatic_signup_activation": "pending audit gate"
+}

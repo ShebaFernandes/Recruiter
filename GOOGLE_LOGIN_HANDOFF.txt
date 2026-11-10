@@ -1,0 +1,201 @@
+LATEST UI UPDATE: see the SUBSEQUENT SIGNUP UI CLEANUP section in review/google-single-button/activation-local/CURRENT_STATUS.txt. Exact Draft02 notice remains active; shorter copy is proposed only.
+
+CURRENT LOCAL STATUS — 2026-11-10
+
+Google Login is locally activated and verified. Earlier pending status reports
+and unsigned templates are historical; they must not be treated as current gates.
+The genuine policy-owner confirmation is preserved in:
+  approved-local-live-v1.0-draft02-2026-11-10/policy-owner-confirmation.txt
+  approved-local-live-v1.0-draft02-2026-11-10/policy-approval.json
+The 13:40 approval time is interpreted as IST from the established conversation
+timezone, with that basis explicitly disclosed in the record. The approval scope
+is local testing/staging validation only and is rejected in production by code.
+
+ACTUAL PROVIDER VERIFICATION
+The existing Google-linked candidate logged in successfully. Initial stale
+attempts expired; a fresh attempt worked with the original security TTL retained.
+A different real Google account automatically created one new private candidate,
+one external identity and one notice-bound acceptance event. Server checks verified
+an unusable ENTER password, email verification, exact approval hash, actual action
+and creation times, Terms/age purposes only, and no sharing/submission/AI grant.
+The user confirmed My Profile on signup and on logout/repeat login, with no
+completion form or signup checkbox. Repeat login created no duplicate account
+and no second signup event. Existing row hashes showed zero changes/deletions.
+The local database now has two Google-linked candidates: the pre-existing account
+and the newly registered disposable test account. No identities were removed.
+Secure existing-password-account linking was verified by automated tests, including
+real PostgreSQL concurrency and preservation of resume/Career Journey/application
+rows; no second real-provider password-linking scenario was claimed.
+
+FINAL VERIFICATION
+270 focused PostgreSQL tests passed before the subsequent frontend-only UI change.
+289 frontend tests, lint/build passed. Eight navigation/desktop/mobile browser
+checks passed after the UI change; two synthetic full-signup browser tests passed
+before it. Full backend suite: 982 passed, 8 skipped, five established unrelated
+resume-archival/Gemini-canary failures (before three extra safe-diagnostics tests).
+Those three diagnostic tests also passed in the focused recheck. Changed-code
+Ruff and migration consistency passed. No whole-platform clean-suite claim.
+
+LATEST USER STEERING
+User has tested the desired Google Login experience successfully. They intend a
+future direct deployment to enter.careers, but explicitly said NOT to deploy now
+and requested further UI fixes. No staging URL was supplied. Do not ask again
+about staging while the user is reviewing local UI. No deploy, push or merge done.
+
+OPPORTUNITY UI FIX
+Apply now is first in a persistent toolbar above the selected opportunity summary
+and job description. It stays visible while scrolling on desktop/mobile. Close,
+keyboard focus containment, already-applied status, login fallback and selected
+application intent remain intact. Tests confirm no application POST on public Apply.
+Screenshots: /private/tmp/enter-opportunity-top-apply-1280.png and -390.png.
+
+PREPARED ARTIFACTS — NOT DEPLOYED
+A separate staging Dockerfile preserves the hardened production/staging baseline
+and adds only the hash-pinned review/legal artifacts. The linux/amd64 image
+enter-google-candidate-staging:local-review built successfully. An ephemeral
+container verified legal hashes, review-package availability, default-off OAuth,
+absence of local env/backups, and rejection of production activation with this
+scope-limited approval. .dockerignore now excludes .local-benchmark/ backups.
+The staging frontend uses same-origin /api/v1 and the candidate-only safeguard.
+Staging templates keep OAuth off. Production needs separate explicit deployment
+and release-scope authorization; the current approval does not authorize it.
+Publication manifest statuses remain independently unconfirmed. Existing unrelated
+backend-suite and repository-wide Ruff findings remain release triage items.
+
+PRESERVED
+Both original worktrees' pending-file hashes, Draft02 files and historical approved
+legal snapshots were verified unchanged. Credentials stay in ignored private local
+environment files. Local development servers 18010/15173 remain available.
+Temporary browser-test servers/PostgreSQL are stopped after final checks.
+
+---------- HISTORICAL CHECKPOINTS ----------
+LATEST LOCAL CHECKPOINT — 2026-11-10 — supersedes historical status below
+Branch: codex/google-candidate-login. Base: 38d773a5017639ae9adc26a916bb2a0e95cd2352.
+
+IMPLEMENTED
+Notice-bound automatic Google candidate registration with a separate default-off
+approval/document gate; one-use browser-bound challenge; CSRF-protected button;
+PKCE/state/nonce OIDC; exact Draft 02 notice with versioned public document links;
+atomic candidate/identity/Terms/age/evidence creation; actual button receipt time,
+account creation time, privacy notice snapshot and approval hash stored separately.
+No completion form or signup checkboxes in the Google path. Existing linked users
+log in directly; password collisions still require explicit secure linking.
+Private profile defaults and separate sharing/AI/upload/submission controls remain.
+Existing readiness helper selects My Profile for new/incomplete candidates; valid
+Apply intent takes priority and never auto-submits. Opportunities remains public.
+New migration: 0036_googlesignupevidence_publishedsignupdocument.
+
+VERIFIED
+260 focused backend tests passed on disposable PostgreSQL, including real database
+concurrency for automatic registration and existing linking. Full backend suite:
+975 passed, 8 skipped, 5 previously established unrelated failures (four resume
+archival and one Gemini canary); not a whole-platform green build. After adding
+notice-challenge log redaction, 23 signup/privacy tests passed on SQLite (one
+PostgreSQL-only concurrency test skipped there; it already passed on PostgreSQL).
+289 frontend tests passed; frontend lint and candidate-only build passed.
+Eight Playwright browser tests passed: two full synthetic-provider automatic
+signup/repeat-login/application flows plus six existing browsing/auth/redirect
+regressions. Desktop notice/profile screenshots inspected. Synthetic exchange is
+NOT a real Google end-to-end certification. Existing Google signature/claims and
+cookie/CSRF/replay tests pass independently. Django/migration/changed-code lint
+and whitespace checks pass. Whole-repository Ruff retains four baseline findings
+in admin imports, optimize_images.py and e2e_isolated.py; left outside this scope.
+
+PRESERVED
+Draft 02 hashes, historical approved legal snapshots and both original worktrees'
+pending-file hashes match their prior preservation manifests. No live candidate
+records, credentials, production configuration or staging settings changed.
+No deployment, push, merge, stash, reset or commit occurred.
+
+PENDING RELEASE GATE — NOT ANOTHER UX/ARCHITECTURE APPROVAL
+User reports authorized approval and has authorized engineering. Formal audit
+identity/authority, actual approval timestamp, durable decision reference and
+conditions are not recorded. Do not fabricate them. Activation also requires the
+separately versioned matching approved legal bundle and its actual effective date.
+See review/google-single-button/IMPLEMENTATION_GATE.txt for the exact configuration
+contract. The preserved unsigned review package is not runtime approval evidence.
+Real Google automatic signup remains untested/disabled until those inputs exist.
+Third-party Google mailboxes retain existing ENTER email verification protection.
+Job publication status confirmation remains pending independently; manifest design
+and validator are staged, not silently activated against unconfirmed statuses.
+
+STAGING: NO-GO for final automatic-signup acceptance testing until the audit/legal
+release gate is completed and the real Google flow is verified locally. Existing
+five full-suite failures remain release triage items. No staging enablement done.
+Disposable test servers/database are stopped after verification. Original local
+Google development servers remain untouched during these synthetic runs.
+
+---------- HISTORICAL CHECKPOINT (superseded above) ----------
+ENTER Google Login — final independently authorized engineering checkpoint
+Branch: codex/google-candidate-login
+Worktree: /private/tmp/enter-google-candidate-login
+All code changes remain local and uncommitted. No push, merge or deployment.
+
+FINISHED
+- Candidate Google OAuth authorization-code/OIDC, PKCE, CSRF/state/nonce,
+  identity-token validation, secure cookies, expiry/replay and rate protections.
+- Google signing-key rotation now handles the library's InvalidKeyIdError and
+  refreshes the fixed trusted key source before validating again.
+- Secure explicit account linking; concurrent linking and confirmed legacy-signup
+  uniqueness tests prove one existing candidate/identity survives without data loss.
+- Existing linked candidates log in directly. Recruiter Google authentication stays
+  rejected. Candidate data, resumes, Career Journey and applications are preserved.
+- My Profile/Opportunities landing uses existing readiness and portal tabs;
+  authorized Apply intent wins, restores the application, and never auto-submits.
+- Public Opportunities browsing/search/filter/detail and private API separation.
+- Existing password auth/verification/reset/logout regressions and Google-only
+  recovery restrictions.
+- Neutral Terms and Privacy links beside Google Login; no implied acceptance.
+- Legal configuration failure now blocks the existing Google completion endpoint.
+  A draft version/true client flags cannot bypass this guard. The interface offers
+  a clear unavailable message and public browsing instead of an unchecked form.
+- Quoted/JSON-like OAuth credential and authorization-code log-redaction tests.
+- Publication-contract negative tests; owner statuses remain unassigned and the
+  manifest is not connected to the public build. The existing catalog is unchanged.
+
+FINAL CHECKS
+245 relevant backend tests passed on a disposable PostgreSQL database, including
+concurrency, security, legal, candidate-data, administrator and migration checks.
+287 frontend tests passed (51 files).
+6 browser tests passed with isolated synthetic sessions and a disposable database.
+Frontend lint/build, changed Python lint, Django checks, migration consistency,
+whitespace checks and the staged manifest validator passed.
+Browser Google-session tests isolate redirect behavior using synthetic authenticated
+sessions; no new real-Google automatic registration was exercised or claimed.
+Earlier manual Google identity authentication succeeded. Actual final one-button
+signup remains unimplemented pending policy approval.
+
+PRESERVATION
+Draft 02 draft-file hashes match review/google-single-button/review-manifest.json.
+Approved legal snapshots and production settings/Compose remain unchanged.
+Both original worktrees match their preserved pending-file hashes and Git status.
+No actual candidate records or credentials were modified by automated tests.
+Google credentials remain in ignored, private .env; no real secret appears here.
+The isolated real local backend is reloaded on 18010; frontend remains on 15173.
+Temporary browser-test services and disposable PostgreSQL are cleaned up afterward.
+
+STILL BLOCKED
+Automatic new-account creation through Draft 02's notice-bound Google button.
+It is not implemented, enabled or represented as legally approved. Existing legal
+requirements stay enforced; no acceptance evidence is fabricated. The target UX
+remains Google button -> Google selection -> My Profile (or authorized intent).
+
+ONE REVIEWER DECISION NEEDED FOR GOOGLE SIGNUP
+ENTER's authorized policy/legal reviewer approves the exact Draft 02 notice,
+policy amendments and notice-bound button mechanism as affirmative Terms
+acceptance and self-declared 18+/India eligibility, with Privacy Policy version
+binding as notice evidence only. Approval must identify the exact reviewed
+wording/mechanism (package hashes), reviewer authority and any conditions.
+The unsigned decision template is review/google-single-button/reviewer-decision.txt.
+The user's conditional local-implementation authorization is already recorded;
+no repeat architecture redesign or repeat UX approval is needed afterward.
+
+STAGING STATUS
+Completed existing-account/security/navigation paths are suitable for a restricted
+staging verification once separately authorized and configured. Full final signup
+acceptance testing is NOT ready until reviewer approval and automatic-creation
+implementation/tests. No staging or production configuration was changed.
+Job publication statuses remain a separate business review before manifest activation.
+The last full backend suite had five pre-existing resume-archival/AI-canary failures
+reproduced on the approved baseline; they were not changed by this scoped work.
+This checkpoint is not a whole-platform release-readiness signoff.

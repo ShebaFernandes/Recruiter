@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "check:publication": "node scripts/check_publication_manifest.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",

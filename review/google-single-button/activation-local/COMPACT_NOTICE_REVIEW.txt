@@ -1,0 +1,25 @@
+COMPACT NOTICE — PROPOSED WORDING ONLY — NOT ACTIVE OR APPROVED
+
+For new accounts, continuing with Google accepts our Terms and declares you’re
+18+ and choosing India for registration. Google doesn’t verify these declarations.
+Read our Privacy Policy.
+
+Terms and Privacy Policy remain separate accessible links. This reduces wording
+while preserving explicit age/India self-declarations and the distinction between
+Google identity verification, Terms agreement and privacy notice. It grants no
+sharing or optional processing permission.
+
+The exact Draft 02 wording and its existing approval/notice hashes remain active
+and unchanged. This proposed replacement requires the policy owner's approval,
+a new notice version/hash and truthful evidence binding before activation.
+No previous acceptance event will be relabelled with the shortened wording.
+Email/password signup retains its independently required explicit confirmations;
+the primary Google entry now hides that optional email form behind a choice.
+
+UI REFERENCES CHECKED
+LinkedIn uses a short button-adjacent agreement notice:
+https://www.linkedin.com/signup
+Wellfound places Google first and provides an email alternative with a short notice:
+https://wellfound.com/featured_global_candidates/signup
+These are visual references, not authorization to copy their policies or to infer
+ENTER's privacy permissions, age eligibility or registration-country acceptance.

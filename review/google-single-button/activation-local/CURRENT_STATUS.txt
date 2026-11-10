@@ -1,0 +1,100 @@
+CURRENT LOCAL STATUS — 2026-11-10
+
+Google Login is locally activated and verified. Earlier pending status reports
+and unsigned templates are historical; they must not be treated as current gates.
+The genuine policy-owner confirmation is preserved in:
+  approved-local-live-v1.0-draft02-2026-11-10/policy-owner-confirmation.txt
+  approved-local-live-v1.0-draft02-2026-11-10/policy-approval.json
+The 13:40 approval time is interpreted as IST from the established conversation
+timezone, with that basis explicitly disclosed in the record. The approval scope
+is local testing/staging validation only and is rejected in production by code.
+
+ACTUAL PROVIDER VERIFICATION
+The existing Google-linked candidate logged in successfully. Initial stale
+attempts expired; a fresh attempt worked with the original security TTL retained.
+A different real Google account automatically created one new private candidate,
+one external identity and one notice-bound acceptance event. Server checks verified
+an unusable ENTER password, email verification, exact approval hash, actual action
+and creation times, Terms/age purposes only, and no sharing/submission/AI grant.
+The user confirmed My Profile on signup and on logout/repeat login, with no
+completion form or signup checkbox. Repeat login created no duplicate account
+and no second signup event. Existing row hashes showed zero changes/deletions.
+The local database now has two Google-linked candidates: the pre-existing account
+and the newly registered disposable test account. No identities were removed.
+Secure existing-password-account linking was verified by automated tests, including
+real PostgreSQL concurrency and preservation of resume/Career Journey/application
+rows; no second real-provider password-linking scenario was claimed.
+
+FINAL VERIFICATION
+270 focused PostgreSQL tests passed before the subsequent frontend-only UI change.
+289 frontend tests, lint/build passed. Eight navigation/desktop/mobile browser
+checks passed after the UI change; two synthetic full-signup browser tests passed
+before it. Full backend suite: 982 passed, 8 skipped, five established unrelated
+resume-archival/Gemini-canary failures (before three extra safe-diagnostics tests).
+Those three diagnostic tests also passed in the focused recheck. Changed-code
+Ruff and migration consistency passed. No whole-platform clean-suite claim.
+
+LATEST USER STEERING
+User has tested the desired Google Login experience successfully. They intend a
+future direct deployment to enter.careers, but explicitly said NOT to deploy now
+and requested further UI fixes. No staging URL was supplied. Do not ask again
+about staging while the user is reviewing local UI. No deploy, push or merge done.
+
+OPPORTUNITY UI FIX
+Apply now is first in a persistent toolbar above the selected opportunity summary
+and job description. It stays visible while scrolling on desktop/mobile. Close,
+keyboard focus containment, already-applied status, login fallback and selected
+application intent remain intact. Tests confirm no application POST on public Apply.
+Screenshots: /private/tmp/enter-opportunity-top-apply-1280.png and -390.png.
+
+PREPARED ARTIFACTS — NOT DEPLOYED
+A separate staging Dockerfile preserves the hardened production/staging baseline
+and adds only the hash-pinned review/legal artifacts. The linux/amd64 image
+enter-google-candidate-staging:local-review built successfully. An ephemeral
+container verified legal hashes, review-package availability, default-off OAuth,
+absence of local env/backups, and rejection of production activation with this
+scope-limited approval. .dockerignore now excludes .local-benchmark/ backups.
+The staging frontend uses same-origin /api/v1 and the candidate-only safeguard.
+Staging templates keep OAuth off. Production needs separate explicit deployment
+and release-scope authorization; the current approval does not authorize it.
+Publication manifest statuses remain independently unconfirmed. Existing unrelated
+backend-suite and repository-wide Ruff findings remain release triage items.
+
+PRESERVED
+Both original worktrees' pending-file hashes, Draft02 files and historical approved
+legal snapshots were verified unchanged. Credentials stay in ignored private local
+environment files. Local development servers 18010/15173 remain available.
+Temporary browser-test servers/PostgreSQL are stopped after final checks.
+
+SUBSEQUENT SIGNUP UI CLEANUP
+The user requested removal of the large checkbox block and shorter signup copy.
+The candidate entry now presents Google first and hides email fields and their
+required confirmations behind an explicit native "Continue with email" choice.
+Recruiter forms remain directly available. Internal document version IDs are no
+longer rendered in LegalChecks labels, but version inputs and backend validation
+are unchanged. Google notice typography/spacing is compact and left aligned.
+The exact approved Draft02 notice has NOT been shortened, collapsed or replaced.
+COMPACT_NOTICE_REVIEW.txt contains a shorter proposed notice requiring policy-owner
+approval and a new exact evidence binding before activation. No checkbox is
+required for Google signup; email signup still retains its approved confirmations.
+289 frontend unit tests and lint/build passed. Desktop/mobile layout checks prove
+no checkbox is visible by default and email submission cannot proceed without its
+required acceptance. Eight browsing, fallback, intent and Apply visibility browser
+regressions also passed. No actual candidate account was created by layout tests.
+A refreshed same-origin frontend artifact remains local only. Deployment remains
+deferred at the user's explicit request while they review UI.
+The two full synthetic automatic-signup/repeat-login/application-intent browser
+flows also passed after this layout change. Total browser rechecks for this update:
+12 passed (two read-only approved-local layout/consent checks, eight navigation/
+Apply checks, two synthetic-provider full flows). Temporary test servers stopped;
+actual activated local servers remain on ports 18010/15173. Nothing deployed.
+
+REFERENCE-STYLE GOOGLE BUTTON UPDATE
+The candidate Google button now has a grey fill, white icon tile and Google's
+unaltered official multicolor G asset downloaded from the documented Google
+branding asset URL. The email disclosure is styled as "OR Continue with email"
+with a right arrow and link underline. No recruiter signup action was added.
+Exact notice text, email consent enforcement and OAuth behavior remain unchanged.
+289 frontend tests, lint/build and two desktop/mobile layout/consent browser
+checks passed. The developer preview remains local; nothing was deployed.
+Prepared frontend deployment artifacts must be rebuilt after UI review is final.

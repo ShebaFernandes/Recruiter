@@ -1,0 +1,181 @@
+REVIEWER-READY TECHNICAL SPECIFICATION — DRAFT 02 — NOT ACTIVE
+Proposed mechanism identifier: enter-google-signup-button-draft-02
+Status: awaiting exact wording and acceptance-mechanism approval.
+
+1. Preconditions and notice delivery
+
+The new automatic-signup feature remains disabled until separately approved and
+implemented. Existing production legal-approval/hash gates remain unchanged.
+Do not use disabled legal modes as authorization to omit signup requirements.
+When the approved mechanism is unavailable, stale, invalid or disabled, block
+new automatic registration and offer a clearly explained retry/fallback that
+still enforces the applicable requirements. A local review mode must not label
+unpublished material as approved or authorize a production rollout.
+
+The backend serves the exact approved notice, Terms/age/Privacy versions and
+hashes, linked document locations and a short-lived browser-bound notice
+challenge. The frontend renders the notice next to the enabled Google button.
+The backend defines the declaration values (at least 18; registration country
+IN); the browser does not infer these from Google, IP address or locale. An
+ineligible visitor must be told not to create an account under this notice.
+Reading linked documents does not initiate signup. The notice must explicitly
+say these are the candidate’s declarations, not age/country verification supplied
+by Google. Do not obtain extra Google scopes or DOB/location data to imply such
+verification. No new age, country or Terms form/checkbox appears after Google in
+the ordinary approved path.
+
+Record a notice issue/delivery response time only if useful. Do not call that
+proof of rendering, reading or agreement. The server cannot independently prove
+what a person read or understood. The submitted action is evidence of the
+specified signup request, not biometric proof of a human click.
+
+2. Deliberate action and event capture
+
+Selecting “Continue with Google” submits a CSRF-protected POST identifying the
+notice challenge, exact versions, client action and intended destination. Verify
+origin/CSRF, browser binding, challenge age, document/hash validity and applicable
+rate limits. Reject omitted or stale notice evidence. Construct an immutable
+pending event with a server-generated ID and the server UTC receipt time.
+Store it within the existing expiring OAuth transaction, alongside PKCE/state/
+nonce bindings. No user exists yet, so no user acceptance row is created yet.
+
+The request declares new-account eligibility and agreement using the reviewed
+button mechanism. Do not hardcode accepted=true from the Google callback or
+rely on arbitrary caller booleans as sufficient evidence. The trusted binding is
+the server-issued notice/version challenge and accepted request, followed by the
+validated, same-browser OAuth transaction. A client timestamp is not authoritative.
+Store only the minimum event evidence; no added IP/UA/fingerprint collection is
+proposed. Apply the current privacy/retention policy to evidence.
+
+3. Callback and automatic account creation
+
+Validate single-use OAuth state/browser binding, PKCE, code exchange, signature,
+issuer, audience/authorized party, expiry, nonce and relevant email claims using
+the existing maintained OIDC library. Retain the existing verification policy.
+
+If a Google subject is already linked: authenticate the eligible existing
+candidate. Do not recreate the account, reset profile state, or write new signup
+acceptance evidence from routine login. Existing current-Terms gates for uploads
+and submission remain. Recruiter identities do not enter this flow.
+
+If the email matches another ENTER account: keep the secure existing-account
+linking process. Prove control of the existing verified ENTER account and the
+Google identity, then explicitly confirm linking. Do not transfer provisional
+new-account declarations to an existing user or silently accept updated Terms.
+
+For a new identity with no existing account: recheck registration pause,
+eligibility declarations, the mechanism’s approval and all document versions.
+If anything changed while at Google, create no account and ask the candidate to
+review the current notice and deliberately start again. Do not substitute a new
+version into an old action.
+
+In one database transaction, consume the signup attempt and create the User
+with an unusable password, candidate role/profile, Google ExternalIdentity and
+approved explicit-action evidence. Uniqueness constraints arbitrate concurrent
+Google/password registrations. A conflict rolls back every new row and enters
+the existing-account flow; never merge profiles or insert a duplicate.
+
+Use the existing authoritative-email policy. Ordinary eligible Google identities
+can receive the ENTER auth cookie immediately. Where separate ENTER mailbox
+verification is still required, retain it; this is an exception to the normal
+no-additional-step UX, not a reason to weaken verification. Disabled accounts
+must not be reactivated by Google authentication.
+
+4. Event fields and evidence semantics (proposed schema, not a migration)
+
+- event_id: server-generated opaque identifier, unique and idempotent.
+- event_type: candidate_signup_button; method: notice_bound_google_button_v1.
+- server_received_at: actual UTC receipt time of the initiating action.
+- oauth_transaction_id: internal reference to the same browser-bound transaction;
+  never a raw OAuth state/code/token in audit exports or logs.
+- mechanism_id, notice_version, notice_text and notice_sha256: exact approved copy.
+- terms_version and terms_sha256 plus immutable exact Terms text/snapshot reference.
+- age_statement_version/hash/text and declared_age_at_least_18: true only as the
+  reviewed self-declaration associated with the initiating action.
+- registration_country_code: IN, explicitly declared through that notice/action;
+  not a claim of verified citizenship, residence or current physical location.
+- privacy_notice_version/hash and an immutable notice reference: provided notice
+  evidence only. No privacy_accepted, privacy_acknowledged, privacy_read, or
+  blanket-consent fields. A request or document response does not establish a
+  separately made acknowledgement or that the candidate read the text.
+- subject_user_id: null while pending; assigned only on successful new creation.
+- account_created_at and evidence_committed_at: actual server times, distinct from
+  server_received_at. An existing LegalAcceptance.accepted_at must represent the
+  accepted action’s server receipt time, not the later OAuth return time.
+- No sharing, visibility, submission or AI-processing consent values on this event.
+
+Retain existing records and timestamps exactly. Add fields/new linked evidence
+records as needed later; leave a legacy method unknown unless actual historical
+evidence establishes it. Do not relabel old records as checkbox/button actions.
+If a failed database commit occurs, no acceptance/user/link row survives. If the
+transaction is cancelled, denied, expired or invalid, there is no successful-user
+acceptance record. Temporary pending data expires with OAuth state (currently ten
+minutes); expired-row cleanup removes it on the scheduled purge, with existing
+backup and retention rules still applicable.
+
+5. Navigation and optional permissions
+
+After cookie issuance, retain finishCandidateLogin()/candidateLanding() and the
+existing applicationProfileReady() helper and CandidatePortal tabs. A new
+candidate without an authorized intent opens the existing My Profile tab. A
+valid opportunity/application intent wins; restore the application without
+submitting it. An existing incomplete profile opens My Profile; a ready one opens
+Opportunities. Browsing remains available without profile completion or login.
+Resume upload and Career Journey data are not rewritten by authentication.
+
+No recruiter visibility, resume-sharing, profile-submission or external-AI consent
+is implied. Existing separate confirmations remain at the relevant product action.
+Google’s own identity-access consent is not an ENTER sharing/processing permission.
+
+6. Minimum verification before activation
+
+Test valid new creation, existing linked login, email collisions/link confirmation,
+no added consent on repeat login, denied/cancelled Google flow, expired/altered
+notice, document changes during OAuth, omitted action evidence, concurrent signup,
+CSRF/state/nonce/signature/PKCE failure, disabled account, registration pause,
+country/age declarations, non-authoritative mailbox verification and recruiter
+rejection. Assert exact event timestamps/versions/method without invented read
+or blanket-consent fields. Assert unchanged existing resumes, Career Journey,
+applications and permissions. Test My Profile and intended application restoration,
+with no automatic application submission and unrestricted public browsing.
+
+7. Review and activation sequence
+
+A. Policy/legal reviewer and ENTER owner approve the exact notice, clause changes,
+   eligible audience/declarations, privacy-notice treatment and action-evidence
+   semantics. Their review must identify these exact drafts; architecture approval
+   alone does not grant this policy approval.
+B. The user has already authorized local implementation conditionally on approval
+   of the exact wording and acceptance mechanism. Once that authorized reviewer
+   decision is supplied and its conditions are resolved, proceed within that scope;
+   do not treat the already-approved target UX as policy approval or ask again for
+   the same technical direction. Material scope changes need separate review.
+C. Implement with an independent default-off feature flag, additive evidence
+   storage and fail-closed document/configuration checks. Test in isolation.
+D. Publication versions/effective dates/hashes are assigned only to the final
+   approved release documents; draft review hashes are not production approvals.
+E. Deploy/enable only through a later, explicitly authorized production action.
+   No secret, production flag, approved snapshot or runtime code is changed by
+   preparing this review package. No approval is requested for sending documents
+   externally; nothing is sent as part of this task.
+
+8. Reviewer-ready acceptance criteria for draft 02
+
+Ordinary new Google signup has one ENTER action before Google: Continue with
+Google with the adjacent notice displayed. There is no completion screen, form,
+age/Terms checkbox, or registration-country dropdown afterward. New candidates
+open the existing My Profile tab unless an authorized intended opportunity or
+application takes priority. The profile-completion helper and candidate tabs do
+not change. Returning linked candidates retain their account and data.
+
+Terms acceptance is a specific affirmative action. Age and country are recorded
+as self-declarations using that approved mechanism. Privacy Policy version binding
+is notice evidence; it is not another agreement, proof of reading, or an inferred
+acknowledgement. Optional external AI, recruiter visibility, resume sharing and
+profile submission remain separate product actions and permissions. No normal
+Google login renews Terms or grants those permissions implicitly.
+
+reviewer-decision.txt is an unsigned decision template. It does not create an
+approval, acceptance event, publication date or effective policy. Approval should
+identify the exact draft files/hashes in review-manifest.json and the selected
+release baseline; no reviewer decision is filled in by the agent.

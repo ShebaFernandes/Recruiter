@@ -7,7 +7,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from django.db import DatabaseError, connection, transaction
+from django.db import DatabaseError, IntegrityError, connection, transaction
 from django.db.models import Count, Q
 from django.http import FileResponse
 from django.middleware.csrf import get_token
@@ -35,6 +35,7 @@ from .account_security import (
     send_verification_email,
 )
 from .authentication import CsrfProtectedPublicAuthentication
+from .google_oauth import reauthentication
 from .models import (
     AccountActionToken,
     CandidateProfile,
@@ -84,7 +85,10 @@ from .throttling import (
 def _identity(user):
     role = user.role_profile.role
     profile = user.candidate_profile if role == UserRole.Role.CANDIDATE else user.recruiter_profile
-    return {"id": user.id, "email": user.email, "role": role, "full_name": profile.full_name}
+    identity = {"id": user.id, "email": user.email, "role": role, "full_name": profile.full_name}
+    if role == UserRole.Role.CANDIDATE:
+        identity["has_password"] = user.has_usable_password()
+    return identity
 
 
 def _authenticated_response(user, token, response_status=status.HTTP_200_OK):
@@ -177,22 +181,25 @@ def signup(request):
     serializer = SignupSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     data = serializer.validated_data
-    with transaction.atomic():
-        user = User.objects.create_user(
-            username=data["email"],
-            email=data["email"],
-            password=data["password"],
-            is_active=False,
-        )
-        UserRole.objects.create(user=user, role=data["role"])
-        CandidateProfile.objects.create(
-            user=user,
-            full_name=data["full_name"],
-            email=data["email"],
-            registration_country_code=data["country_code"],
-        )
-        for purpose, doc in accepted.items():
-            legal.record(user, purpose, doc)
+    try:
+        with transaction.atomic():
+            user = User.objects.create_user(
+                username=data["email"],
+                email=data["email"],
+                password=data["password"],
+                is_active=False,
+            )
+            UserRole.objects.create(user=user, role=data["role"])
+            CandidateProfile.objects.create(
+                user=user,
+                full_name=data["full_name"],
+                email=data["email"],
+                registration_country_code=data["country_code"],
+            )
+            for purpose, doc in accepted.items():
+                legal.record(user, purpose, doc)
+    except IntegrityError:
+        return Response({"detail": "An account with this email already exists."}, status=400)
     try:
         verification_url = send_verification_email(user)
     except Exception:
@@ -317,7 +324,9 @@ def resend_verification(request):
 def request_password_reset(request):
     email = str(request.data.get("email", "")).strip().lower()
     user = User.objects.filter(username__iexact=email, is_active=True).first()
-    if user and not recently_issued(user, AccountActionToken.Purpose.RESET_PASSWORD):
+    if user and user.has_usable_password() and not recently_issued(
+        user, AccountActionToken.Purpose.RESET_PASSWORD
+    ):
         try:
             send_password_reset_email(user)
         except Exception:
@@ -338,7 +347,7 @@ def request_password_reset(request):
 def confirm_password_reset(request):
     raw_token = request.data.get("token")
     action_token = inspect_account_token(raw_token, AccountActionToken.Purpose.RESET_PASSWORD)
-    if not action_token:
+    if not action_token or not action_token.user.has_usable_password():
         return Response(
             {"detail": "This password-reset link is invalid or has expired."},
             status=status.HTTP_400_BAD_REQUEST,
@@ -539,7 +548,7 @@ def delete_candidate_account(request):
             {"detail": "Type DELETE to confirm permanent account deletion."},
             status=status.HTTP_400_BAD_REQUEST,
         )
-    if not request.user.check_password(str(request.data.get("password", ""))):
+    if not reauthentication(request, "delete_account"):
         return Response(
             {"detail": "Your password is incorrect."}, status=status.HTTP_400_BAD_REQUEST
         )
@@ -682,7 +691,7 @@ def confirm_resume_ownership(request, resume_id):
     if request.data.get("confirmation") is not True:
         return Response({"detail": "Confirm that this exact file is your resume."},
                         status=status.HTTP_400_BAD_REQUEST)
-    if not request.user.check_password(str(request.data.get("password", ""))):
+    if not reauthentication(request, "confirm_resume"):
         return Response({"detail": "Your password is incorrect."},
                         status=status.HTTP_400_BAD_REQUEST)
     try:

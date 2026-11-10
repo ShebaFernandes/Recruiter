@@ -1,0 +1,29 @@
+{
+  "status": "PREPARED_NOT_APPROVED_NOT_ACTIVE",
+  "baseline": "root-v1.2",
+  "baseline_file_sha256": {
+    "terms": "e6276b935d62840c98084e491e072781ac9776dd1ad3011c4d4d8276b7aaac8c",
+    "privacy": "7cfeb57abf1ac8537c59c1b06dc8b7bbeafc90e1dba6b3979737bef069a5bad9"
+  },
+  "documents": {
+    "terms": {
+      "version": "enter-candidate-terms-root-v1.2-google-draft02-local-review",
+      "sha256": "799e19fdcf1ae2daea3115909e999a0efacf4766281f77d4887a5a05c04b1006"
+    },
+    "privacy": {
+      "version": "enter-candidate-privacy-root-v1.2-google-draft02-local-review",
+      "sha256": "9b16e4710df0bf89f6a63069828c2f67dd9b6edcc49ddd81afb198a05fd4f545"
+    },
+    "age": {
+      "version": "enter-candidate-age-v1.0",
+      "sha256": "66b79e5cc63ddd3760ed02abb947604bf28ca152fc991dd09e59e5711e960bdf"
+    },
+    "submission": {
+      "version": "enter-candidate-submission-v1.0",
+      "sha256": "d1beaf60fbea2b351f039dc64f37a54e76d8e42083fe216da199ece72b1b70ba"
+    }
+  },
+  "notice_sha256": "fedffde9f5e4001ab2c2470b1c562e9e622f7cf002c94640c838ac6f383f75c4",
+  "review_package_sha256": "e769d63851f2399b90de0f05c33fe4b2bb9ef4107190b310ebb282abd99ed3cb",
+  "effective_date": null
+}

@@ -1,0 +1,36 @@
+{
+  "record_type": "developer_local_implementation_and_testing_approval",
+  "reviewer_name": "Sheba",
+  "reviewer_role": "Full-Stack Developer",
+  "approved_at": "2026-11-10T13:34:00+05:30",
+  "decision_reference": "User's written approval message in this conversation, quoting the reviewer, role, time, scope and conditions preserved in developer-approval-message.txt",
+  "decision": "approved_for_local_implementation_and_testing",
+  "mechanism_id": "enter-google-signup-button-draft-02",
+  "conditions": "Local implementation and testing only. Production deployment requires separate authorization.",
+  "selected_legal_baseline": "ENTER live-legal-v1.0, incorporating the exact Draft 02 amendments",
+  "proposed_effective_date": "2026-11-10",
+  "effective_date_status": "subject_to_authorized_policy_approval",
+  "policy_approval_status": "not_established_by_this_developer_approval",
+  "runtime_activation_authorization": false,
+  "written_message_sha256": "64e7c0ad143af42d27264e1b8a5704ecec8b0c1719f7cd0f7292a7095a5a6b16",
+  "review_package_sha256": "e769d63851f2399b90de0f05c33fe4b2bb9ef4107190b310ebb282abd99ed3cb",
+  "notice_sha256": "fedffde9f5e4001ab2c2470b1c562e9e622f7cf002c94640c838ac6f383f75c4",
+  "prepared_documents": {
+    "terms": {
+      "version": "enter-candidate-terms-live-v1.0-google-draft02-local-review",
+      "sha256": "04c2d3b3e147368286d9e634c7835c292c26e56aae1eba426353dc2a806cc6ea"
+    },
+    "privacy": {
+      "version": "enter-candidate-privacy-live-v1.0-google-draft02-local-review",
+      "sha256": "739edcbdb3345be3342ae60f51391a275898eab2ee89b91a3709e80361e0e68a"
+    },
+    "age": {
+      "version": "enter-candidate-age-v1.0",
+      "sha256": "66b79e5cc63ddd3760ed02abb947604bf28ca152fc991dd09e59e5711e960bdf"
+    },
+    "submission": {
+      "version": "enter-candidate-submission-v1.0",
+      "sha256": "d1beaf60fbea2b351f039dc64f37a54e76d8e42083fe216da199ece72b1b70ba"
+    }
+  }
+}

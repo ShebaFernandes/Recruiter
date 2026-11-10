@@ -76,3 +76,31 @@ it('uses the latest close callback without resetting dialog focus', async () => 
   expect(previous).not.toHaveBeenCalled()
   expect(current).toHaveBeenCalledOnce()
 })
+
+it('returns an authenticated Apply intent to the application flow without submitting', async () => {
+  window.history.replaceState({}, '', '/opportunities?role=backend-engineer&apply=1')
+  vi.spyOn(api, 'candidateProfile').mockResolvedValue({
+    full_name: 'Synthetic Candidate', latest_resume: { id: 9, processing_status: 'completed', scan_status: 'clean' },
+  } as Candidate)
+  vi.spyOn(api, 'opportunityApplications').mockResolvedValue([])
+  const submit = vi.spyOn(api, 'applyOpportunity')
+  render(<Opportunities loggedIn onLogin={vi.fn()} />)
+  expect(await screen.findByRole('heading', { name: 'Review your application' })).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Submit application' })).toBeDisabled()
+  expect(submit).not.toHaveBeenCalled()
+  window.history.replaceState({}, '', '/')
+})
+
+it('stores the selected role and Apply action before requesting authentication', async () => {
+  sessionStorage.setItem('enter-opportunity-intent', 'backend-engineer')
+  const login = vi.fn()
+  const submit = vi.spyOn(api, 'applyOpportunity')
+  render(<Opportunities loggedIn={false} onLogin={login} />)
+  fireEvent.click(await screen.findByRole('button', { name: 'Apply now' }))
+  expect(login).toHaveBeenCalledOnce()
+  expect(sessionStorage.getItem('enter-opportunity-intent')).toBe('backend-engineer')
+  expect(sessionStorage.getItem('enter-opportunity-action')).toBe('apply')
+  expect(window.location.search).toContain('apply=1')
+  expect(submit).not.toHaveBeenCalled()
+  window.history.replaceState({}, '', '/')
+})

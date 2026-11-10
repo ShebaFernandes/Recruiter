@@ -700,3 +700,73 @@ class OpportunityApplication(models.Model):
         constraints = [models.UniqueConstraint(
             fields=["candidate", "opportunity_id"], name="unique_candidate_opportunity"
         )]
+
+
+class ExternalIdentity(models.Model):
+    """Stable provider subject; email is never an account-linking credential."""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="external_identities")
+    provider = models.CharField(max_length=20, default="google")
+    issuer = models.CharField(max_length=100, default="https://accounts.google.com")
+    subject = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["provider", "issuer", "subject"], name="unique_oidc_subject",
+            ),
+            models.UniqueConstraint(fields=["user", "provider"], name="unique_user_provider"),
+        ]
+
+
+class GoogleOAuthTransaction(models.Model):
+    """Short-lived, single-use OAuth state shared by every web replica."""
+
+    state_hash = models.CharField(max_length=64, unique=True)
+    browser_hash = models.CharField(max_length=64)
+    stage = models.CharField(max_length=30, default="authorize")
+    payload = models.JSONField(default=dict)
+    user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
+    expires_at = models.DateTimeField(db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class PublishedSignupDocument(models.Model):
+    """Immutable public legal text; contains no candidate or approval-person details."""
+
+    purpose = models.CharField(max_length=20)
+    version = models.CharField(max_length=100)
+    sha256 = models.CharField(max_length=64)
+    text = models.TextField()
+    archived_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(
+            fields=["purpose", "version", "sha256"], name="unique_signup_public_document",
+        )]
+
+
+class GoogleSignupEvidence(models.Model):
+    """One observed signup action; retention follows its existing legal acceptance rows."""
+
+    action_id = models.UUIDField(unique=True)
+    terms_acceptance = models.OneToOneField(
+        LegalAcceptance, on_delete=models.CASCADE, related_name="google_signup_terms_evidence",
+    )
+    age_acceptance = models.OneToOneField(
+        LegalAcceptance, on_delete=models.CASCADE, related_name="google_signup_age_evidence",
+    )
+    method = models.CharField(max_length=60, default="notice_bound_google_button_v1")
+    received_at = models.DateTimeField()
+    account_created_at = models.DateTimeField()
+    committed_at = models.DateTimeField(auto_now_add=True)
+    notice_version = models.CharField(max_length=100)
+    notice_text = models.TextField()
+    notice_sha256 = models.CharField(max_length=64)
+    privacy_version = models.CharField(max_length=100)
+    privacy_text = models.TextField()
+    privacy_sha256 = models.CharField(max_length=64)
+    country_code = models.CharField(max_length=2)
+    age_self_declared = models.BooleanField()
+    approval_sha256 = models.CharField(max_length=64)

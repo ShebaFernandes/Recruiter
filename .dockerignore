@@ -36,3 +36,6 @@ backups/
 .local-*.log
 .pytest_cache
 .ruff_cache
+
+# Private local test databases, environment backups and diagnostics
+.local-benchmark/

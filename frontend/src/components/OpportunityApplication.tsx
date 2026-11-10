@@ -91,7 +91,7 @@ export default function OpportunityApplication({ role, onBack, embedded = false 
       }
       const result = await api.applyOpportunity(role.id, note)
       setMessage(result.detail); setStep('success')
-      sessionStorage.removeItem('enter-opportunity-intent')
+      sessionStorage.removeItem('enter-opportunity-intent'); sessionStorage.removeItem('enter-opportunity-action')
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not submit. Please try again.') }
     finally { setBusy(false) }
   }

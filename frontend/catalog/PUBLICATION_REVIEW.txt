@@ -1,0 +1,26 @@
+Publication manifest contract — awaiting owner-confirmed opportunity statuses
+
+Existing behavior: opportunityRoles.ts is a static public client-side catalog.
+It contains job descriptions and filters, with no approval/publication fields.
+There is no public jobs API to loosen. Candidate/application endpoints stay private.
+
+This manifest is a staged contract, NOT an assertion that any job is approved.
+No runtime or build import currently activates it. Existing public browsing remains
+unchanged until the owner supplies reviewed IDs and the activation is reviewed.
+
+Proposed activation, after statuses are supplied:
+- Resolve each ID against the existing catalog and reject unknown/duplicate IDs.
+- Publish only approved=true AND published=true entries; absent/unmarked entries
+  are excluded. A missing/invalid manifest must fail closed.
+- Generate the public bundle from a separate source catalog. Runtime filtering
+  alone is insufficient: excluded jobs must not be present in client assets.
+- Permit only the existing public job-description fields. Never serialize models,
+  recruiter notes, candidates, resumes, applications, contact records or internal
+  publication metadata into the public catalog.
+- Keep candidate application/history and resume endpoints authenticated and scoped.
+- Validate selected IDs against the same approved catalog on the application API.
+- Verify the final build contains no excluded job descriptions, and test anonymous
+  browsing separately from private endpoints.
+
+Needed from the owner: the opportunity IDs that are approved for publication and
+any IDs explicitly withdrawn. Current visibility is not evidence of approval.

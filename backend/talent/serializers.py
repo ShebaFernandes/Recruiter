@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.db import models
 from rest_framework import serializers
 
 from .candidate_experience import (
@@ -35,7 +36,9 @@ class SignupSerializer(serializers.Serializer):
     country_code = serializers.CharField(max_length=2, required=False, allow_blank=True)
 
     def validate_email(self, value):
-        if User.objects.filter(username__iexact=value).exists():
+        if User.objects.filter(
+            models.Q(username__iexact=value) | models.Q(email__iexact=value)
+        ).exists():
             raise serializers.ValidationError("An account with this email already exists.")
         return value.lower()
 

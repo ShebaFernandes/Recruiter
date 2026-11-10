@@ -1,0 +1,63 @@
+--- /private/tmp/enter-google-candidate-login/deploy/TERMS_PUBLICATION.txt
++++ prepared-root-v1.2/TERMS_PUBLICATION.txt
+@@ -10,18 +10,26 @@
+ Corporate Identity Number: U74999DL2020PTC370862.
+ Contact: sheba@enterrecruitment.com.
+ 
+-New registration is limited to individuals aged 18 or over who select India as
+-their registration country. You must separately and affirmatively confirm that
+-you are at least 18 and accept the displayed version of these Terms. The Privacy
+-Policy is provided separately and is not blanket consent. Profile submission is
+-a separate confirmation and does not authorize recruiter sharing.
++New registration is limited to individuals aged 18 or over who choose India as
++their registration country. For a new Google signup, selecting “Continue with
++Google” after the signup notice is displayed is an affirmative request to create
++a candidate account, acceptance of the displayed version of these Terms, and a
++declaration that you are at least 18 and choose India as your registration
++country. These declarations do not require separate checkboxes or a country
++dropdown in that flow. Age and registration country are the candidate’s own declarations; this Google
++sign-in does not provide ENTER with verified age or registration-country evidence.
++The country declaration is not proof of citizenship, residence or physical location. Other registration methods retain their required
++affirmative signup controls. The Privacy Policy is provided separately as a
++notice, not blanket consent. Profile submission remains a separate confirmation
++and does not authorize recruiter sharing or optional external AI processing.
+ 
+ 2. Your account
+ 
+-Provide accurate registration information, verify your email, keep your password
+-secure, and notify us if you suspect unauthorized access. Do not impersonate
+-another person, create an account for someone else without authority, transfer an
+-account, or use credentials that are not yours.
++Provide accurate registration information, complete any required email
++verification, protect your sign-in credentials, and notify us if you suspect
++unauthorized access. You may use Google sign-in without creating an ENTER
++password. Do not impersonate another person, create an account for someone else
++without authority, transfer an account, or use credentials that are not yours.
+ 
+ If account ownership or eligibility is reasonably disputed, ENTER may
+ proportionately restrict sensitive changes, uploads, or submission while checking
+@@ -127,10 +135,20 @@
+ 
+ 9. Versions, existing accounts, and changes
+ 
+-ENTER records the candidate identifier, server-side time, immutable Terms
+-version, and SHA-256 hash of the exact text accepted. ENTER does not backfill
+-acceptance or infer it from previous use, submission, a sharing record, or an
+-existing session.
++ENTER records the candidate identifier, the server-received time of the
++affirmative signup action, the acceptance method, and the immutable versions and
++SHA-256 hashes of the Terms and signup notice associated with that action. The
++corresponding Privacy Policy notice version is recorded as notice evidence, not
++as agreement, a separately made acknowledgement, consent, or proof that it was
++read. ENTER does not record a Privacy Policy acceptance or read event from this
++button action. For Google signup, the affirmative action
++is selecting the button with the signup notice displayed; successful Google
++authentication alone is not acceptance. Evidence is linked to a new candidate
++only if the same signup attempt successfully creates that account. Account
++creation and evidence-recording times are retained separately from the action
++time. ENTER does not backfill acceptance or infer it from previous use,
++submission, a sharing record, an existing session, or routine returning-user
++Google login. Existing acceptance records are not relabelled as button actions.
+ 
+ An existing candidate who has not accepted this version may sign in to read the
+ documents and reach privacy, support, and deletion functions, but must accept

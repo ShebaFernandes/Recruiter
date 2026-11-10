@@ -1,0 +1,124 @@
+REVIEWER-READY AMENDMENTS — DRAFT 02 — NOT APPROVED, PUBLISHED OR EFFECTIVE
+
+These are proposed clause replacements/additions only. They are not complete
+publication-ready policies and have no effective date or approved release ID.
+No currently approved snapshot is modified. Apply approved edits later to the
+correct release baseline: live-legal-v1.0 and the root v1.2 documents are distinct
+snapshots; do not import v1.2 AI-processing provisions into the AI-disabled release.
+Unlisted clauses, retention periods and all independent approval gates are unchanged.
+
+TERMS OF USE
+
+T1. Section 1, eligibility paragraph — replace with:
+
+New registration is limited to individuals aged 18 or over who choose India as
+their registration country. For a new Google signup, selecting “Continue with
+Google” after the signup notice is displayed is an affirmative request to create
+a candidate account, acceptance of the displayed version of these Terms, and a
+declaration that you are at least 18 and choose India as your registration
+country. These declarations do not require separate checkboxes or a country
+dropdown in that flow. Age and registration country are the candidate’s own declarations; this Google
+sign-in does not provide ENTER with verified age or registration-country evidence.
+The country declaration is not proof of citizenship, residence or physical location. Other registration methods retain their required
+affirmative signup controls. The Privacy Policy is provided separately as a
+notice, not blanket consent. Profile submission remains a separate confirmation
+and does not authorize recruiter sharing or optional external AI processing.
+
+T2. Section 2, first paragraph — replace with:
+
+Provide accurate registration information, complete any required email
+verification, protect your sign-in credentials, and notify us if you suspect
+unauthorized access. You may use Google sign-in without creating an ENTER
+password. Do not impersonate another person, create an account for someone else
+without authority, transfer an account, or use credentials that are not yours.
+
+T3. Section 9, first paragraph — replace with:
+
+ENTER records the candidate identifier, the server-received time of the
+affirmative signup action, the acceptance method, and the immutable versions and
+SHA-256 hashes of the Terms and signup notice associated with that action. The
+corresponding Privacy Policy notice version is recorded as notice evidence, not
+as agreement, a separately made acknowledgement, consent, or proof that it was
+read. ENTER does not record a Privacy Policy acceptance or read event from this
+button action. For Google signup, the affirmative action
+is selecting the button with the signup notice displayed; successful Google
+authentication alone is not acceptance. Evidence is linked to a new candidate
+only if the same signup attempt successfully creates that account. Account
+creation and evidence-recording times are retained separately from the action
+time. ENTER does not backfill acceptance or infer it from previous use,
+submission, a sharing record, an existing session, or routine returning-user
+Google login. Existing acceptance records are not relabelled as button actions.
+
+Retain the existing remaining Section 9 paragraphs, including current-Terms
+requirements before new resume uploads or profile submission and new acceptance
+where required for material changes.
+
+PRIVACY POLICY
+
+P1. Section 2, first information-category bullet — replace with:
+
+- your name, email address, India registration declaration, email-verification
+  and authentication records; and, if you choose Google sign-in, your Google
+  account’s stable identifier and the basic identity information needed to
+  authenticate you, including name, email address and verification information;
+
+P2. Section 2, bullet about draft/paused/submitted state — replace with:
+
+- draft, paused, and submitted profile state, age and registration-country
+  declarations, Terms-acceptance evidence including the affirmative action’s
+  server-received time and method, the versions of documents and signup notice
+  associated with that action, and separately obtained profile-submission consent;
+
+P3. Section 5, immediately after the existing authentication/CSRF-cookie paragraph
+— add:
+
+Google sign-in is optional; email/password authentication remains available.
+Google authenticates your Google account, and ENTER receives the basic identity
+information needed to create or sign you into your candidate account. ENTER does
+not receive your Google password or retain Google access or refresh tokens.
+Short-lived cookies and temporary server-side state protect the sign-in attempt
+and connect it to the browser that started it. Browser session storage may
+preserve the opportunity or application you intended to return to. A matching
+email address alone does not connect a Google identity to an existing ENTER
+account: separate proof of account control and explicit linking confirmation
+are required. Signing in with Google does not authorize recruiter visibility,
+resume sharing, or optional external AI processing.
+
+P4. Section 7, paragraph beginning “You must separately confirm” — replace with:
+
+At signup, you must affirmatively declare that you are at least 18, choose India
+as your registration country, and accept the displayed Terms version. For new
+Google accounts, selecting “Continue with Google” with the signup notice
+displayed makes those declarations and accepts those Terms; separate signup
+checkboxes and a country dropdown are not required for that flow. These are the
+candidate’s own declarations; Google sign-in does not verify age or registration
+country for ENTER. The Privacy Policy is a notice, not a separate agreement or
+blanket consent. ENTER records the notice version associated with the action,
+not a claim that the candidate read it or separately acknowledged it. Profile submission, recruiter sharing
+and optional external AI processing retain their own required confirmations or
+permissions. Existing accounts are not treated as having accepted a new document
+merely because they used the service or signed in with Google.
+
+REVIEW DECISION
+
+Confirm whether one clearly disclosed action satisfies the affirmative age,
+country and Terms requirements for this candidate service and applicable law.
+Confirm the authentication/Google disclosure and the separation of privacy notice
+from permissions. These drafts do not assert that a checkbox is universally
+required or unnecessary by law. A legal/policy decision on this exact mechanism
+is still needed; no such decision is implied by technical architecture approval.
+
+REVIEWER CONFIRMATION FOR DRAFT 02
+
+Approve or request revision of the exact signup-notice.txt wording and the
+notice-bound method specified in acceptance-event-specification.txt. In particular:
+- Is the single action an adequate affirmative Terms acceptance and self-declaration
+  for age eligibility and India registration under the applicable requirements?
+- Is the distinction between those declarations and verified Google identity clear?
+- Is recording the linked Privacy Policy version as notice evidence adequate,
+  without treating this action as blanket consent or a separate acknowledgement?
+- Are the action time, commit time, document versions and method evidence sufficient?
+
+This package preserves the normal no-additional-form/no-checkbox target, existing
+account-linking exceptions, and independent sharing/AI permission requirements.
+No reviewer identity, decision or approval date has been supplied or inferred.

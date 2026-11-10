@@ -1,0 +1,66 @@
+LOCAL IMPLEMENTATION STATUS — 2026-11-10
+
+The user reports that ENTER's authorized decision-maker approved Draft 02.
+Engineering implementation is authorized. This file does not invent or substitute
+for the reviewer's signed/durable approval evidence. The original Draft 02 review
+files, unsigned decision template, and approved legal snapshots remain unchanged.
+
+The automatic path is implemented behind GOOGLE_SIGNUP_AUTOCREATE_ENABLED=false.
+Existing Google-linked candidate login and explicit password-account linking do
+not require this new-account release gate. No production configuration changed.
+
+ACTIVATION INPUTS — pending actual approval audit details
+
+Provide a private JSON approval file through GOOGLE_SIGNUP_APPROVAL_FILE; pin its
+exact byte SHA-256 with GOOGLE_SIGNUP_APPROVAL_SHA256. Do not put credentials in
+this file. Preserve each approval file immutably for its audit-retention period;
+do not overwrite historical approval files. It must contain these fields from actual approval evidence:
+  decision: approved
+  mechanism_id: enter-google-signup-button-draft-02
+  reviewer_name: actual authorized reviewer's name
+  reviewer_role: actual role/authority
+  approved_at: actual timezone-aware approval timestamp
+  decision_reference: durable decision reference or actual written attestation
+  conditions: none (only if actually unconditional; resolve any conditions first)
+  notice_sha256: SHA-256 of the exact UTF-8 notice served by google_signup.NOTICE
+  review_package_sha256: SHA-256 of the preserved review-manifest.json bytes
+  documents: objects for terms, privacy, age, submission, each containing the
+             exact published version and public-text SHA-256.
+
+Configure a separately versioned legal release bundle incorporating the approved
+amendments, through the existing LEGAL_DOCUMENT_ROOT/version/hash controls. Do not
+overwrite historical approved snapshots. The new bundle and its effective date
+must match the actual approval record. Preview/unpublished legal mode cannot
+activate this mechanism. Only then set the automatic-signup flag for an expressly
+authorized local test. Staging/production enablement requires separate permission.
+
+The server checks the approval file hash, authority/date/reference fields, exact
+mechanism/notice, unchanged review package, current approved document versions
+and hashes, and registration controls at both the deliberate button action and
+callback. A changed/expired binding creates no account. Browser challenges are
+single-use, CSRF protected and bound to HTTP-only browser cookies. Google state,
+PKCE, nonce, signature/issuer/audience/expiry checks remain in the OIDC service.
+
+Actual server receipt time is recorded as the signup action, separately from
+account creation and evidence commit times. Terms agreement, age self-declaration
+and India selection are bound to that action. Privacy text/version is recorded as
+notice evidence, without labeling it optional-processing consent. Ordinary login
+and explicit linking create no new signup acceptance. No IP/UA evidence is added.
+
+New accounts are private candidate drafts with unusable passwords. Gmail and
+Google-hosted authoritative email identities proceed to the existing My Profile
+tab, unless valid opportunity/application intent takes priority. Third-party
+mailboxes retain ENTER email-ownership verification before authentication.
+Recruiter visibility, resume sharing, submission and external AI permissions are
+not granted by signup. Existing upload/submission checks remain in place.
+
+TEST FIXTURES ARE NOT APPROVAL EVIDENCE
+backend/tests/test_google_signup.py and google_signup_browser_server.py construct
+explicitly SYNTHETIC approval/document fixtures only within disposable test
+contexts. The browser fixture rejects non-test environments and non-disposable
+databases. It mocks the Google exchange; it does not certify a real Google login.
+Do not use its approval file, documents, credentials or database for live accounts.
+
+REAL GOOGLE END-TO-END SIGNUP
+Pending the actual audit record and matching new legal release configuration.
+No live candidate registration or existing candidate record was changed by tests.

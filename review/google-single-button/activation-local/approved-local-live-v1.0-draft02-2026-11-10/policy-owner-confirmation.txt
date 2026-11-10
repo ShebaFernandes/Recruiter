@@ -1,0 +1,9 @@
+**ENTER Google Signup — Draft 02 Approval**
+Policy owner's full name: Dikshita Verma
+Role and authority: CEO, ENTER
+Actual approval date/time and timezone:  10 November 2026, 1:40 pm
+Approved effective date: 10 November 2026
+**Confirmation:**
+I approve the exact Draft 02 notice, live-v1.0 amendments, and single-button acceptance mechanism for local testing and staging validation. Production deployment requires separate authorization.
+Additional conditions: None, unless otherwise specified by the policy owner.
+Approval reference: This completed written confirmation.

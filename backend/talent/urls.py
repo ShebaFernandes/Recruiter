@@ -3,6 +3,7 @@ from django.urls import path
 from . import (
     candidate_views,
     career_views,
+    google_views,
     hiring_views,
     legal_views,
     opportunity_views,
@@ -11,6 +12,15 @@ from . import (
 )
 
 urlpatterns = [
+    path("auth/google/config/", google_views.configuration),
+    path("auth/google/documents/<str:purpose>/", google_views.signup_document),
+    path("auth/google/start/", google_views.start),
+    path("auth/google/callback/", google_views.callback),
+    path("auth/google/pending/", google_views.pending),
+    path("auth/google/complete/", google_views.complete),
+    path("auth/google/link/start/", google_views.link_start),
+    path("auth/google/link/confirm/", google_views.link_confirm),
+    path("auth/google/reauth/", google_views.reauth_start),
     path("opportunities/applications/", opportunity_views.apply),
     path("careers/applications/", career_views.career_application),
     path("legal/documents/", legal_views.legal_documents),

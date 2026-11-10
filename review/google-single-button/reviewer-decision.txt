@@ -1,0 +1,32 @@
+AUTHORIZED REVIEWER DECISION — UNSIGNED TEMPLATE — NO APPROVAL RECORDED
+Package: Google single-button signup, reviewer-ready draft 02
+Status: awaiting authorized reviewer decision
+
+Already approved by the user: target UX and technical direction, including local
+implementation/testing after the acceptance mechanism and policy wording are approved.
+Still outstanding: approval of this exact notice, amendments and acceptance method.
+
+Complete only through ENTER’s authorized review process:
+Reviewer name: [not supplied]
+Role and basis of authority to approve this policy/mechanism: [not supplied]
+Decision (approve / request changes / reject): [not supplied]
+Decision time and timezone: [not supplied]
+Exact reviewed package/file hashes: [not supplied; see review-manifest.json]
+Selected underlying legal release baseline: [not supplied]
+Conditions, required changes or limitations: [not supplied]
+
+Decision scope:
+1. Exact adjacent notice and button label.
+2. Single-action Terms agreement and self-declared age/India eligibility; adequacy
+   of those declarations for this service and applicable requirements.
+3. Privacy notice version evidence without inferred agreement, reading or a separate
+   acknowledgement; no blanket data-processing consent.
+4. Accurate server action/creation/commit times and versioned acceptance method.
+5. Preserved account linking, duplicate prevention, candidate data and permissions.
+6. No additional normal Google signup form, checkbox or country dropdown.
+7. Existing My Profile/intended-destination behavior and separate sharing/AI consent.
+
+This template is not a candidate acceptance record. Do not fill it with an assumed
+reviewer, approval or date. No revised mechanism is implemented before a genuine
+decision covers its wording and method. Production publication, deployment and
+OAuth enablement require separate explicit authorization even after local tests.

@@ -1,0 +1,68 @@
+--- /private/tmp/enter-google-candidate-login/deploy/PRIVACY_POLICY_PUBLICATION.txt
++++ prepared-root-v1.2/PRIVACY_POLICY_PUBLICATION.txt
+@@ -25,15 +25,19 @@
+ 
+ We handle the information needed to provide and protect your candidate account:
+ 
+-- your name, email address, India registration selection, email-verification and
+-  authentication records;
++- your name, email address, India registration declaration, email-verification
++  and authentication records; and, if you choose Google sign-in, your Google
++  account’s stable identifier and the basic identity information needed to
++  authenticate you, including name, email address and verification information;
+ - your PDF or DOCX resume, optional profile photograph, work and education
+   history, skills, achievements, career preferences, and settings;
+ - rule-based resume-extraction results and, when you separately choose it for a
+   specific upload, the resume text sent to Google Gemini and the structured
+   extraction returned to ENTER;
+-- draft, paused, and submitted profile state, and records of age confirmation,
+-  Terms acceptance, and profile-submission consent;
++- draft, paused, and submitted profile state, age and registration-country
++  declarations, Terms-acceptance evidence including the affirmative action’s
++  server-received time and method, the versions of documents and signup notice
++  associated with that action, and separately obtained profile-submission consent;
+ - support, privacy, complaint, and deletion correspondence; and
+ - limited security, audit, processing, backup, and service-operation records.
+ 
+@@ -99,6 +103,18 @@
+ or analytics SDK. A background video delivered from an Amazon CloudFront hostname
+ causes ordinary connection information, such as IP address, browser details, and
+ request time, to be sent to that delivery service.
++
++Google sign-in is optional; email/password authentication remains available.
++Google authenticates your Google account, and ENTER receives the basic identity
++information needed to create or sign you into your candidate account. ENTER does
++not receive your Google password or retain Google access or refresh tokens.
++Short-lived cookies and temporary server-side state protect the sign-in attempt
++and connect it to the browser that started it. Browser session storage may
++preserve the opportunity or application you intended to return to. A matching
++email address alone does not connect a Google identity to an existing ENTER
++account: separate proof of account control and explicit linking confirmation
++are required. Signing in with Google does not authorize recruiter visibility,
++resume sharing, or optional external AI processing.
+ 
+ The service uses Amazon Web Services in Sydney, Australia for application and
+ database hosting, private file storage, queues, transactional email, operational
+@@ -167,10 +183,18 @@
+ undo processing that was lawful before withdrawal. Deleting the resume or
+ account remains subject to the deletion and backup periods above.
+ 
+-You must separately confirm that you are at least 18 and accept the displayed
+-Terms version. The Privacy Policy is a notice, not blanket consent. Profile
+-submission requires its own confirmation. Existing accounts are not treated as
+-having accepted a new document merely because they used the service before.
++At signup, you must affirmatively declare that you are at least 18, choose India
++as your registration country, and accept the displayed Terms version. For new
++Google accounts, selecting “Continue with Google” with the signup notice
++displayed makes those declarations and accepts those Terms; separate signup
++checkboxes and a country dropdown are not required for that flow. These are the
++candidate’s own declarations; Google sign-in does not verify age or registration
++country for ENTER. The Privacy Policy is a notice, not a separate agreement or
++blanket consent. ENTER records the notice version associated with the action,
++not a claim that the candidate read it or separately acknowledged it. Profile submission, recruiter sharing
++and optional external AI processing retain their own required confirmations or
++permissions. Existing accounts are not treated as having accepted a new document
++merely because they used the service or signed in with Google.
+ 
+ 8. Changes and contact
+ 

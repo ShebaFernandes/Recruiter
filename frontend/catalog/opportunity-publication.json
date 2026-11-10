@@ -1,0 +1,6 @@
+{
+  "$schema": "./opportunity-publication.schema.json",
+  "schemaVersion": 1,
+  "reviewStatus": "awaiting-owner-confirmation",
+  "opportunities": {}
+}

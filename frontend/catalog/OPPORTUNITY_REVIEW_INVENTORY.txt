@@ -1,0 +1,93 @@
+Current static opportunity catalog — approval status NOT inferred
+
+Confirm which IDs below are approved AND published before manifest activation.
+
+lead-product-manager-consumer
+  Lead Product Manager — Consumer — Bengaluru
+
+lead-product-manager-consumer-healthtech
+  Lead Product Manager — Consumer Healthtech — Bengaluru
+
+ai-product-manager-agentic-ai
+  AI Product Manager — Agentic AI — Bengaluru
+
+product-manager-internal-tools-ai-platform
+  Product Manager — Internal Tools & AI Platform — Bengaluru
+
+product-manager-ai-products
+  Product Manager — AI Products — Delhi/Bengaluru
+
+lead-product-manager-b2b-growth
+  Lead Product Manager — B2B Growth — Bengaluru
+
+senior-product-designer-b2c
+  Senior Product Designer — B2C — Bengaluru
+
+senior-product-designer-b2b-saas
+  Senior Product Designer — B2B / SaaS — Bengaluru
+
+product-designer-ai-products
+  Product Designer — AI Products — Bengaluru
+
+founding-backend-engineer
+  Founding Backend Engineer — Bengaluru / Remote
+
+founding-full-stack-engineer
+  Founding Full Stack Engineer — Bengaluru / Remote
+
+senior-engineering-manager-ai-ml
+  Senior Engineering Manager — AI / ML — Bengaluru
+
+director-of-engineering-ai-platform
+  Director Of Engineering — AI Platform — Bengaluru
+
+vp-engineering-enterprise-ai
+  VP Engineering — Enterprise AI — Bengaluru
+
+head-of-data-ai-lending
+  Head Of Data & AI — Lending — Mumbai
+
+engineering-manager-enterprise-saas
+  Engineering Manager — Enterprise SaaS — Bengaluru
+
+ai-ml-engineer
+  AI / ML Engineer — Bengaluru
+
+deep-learning-engineer
+  Deep Learning Engineer — Bengaluru
+
+ml-engineer-voice-ai
+  ML Engineer — Voice AI — Bengaluru
+
+voice-ai-engineer
+  Voice AI Engineer — Mumbai / Bengaluru / Remote
+
+ai-ml-engineer-speech-models
+  AI / ML Engineer — Speech Models — Mumbai / Bengaluru / Remote
+
+data-scientist
+  Data Scientist — Bengaluru
+
+lead-data-scientist-recommendations
+  Lead Data Scientist — Recommendations — Gurugram
+
+founding-ai-evals-engineer
+  Founding AI Evals Engineer — Mumbai
+
+ai-evaluation-engineer-healthtech
+  AI Evaluation Engineer — Healthtech — Bengaluru
+
+backend-engineer
+  Backend Engineer — Remote
+
+senior-backend-engineer
+  Senior Backend Engineer — Mumbai
+
+frontend-engineer-sde-iii
+  Frontend Engineer – SDE III — Bengaluru
+
+mobile-engineer-flutter
+  Mobile Engineer – Flutter — Bengaluru
+
+senior-sre-devops-engineer
+  Senior SRE / DevOps Engineer — Bengaluru

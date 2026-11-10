@@ -445,3 +445,95 @@ cd frontend && npm run lint && npm run test && npm run build && npm run test:e2e
 ```
 
 For a production-settings check, provide non-secret placeholder/test endpoints for every required environment variable, then run `python manage.py check --deploy`. This validates configuration shape; it does not prove RDS, S3, SQS, SMTP, ClamAV, DNS, or TLS connectivity.
+
+## Candidate Google Login (disabled by default)
+
+`GOOGLE_OAUTH_ENABLED=false` is the default. This release does not enable Google
+in any environment. Existing password authentication remains available. Recruiter
+Google authentication is not supported; consider it separately with organization
+approval and recruiter access policies.
+
+Create a **Web application** OAuth client in Google Cloud Console for each of
+local development, staging and production. Configure Google Auth Platform branding,
+support contact, audience/test users, verified domains, homepage, Privacy Policy
+and Terms URLs. Request only `openid email profile`. No offline access, Gmail,
+Drive or refresh tokens are needed. This server redirect flow does not require a
+Google browser SDK or a frontend client secret.
+
+For local development use one hostname consistently (do not mix localhost and
+127.0.0.1):
+
+- React origin: `http://127.0.0.1:5173`
+- Django origin: `http://127.0.0.1:8010`
+- Exact authorized redirect URI:
+  `http://127.0.0.1:8010/api/v1/auth/google/callback/`
+- Set backend `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, and
+  `GOOGLE_OAUTH_REDIRECT_URI` in an ignored local `.env` or private process environment.
+  Never paste secrets into chat, screenshots, tracked files, or `VITE_*` variables.
+- After development credentials are configured, explicitly set
+  `GOOGLE_OAUTH_ENABLED=true` **only locally**, restart Django, and test with the
+  Google Console test users. Real provider testing remains required before rollout.
+
+Staging and production must use separate clients, exact same-origin HTTPS callback
+URLs ending in `/api/v1/auth/google/callback/`, and credentials from Secrets Manager
+or SSM. For `enter.careers`, the proposed callback is
+`https://enter.careers/api/v1/auth/google/callback/`; confirm the live origin before
+registering it. Do not enable production without explicit owner approval.
+
+OAuth transaction state is stored in the database, works across web replicas,
+and expires after ten minutes. The browser-binding and pending cookies are
+HTTP-only and SameSite=Lax, with host-only `__Host-` names and Secure attributes
+when existing auth cookies are Secure.
+Existing ENTER auth-cookie options remain in force. Google reauthentication gives
+a five-minute, single-use proof bound to the current ENTER token and account action.
+Run `python manage.py purge_google_oauth_transactions` at least hourly to remove
+expired state and temporary identity information. OAuth access tokens, refresh
+tokens and Google passwords are not stored. The persistent identity stores only
+provider, canonical issuer and stable subject against the existing ENTER user.
+
+Before migration, take the usual database backup. Migration 0035 audits duplicate
+case-insensitive usernames and non-staff login emails and fails without merging accounts or logging
+addresses. Resolve collisions privately with owner approval; do not delete or
+merge users automatically. It then adds database unique indexes for nonempty
+non-staff emails and case-insensitive usernames. Existing staff accounts may
+retain a shared contact email with a distinct login username; candidate and recruiter
+login-email uniqueness still applies. These indexes also protect concurrent
+password/Google registration. Existing accounts and profile relationships stay
+on their original user IDs. Index creation can lock the user table: schedule the
+migration appropriately and review table size in staging first.
+
+A Google email matching an existing account never authenticates or links it.
+Candidates prove the existing verified ENTER account password, authenticate the
+same Google email, then explicitly confirm linking. Pending/unverified or disabled
+accounts must use existing verification/recovery/support paths. Google-only
+accounts have unusable passwords and cannot acquire passwords through the reset
+endpoint. Non-Gmail/non-Workspace Google email identities still require ENTER's
+email-verification message. Neither login nor linking overwrites candidate data
+or grants consent. New Google accounts complete current age/Terms acceptance and
+registration-country validation before creation; registration pauses are checked
+again at completion. Sharing and resume-AI consent remain separate.
+
+Forward callback query strings and cookies through CloudFront/ALB, allow the POST
+start/completion endpoints, and disable caching for every `/api/v1/auth/google/*`
+response. Apply `no-store` and `Referrer-Policy: no-referrer` to the frontend
+`/auth/google` route too. Keep the existing strict CSP: this flow needs no external
+Google JavaScript or iframe. **Before provider testing**, disable or redact query
+strings for callback requests in CloudFront, ALB, reverse-proxy and APM access logs;
+authorization codes/state must not be retained. Application errors do not include
+provider response bodies, codes or identity tokens. Backend egress must reach
+Google's authorization/token/key endpoints over HTTPS; never accept arbitrary
+issuer or JWKS URLs from a request or JWT header.
+
+Roll out additive migrations and code with OAuth disabled, validate through staging
+with real Google test accounts and PostgreSQL, and enable production only after
+explicit approval. Rollback disables new Google flows but retains identity records
+and existing ENTER sessions. Google-only accounts cannot initiate a new login while
+the feature is disabled: establish a support/recovery procedure before launch.
+Do not roll back by deleting identities, assigning passwords or removing consent
+checks. Preserve the uniqueness indexes when rolling back application code.
+
+Local browser regression checks (isolated servers, synthetic data only):
+`E2E_GOOGLE_LOCAL=1 PLAYWRIGHT_BASE_URL=http://127.0.0.1:15173 npx playwright test tests/google-login-local.spec.ts`
+from `frontend/`. The checked-in local scenario expects Django on port 18010,
+React on 15173, local email shortcuts enabled, and OAuth disabled. Its enabled-button
+case stubs only the feature-status response for visual review; it does not test Google.

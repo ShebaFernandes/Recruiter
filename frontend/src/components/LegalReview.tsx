@@ -9,7 +9,7 @@ export function LegalChecks({ documents }: { documents: LegalDocuments }) {
   return <fieldset className="legal-confirmations">
     <legend>Required confirmations</legend>
     <label className="cp-check"><input name="terms_accepted" type="checkbox" required />
-      <span>{documents.age.text} I have read and agree to the <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Use</a> ({documents.terms.version}).</span>
+      <span>{documents.age.text} I have read and agree to the <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Use</a>.</span>
     </label>
     <input type="hidden" name="age_version" value={documents.age.version} />
     <input type="hidden" name="terms_version" value={documents.terms.version} />

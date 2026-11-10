@@ -92,6 +92,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "talent.google_middleware.GoogleOAuthPrivacyMiddleware",
     "talent.legal_middleware.LocalLegalPreviewMiddleware",
     "talent.launch_controls.LaunchControlMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -702,3 +703,37 @@ if not DEBUG:
     SESSION_COOKIE_SAMESITE = "Lax"
     CSRF_COOKIE_SAMESITE = AUTH_COOKIE_SAMESITE
     CSRF_COOKIE_HTTPONLY = True
+
+# Candidate OAuth is opt-in. Credentials are backend-only and never VITE variables.
+GOOGLE_OAUTH_ENABLED = os.getenv("GOOGLE_OAUTH_ENABLED", "false").lower() == "true"
+GOOGLE_OAUTH_CLIENT_ID = os.getenv("GOOGLE_OAUTH_CLIENT_ID", "")
+GOOGLE_OAUTH_CLIENT_SECRET = os.getenv("GOOGLE_OAUTH_CLIENT_SECRET", "")
+GOOGLE_OAUTH_REDIRECT_URI = os.getenv("GOOGLE_OAUTH_REDIRECT_URI", "")
+GOOGLE_OAUTH_TRANSACTION_TTL_SECONDS = 600
+if GOOGLE_OAUTH_ENABLED:
+    if not all([GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET, GOOGLE_OAUTH_REDIRECT_URI]):
+        raise ImproperlyConfigured(
+            "Google OAuth requires client ID, secret and exact callback URI."
+        )
+    callback = urlsplit(GOOGLE_OAUTH_REDIRECT_URI)
+    frontend = urlsplit(FRONTEND_URL)
+    if (callback.username or callback.password or callback.query or callback.fragment
+            or callback.path != "/api/v1/auth/google/callback/"):
+        raise ImproperlyConfigured("Google OAuth callback must be the exact backend callback URL.")
+    local_callback = DEBUG and APP_ENV in {"local", "test"} and callback.hostname in {
+        "localhost", "127.0.0.1",
+    }
+    if not local_callback and (
+        callback.scheme != "https" or callback.netloc != frontend.netloc
+    ):
+        raise ImproperlyConfigured("Google OAuth requires the same public HTTPS origin.")
+    if callback.scheme not in {"http", "https"} or not callback.netloc:
+        raise ImproperlyConfigured("Google OAuth callback is invalid.")
+
+# Separate default-off release gate: approval evidence and published document hashes
+# are required; enabling OAuth alone never enables the revised signup mechanism.
+GOOGLE_SIGNUP_AUTOCREATE_ENABLED = (
+    os.getenv("GOOGLE_SIGNUP_AUTOCREATE_ENABLED", "false").lower() == "true"
+)
+GOOGLE_SIGNUP_APPROVAL_FILE = os.getenv("GOOGLE_SIGNUP_APPROVAL_FILE", "")
+GOOGLE_SIGNUP_APPROVAL_SHA256 = os.getenv("GOOGLE_SIGNUP_APPROVAL_SHA256", "")

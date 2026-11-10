@@ -64,7 +64,7 @@ def test_every_public_opportunity_has_one_backend_application_choice():
 
     from talent.opportunity_views import OPPORTUNITY_IDS
 
-    source = Path(__file__).resolve().parents[2] / "frontend/src/components/Opportunities.tsx"
+    source = Path(__file__).resolve().parents[2] / "frontend/src/components/opportunityRoles.ts"
     catalog = source.read_text().split("const roles = [", 1)[1].split("\n]", 1)[0]
     ids = re.findall(r"(?:\"id\"|id)\s*:\s*['\"]([^'\"]+)", catalog)
     assert len(ids) == len(set(ids))
@@ -82,3 +82,29 @@ def test_application_history_is_private_and_resume_required(client, candidate_ac
     profile = CandidateProfile.objects.create(user=other)
     OpportunityApplication.objects.create(candidate=profile, opportunity_id='backend-engineer')
     assert client.get('/api/v1/opportunities/applications/').data == []
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("path", [
+    "/api/v1/opportunities/applications/",
+    "/api/v1/candidate/profile/",
+    "/api/v1/candidate/resumes/",
+    "/api/v1/resumes/123/download/",
+    "/api/v1/projects/",
+    "/api/v1/searches/",
+])
+def test_public_browsing_does_not_open_private_api_access(client, path):
+    response = client.get(path)
+    assert response.status_code in (401, 403, 404)
+
+
+@pytest.mark.django_db
+def test_application_history_ignores_another_candidates_id(client, candidate_account):
+    other = User.objects.create_user(username="other-synthetic-candidate")
+    other_profile = CandidateProfile.objects.create(user=other, email_verified_at=timezone.now())
+    OpportunityApplication.objects.create(
+        candidate=other_profile, opportunity_id="backend-engineer",
+    )
+    response = client.get("/api/v1/opportunities/applications/", {"candidate_id": other_profile.pk})
+    assert response.status_code == 200
+    assert response.data == []

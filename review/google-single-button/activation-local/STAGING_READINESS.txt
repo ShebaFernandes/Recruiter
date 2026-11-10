@@ -1,0 +1,64 @@
+STAGING PREPARATION — NOT DEPLOYED — NO-GO PENDING FINAL LOCAL ACCEPTANCE
+
+Current code and Draft 02 remain preserved on codex/google-candidate-login.
+User authorization permits independent local testing and conditional staging
+preparation; it does not authorize production deployment. No environments changed.
+
+AUDIT STATUS
+Sheba's existing developer approval is preserved unchanged with its supplied role,
+2026-11-10 13:34 IST timestamp and local-only condition. The user reports policy
+confirmation, but directs missing separate policy-owner fields to remain pending.
+policy-approval-report.json records this accurately. Do not reuse developer details
+as policy-owner evidence. Do not request those developer details again.
+
+BEFORE REAL GOOGLE AUTOMATIC SIGNUP
+Finalize the separate policy-owner audit record and effective date when supplied.
+Finalize a separate immutable local copy of the selected live-v1.0/Draft02 bundle;
+leave historical and prepared snapshots unchanged. Validate the document hashes,
+notice, approval hash and release conditions using the existing backend gate.
+No "none" conditions may be fabricated to bypass a scoped or conditional approval.
+Keep production forbidden. Apply additive migrations only to the isolated test DB;
+start only isolated local servers with private ignored env configuration.
+
+REAL PROVIDER LOCAL ACCEPTANCE — STILL PENDING
+Use a disposable Google test account through the genuine account chooser. The
+account owner completes any Google sign-in/consent themselves. Do not collect or
+print Google credentials, codes, state, tokens, private claims or cookie values.
+Verify exactly one private candidate account and one signup-evidence event,
+unusable ENTER password, My Profile landing using existing readiness rules,
+logout/repeat login without duplicates or profile reset, password-account linking
+with explicit proof and confirmation, and Apply-intent restoration without a POST
+submission. Confirm no Google completion form/checkbox appears. Preserve the
+third-party mailbox ownership-verification exception and separate sharing/AI gates.
+
+STAGING ARTIFACT REQUIREMENTS — AFTER LOCAL ACCEPTANCE PASSES
+- Isolated staging PostgreSQL, private media/email destinations and test accounts.
+- Separate Google development/staging client, exact HTTPS callback and test-user
+  allowlist as applicable; credentials in the staging secret store, never frontend.
+- Additive migrations 0034, 0035 and 0036, with existing-data uniqueness preflight;
+  no destructive rollback of identity, acceptance or candidate tables.
+- Exact approved legal bundle, approval file/hash and preserved review package
+  available read-only to the application. The current backend image copies only
+  backend/: it does not yet package review/google-single-button. Supply the pinned
+  package through an explicitly reviewed staging artifact or read-only mount before
+  enablement. Do not assume the current image contains it.
+- Default-off OAuth/automatic-signup flags until staging checks pass; correct
+  candidate-only build, HTTPS cookies, CSRF/CORS and intended-destination checks.
+- Disable/redact callback query strings in application, proxy and load-balancer logs.
+- Confirm public job approval/publication statuses before activating the staged
+  publication manifest; it currently has zero owner-confirmed public entries.
+- Triage five known unrelated full-backend failures and four repository-wide Ruff
+  findings. They are not new OAuth failures or a whole-platform release signoff.
+
+ROLLBACK
+Turn off automatic new-account creation while preserving Google login for linked
+accounts when safe; keep identities, candidate data and acceptance evidence.
+Email/password remains available to accounts with passwords. Turning off all
+Google login prevents new sessions for Google-only users, so decide and communicate
+that impact before any rollback. Never add passwords or remove identities as a
+rollback shortcut. Do not roll back the additive data migrations destructively.
+
+GO DECISION
+No staging deployment or final readiness claim until actual local provider
+acceptance succeeds and the relevant staging configuration/packaging checks pass.
+Production always requires separate explicit authorization.

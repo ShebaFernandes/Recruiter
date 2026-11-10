@@ -1,0 +1,36 @@
+{
+  "decision": "approved",
+  "reviewer_name": "Dikshita Verma",
+  "reviewer_role": "CEO, ENTER; authorized policy owner as identified in the supplied confirmation",
+  "approved_at": "2026-11-10T13:40:00+05:30",
+  "decision_reference": "Completed written policy-owner confirmation supplied by the user in this conversation; preserved in policy-owner-confirmation.txt",
+  "conditions": "none",
+  "mechanism_id": "enter-google-signup-button-draft-02",
+  "notice_sha256": "fedffde9f5e4001ab2c2470b1c562e9e622f7cf002c94640c838ac6f383f75c4",
+  "review_package_sha256": "e769d63851f2399b90de0f05c33fe4b2bb9ef4107190b310ebb282abd99ed3cb",
+  "documents": {
+    "terms": {
+      "version": "enter-candidate-terms-live-v1.0-google-draft02-local-review",
+      "sha256": "04c2d3b3e147368286d9e634c7835c292c26e56aae1eba426353dc2a806cc6ea"
+    },
+    "privacy": {
+      "version": "enter-candidate-privacy-live-v1.0-google-draft02-local-review",
+      "sha256": "739edcbdb3345be3342ae60f51391a275898eab2ee89b91a3709e80361e0e68a"
+    },
+    "age": {
+      "version": "enter-candidate-age-v1.0",
+      "sha256": "66b79e5cc63ddd3760ed02abb947604bf28ca152fc991dd09e59e5711e960bdf"
+    },
+    "submission": {
+      "version": "enter-candidate-submission-v1.0",
+      "sha256": "d1beaf60fbea2b351f039dc64f37a54e76d8e42083fe216da199ece72b1b70ba"
+    }
+  },
+  "legal_baseline": "live-v1.0",
+  "effective_date": "2026-11-10",
+  "additional_conditions_verbatim": "None, unless otherwise specified by the policy owner.",
+  "release_scope": "local_testing_and_staging_validation",
+  "timezone_basis": "The message omitted an explicit timezone; interpreted as IST (Asia/Kolkata, UTC+05:30) from the established conversation timezone.",
+  "production_deployment_authorized": false,
+  "confirmation_sha256": "2f588277c34e28fc85be5767f6b7b92d9822408a08e3a8604604c99d9e23635f"
+}

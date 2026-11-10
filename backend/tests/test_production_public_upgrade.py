@@ -8,7 +8,7 @@ from django.utils import timezone
 @pytest.mark.django_db(transaction=True)
 def test_production_upgrade_preserves_candidate_and_confirmed_resume():
     production = ("talent", "0030_merge_candidate_and_website")
-    release = ("talent", "0033_merge_production_public_pages")
+    release = ("talent", "0036_googlesignupevidence_publishedsignupdocument")
     executor = MigrationExecutor(connection)
     try:
         # Only the disposable test DB is rewound to construct production's schema.
@@ -34,6 +34,8 @@ def test_production_upgrade_preserves_candidate_and_confirmed_resume():
         assert [m.name for m, _ in plan] == [
             "0030_careerapplication", "0031_opportunityapplication",
             "0032_preserve_transition_contact_phone", "0033_merge_production_public_pages",
+            "0034_googleoauthtransaction_externalidentity", "0035_login_identifier_uniqueness",
+            "0036_googlesignupevidence_publishedsignupdocument",
         ]
         executor.migrate([release])
         apps = executor.loader.project_state([release]).apps

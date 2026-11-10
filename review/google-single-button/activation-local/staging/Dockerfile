@@ -1,0 +1,40 @@
+# Reviewed Alpine base for the production/staging build only.
+# Development remains on backend/Dockerfile. Scan each built release image.
+FROM python:3.12-alpine@sha256:1b668429b3511ab407d8e00648891631b0b1a4d7e15e3ca70f38ab5b91ad4ab4
+
+# Includes vendor zlib 1.3.2-r1 security update; do not suppress the Debian finding.
+RUN apk upgrade --no-cache
+# Local OCR stays disabled unless the worker explicitly enables it. Install
+# render/recognition tools from this base image's matching Alpine repositories.
+RUN apk add --no-cache poppler-utils tesseract-ocr tesseract-ocr-data-eng
+# Dependencies are installed by uv at build time; production never uses pip.
+# Remove the base image's unused installer rather than ship its known CVEs.
+RUN python -m pip uninstall --yes pip
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_PROJECT_ENVIRONMENT=/opt/venv \
+    PATH="/opt/venv/bin:$PATH"
+COPY --from=ghcr.io/astral-sh/uv:0.12.19 /uv /usr/local/bin/uv
+WORKDIR /app
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project
+COPY backend ./backend
+# Preserve the exact v1.0 snapshots approved by production integrity settings.
+# The newer root documents and optional AI consent are not this AI-disabled release.
+COPY deploy/live-legal-v1.0/PRIVACY_POLICY_PUBLICATION.txt \
+    deploy/live-legal-v1.0/TERMS_PUBLICATION.txt ./deploy/
+WORKDIR /app/backend
+RUN mkdir -p media staticfiles \
+    && python manage.py collectstatic --noinput \
+    && chown -R nobody:nogroup media staticfiles
+# Staging-only approved policy artifacts; no credentials or candidate records.
+COPY review/google-single-button/review-manifest.json \
+    review/google-single-button/acceptance-event-specification.txt \
+    review/google-single-button/acceptance-event.example.json \
+    review/google-single-button/policy-amendments.txt \
+    review/google-single-button/reviewer-decision.txt \
+    review/google-single-button/signup-notice.txt /app/review/google-single-button/
+COPY review/google-single-button/activation-local/approved-local-live-v1.0-draft02-2026-11-10/ /app/review/google-single-button/activation-local/approved-local-live-v1.0-draft02-2026-11-10/
+USER nobody
+EXPOSE 8000
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "60"]

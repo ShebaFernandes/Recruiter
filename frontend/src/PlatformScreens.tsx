@@ -4,12 +4,13 @@ import CandidateApplications from './components/CandidateApplications'
 import Opportunities from './components/Opportunities'
 import { FormEvent, Suspense, lazy, useEffect, useRef, useState } from 'react'
 import {
-  Bell, BriefcaseBusiness, CalendarDays, Check,
+  ArrowRight, Bell, BriefcaseBusiness, CalendarDays, Check,
   FolderPlus, GraduationCap,
   History, IndianRupee, LogOut, Mail, MapPin, MessageCircle, Plus,
   Search as SearchIcon, ShieldCheck, SlidersHorizontal, X, ChevronDown,
 } from 'lucide-react'
 import { api, ApiError, auth } from './api'
+import { savedCandidateTab, clearCandidateLanding } from './candidateNavigation'
 import type { AuthPayload } from './api'
 import type { Candidate, Notification, Project, ProjectDetail, Search, SearchResult, User } from './types'
 import { Badge, Button, Card, FormField } from './components/ui'
@@ -18,8 +19,9 @@ import { ProjectWorkspace, WorkspacePanel } from './components/RecruiterWorkspac
 import './components/auth.css'
 import EnterBrandText from './components/EnterBrandText'
 import './components/onboarding.css'
-import { LegalPage } from './components/LegalReview'
-import { legalPublished } from './legalReview'
+import { LegalPage, LegalChecks, LegalRetry } from './components/LegalReview'
+import { GoogleButton } from './components/GoogleLogin'
+import { legalPublished, useLegalDocumentState } from './legalReview'
 
 import './components/recruiter-results.css'
 import './components/recruiter-workspace.css'
@@ -139,9 +141,10 @@ function AuthLayout({ role, back, children, onboardingMode }: {
 }
 
 function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
-  role: 'candidate' | 'recruiter'; onDone: (payload: AuthPayload) => void; back: () => void
+  role: 'candidate' | 'recruiter'; onDone: (payload: AuthPayload) => void | Promise<void>; back: () => void
   initialMode?: 'signup' | 'login'
 }) {
+  const { documents: legalDocuments, error: legalError } = useLegalDocumentState()
   const [mode, setMode] = useState<'signup' | 'login' | 'forgot'>(role === 'recruiter' ? 'login' : initialMode)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -161,8 +164,11 @@ function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
         setMessage(response.detail)
         return
       }
+      if (mode === 'signup' && legalPublished && (!legalDocuments || data.terms_accepted !== 'on')) {
+        throw new Error('Review and accept the current Terms before creating your account.')
+      }
       const payload = mode === 'signup'
-        ? await api.signup({ ...data, role })
+        ? await api.signup({ ...data, role, ...(legalPublished ? { age_accepted: data.terms_accepted === 'on', terms_accepted: data.terms_accepted === 'on' } : {}) })
         : await api.login({ email: data.email, password: data.password })
       if ('requires_email_verification' in payload) {
         setPendingEmail(data.email)
@@ -171,7 +177,7 @@ function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
         return
       }
       if (payload.user.role !== role) throw new ApiError(`This account belongs to the ${payload.user.role} platform.`, 400)
-      auth.save(payload); onDone(payload)
+      auth.save(payload); await onDone(payload)
     } catch (err) {
       if (role === 'candidate' && mode === 'login' && err instanceof ApiError && err.code === 'email_not_verified') {
         setPendingEmail(data.email)
@@ -198,12 +204,7 @@ function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
       <Button variant="ghost" fullWidth onClick={() => { setPendingEmail(''); setLocalVerificationUrl(''); setMode('login'); setMessage(''); setError('') }}>Back to login</Button>
     </Card>
   </AuthLayout>
-  return <AuthLayout role={role} back={back} onboardingMode={mode === 'forgot' ? undefined : mode}>
-    <Card className="auth-card">
-      <form className="auth-form" onSubmit={submit}>
-        <Badge tone="neutral">{role === 'recruiter' ? 'RECRUITER WORKSPACE' : 'CANDIDATE PROFILE'}</Badge>
-        <h1>{mode === 'signup' ? 'Create your account' : mode === 'forgot' ? 'Forgot your password?' : 'Welcome back'}</h1>
-        <p>{mode === 'forgot' ? 'Enter your email. If an account exists, we’ll send a secure reset link.' : role === 'recruiter' ? 'Search real candidate profiles and build a thoughtful shortlist.' : 'Turn your resume into a profile you control.'}</p>
+  const emailFields = <div className="auth-email-fields">
         <div className="auth-fields">
           {mode === 'signup' && <FormField label="Full name" name="full_name" required autoComplete="name" />}
           {mode === 'signup' && <input type="hidden" name="country_code" value="IN" />}
@@ -212,8 +213,21 @@ function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
         </div>
         <InlineError value={error} />
         {message && <div className="success" role="status"><Check size={17} aria-hidden="true" />{message}</div>}
-        <Button size="large" fullWidth disabled={busy}>{busy ? 'Please wait…' : mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send reset link' : 'Log in'}</Button>
+        {mode === 'signup' && legalPublished && (legalDocuments ? <LegalChecks documents={legalDocuments} /> : <p role="status">{legalError || 'Loading required legal documents…'}<LegalRetry /></p>)}
+        <Button variant={role === 'candidate' && mode !== 'forgot' ? 'secondary' : 'primary'} size="large" fullWidth disabled={busy || (mode === 'signup' && legalPublished && !legalDocuments)}>{busy ? 'Please wait…' : mode === 'signup' ? 'Create account' : mode === 'forgot' ? 'Send reset link' : 'Log in'}</Button>
         {mode === 'login' && <Button type="button" variant="ghost" fullWidth onClick={() => { setMode('forgot'); setError(''); setMessage('') }}>Forgot password?</Button>}
+  </div>
+  return <AuthLayout role={role} back={back} onboardingMode={mode === 'forgot' ? undefined : mode}>
+    <Card className="auth-card">
+      <form className="auth-form" onSubmit={submit}>
+        <Badge tone="neutral">{role === 'recruiter' ? 'RECRUITER WORKSPACE' : 'CANDIDATE PROFILE'}</Badge>
+        <h1>{mode === 'signup' ? 'Create your account' : mode === 'forgot' ? 'Forgot your password?' : 'Welcome back'}</h1>
+        <p>{mode === 'forgot' ? 'Enter your email. If an account exists, we’ll send a secure reset link.' : role === 'recruiter' ? 'Search real candidate profiles and build a thoughtful shortlist.' : 'Turn your resume into a profile you control.'}</p>
+        {role === 'candidate' && mode !== 'forgot' && <GoogleButton />}
+        {role === 'candidate' && mode !== 'forgot' ? <details className="auth-email-options">
+          <summary><span className="auth-email-or">OR</span><span className="auth-email-link"><span>Continue with email</span><ArrowRight size={18} aria-hidden="true" /></span></summary>
+          {emailFields}
+        </details> : emailFields}
         {(role === 'candidate' || mode === 'forgot') && <Button type="button" variant="ghost" fullWidth onClick={() => { setMode(mode === 'signup' ? 'login' : mode === 'login' ? 'signup' : 'login'); setError(''); setMessage('') }}>
           {mode === 'signup' ? 'Already have an account? Log in' : mode === 'login' ? 'New here? Create an account' : 'Back to login'}
         </Button>}
@@ -222,16 +236,16 @@ function AuthScreen({ role, onDone, back, initialMode = 'signup' }: {
   </AuthLayout>
 }
 
-function EmailVerificationScreen({ token, onDone }: { token: string; onDone: (payload: AuthPayload) => void }) {
+function EmailVerificationScreen({ token, onDone }: { token: string; onDone: (payload: AuthPayload) => void | Promise<void> }) {
   const started = useRef(false)
   const [error, setError] = useState('')
   useEffect(() => {
     if (started.current) return
     started.current = true
-    api.verifyEmail(token).then(payload => {
+    api.verifyEmail(token).then(async payload => {
       auth.save(payload)
       window.history.replaceState({}, '', '/')
-      onDone(payload)
+      await onDone(payload)
     }).catch(cause => setError(cause instanceof Error ? cause.message : 'This verification link could not be used.'))
   }, [token, onDone])
   return <AuthLayout role="candidate"><Card className="auth-card auth-state-card">
@@ -290,12 +304,13 @@ function CandidateAccountMenu({ user, accountDeleted, viewProfile, updateResume,
   const [deleting, setDeleting] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  return <div className="candidate-account-menu"><button type="button" className="candidate-account-trigger" aria-expanded={open} aria-controls="candidate-account-popover" onClick={() => setOpen(value => !value)}><span className="candidate-menu-avatar" aria-hidden="true">{user.full_name.split(/\s+/).filter(Boolean).slice(0,2).map(part => part[0]).join('').toUpperCase()}</span>{user.full_name}<ChevronDown size={15} aria-hidden="true" /></button>{open && <section id="candidate-account-popover" className="candidate-account-popover" aria-label="Account menu"><div className="candidate-menu-links"><button onClick={() => { setOpen(false); viewProfile() }}><GraduationCap size={18} aria-hidden="true" />View My Profile</button><button onClick={() => { setOpen(false); updateResume() }}><History size={18} aria-hidden="true" />Update Resume</button><button onClick={() => setSettings(value => !value)} aria-expanded={settings}><SlidersHorizontal size={18} aria-hidden="true" />Account Settings</button><button className="candidate-menu-logout" onClick={() => { setOpen(false); logout() }}><LogOut size={18} aria-hidden="true" />Log Out</button></div>{settings && <><strong>Account Settings</strong><p>Manage your ENTER account.</p></>}{error && <p role="alert" className="error">{error}</p>}{settings && (!deleting ? <button type="button" className="cp-danger" onClick={() => setDeleting(true)}>Delete my account</button> : <form onSubmit={async event => { event.preventDefault(); const data = new FormData(event.currentTarget); setBusy(true); setError(''); try { await api.deleteCandidateAccount(String(data.get('password')), String(data.get('confirmation'))); accountDeleted() } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not delete account.') } finally { setBusy(false) } }}><label>Current password<input type="password" name="password" autoComplete="current-password" required /></label><label>Type DELETE to confirm<input name="confirmation" required pattern="DELETE" /></label><div><button disabled={busy} className="cp-danger">Permanently delete my account</button><button type="button" disabled={busy} onClick={() => { setDeleting(false); setError('') }}>Cancel</button></div></form>)}</section>}</div>
+  return <div className="candidate-account-menu"><button type="button" className="candidate-account-trigger" aria-expanded={open} aria-controls="candidate-account-popover" onClick={() => setOpen(value => !value)}><span className="candidate-menu-avatar" aria-hidden="true">{user.full_name.split(/\s+/).filter(Boolean).slice(0,2).map(part => part[0]).join('').toUpperCase()}</span>{user.full_name}<ChevronDown size={15} aria-hidden="true" /></button>{open && <section id="candidate-account-popover" className="candidate-account-popover" aria-label="Account menu"><div className="candidate-menu-links"><button onClick={() => { setOpen(false); viewProfile() }}><GraduationCap size={18} aria-hidden="true" />View My Profile</button><button onClick={() => { setOpen(false); updateResume() }}><History size={18} aria-hidden="true" />Update Resume</button><button onClick={() => setSettings(value => !value)} aria-expanded={settings}><SlidersHorizontal size={18} aria-hidden="true" />Account Settings</button><button className="candidate-menu-logout" onClick={() => { setOpen(false); logout() }}><LogOut size={18} aria-hidden="true" />Log Out</button></div>{settings && <><strong>Account Settings</strong><p>Manage your ENTER account.</p></>}{error && <p role="alert" className="error">{error}</p>}{settings && (!deleting ? <button type="button" className="cp-danger" onClick={() => setDeleting(true)}>Delete my account</button> : <form onSubmit={async event => { event.preventDefault(); const data = new FormData(event.currentTarget); setBusy(true); setError(''); try { await api.deleteCandidateAccount(String(data.get('password')), String(data.get('confirmation'))); accountDeleted() } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not delete account.') } finally { setBusy(false) } }}>{user.has_password === false ? <><p>Confirm your identity with Google, then return here and type DELETE.</p><button type="button" disabled={busy} onClick={async () => { setBusy(true); setError(''); try { window.location.assign((await api.googleReauth('delete_account')).url) } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not verify identity.'); setBusy(false) } }}>Verify with Google</button></> : <label>Current password<input type="password" name="password" autoComplete="current-password" required /></label>}<label>Type DELETE to confirm<input name="confirmation" required pattern="DELETE" /></label><div><button disabled={busy} className="cp-danger">Permanently delete my account</button><button type="button" disabled={busy} onClick={() => { setDeleting(false); setError('') }}>Cancel</button></div></form>)}</section>}</div>
 }
 
 function CandidatePortal({ user, logout, accountDeleted, goHome }: { user: User; logout: () => void; accountDeleted: () => void; goHome: () => void }) {
   const beforeLeave = useRef<(() => Promise<boolean>) | null>(null)
-  const [tab, setTab] = useState<'profile' | 'opportunities' | 'applications'>('opportunities')
+  const [tab, setTab] = useState<'profile' | 'opportunities' | 'applications'>(() => savedCandidateTab(user.id) || 'opportunities')
+  useEffect(() => { clearCandidateLanding() }, [user.id])
   const [detailsFromApplications, setDetailsFromApplications] = useState(false)
   const [opportunitiesVersion, setOpportunitiesVersion] = useState(0)
   const [applications, setApplications] = useState<{id:number; opportunity_id:string; created_at:string}[]>([])
@@ -312,9 +327,9 @@ function CandidatePortal({ user, logout, accountDeleted, goHome }: { user: User;
     beforeLeave.current = null
     if (resetOpportunities) setDetailsFromApplications(false)
     if (next === 'opportunities' && resetOpportunities) {
-      sessionStorage.removeItem('enter-opportunity-intent')
+      sessionStorage.removeItem('enter-opportunity-intent'); sessionStorage.removeItem('enter-opportunity-action')
       const url = new URL(window.location.href)
-      url.searchParams.delete('role')
+      url.searchParams.delete('role'); url.searchParams.delete('apply')
       window.history.replaceState({}, '', url.pathname + url.search)
       setOpportunitiesVersion(value => value + 1)
     }
@@ -326,8 +341,8 @@ function CandidatePortal({ user, logout, accountDeleted, goHome }: { user: User;
   return <Shell navigation={navigation} user={user} goHome={() => { void (async () => { if (!beforeLeave.current || await beforeLeave.current()) goHome() })() }} accountMenu={<CandidateAccountMenu user={user} accountDeleted={accountDeleted} viewProfile={() => void selectTab('profile')} updateResume={() => { void selectTab('profile'); const observer = new MutationObserver(() => { const input = document.querySelector<HTMLInputElement>('.candidate-experience input[aria-label="Update Resume"], .candidate-experience input[data-testid="resume-input"]'); if (input) { observer.disconnect(); input.closest('label')?.scrollIntoView({behavior:'smooth',block:'center'}); input.click() } }); observer.observe(document.body,{childList:true,subtree:true}); window.setTimeout(() => observer.disconnect(),10000) }} logout={() => { void (async () => { if (!beforeLeave.current || await beforeLeave.current()) logout() })() }} />} logout={() => { void (async () => { if (!beforeLeave.current || await beforeLeave.current()) logout() })() }}>
     <div key={tab} className="candidate-tab-panel"><Suspense fallback={<div className="candidate-tab-loading" role="status">Opening your profile…</div>}>
     {tab === 'profile' && <CandidateExperience beforeLeaveRef={beforeLeave} />}
-    {tab === 'opportunities' && <div className="candidate-platform-opportunities"><Opportunities key={opportunitiesVersion} applicationDetails={detailsFromApplications} onDetailClose={detailsFromApplications ? () => { const url = new URL(window.location.href); url.searchParams.delete('role'); window.history.replaceState({}, '', url.pathname + url.search); void selectTab('applications') } : undefined} embedded loggedIn onLogin={() => void selectTab('profile')} /></div>}
-    {tab === 'applications' && <CandidateApplications applications={applications} loading={loadingApplications} error={applicationError} browse={() => void selectTab('opportunities')} view={id => { setDetailsFromApplications(true); sessionStorage.removeItem('enter-opportunity-intent'); window.history.replaceState({}, '', '?role=' + encodeURIComponent(id)); void selectTab('opportunities', false) }} />}
+    {tab === 'opportunities' && <div className="candidate-platform-opportunities"><Opportunities key={opportunitiesVersion} applicationDetails={detailsFromApplications} onDetailClose={detailsFromApplications ? () => { const url = new URL(window.location.href); url.searchParams.delete('role'); url.searchParams.delete('apply'); window.history.replaceState({}, '', url.pathname + url.search); void selectTab('applications') } : undefined} embedded loggedIn onLogin={() => void selectTab('profile')} /></div>}
+    {tab === 'applications' && <CandidateApplications applications={applications} loading={loadingApplications} error={applicationError} browse={() => void selectTab('opportunities')} view={id => { setDetailsFromApplications(true); sessionStorage.removeItem('enter-opportunity-intent'); sessionStorage.removeItem('enter-opportunity-action'); window.history.replaceState({}, '', '?role=' + encodeURIComponent(id)); void selectTab('opportunities', false) }} />}
     </Suspense></div>
   </Shell>
 }

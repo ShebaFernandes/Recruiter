@@ -1,0 +1,21 @@
+{
+  "status": "ILLUSTRATIVE_DRAFT_NOT_AN_ACTUAL_EVENT",
+  "event_id": null,
+  "event_type": "candidate_signup_button",
+  "method": "notice_bound_google_button_v1",
+  "server_received_at": null,
+  "oauth_transaction_id": null,
+  "mechanism_id": "enter-google-signup-button-draft-02",
+  "notice_version": "enter-google-signup-notice-draft-02",
+  "notice_sha256": "fedffde9f5e4001ab2c2470b1c562e9e622f7cf002c94640c838ac6f383f75c4",
+  "terms_version": null,
+  "terms_sha256": null,
+  "age_statement_version": null,
+  "declared_age_at_least_18": null,
+  "registration_country_code": null,
+  "privacy_notice_version": null,
+  "privacy_notice_sha256": null,
+  "subject_user_id": null,
+  "account_created_at": null,
+  "evidence_committed_at": null
+}

@@ -1,0 +1,20 @@
+USER-SUPPLIED WRITTEN APPROVAL — PRESERVED VERBATIM
+This is developer approval for local implementation and testing, not a claim
+that the amended legal policies have received authorized policy approval.
+
+I confirm my approval of ENTER Google Signup Draft 02.
+Approval details
+Authorized reviewer: Sheba
+Role: Full-Stack Developer
+Approval date/time: 10 November 2026, 1:34 PM IST (UTC+05:30)
+Approval reference: This written approval message.
+Conditions: Local implementation and testing only. Production deployment requires separate authorization.
+Approved legal baseline: ENTER live-legal-v1.0, incorporating the exact Draft 02 amendments.
+Proposed effective date: 10 November 2026, subject to authorized policy approval.
+Decision
+I approve the Draft 02 single-button Google signup design and its proposed acceptance-recording mechanism for local implementation and testing.
+Please preserve this decision as an audit record.
+If additional legal-policy authorization is required, identify that separately rather than treating my developer approval as legal approval.
+Once the required approval and legal-bundle checks are satisfied, enable automatic Google signup locally and test the complete flow:
+Continue with Google → Select Google Account → Automatically create candidate account → My Profile.
+Do not deploy, push, merge, or modify production.

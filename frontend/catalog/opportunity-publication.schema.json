@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ENTER opportunity publication manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "reviewStatus", "opportunities"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "reviewStatus": { "enum": ["awaiting-owner-confirmation", "reviewed"] },
+    "opportunities": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["approved", "published"],
+        "properties": {
+          "approved": { "type": "boolean" },
+          "published": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

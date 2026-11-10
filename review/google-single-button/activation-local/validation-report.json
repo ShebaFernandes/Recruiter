@@ -1,0 +1,23 @@
+{
+  "scope": "local activation preparation only",
+  "checks": {
+    "draft02_original_files_unchanged": true,
+    "approved_legal_snapshots_unchanged": true,
+    "website-design_preserved_pending_files_unchanged": true,
+    "candidate-release_preserved_pending_files_unchanged": true,
+    "automatic_signup_disabled": true,
+    "approved_legal_mode_disabled": true,
+    "private_env_mode_0600": true,
+    "developer_written_approval_hash_matches": true
+  },
+  "bundle_validation": "passed; unapproved publication rejected",
+  "policy_authorization": "User reports confirmation; separate policy-owner audit fields left pending at explicit user direction. Existing developer record retained without relabelling.",
+  "real_google_signup_test": "not run: activation audit gate remains pending",
+  "go_no_go": "NO-GO for activation/staging",
+  "backend_authentication_security_recheck": {
+    "passed": 78,
+    "skipped": 3,
+    "skip_reason": "PostgreSQL-only concurrency tests; current recheck uses disposable SQLite"
+  },
+  "staging_preparation": "STAGING_READINESS.txt; not deployed; real provider acceptance remains pending"
+}

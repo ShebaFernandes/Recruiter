@@ -7,7 +7,11 @@ class SensitiveValueFilter(logging.Filter):
 
     patterns = (
         re.compile(r"(?i)(authorization\s*[:=]\s*(?:token|bearer)\s+)[^\s,;]+"),
-        re.compile(r"(?i)((?:password|secret|access[_-]?key|session|token)\s*[:=]\s*)[^\s,;]+"),
+        re.compile(
+            r"(?i)(?<![\w-])((?:password|(?:client[_-]?)?secret|access[_-]?key|session|"
+            r"(?:id[_-]?|access[_-]?|refresh[_-]?)?token|code|state|nonce|code_verifier|(?:notice_)?challenge)"
+            r"[\"']?\s*[:=]\s*[\"']?)[^\s,;\"'&]+"
+        ),
     )
 
     def filter(self, record):

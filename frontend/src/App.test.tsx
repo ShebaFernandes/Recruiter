@@ -99,8 +99,8 @@ describe('Enter Talent landing', () => {
     expect(screen.queryByText('CANDIDATE PLATFORM')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Country')).not.toBeInTheDocument()
     expect(document.querySelector('input[name="country_code"]')).toHaveValue('IN')
-    expect(screen.queryByRole('link', { name: 'Privacy Policy' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: 'Terms of Use' })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '/privacy')
+    expect(screen.getByRole('link', { name: 'Terms' })).toHaveAttribute('href', '/terms')
   })
 
   it('fails closed when approved legal publication is unavailable', async () => {

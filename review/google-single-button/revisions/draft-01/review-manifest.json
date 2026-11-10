@@ -1,0 +1,21 @@
+{
+  "status": "DRAFT_REVIEW_ONLY_NOT_RUNTIME_CONFIGURATION",
+  "branch": "codex/google-candidate-login",
+  "base_documents_and_runtime_files_unchanged": {
+    "deploy/live-legal-v1.0/TERMS_PUBLICATION.txt": "c3d509227aa02272912175005f06e2ef7f675de09c8d37c705546476b513f572",
+    "deploy/live-legal-v1.0/PRIVACY_POLICY_PUBLICATION.txt": "d1c43d6d463335d30d31d4bc1233bec83f9c8bc43a939ff4087b0b60d381d26c",
+    "deploy/TERMS_PUBLICATION.txt": "e6276b935d62840c98084e491e072781ac9776dd1ad3011c4d4d8276b7aaac8c",
+    "deploy/PRIVACY_POLICY_PUBLICATION.txt": "7cfeb57abf1ac8537c59c1b06dc8b7bbeafc90e1dba6b3979737bef069a5bad9",
+    "backend/config/settings.py": "bf2950ceefd3915f0f190ee2c3002a5f6b6d5a681adf914bfd975300a10fc570",
+    "compose.production.yaml": "084fcae115f5607b1e86fb69f444f4a0fbce95b8367d537df804754d24961a0b",
+    "backend/talent/google_views.py": "fdd094c848b9d412ffca25c333a65086aee6d19d28315fb2efe0d1aa95c1d49b",
+    "backend/talent/google_oauth.py": "5d8b208d1fd40d5c4b4c1f01993fa69c578d3fad3d2dc180aa37e7074a990a37",
+    "backend/talent/models.py": "6438735dd3cdeb7b28267db9758280e3ddd029e629b290f7321f776716f2862b"
+  },
+  "draft_files": {
+    "acceptance-event-specification.txt": "ca9cb43ad760bc536c86fb263143397283febe202010708042cc7f6b4873a435",
+    "acceptance-event.example.json": "3bd377c3c5d7070f76988384b04a157ba4f66138083e41be7bfdd7e9b50df7d1",
+    "policy-amendments.txt": "f8a8ce44d427a7cb9435e528b244b4eaa7234cb54e0a7a9e8953318fb7acf216",
+    "signup-notice.txt": "aef99709f73a202b2a0e8eb23eae12e06a50bc497506ed7cfcb66fa50ad026f8"
+  }
+}
