@@ -401,3 +401,11 @@
 @media (min-width: 601px) and (max-width: 900px) {
   .enter-footer__grid { column-gap: 20px; row-gap: 24px; }
 }
+
+.enter-footer__availability {
+  min-height: 1.5em;
+  margin: 16px 0 0;
+  color: #e1e6e3;
+  font-size: 13px;
+  line-height: 1.5;
+}

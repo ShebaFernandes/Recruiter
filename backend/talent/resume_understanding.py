@@ -1173,7 +1173,12 @@ def understand_resume(
     result = dict(rules)
     layout = rules.get('_document_layout') or {}
     if layout.get('layout_uncertain') or layout.get('layout_incomplete'):
-        result['work_experiences'] = _spatially_validated_rule_rows(rules)
+        # Enabled routing has already reproduced each rule association inside a
+        # safe source scope. Converting those rows into AI quotation conventions
+        # would lose valid promotions and change literal date precision.
+        routed = (rules.get('_layout_routing') or {}).get('mode') == 'enabled'
+        if not routed:
+            result['work_experiences'] = _spatially_validated_rule_rows(rules)
         result['_employment_parse'] = {
             **(rules.get('_employment_parse') or {}),
             'reliable': False, 'complete_for_archival': False, 'rule_role_keys': [],

@@ -313,7 +313,10 @@ def _heading(value):
 
 def _heading_and_tail(value):
     """Return a bounded section heading, including common qualified headings."""
-    stripped = value.strip()
+    stripped = value.strip().lstrip("�• ")
+    qualified = re.match(r"(?i)^(work experience)\s+\d+\+?\s+years?\b.*$", stripped)
+    if qualified:
+        return "work experience", ""
     for heading in sorted(SECTION_HEADINGS, key=len, reverse=True):
         match = re.match(rf"(?i)^\s*{re.escape(heading)}\s*(?:[:|]\s*(.*))?$", stripped)
         if match:
@@ -321,6 +324,8 @@ def _heading_and_tail(value):
     # Resumes frequently qualify headings (for example, a selected employment
     # section). Only standalone, short heading-shaped lines qualify; job rows,
     # dates and prose never become section boundaries.
+    if stripped.endswith((".", "!", "?")):
+        return "", ""
     candidate = stripped.strip("•|:–—- ")
     heading = _heading(candidate)
     if (len(candidate) <= 70 and 1 <= len(heading.split()) <= 6
@@ -536,7 +541,11 @@ def _standard_experiences(lines, original_section=None):
             start_date, end_date = _range_dates(match)
             description_start = index + 1
             role, company = "", ""
-            if "|" in prefix or re.search(r"\s(?:at|@)\s", prefix, re.I):
+            inline_parts = re.split(r"\s+[–—]\s+", prefix)
+            if len(inline_parts) >= 2 and _concise_role(" – ".join(inline_parts[:-1])):
+                role = " – ".join(inline_parts[:-1])
+                company = inline_parts[-1]
+            elif "|" in prefix or re.search(r"\s(?:at|@)\s", prefix, re.I):
                 role, company = _role_and_company(prefix.split("|"))
                 role = _concise_role(role)
                 if not role:
@@ -695,7 +704,7 @@ PIPE_EXPERIENCE_PATTERN = re.compile(
 )
 
 
-def parse_resume(file_obj, filename):
+def _parse_resume_legacy(file_obj, filename):
     text = extract_text(file_obj, filename)
     evidence_views = []
     layout = {}
@@ -707,7 +716,9 @@ def parse_resume(file_obj, filename):
         # The readable view is the model/parser input, never a concatenation.
         alternative = '' if OCR_REQUIRED_MARKER in text or OCR_USED_MARKER in text else (
             _poppler_pdf_text(file_obj))
-        evidence_views, layout = pdf_views(file_obj, text, alternative)
+        structure = (settings.configured
+                     and getattr(settings, 'RESUME_LAYOUT_MODE', 'disabled') != 'disabled')
+        evidence_views, layout = pdf_views(file_obj, text, alternative, include_structure=structure)
         readable = [view for view in evidence_views
                     if view['text'].strip() and view.get('parser_input', True)]
         if readable:
@@ -734,6 +745,52 @@ def parse_resume(file_obj, filename):
         from .document_evidence import docx_view
 
         evidence_views, layout = docx_view(text)
+    if Path(filename).suffix.lower() == ".pdf":
+        file_obj.seek(0)
+        for page in PdfReader(file_obj).pages:
+            for reference in page.get("/Annots", []):
+                action = reference.get_object().get("/A")
+                if action and action.get("/S") == "/URI":
+                    uri = str(action.get("/URI", ""))
+                    if any(_profile_url(uri, host) for host in ("linkedin.com", "github.com")):
+                        text += "\n" + uri
+    # Some CV templates print the end date beside the role and the start date
+    # beside its first bullet. Restore a single chronological date range.
+    text = re.sub(
+        r"(?m)^([^\S\n]*)(\d{2}/\d{4})[ \t]+([^\n]+)\n"
+        r"[ \t]*(\d{2}/\d{4})[ \t]*(.*)$",
+        lambda m: (
+            "Experience: " + "|".join(m[3].rsplit(",", 2)[:2]) + "|"
+            + "-".join(reversed(m[4].split("/"))) + "-01|"
+            + "-".join(reversed(m[2].split("/"))) + f"-01\n{m[5]}"
+        ),
+        text,
+    )
+    return _parse_resume_text(text, filename, evidence_views, layout, layout_regions)
+
+
+def parse_resume(file_obj, filename):
+    """Keep the public parser contract; layout routing is opt-in and local only."""
+    baseline = _parse_resume_legacy(file_obj, filename)
+    mode = (getattr(settings, 'RESUME_LAYOUT_MODE', 'disabled')
+            if settings.configured else 'disabled')
+    if mode == 'disabled':
+        return baseline
+    from .resume_layout import classify_layout, extract_document, parse_document
+
+    document = extract_document(file_obj, filename, baseline=baseline)
+    profile = classify_layout(document)
+    routed = parse_document(document, profile)
+    if mode == 'shadow':
+        # Compare counts and decisions only. Never change facts or worker evidence.
+        baseline['_layout_routing'] = {**routed['_layout_routing'], 'mode': 'shadow'}
+        return baseline
+    routed['_layout_routing']['mode'] = 'enabled'
+    return routed
+
+
+def _parse_resume_text(text, filename, evidence_views, layout, layout_regions):
+    """Shared field extraction for legacy and layout-specific reading strategies."""
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     email_match = re.search(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}", text)
     phone_match = re.search(r"(?:\+?91[-\s]?)?[6-9]\d{9}", text)
@@ -743,6 +800,11 @@ def parse_resume(file_obj, filename):
     years_match = re.search(
         r"(?i)(\d+(?:\.\d+)?)\+?\s*(?:years?|yrs?)\s+(?:of\s+)?experience", text
     )
+    if not years_match:
+        years_match = re.search(
+            r"(?im)^\s*(?:work|professional|total)\s+experience\s*[:|–-]?\s*"
+            r"(\d+(?:\.\d+)?)\+?\s*(?:years?|yrs?)\b", text
+        )
     skills_line = _value_after_label(text, "Skills")
     skills = [skill for skill in RESUME_SKILLS if re.search(rf"(?i)\b{re.escape(skill)}\b", text)]
     if skills_line:

@@ -418,3 +418,58 @@ cd frontend && npm run lint && npm run test && npm run build && npm run test:e2e
 ```
 
 For a production-settings check, provide non-secret placeholder/test endpoints for every required environment variable, then run `python manage.py check --deploy`. This validates configuration shape; it does not prove RDS, S3, SQS, SMTP, ClamAV, DNS, or TLS connectivity.
+
+## Local layout-aware resume parsing
+
+`RESUME_LAYOUT_MODE` accepts `disabled` (default), `shadow`, or `enabled`.
+No migration or new service is required. Restart resume workers after changing it.
+
+- `disabled` uses the original parser without layout-routing overhead.
+- `shadow` runs classification and compares up to two local readings, but returns
+  the original facts and evidence to the existing AI and saving pipeline. Only
+  bounded `_layout_routing` diagnostics are added.
+- `enabled` selects a reading using evidence-supported associations. Single-column,
+  sidebar, table, and mixed documents share the existing field parser. Each role
+  must be reproducible inside a safe source scope; separate columns and table rows
+  cannot lend each other employers or titles. Conflicting associations are withheld
+  and the employment outcome requests review. Supported roles can still be saved.
+
+The classifier labels pages and sections independently. Native text, scans, and
+mixed documents are tracked separately. PDF geometry comes from bounded local
+pdfplumber extraction; DOCX table cells retain their actual row membership. A pipe
+character in an ordinary paragraph does not make it a table. Unknown or incomplete
+layouts retain the legacy reading and review diagnostics. OCR retains the existing
+availability, time, size, and page limits; classification does not enable OCR.
+
+Scores are routing heuristics, not calibrated confidence probabilities. Classification
+never grants employment completeness: enabled routing disables omission archival in
+this first version. Year-only dates retain literal years without invented month/day
+precision. Existing identity, candidate-edit, AI consent, budget, lease, and transaction
+checks still govern processing and persistence. This feature makes no provider calls
+itself and does not change AI rollout settings.
+
+Monitor private `_layout_routing` counts by version/family: accepted and rejected
+roles, conflicting associations, missing employment sections, review rate, strategy
+selection, and elapsed time. Diagnostics contain source IDs rather than resume
+quotations. Full geometry/evidence views remain transient in the worker. Rollback
+requires setting the mode to `disabled` and restarting workers; existing saved facts
+are not rewritten. Do not bulk-reprocess existing resumes as part of rollout.
+
+Run the fictional local comparison before enabling a strategy:
+
+```bash
+uv run python scripts/resume_layout_benchmark.py --output /tmp/resume-layout-report.json
+uv run python scripts/resume_accuracy_benchmark.py
+uv run python scripts/resume_generalization_benchmark.py --output /tmp/resume-generalization.json
+DATABASE_URL=postgresql://enter:enter@127.0.0.1:5433/enter uv run pytest -q backend/tests/test_resume_layout.py
+```
+
+The comparison reports legacy, oracle-layout, and automatic routing for identical
+fixtures, split into development templates and structurally distinct held-out
+sidebar/table/multi-page/unheaded/scanned examples. It measures role association,
+date facts at their stated precision, classification, review signals, and latency.
+Persistence and no-archival behavior are covered by API/worker regression tests.
+Synthetic scores do not establish production accuracy. A representative consented
+resume evaluation and shadow results are required before enabling production traffic;
+scans with OCR disabled remain an expected review case. Existing consented AI may
+still run downstream in shadow mode according to its own settings.

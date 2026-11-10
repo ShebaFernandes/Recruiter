@@ -267,7 +267,13 @@ def _employment_outcome(extracted):
     layout = extracted.get("_document_layout")
     layout = layout if isinstance(layout, dict) else {}
     source = str(interpretation.get("source") or "rules")
-    if roles:
+    if extracted.get('_layout_review_required'):
+        status = "review_required"
+        layout_reason = extracted.get('_layout_review_reason')
+        reason = (layout_reason if layout_reason in {
+            'unsupported_layout_associations', 'document_layout_uncertain'
+        } else 'conflicting_layout_associations')
+    elif roles:
         status = "verified_ai" if source in {"ai", "ai_cached"} else "verified_fallback"
         reason = "evidence_roles_accepted"
     elif parse.get("explicit_no_employment"):
@@ -763,6 +769,10 @@ def process_resume_job(job_id, idempotency_key=None, claimed=None):
                     }
         else:
             extracted["_interpretation"] = {"source": "rules", "reason": "identity_check"}
+        if extracted.get('_layout_conflict_ids'):
+            from .resume_layout import protect_layout_conflicts
+
+            protect_layout_conflicts(extracted)
         # Alternative raw views exist only while this worker validates evidence.
         # The private resume remains in file storage; persist bounded metadata only.
         extracted.pop('_evidence_views', None)

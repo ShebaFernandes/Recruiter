@@ -702,3 +702,8 @@ if not DEBUG:
     SESSION_COOKIE_SAMESITE = "Lax"
     CSRF_COOKIE_SAMESITE = AUTH_COOKIE_SAMESITE
     CSRF_COOKIE_HTTPONLY = True
+
+# Local layout routing: shadow records comparisons without changing extracted facts.
+RESUME_LAYOUT_MODE = os.getenv('RESUME_LAYOUT_MODE', 'disabled').lower()
+if RESUME_LAYOUT_MODE not in {'disabled', 'shadow', 'enabled'}:
+    raise ImproperlyConfigured('RESUME_LAYOUT_MODE must be disabled, shadow, or enabled.')

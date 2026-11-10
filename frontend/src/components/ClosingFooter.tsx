@@ -21,12 +21,6 @@ export default function ClosingFooter({ onCandidate }: { onCandidate: () => void
     if (section) return observeLandingReveal(section, 0.22)
   }, [])
 
-  useEffect(() => {
-    if (!pending) return
-    const dismiss = window.setTimeout(() => setPending(null), 4000)
-    return () => window.clearTimeout(dismiss)
-  }, [pending])
-
   const comingSoon = (destination: PendingDestination) => setPending(destination)
 
   return <section ref={sectionRef} id="closing-section" className="closing-section" aria-label="Build with enter">
@@ -47,9 +41,7 @@ export default function ClosingFooter({ onCandidate }: { onCandidate: () => void
             For Candidates <ArrowRight size={16} aria-hidden="true" />
           </button>
         </div>
-        <p id="closing-availability" className={`closing-cta__status${pending ? ' is-visible' : ''}`} role="status" aria-live="polite">
-          {pending ? `${pending} is coming soon.` : 'Company access and unfinished destinations are coming soon.'}
-        </p>
+
       </div>
     </div>
 
@@ -70,16 +62,20 @@ export default function ClosingFooter({ onCandidate }: { onCandidate: () => void
         <nav className="enter-footer__column" aria-label="For candidates">
           <h3>FOR CANDIDATES</h3>
           <button type="button" onClick={onCandidate}>Join enter's Talent network</button>
-          <button type="button" title="Coming soon" onClick={() => comingSoon('Opportunities')}>Opportunities <span className="enter-footer__soon">Coming soon</span></button>
+          <button type="button" title="Coming soon" aria-describedby="closing-availability" onClick={() => comingSoon('Opportunities')}>Opportunities <span className="enter-footer__soon">Coming soon</span></button>
         </nav>
 
         <nav className="enter-footer__column" aria-label="enter">
           <h3>ENTER</h3>
           <a href="#talent-principles">About</a>
-          <button type="button" title="Coming soon" onClick={() => comingSoon('Careers')}>Careers <span className="enter-footer__soon">Coming soon</span></button>
+          <button type="button" title="Coming soon" aria-describedby="closing-availability" onClick={() => comingSoon('Careers')}>Careers <span className="enter-footer__soon">Coming soon</span></button>
           <a href="mailto:sheba@enterrecruitment.com">Contact</a>
         </nav>
       </div>
+
+      <p id="closing-availability" className="enter-footer__availability" role="status" aria-live="polite">
+        {pending ? `${pending} is coming soon.` : ''}
+      </p>
 
       <div className="enter-footer__legal">
         <span>© enter Recruitment Private Limited</span>

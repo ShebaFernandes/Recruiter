@@ -22,7 +22,7 @@ def _box(value):
     return [round(float(part), 1) for part in value[:4]]
 
 
-def _positioned_lines(page, page_number):
+def _positioned_lines(page, page_number, *, split_gutters=False):
     """Reconstruct verbatim word lines, splitting only clear column gutters."""
     words = page.extract_words(x_tolerance=2, y_tolerance=3)
     if len(words) > MAX_WORDS:
@@ -41,7 +41,7 @@ def _positioned_lines(page, page_number):
                 previous = groups[-1][-1]
                 gutter = word['x0'] - previous['x1']
                 if gutter > max(45, page.width * .08) and (
-                    previous['x1'] < midpoint and word['x0'] > midpoint
+                    split_gutters or previous['x1'] < midpoint and word['x0'] > midpoint
                 ):
                     groups.append([])
             groups[-1].append(word)
@@ -87,7 +87,7 @@ def _row_view(page_number, table_number, row_number, bbox, cells, kind):
     text = ' | '.join(cell for cell in cells if cell)
     entry_id = f'p{page_number}:t{table_number}:r{row_number}'
     block = {'page': page_number, 'bbox': _box(bbox), 'column': entry_id,
-             'table_row': row_number, 'entry_id': entry_id, 'text': text}
+             'table_row': row_number, 'entry_id': entry_id, 'text': text, 'cells': cells}
     return {'method': kind, 'text': text, 'blocks': [block],
             'validation_safe': True, 'parser_input': False,
             'page': page_number, 'entry_id': entry_id}
@@ -268,7 +268,7 @@ def _structured_rows(page, page_number):
     return views + borderless, boxes + row_boxes + ambiguous, bool(ambiguous or overflow)
 
 
-def pdf_views(file_obj, primary_text, poppler_text=''):
+def pdf_views(file_obj, primary_text, poppler_text='', *, include_structure=False):
     """Return separate pdfplumber and Poppler views plus safe layout metadata."""
     file_obj.seek(0)
     payload = file_obj.read(8 * 1024 * 1024 + 1)
@@ -285,18 +285,33 @@ def pdf_views(file_obj, primary_text, poppler_text=''):
             if len(document.pages) > 100:
                 return [], {**metadata, 'layout_incomplete': True}
             blocks = []
+            geometry = []
+            geometry_incomplete = False
             structured = []
             table_boxes = {}
             words = 0
             for number, page in enumerate(document.pages, start=1):
                 ordered, columns, page_words = _ordered_blocks(page, number)
                 words += page_words
+                for block in ordered:
+                    block['page_size'] = [float(page.width), float(page.height)]
                 blocks.extend(ordered)
+                if include_structure:
+                    positioned, _ = _positioned_lines(page, number, split_gutters=True)
+                    for block in positioned:
+                        block['page_size'] = [float(page.width), float(page.height)]
+                    geometry.extend(positioned)
+                    if len(geometry) > MAX_BLOCKS:
+                        geometry_incomplete = True
+                        geometry = geometry[:MAX_BLOCKS]
                 metadata['columns'] += bool(columns)
                 if len(blocks) > MAX_BLOCKS or words > MAX_WORDS:
                     metadata['layout_incomplete'] = True
                     break
                 row_views, boxes, uncertain = _structured_rows(page, number)
+                for view in row_views:
+                    for block in view['blocks']:
+                        block['page_size'] = [float(page.width), float(page.height)]
                 structured.extend(row_views)
                 table_boxes[number] = boxes
                 metadata['layout_uncertain'] |= uncertain
@@ -311,6 +326,12 @@ def pdf_views(file_obj, primary_text, poppler_text=''):
                     metadata['text_layer_disordered'] = _order_disagrees(
                         primary_text, reconstructed)
                     metadata['layout_uncertain'] |= metadata['text_layer_disordered']
+                    if include_structure:
+                        views.append({'method': 'layout_geometry',
+                                      'text': '\n'.join(block['text'] for block in geometry),
+                                      'blocks': geometry, 'validation_safe': False,
+                                      'incomplete': geometry_incomplete,
+                                      'parser_input': False})
                     views.append({'method': 'pdfplumber', 'text': reconstructed,
                                   'blocks': blocks, 'validation_safe': True})
                     metadata['methods'].append('pdfplumber')
